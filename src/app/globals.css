@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+/* ============================================
+   Blackjack — Evolution Gaming Premium Theme
+   ============================================ */
+
+:root {
+  /* Casino atmosphere colors */
+  --bg-dark: #1a0e0a;
+  --bg-medium: #2a1810;
+  --felt-red: #8b1a1a;
+  --felt-dark: #5a1212;
+  --gold: #d4a843;
+  --gold-dim: rgba(212, 168, 67, 0.4);
+  --gold-glow: rgba(212, 168, 67, 0.15);
+  --text-gold: #e8c860;
+  --text-light: #f0e6d6;
+  --text-muted: rgba(240, 230, 214, 0.5);
+  --accent-green: #2ecc71;
+  --accent-red: #e74c3c;
+  --accent-orange: #f39c12;
+  --accent-blue: #3498db;
+  --bar-bg: rgba(10, 6, 4, 0.92);
+  --panel-bg: rgba(20, 12, 8, 0.85);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg-dark);
+  color: var(--text-light);
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Portrait Mode Overlay ─── */
+.portrait-overlay {
+  display: none;
+}
+
+@media (orientation: portrait) and (max-width: 1024px) {
+  .portrait-overlay {
+    display: flex !important;
+  }
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Selection ─── */
+::selection {
+  background: rgba(212, 168, 67, 0.3);
+  color: white;
+}
+
+/* ─── Focus ─── */
+*:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ─── Table felt text style ─── */
+.felt-text {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  color: rgba(212, 168, 67, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  user-select: none;
+  pointer-events: none;
+}
+
+.felt-text-bright {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  color: rgba(212, 168, 67, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ─── Glow pulse animation ─── */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(212, 168, 67, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(212, 168, 67, 0.6); }
+}
+
+@keyframes soft-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-soft-pulse {
+  animation: soft-pulse 2s ease-in-out infinite;
+}

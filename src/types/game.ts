@@ -1,0 +1,151 @@
+// ============================================
+// Blackjack Game Type Definitions
+// ============================================
+
+import { Suit, Rank, HandStatus, GamePhase } from './enums';
+
+/** A single playing card */
+export interface Card {
+  suit: Suit;
+  rank: Rank;
+  /** Numeric value: face cards = 10, Ace = 11 (adjusted dynamically) */
+  value: number;
+  /** Whether the card is face-down (dealer's hole card) */
+  isHidden: boolean;
+}
+
+/** The shoe — an array of cards from multiple decks */
+export type Shoe = Card[];
+
+/** A single hand of blackjack (a seat can have multiple hands after splitting) */
+export interface Hand {
+  id: string;
+  cards: Card[];
+  betAmount: number;
+  status: HandStatus;
+  isFreeDouble?: boolean;
+  isFreeSplit?: boolean;
+  freeBetAmount?: number;
+}
+
+/** A seat / betting box at the table (1-5) */
+export interface Seat {
+  id: number;
+  isActive: boolean;
+  hands: Hand[];
+  currentHandIndex: number;
+}
+
+/** The dealer's hand */
+export interface DealerHand {
+  cards: Card[];
+}
+
+/** A record of a completed round for match history */
+export interface MatchRecord {
+  id: string;
+  timestamp: number;
+  roomId: string;
+  seats: {
+    seatId: number;
+    insuranceCost?: number;
+    insurancePayout?: number;
+    hands: {
+      betAmount: number;
+      result: HandStatus;
+      payout: number;
+      cards: { suit: Suit; rank: Rank }[];
+    }[];
+  }[];
+  dealerCards: { suit: Suit; rank: Rank }[];
+  bankrollBefore: number;
+  bankrollAfter: number;
+}
+
+/** Hand value calculation result */
+export interface HandValue {
+  total: number;
+  isSoft: boolean;
+}
+
+// ============================================
+// Zustand Store Types
+// ============================================
+
+/** The complete game state shape */
+export interface GameState {
+  // Core
+  bankroll: number;
+  shoe: Shoe;
+  gamePhase: GamePhase;
+  currentRoom: string;
+
+  // Table
+  seats: Seat[];
+  dealerHand: DealerHand;
+
+  // Turn tracking
+  currentSeatIndex: number;
+
+  // Betting
+  selectedChipValue: number;
+  betHistory: { seatId: number; amount: number }[];
+
+  // History
+  matchHistory: MatchRecord[];
+
+  // Daily claim
+  lastDailyClaim: number;
+
+  // Insurance
+  insuranceBets: Record<number, number>; // seatId -> insurance bet amount
+}
+
+/** All actions available on the game store */
+export interface GameActions {
+  // Shoe
+  initializeShoe: () => void;
+
+  // Seat management
+  toggleSeat: (seatId: number) => void;
+
+  // Betting phase
+  placeBet: (seatId: number, amount: number) => void;
+  undoBet: () => void;
+  clearBet: (seatId: number) => void;
+  clearAllBets: () => void;
+  selectChip: (value: number) => void;
+
+  // Game flow
+  startDeal: () => void;
+  hit: () => void;
+  stand: () => void;
+  doubleDown: () => void;
+  split: () => void;
+  acceptInsurance: () => void;
+  declineInsurance: () => void;
+
+  // Dealer
+  dealerPlay: () => void;
+
+  // Payout
+  calculatePayouts: () => void;
+
+  // Round management
+  resetRound: () => void;
+
+  // Utility
+  addFunds: (amount: number) => void;
+  claimDaily: () => boolean;
+  setCurrentRoom: (roomId: string) => void;
+
+  // Advance turn: move to the next hand/seat
+  advanceToNextHand: () => void;
+
+  // Dev tools
+  forceBlackjack: () => void;
+  forceSplitScenario: () => void;
+}
+
+/** Combined store type */
+export type GameStore = GameState & GameActions;
