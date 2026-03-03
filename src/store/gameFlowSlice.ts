@@ -545,10 +545,17 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       .filter((s) => s.isActive)
       .every((s) => s.hands.every((h) => h.status === HandStatus.BUST));
 
+    // Check if all non-bust player hands are blackjacks — dealer doesn't need to draw
+    const allBlackjackOrBust = state.seats
+      .filter((s) => s.isActive)
+      .every((s) => s.hands.every((h) =>
+        h.status === HandStatus.BUST || h.status === HandStatus.BLACKJACK
+      ));
+
     // Initial reveal
     set({ dealerHand: { cards: [...dealerCards] } });
 
-    if (!allBusted) {
+    if (!allBusted && !allBlackjackOrBust) {
       const roomCfg = getRoomConfig(state.currentRoom);
       const hitsSoft17 = roomCfg.gameRules.dealerHitsSoft17;
 

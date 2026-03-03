@@ -84,6 +84,17 @@ export default function ActionPanel({ timer }: { timer?: number }) {
                         exit={{ opacity: 0, scale: 0.8 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     >
+                        {timer !== undefined && (
+                            <motion.div
+                                className={`flex items-center justify-center rounded-full border-2 bg-black/80 backdrop-blur-md shadow-xl
+                                    ${timer <= 5 ? 'border-red-500/80' : timer <= 10 ? 'border-yellow-500/80 text-yellow-500' : 'border-emerald-500/80 text-emerald-400'}`}
+                                style={{ width: 46, height: 46 }}
+                                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}
+                            >
+                                <span className={`text-lg font-black tabular-nums ${timer <= 5 ? 'text-red-500 animate-pulse' : ''}`}>{timer}</span>
+                            </motion.div>
+                        )}
+
                         <div className="flex items-center gap-3">
                             <CircleButton label="DOUBLE DOWN" icon="2x" color="#f39c12" hoverColor="#f1c40f"
                                 onClick={doubleDown} disabled={!canDbl} size={45} />
@@ -96,17 +107,6 @@ export default function ActionPanel({ timer }: { timer?: number }) {
                             <CircleButton label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
                                 onClick={split} disabled={!canSpl} size={45} />
                         </div>
-
-                        {timer !== undefined && (
-                            <motion.div
-                                className={`flex items-center justify-center rounded-full border-2 bg-black/80 backdrop-blur-md shadow-xl
-                                    ${timer <= 5 ? 'border-red-500/80' : timer <= 10 ? 'border-yellow-500/80 text-yellow-500' : 'border-emerald-500/80 text-emerald-400'}`}
-                                style={{ width: 46, height: 46 }}
-                                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}
-                            >
-                                <span className={`text-lg font-black tabular-nums ${timer <= 5 ? 'text-red-500 animate-pulse' : ''}`}>{timer}</span>
-                            </motion.div>
-                        )}
                     </motion.div>
                 )}
 
@@ -214,17 +214,30 @@ export default function ActionPanel({ timer }: { timer?: number }) {
                     <motion.button
                         key="payout"
                         onClick={resetRound}
-                        className="px-8 py-3 rounded-full font-extrabold text-sm uppercase tracking-[0.2em] cursor-pointer
-                            bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30
-                            hover:shadow-amber-500/50 hover:from-amber-400 hover:to-amber-500
-                            transition-all duration-300"
+                        className="px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
+                            bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white
+                            shadow-[0_0_30px_rgba(16,185,129,0.4),0_8px_20px_rgba(0,0,0,0.3)]
+                            hover:shadow-[0_0_50px_rgba(16,185,129,0.6),0_12px_30px_rgba(0,0,0,0.4)]
+                            hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400
+                            border-2 border-emerald-300/30
+                            transition-all duration-300 relative overflow-hidden"
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.8 }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.93 }}
                     >
-                        🔄 NEW ROUND
+                        <motion.span
+                            className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0"
+                            initial={{ x: '-100%' }}
+                            animate={{ x: '200%' }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                        />
+                        <span className="relative flex items-center gap-2">
+                            <Sparkles className="w-5 h-5" />
+                            NEW ROUND
+                            <Sparkles className="w-5 h-5" />
+                        </span>
                     </motion.button>
                 )}
             </AnimatePresence>

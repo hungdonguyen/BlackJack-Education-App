@@ -4,13 +4,171 @@
 // DealerArea — with card stacks left/right
 // ============================================
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { getHandDisplayValue } from '@/utils/hand';
-import { Spade } from 'lucide-react';
+import { getRoomConfig } from '@/utils/rooms';
+import { RESHUFFLE_THRESHOLD } from '@/utils/constants';
+import { Shuffle } from 'lucide-react';
 import CardComponent from './CardComponent';
 import ScoreBadge from './ScoreBadge';
+
+// ─── Shoe Indicator ───────────────────────────────────────────────────────────
+
+function ShoeIndicator() {
+    const shoe           = useGameStore((s) => s.shoe);
+    const currentRoom    = useGameStore((s) => s.currentRoom);
+    const gamePhase      = useGameStore((s) => s.gamePhase);
+    const initializeShoe = useGameStore((s) => s.initializeShoe);
+    const roomCfg        = getRoomConfig(currentRoom);
+    const isBetting      = gamePhase === GamePhase.BETTING;
+    const numDecks    = roomCfg.gameRules.numberOfDecks;
+    const totalCards  = numDecks * 52;
+    const remaining   = shoe.length;
+    const pct         = totalCards > 0 ? remaining / totalCards : 1;
+    const reshufflePct = RESHUFFLE_THRESHOLD;         // 0.25
+    const warningPct   = reshufflePct + 0.15;         // warn at 40%
+    const reshuffleAt  = Math.floor(totalCards * reshufflePct);
+
+    const isUrgent  = pct <= reshufflePct;
+    const isWarning = !isUrgent && pct <= warningPct;
+
+    const barColor = isUrgent
+        ? '#ef4444'
+        : isWarning
+            ? '#f59e0b'
+            : '#22c55e';
+
+    const glowColor = isUrgent
+        ? 'rgba(239,68,68,0.35)'
+        : isWarning
+            ? 'rgba(245,158,11,0.25)'
+            : 'rgba(34,197,94,0.18)';
+
+    // Stacked card backs: show up to 5 card ghost layers
+    const layers = Math.min(numDecks, 5);
+
+    return (
+        <motion.div
+            className="flex flex-col items-center gap-1.5"
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.25 }}
+        >
+            {/* Card stack icon */}
+            <div className="relative" style={{ width: 38, height: 54 }}>
+                {Array.from({ length: layers }).map((_, i) => {
+                    const offset = (layers - 1 - i) * 2;
+                    return (
+                        <div
+                            key={i}
+                            className="absolute rounded-md border"
+                            style={{
+                                width: 34,
+                                height: 48,
+                                bottom: offset,
+                                left: offset / 2,
+                                background: isUrgent
+                                    ? 'linear-gradient(135deg, #3b0a0a 0%, #1f0606 100%)'
+                                    : 'linear-gradient(135deg, #1a0f06 0%, #0e0804 100%)',
+                                borderColor: isUrgent
+                                    ? 'rgba(239,68,68,0.35)'
+                                    : isWarning
+                                        ? 'rgba(245,158,11,0.3)'
+                                        : 'rgba(255,255,255,0.1)',
+                                boxShadow: i === layers - 1
+                                    ? `0 0 10px ${glowColor}`
+                                    : 'none',
+                            }}
+                        >
+                            {/* Card back pattern on top layer */}
+                            {i === layers - 1 && (
+                                <div className="absolute inset-[3px] rounded-sm overflow-hidden opacity-30"
+                                    style={{
+                                        backgroundImage: `repeating-linear-gradient(45deg, ${barColor}22 0px, ${barColor}22 1px, transparent 1px, transparent 6px)`,
+                                    }}
+                                />
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Remaining count */}
+            <div className="flex flex-col items-center gap-0.5">
+                <span
+                    className="text-[14px] font-black tabular-nums leading-none"
+                    style={{ color: barColor, textShadow: `0 0 8px ${glowColor}` }}
+                >
+                    {remaining}
+                </span>
+                <span className="text-[7px] text-white/25 font-bold uppercase tracking-[0.15em]">
+                    cards left
+                </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-9 h-1 rounded-full overflow-hidden bg-white/5">
+                <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: barColor, boxShadow: `0 0 4px ${glowColor}` }}
+                    initial={false}
+                    animate={{ width: `${pct * 100}%` }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                />
+            </div>
+
+            {/* Reshuffle threshold line label */}
+            <span
+                className="text-[6.5px] font-bold uppercase tracking-[0.1em] text-center leading-tight"
+                style={{ color: isUrgent ? '#ef4444' : 'rgba(255,255,255,0.18)' }}
+            >
+                {isUrgent ? '⚠ shuffle soon' : `shuffle at ${reshuffleAt}`}
+            </span>
+
+            {/* Force reshuffle button — only during betting */}
+            <AnimatePresence>
+                {isBetting && (
+                    <motion.button
+                        key="reshuffle-btn"
+                        onClick={initializeShoe}
+                        title="Force reshuffle shoe"
+                        className="flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer
+                            border transition-all duration-200"
+                        style={{
+                            background: isUrgent
+                                ? 'rgba(239,68,68,0.15)'
+                                : 'rgba(255,255,255,0.05)',
+                            borderColor: isUrgent
+                                ? 'rgba(239,68,68,0.45)'
+                                : 'rgba(255,255,255,0.12)',
+                        }}
+                        initial={{ opacity: 0, scale: 0.8, y: 4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: 4 }}
+                        whileHover={{ scale: 1.08,
+                            backgroundColor: isUrgent ? 'rgba(239,68,68,0.28)' : 'rgba(255,255,255,0.10)' }}
+                        whileTap={{ scale: 0.92 }}
+                    >
+                        <Shuffle
+                            style={{ width: 9, height: 9,
+                                color: isUrgent ? '#ef4444' : 'rgba(255,255,255,0.4)' }}
+                        />
+                        <span
+                            className="text-[7px] font-bold uppercase tracking-wide"
+                            style={{ color: isUrgent ? '#ef4444' : 'rgba(255,255,255,0.35)' }}
+                        >
+                            Shuffle
+                        </span>
+                    </motion.button>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
+}
+
+// ─── DealerArea ───────────────────────────────────────────────────────────────
 
 export default function DealerArea() {
     const dealerHand = useGameStore((s) => s.dealerHand);
@@ -28,11 +186,13 @@ export default function DealerArea() {
 
     return (
         <motion.div
-            className="flex items-start justify-center w-full gap-6"
+            className="flex items-start justify-center w-full"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
         >
+            {/* Left spacer — mirrors ShoeIndicator width so dealer hand stays centered */}
+            <div style={{ width: 60 }} />
 
             {/* Dealer center */}
             <div className="flex flex-col items-center gap-2">
@@ -101,6 +261,11 @@ export default function DealerArea() {
                         <span className="text-amber-400 font-bold">{totalValue}</span>
                     </motion.div>
                 )}
+            </div>
+
+            {/* Shoe indicator — right of dealer hand, flex sibling */}
+            <div className="flex items-start pt-7 pl-4">
+                <ShoeIndicator />
             </div>
 
         </motion.div>

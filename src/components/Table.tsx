@@ -22,6 +22,7 @@ import DevTools from './DevTools';
 import PortraitOverlay from './PortraitOverlay';
 import PayoutPanel from './PayoutPanel';
 import StrategyModal from './StrategyModal';
+import HandAdvisor from './HandAdvisor';
 
 const TURN_TIMER_SECONDS = 30;
 
@@ -74,16 +75,24 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         if (shoe.length === 0) initializeShoe();
     }, [shoe.length, initializeShoe]);
 
-    // 30-second turn timer (FIXED MEMORY LEAK)
+    // 30-second turn timer — stand() deferred via setTimeout to avoid
+    // calling Zustand mutations inside a React state updater (batch context).
     useEffect(() => {
         let interval: NodeJS.Timeout;
+        let expired = false;
+
         if (isPlayerTurn) {
             setTimer(TURN_TIMER_SECONDS);
             interval = setInterval(() => {
                 setTimer((prev) => {
                     if (prev <= 1) {
                         clearInterval(interval);
-                        stand();
+                        if (!expired) {
+                            expired = true;
+                            // Defer outside React's batch so advanceToNextHand
+                            // sees fully committed Zustand state
+                            setTimeout(() => stand(), 0);
+                        }
                         return 0;
                     }
                     return prev - 1;
@@ -376,8 +385,13 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             </div>
 
             {/* Payout Panel — left side */}
-            <div className="absolute top-[100px] left-[20px] z-15">
+            <div className="absolute top-[45px] left-[20px] z-15">
                 <PayoutPanel roomConfig={room} />
+            </div>
+
+            {/* Hand Advisor — next to PayoutPanel */}
+            <div className="absolute top-[45px] left-[280px] z-15">
+                <HandAdvisor roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} />
             </div>
 
             {/* Match History — right side, always below logo */}
@@ -386,7 +400,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             </div>
 
             {/* Action Buttons — center */}
-            <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: '38%' }}>
+            <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: '33%' }}>
                 <ActionPanel timer={timer} />
             </div>
 

@@ -32,7 +32,7 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
 
     return (
         <motion.div
-            className="w-[210px] rounded-xl overflow-hidden"
+            className="w-[250px] rounded-xl overflow-hidden"
             style={{
                 background: 'rgba(10, 6, 4, 0.8)',
                 backdropFilter: 'blur(10px)',

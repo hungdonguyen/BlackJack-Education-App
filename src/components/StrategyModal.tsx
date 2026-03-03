@@ -20,8 +20,8 @@ type Tab = 'hard' | 'soft' | 'pairs';
 
 // Refined color palette matching casino aesthetic - gradient backgrounds
 const ACTION_STYLES: Record<Action, { bg: string; text: string; label: string; desc: string }> = {
-    H:  { bg: 'linear-gradient(135deg, #a8322c 0%, #8b1a1a 100%)', text: '#fde8e8', label: 'H',  desc: 'Hit' },
-    S:  { bg: 'linear-gradient(135deg, #1b7a3e 0%, #14532d 100%)', text: '#d1fae5', label: 'S',  desc: 'Stand' },
+    H:  { bg: 'linear-gradient(135deg, #1b7a3e 0%, #14532d 100%)', text: '#d1fae5', label: 'H',  desc: 'Hit' },
+    S:  { bg: 'linear-gradient(135deg, #a8322c 0%, #8b1a1a 100%)', text: '#fde8e8', label: 'S',  desc: 'Stand' },
     D:  { bg: 'linear-gradient(135deg, #c9983a 0%, #a67c2e 100%)', text: '#1a1206', label: 'D',  desc: 'Double Down' },
     DS: { bg: 'linear-gradient(135deg, #1a7a7a 0%, #115e5e 100%)', text: '#ccfbf1', label: 'DS', desc: 'Double if allowed, else Stand' },
     SP: { bg: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', text: '#dbeafe', label: 'SP', desc: 'Split' },
