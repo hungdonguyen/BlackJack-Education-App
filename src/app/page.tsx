@@ -41,7 +41,7 @@ export default function HomePage() {
             }}
             transition={{
               duration: 6 + i,
-              repeat: Infinity,
+              repeat: 1,
               ease: 'easeInOut',
             }}
           >
@@ -61,8 +61,8 @@ export default function HomePage() {
         <div className="text-center">
           <motion.div
             className="mb-4 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]"
-            animate={{ rotateY: [0, 360] }}
-            transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}
+            animate={{ rotate: [0, 360] }}
+            transition={{ duration: 3, repeat: 2, repeatDelay: 5 }}
           >
             <Spade className="w-16 h-16 mx-auto fill-current" />
           </motion.div>

@@ -86,15 +86,15 @@ export default function ActionPanel({ timer }: { timer?: number }) {
                     >
                         <div className="flex items-center gap-3">
                             <CircleButton label="DOUBLE DOWN" icon="2x" color="#f39c12" hoverColor="#f1c40f"
-                                onClick={doubleDown} disabled={!canDbl} size={56} />
+                                onClick={doubleDown} disabled={!canDbl} size={45} />
 
                             <CircleButton label="HIT" icon="+" color="#2ecc71" hoverColor="#27ae60"
-                                onClick={hit} disabled={!canHit} size={66} />
+                                onClick={hit} disabled={!canHit} size={53} />
                             <CircleButton label="STAND" icon="−" color="#e74c3c" hoverColor="#c0392b"
-                                onClick={stand} disabled={!canStand} size={66} />
+                                onClick={stand} disabled={!canStand} size={53} />
 
                             <CircleButton label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
-                                onClick={split} disabled={!canSpl} size={56} />
+                                onClick={split} disabled={!canSpl} size={45} />
                         </div>
 
                         {timer !== undefined && (

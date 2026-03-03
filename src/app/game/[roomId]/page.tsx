@@ -1,14 +1,16 @@
-'use client';
-
 // ============================================
 // Game Room Page — Dynamic table based on roomId
 // ============================================
 
-import { use } from 'react';
-import Table from '@/components/Table';
+import GameClient from './GameClient';
+import { ROOMS } from '@/utils/rooms';
 
-export default function GamePage({ params }: { params: Promise<{ roomId: string }> }) {
-    const { roomId } = use(params);
+export function generateStaticParams() {
+    return Object.keys(ROOMS).map((roomId) => ({ roomId }));
+}
 
-    return <Table roomId={roomId} />;
+export default async function GamePage({ params }: { params: Promise<{ roomId: string }> }) {
+    const { roomId } = await params;
+
+    return <GameClient roomId={roomId} />;
 }

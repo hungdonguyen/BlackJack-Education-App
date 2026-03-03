@@ -60,8 +60,8 @@ export default function DealerArea() {
                 <div
                     className="relative flex items-end justify-center"
                     style={{
-                        minHeight: '154px',
-                        minWidth: hasCards ? `${107 + (dealerHand.cards.length - 1) * 38}px` : '110px',
+                        minHeight: '123px',
+                        minWidth: hasCards ? `${86 + (dealerHand.cards.length - 1) * 30}px` : '88px',
                     }}
                 >
                     {dealerHand.cards.map((card, idx) => (
@@ -77,7 +77,7 @@ export default function DealerArea() {
 
                     {/* Empty placeholder */}
                     {!hasCards && (
-                        <div className="w-[107px] h-[154px] rounded-lg border border-dashed border-white/[0.08] flex items-center justify-center"
+                        <div className="w-[86px] h-[123px] rounded-lg border border-dashed border-white/[0.08] flex items-center justify-center"
                             style={{ background: 'rgba(255,255,255,0.02)' }}
                         >
                             <span className="text-white/[0.08] text-2xl">🂠</span>

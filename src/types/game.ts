@@ -156,6 +156,11 @@ export interface GameActions {
   forceBust: () => void;
   forceSplitScenario: () => void;
   forceAceSplitScenario: () => void;
+  forcePush: () => void;
+  forceDealerBust: () => void;
+  forceInsurance: () => void;
+  forceDoubleSetup: () => void;
+  setBankroll: (amount: number) => void;
 }
 
 /** Combined store type */

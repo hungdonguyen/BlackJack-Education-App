@@ -29,6 +29,8 @@ export interface RoomConfig {
     blackjackMultiplier: number;
     /** Min/Max bet range */
     betRange: [number, number];
+    /** Theoretical Return to Player % */
+    rtp: string;
     /** Room icon component */
     icon: React.ReactNode;
     /** Accent color for UI elements */
@@ -59,6 +61,7 @@ export const ROOMS: Record<string, RoomConfig> = {
         },
         blackjackMultiplier: 1.5,
         betRange: [1, 1_000_000],
+        rtp: '99.50%',
         icon: <Spade className="w-5 h-5 fill-amber-300 stroke-amber-300 drop-shadow-md" />,
         accentColor: '#d4a843',
     },
@@ -82,6 +85,7 @@ export const ROOMS: Record<string, RoomConfig> = {
         },
         blackjackMultiplier: 1.5,
         betRange: [1, 1_000_000],
+        rtp: '99.65%',
         icon: <Ticket className="w-5 h-5 drop-shadow-md text-purple-400" />,
         accentColor: '#8b5cf6',
     },

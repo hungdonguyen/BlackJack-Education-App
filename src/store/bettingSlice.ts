@@ -37,6 +37,7 @@ export interface BettingSlice {
   rebet: () => void;
   triggerInsufficientFunds: () => void;
   clearInsufficientFunds: () => void;
+  setBankroll: (amount: number) => void;
 }
 
 export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> = (set, get) => ({
@@ -245,6 +246,10 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
 
   addFunds: (amount: number) => {
     set((s) => ({ bankroll: s.bankroll + amount }));
+  },
+
+  setBankroll: (amount: number) => {
+    set({ bankroll: Math.max(0, amount) });
   },
 
   claimDaily: () => {

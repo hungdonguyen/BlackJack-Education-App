@@ -7,7 +7,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
-import { Info, Home, X, Coins, Shield, Spade, Timer, Gift, ClipboardList, Plus, Minus, ChevronsUp, ArrowLeftRight, Sparkles, User } from 'lucide-react';
+import { Info, Home, X, Coins, Shield, Spade, Timer, Gift, ClipboardList, Plus, Minus, ChevronsUp, ArrowLeftRight, Sparkles, User, BookOpen } from 'lucide-react';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { getRoomConfig } from '@/utils/rooms';
 import { calculateHandValue, canSplit, canDoubleDown } from '@/utils/hand';
@@ -21,6 +21,7 @@ import ActionPanel from './ActionPanel';
 import DevTools from './DevTools';
 import PortraitOverlay from './PortraitOverlay';
 import PayoutPanel from './PayoutPanel';
+import StrategyModal from './StrategyModal';
 
 const TURN_TIMER_SECONDS = 30;
 
@@ -39,12 +40,17 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const lastDailyClaim = useGameStore((s) => s.lastDailyClaim);
     const claimDaily = useGameStore((s) => s.claimDaily);
     const setCurrentRoom = useGameStore((s) => s.setCurrentRoom);
+    const insufficientFundsWarning = useGameStore((s) => s.insufficientFundsWarning);
+    const dailyClaimCount = useGameStore((s) => s.dailyClaimCount);
+    const triggerInsufficientFunds = useGameStore((s) => s.triggerInsufficientFunds);
+    const insuranceBets = useGameStore((s) => s.insuranceBets);
     const isHydrated = useStoreHydration();
 
     const [showRules, setShowRules] = useState(false);
+    const [showStrategy, setShowStrategy] = useState(false);
     const [showLogoInfo, setShowLogoInfo] = useState(false);
     const [timer, setTimer] = useState(TURN_TIMER_SECONDS);
-    const [winNotification, setWinNotification] = useState<{ amount: number; isWin: boolean } | null>(null);
+    const [winNotification, setWinNotification] = useState<{ amount: number; isWin: boolean; isPush?: boolean } | null>(null);
     const [claimCooldown, setClaimCooldown] = useState('');
 
     const isPlayerTurn = gamePhase === GamePhase.PLAYER_TURN;
@@ -54,7 +60,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const totalBet = seats
         .filter((s) => s.isActive)
         .reduce((sum, s) => sum + s.hands.reduce((hSum, h) => hSum + h.betAmount, 0), 0) +
-        Object.values(useGameStore((s) => s.insuranceBets)).reduce((sum, amount) => sum + amount, 0);
+        Object.values(insuranceBets).reduce((sum, amount) => sum + amount, 0);
 
     const currentSeat = seats[currentSeatIndex];
     const currentHand = currentSeat?.hands[currentSeat.currentHandIndex];
@@ -120,6 +126,9 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                 setWinNotification({ amount: totalPayouts, isWin: true });
             } else if (totalPayouts < 0) {
                 setWinNotification({ amount: Math.abs(totalPayouts), isWin: false });
+            } else {
+                // Pure push — clear any stale notification then show PUSH briefly
+                setWinNotification({ amount: 0, isWin: false, isPush: true });
             }
 
             const t = setTimeout(() => setWinNotification(null), 4000);
@@ -129,20 +138,29 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         }
     }, [isPayout, gamePhase, matchHistory.length]);
 
-    // Claim cooldown timer (FIXED HOURS DISPLAY)
+    // Claim cooldown timer — only runs when a cooldown is actually active
     useEffect(() => {
-        const interval = setInterval(() => {
-            const ONE_HOUR = 60 * 60 * 1000;
+        const ONE_HOUR = 60 * 60 * 1000;
+
+        const tick = () => {
             const elapsed = Date.now() - lastDailyClaim;
             if (elapsed >= ONE_HOUR) {
                 setClaimCooldown('');
-            } else {
-                const remaining = ONE_HOUR - elapsed;
-                const h = Math.floor(remaining / 3600000);
-                const m = Math.floor((remaining % 3600000) / 60000);
-                const s = Math.floor((remaining % 60000) / 1000);
-                setClaimCooldown(h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`);
+                return true; // cooldown expired — stop the interval
             }
+            const remaining = ONE_HOUR - elapsed;
+            const h = Math.floor(remaining / 3600000);
+            const m = Math.floor((remaining % 3600000) / 60000);
+            const s = Math.floor((remaining % 60000) / 1000);
+            setClaimCooldown(h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`);
+            return false;
+        };
+
+        // If no cooldown is active right now, clear display and skip interval entirely
+        if (tick()) return;
+
+        const interval = setInterval(() => {
+            if (tick()) clearInterval(interval);
         }, 1000);
         return () => clearInterval(interval);
     }, [lastDailyClaim]);
@@ -158,9 +176,6 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     // Logo paths
     const logoPath = isVegasStrip ? '/images/logo/Vegas_trip_blackjack.png' : '/images/logo/blackjack_vip_logo.avif';
 
-    const insufficientFundsWarning = useGameStore(s => s.insufficientFundsWarning);
-    const dailyClaimCount = useGameStore(s => s.dailyClaimCount);
-    const triggerInsufficientFunds = useGameStore(s => s.triggerInsufficientFunds);
     const isBonusClaim = (dailyClaimCount + 1) % 3 === 0;
 
     if (!isHydrated) {
@@ -338,18 +353,17 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                             <p className="text-xs font-bold text-white/70">{room.rules.dealerStands}</p>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            {/* Footer Button */}
-                            <div className="p-4 bg-black/40 border-t border-white/10">
-                                <button
-                                    onClick={() => setShowLogoInfo(false)}
-                                    className="w-full py-3 rounded-xl font-bold uppercase tracking-widest text-sm transition-all text-black hover:scale-[1.02] active:scale-95"
-                                    style={{ background: room.accentColor }}
-                                >
-                                    Close Info
-                                </button>
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+                                        <span className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center gap-2">
+                                            <Sparkles size={14} /> RTP
+                                        </span>
+                                        <div className="text-right">
+                                            <p className="text-sm font-black" style={{ color: room.accentColor }}>{room.rtp}</p>
+                                            <p className="text-[10px] text-white/30">Theoretical Return to Player</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     </div>
@@ -372,7 +386,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             </div>
 
             {/* Action Buttons — center */}
-            <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: '42%' }}>
+            <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: '38%' }}>
                 <ActionPanel timer={timer} />
             </div>
 
@@ -432,24 +446,39 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                             exit={{ opacity: 0, scale: 0.5, y: -20 }}
                             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                         >
-                            <div className={`px-8 py-4 rounded-xl backdrop-blur-md border ${winNotification.isWin
-                                ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-yellow-400/40'
-                                : 'bg-gradient-to-r from-red-500/20 to-red-700/20 border-red-400/30'
+                            <div className={`px-8 py-4 rounded-xl backdrop-blur-md border ${
+                                winNotification.isPush
+                                    ? 'bg-gradient-to-r from-sky-500/15 to-blue-500/15 border-sky-400/30'
+                                    : winNotification.isWin
+                                        ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-yellow-400/40'
+                                        : 'bg-gradient-to-r from-red-500/20 to-red-700/20 border-red-400/30'
                                 }`}
                                 style={{
-                                    boxShadow: winNotification.isWin
-                                        ? '0 0 60px rgba(250, 204, 21, 0.3), 0 0 120px rgba(250, 204, 21, 0.1)'
-                                        : '0 0 40px rgba(220, 50, 50, 0.2)'
+                                    boxShadow: winNotification.isPush
+                                        ? '0 0 40px rgba(56, 189, 248, 0.2)'
+                                        : winNotification.isWin
+                                            ? '0 0 60px rgba(250, 204, 21, 0.3), 0 0 120px rgba(250, 204, 21, 0.1)'
+                                            : '0 0 40px rgba(220, 50, 50, 0.2)'
                                 }}
                             >
-                                <p className={`text-center text-sm font-bold uppercase tracking-[0.3em] mb-1
-                                        ${winNotification.isWin ? 'text-yellow-300' : 'text-red-300'}`}>
-                                    {winNotification.isWin ? 'YOU WIN' : 'YOU LOSE'}
+                                <p className={`text-center text-sm font-bold uppercase tracking-[0.3em] mb-1 ${
+                                    winNotification.isPush
+                                        ? 'text-sky-300'
+                                        : winNotification.isWin ? 'text-yellow-300' : 'text-red-300'
+                                    }`}>
+                                    {winNotification.isPush ? 'PUSH' : winNotification.isWin ? 'YOU WIN' : 'YOU LOSE'}
                                 </p>
-                                <p className={`text-center text-3xl font-black tabular-nums
-                                        ${winNotification.isWin ? 'text-yellow-400' : 'text-red-400'}`}>
-                                    {winNotification.isWin ? '+' : '-'}${winNotification.amount.toLocaleString()}
-                                </p>
+                                {!winNotification.isPush && (
+                                    <p className={`text-center text-3xl font-black tabular-nums
+                                            ${winNotification.isWin ? 'text-yellow-400' : 'text-red-400'}`}>
+                                        {winNotification.isWin ? '+' : '-'}${winNotification.amount.toLocaleString()}
+                                    </p>
+                                )}
+                                {winNotification.isPush && (
+                                    <p className="text-center text-xl font-bold text-sky-400/80">
+                                        Bet returned
+                                    </p>
+                                )}
                             </div>
                         </motion.div>
                     )}
@@ -502,6 +531,9 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                     <ChipRack />
 
                     <div className="flex items-center gap-3">
+                        <button onClick={() => setShowStrategy(true)}
+                            className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/50 text-[11px] font-bold uppercase tracking-wider hover:bg-white/10 hover:text-white/70 transition-all cursor-pointer"
+                        ><BookOpen size={14} className="mr-1 inline -mt-0.5" /> Strategy</button>
                         <button onClick={() => setShowRules(true)}
                             className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/50 text-[11px] font-bold uppercase tracking-wider hover:bg-white/10 hover:text-white/70 transition-all cursor-pointer"
                         ><Info size={14} className="mr-1 inline -mt-0.5" /> Rules</button>
@@ -519,17 +551,22 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             <AnimatePresence>
                 {showRules && <RulesModal room={room} onClose={() => setShowRules(false)} />}
             </AnimatePresence>
+
+            {/* Strategy Modal */}
+            <AnimatePresence>
+                {showStrategy && <StrategyModal room={room} onClose={() => setShowStrategy(false)} />}
+            </AnimatePresence>
         </>
     );
 }
 
 /* ─── Seat positions: inverted arc (edges higher, center lower) ─── */
 const SEAT_ARC: Record<number, { x: string; y: string; scale: number; z: number }> = {
-    1: { x: '4%', y: '100px', scale: 1.125, z: 1 },  // spread further out
-    2: { x: '23%', y: '45px', scale: 1.275, z: 2 },
-    3: { x: '50%', y: '15px', scale: 1.425, z: 3 },
-    4: { x: '77%', y: '45px', scale: 1.275, z: 2 },
-    5: { x: '96%', y: '100px', scale: 1.125, z: 1 },
+    1: { x: '4%', y: '80px', scale: 0.9, z: 1 },
+    2: { x: '23%', y: '36px', scale: 1.02, z: 2 },
+    3: { x: '50%', y: '12px', scale: 1.14, z: 3 },
+    4: { x: '77%', y: '36px', scale: 1.02, z: 2 },
+    5: { x: '96%', y: '80px', scale: 0.9, z: 1 },
 };
 
 /* ─── Sub-components ─── */

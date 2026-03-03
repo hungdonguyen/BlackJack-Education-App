@@ -1,11 +1,6 @@
 // ============================================
-// Hydration-Safe Store Hook
+// Store Hook
 // ============================================
-// Next.js renders on the server first (SSR) where localStorage doesn't exist.
-// If we use the persisted store values directly, the server-rendered HTML
-// will differ from the client-hydrated HTML, causing a "Hydration Mismatch" error.
-//
-// This hook delays reading persisted values until after hydration is complete.
 
 'use client';
 
@@ -14,34 +9,20 @@ import { useGameStoreBase } from '@/store/gameStore';
 import { GameStore } from '@/types/game';
 
 /**
- * Hydration-safe wrapper around the game store.
+ * Thin wrapper around the base Zustand store.
+ *
+ * The app uses `output: "export"` (static export) — there is no SSR,
+ * so per-call hydration guards are unnecessary overhead. Hydration safety
+ * is handled once at the component level via `useStoreHydration()` which
+ * shows a loading screen until Zustand's persist middleware has finished
+ * rehydrating from localStorage.
  *
  * Usage:
  *   const bankroll = useGameStore((s) => s.bankroll);
  *   const hit = useGameStore((s) => s.hit);
- *
- * On the server and during the first client render, this returns
- * the Zustand store's *default* values (not the persisted ones).
- * After hydration, it seamlessly switches to the persisted values.
  */
 export function useGameStore<T>(selector: (state: GameStore) => T): T {
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
-
-  // During SSR / first render: use default store values
-  // After hydration: use the real (possibly persisted) store values
-  return useGameStoreBase(
-    isHydrated
-      ? selector
-      : (state) => {
-          // Return selector result from the current (default) state
-          // This ensures consistent rendering between server and client
-          return selector(state);
-        }
-  );
+  return useGameStoreBase(selector);
 }
 
 /**

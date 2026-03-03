@@ -168,8 +168,8 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
                     <span className="text-[9px] text-white/25 uppercase tracking-wider">
                         Max: ${isMounted ? room.betRange[1].toLocaleString() : room.betRange[1]}
                     </span>
-                    <span className="text-[9px] text-white/25 uppercase tracking-wider ml-auto">
-                        5 Seats
+                    <span className="text-[9px] uppercase tracking-wider ml-auto font-bold" style={{ color: room.accentColor }}>
+                        RTP {room.rtp}
                     </span>
                 </div>
             </div>

@@ -59,8 +59,8 @@ export default function Seat({ seatId, style }: SeatProps) {
         <div className="flex flex-col items-center" style={style}>
             {/* ─── Cards Area (above circle, higher z-index) ─── */}
             {hasCards && (
-                <div className="relative min-h-[105px] min-w-[75px] flex items-end justify-center mb-6"
-                    style={{ zIndex: 10 }}
+                <div className="relative min-w-[60px] flex items-end justify-center mb-4"
+                    style={{ zIndex: 10, minHeight: '120px', paddingTop: '38px' }}
                 >
                     {seat.hands.map((hand, handIdx) => {
                         // Is this the currently active hand?
@@ -71,7 +71,7 @@ export default function Seat({ seatId, style }: SeatProps) {
                         return (
                             <div key={hand.id}
                                 className={`relative ${handIdx > 0 ? 'ml-5' : ''}`}
-                                style={{ minWidth: `${70 + (hand.cards.length - 1) * 28}px`, height: '101px' }}
+                                style={{ minWidth: `${56 + (hand.cards.length - 1) * 22}px`, height: '93px' }}
                             >
                                 {/* Hand Score (Above Cards) */}
                                 {hand.cards.length > 0 && (
@@ -80,7 +80,7 @@ export default function Seat({ seatId, style }: SeatProps) {
                                             key={`hand-${hand.id}-${hand.cards.length}`}
                                             className={`flex items-center justify-center rounded-full border-2 
                                                 ${isActiveHand ? 'border-amber-400 bg-black/90 text-amber-400' : 'border-white/20 bg-black/80 text-white'} 
-                                                backdrop-blur-sm shadow-lg px-2 min-w-[40px] h-[40px]`}
+                                                backdrop-blur-sm shadow-lg px-1.5 min-w-[32px] h-[32px]`}
                                             initial={{ scale: 0, opacity: 0 }}
                                             animate={{ scale: 1, opacity: 1 }}
                                             transition={{
@@ -90,7 +90,7 @@ export default function Seat({ seatId, style }: SeatProps) {
                                                 delay: Math.max(0, (hand.cards.length - 1) * 0.18 + 0.4)
                                             }}
                                         >
-                                            <span className="text-base font-black tabular-nums whitespace-nowrap">
+                                            <span className="text-sm font-black tabular-nums whitespace-nowrap">
                                                 {getHandDisplayValue(hand.cards)}
                                             </span>
                                         </motion.div>

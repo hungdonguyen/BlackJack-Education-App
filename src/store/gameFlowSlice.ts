@@ -41,6 +41,10 @@ export interface GameFlowSlice {
   forceBust: () => void;
   forceSplitScenario: () => void;
   forceAceSplitScenario: () => void;
+  forcePush: () => void;
+  forceDealerBust: () => void;
+  forceInsurance: () => void;
+  forceDoubleSetup: () => void;
 }
 
 /** Get the current active hand being played */
@@ -830,4 +834,80 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
 
     set({ shoe });
   },
-});
+
+  // ─── Assumes 1 active seat. Dealing order (pop): seat1, dealer_up, seat2, dealer_hole ───
+
+  forcePush: () => {
+    // Both player and dealer get 20 (King + King)
+    const state = get();
+    if (state.gamePhase !== GamePhase.BETTING) return;
+    const shoe = [...state.shoe];
+    const pick = (rank: Rank) => {
+      const idx = shoe.findIndex((c) => c.rank === rank);
+      return idx !== -1 ? shoe.splice(idx, 1)[0] : shoe.splice(0, 1)[0];
+    };
+    const k1 = pick(Rank.KING);
+    const k2 = pick(Rank.QUEEN);
+    const k3 = pick(Rank.JACK);
+    const k4 = shoe.findIndex((c) => c.value === 10);
+    const k4card = k4 !== -1 ? shoe.splice(k4, 1)[0] : shoe.splice(0, 1)[0];
+    // Push order: hole, dealer_up, seat2, seat1
+    shoe.push(k3, k2, k4card, k1);
+    set({ shoe });
+  },
+
+  forceDealerBust: () => {
+    // Player gets 20, dealer gets 6+10=16, next card is 10 → bust 26
+    const state = get();
+    if (state.gamePhase !== GamePhase.BETTING) return;
+    const shoe = [...state.shoe];
+    const pick = (predicate: (c: typeof shoe[0]) => boolean) => {
+      const idx = shoe.findIndex(predicate);
+      return idx !== -1 ? shoe.splice(idx, 1)[0] : shoe.splice(0, 1)[0];
+    };
+    const bust10 = pick((c) => c.value === 10);  // dealer hit card
+    const hole10 = pick((c) => c.value === 10);  // dealer hole
+    const up6   = pick((c) => c.value === 6);    // dealer face-up → 6+10=16, hits
+    const s2    = pick((c) => c.value === 10);   // seat card 2
+    const s1    = pick((c) => c.value === 10);   // seat card 1 → player 20
+    // shoe: [..., bust10, hole10, up6, s2, s1]
+    shoe.push(bust10, hole10, up6, s2, s1);
+    set({ shoe });
+  },
+
+  forceInsurance: () => {
+    // Dealer face-up = Ace → triggers insurance offer
+    // Player gets King + King = 20
+    const state = get();
+    if (state.gamePhase !== GamePhase.BETTING) return;
+    const shoe = [...state.shoe];
+    const pick = (predicate: (c: typeof shoe[0]) => boolean) => {
+      const idx = shoe.findIndex(predicate);
+      return idx !== -1 ? shoe.splice(idx, 1)[0] : shoe.splice(0, 1)[0];
+    };
+    const hole = pick((c) => c.value === 10);         // dealer hole card
+    const ace  = pick((c) => c.rank === Rank.ACE);    // dealer face-up = Ace
+    const s2   = pick((c) => c.value === 10);         // seat second card
+    const s1   = pick((c) => c.value === 10);         // seat first card → 20
+    // shoe: [..., hole, ace, s2, s1]
+    shoe.push(hole, ace, s2, s1);
+    set({ shoe });
+  },
+
+  forceDoubleSetup: () => {
+    // Player gets 9+2 = 11 (ideal double down hand)
+    // Dealer shows 6 (worst dealer upcard)
+    const state = get();
+    if (state.gamePhase !== GamePhase.BETTING) return;
+    const shoe = [...state.shoe];
+    const pick = (predicate: (c: typeof shoe[0]) => boolean) => {
+      const idx = shoe.findIndex(predicate);
+      return idx !== -1 ? shoe.splice(idx, 1)[0] : shoe.splice(0, 1)[0];
+    };
+    const hole = pick((c) => c.value === 10);  // dealer hole
+    const up   = pick((c) => c.value === 6);   // dealer face-up (weak = 6)
+    const s2   = pick((c) => c.value === 2);   // seat card 2 → 9+2=11
+    const s1   = pick((c) => c.value === 9);   // seat card 1
+    shoe.push(hole, up, s2, s1);
+    set({ shoe });
+  },});
