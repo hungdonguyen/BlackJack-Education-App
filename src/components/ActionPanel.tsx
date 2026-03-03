@@ -25,6 +25,7 @@ export default function ActionPanel({ timer }: { timer?: number }) {
     const resetRound = useGameStore((s) => s.resetRound);
     const undoBet = useGameStore((s) => s.undoBet);
     const clearAllBets = useGameStore((s) => s.clearAllBets);
+    const rebet = useGameStore((s) => s.rebet);
     const acceptInsurance = useGameStore((s) => s.acceptInsurance);
     const declineInsurance = useGameStore((s) => s.declineInsurance);
 
@@ -46,23 +47,21 @@ export default function ActionPanel({ timer }: { timer?: number }) {
     let canStand = isPlayerTurn && isPlaying;
 
     let canDbl = false;
-    let isFreeDouble = false;
     if (isPlayerTurn && isPlaying && currentHand) {
         const result = rules.canDoubleDown(currentHand);
-        canDbl = result.allowed && (result.isFree || bankroll >= result.cost);
-        isFreeDouble = result.isFree;
+        canDbl = result.allowed && bankroll >= result.cost;
     }
 
     let canSpl = false;
-    let isFreeSplit = false;
     if (isPlayerTurn && isPlaying && currentHand) {
         const result = rules.canSplit(currentHand, currentSeat?.hands.length || 0);
-        canSpl = result.allowed && (result.isFree || bankroll >= result.cost);
-        isFreeSplit = result.isFree;
+        canSpl = result.allowed && bankroll >= result.cost;
     }
 
     const hasBets = seats.some((s) => s.isActive && s.hands.some((h) => h.betAmount > 0));
     const hasUndo = betHistory.length > 0;
+    const previousBets = useGameStore((s) => s.previousBets);
+    const hasPreviousBets = previousBets && previousBets.length > 0;
 
     // Calculate total insurance cost for display
     const totalInsuranceCost = isInsurance
@@ -73,7 +72,7 @@ export default function ActionPanel({ timer }: { timer?: number }) {
         : 0;
 
     return (
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center" style={{ minHeight: '80px', justifyContent: 'center' }}>
             <AnimatePresence mode="wait">
                 {/* ── Player Turn: Circular Action Buttons ── */}
                 {isPlayerTurn && (
@@ -85,62 +84,17 @@ export default function ActionPanel({ timer }: { timer?: number }) {
                         exit={{ opacity: 0, scale: 0.8 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     >
-                        {/* Freebet Big Notifications embedded inside Action panel layout so it pushes buttons down */}
-                        {(isFreeDouble || isFreeSplit) && (
-                            <div className="flex gap-6 mb-2">
-                                {isFreeDouble && (
-                                    <motion.div
-                                        className="px-8 py-3 rounded-2xl bg-yellow-400 border-4 border-yellow-200"
-                                        initial={{ opacity: 0, scale: 0.8, y: -10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-                                        style={{ boxShadow: '0 0 40px rgba(250, 204, 21, 0.4)' }}
-                                    >
-                                        <span className="text-black text-xl font-black uppercase tracking-[0.1em] flex items-center">
-                                            <Sparkles className="w-5 h-5 mr-2" /> FREE DOUBLE
-                                        </span>
-                                    </motion.div>
-                                )}
-                                {isFreeSplit && (
-                                    <motion.div
-                                        className="px-8 py-3 rounded-2xl bg-yellow-400 border-4 border-yellow-200"
-                                        initial={{ opacity: 0, scale: 0.8, y: -10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-                                        transition={{ delay: 0.1 }}
-                                        style={{ boxShadow: '0 0 40px rgba(250, 204, 21, 0.4)' }}
-                                    >
-                                        <span className="text-black text-xl font-black uppercase tracking-[0.1em] flex items-center">
-                                            <Sparkles className="w-5 h-5 mr-2" /> FREE SPLIT
-                                        </span>
-                                    </motion.div>
-                                )}
-                            </div>
-                        )}
-
-                        <motion.p
-                            className="text-white/80 text-sm font-bold uppercase tracking-[0.3em]"
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
-                            Make Your Decision
-                        </motion.p>
-
                         <div className="flex items-center gap-3">
-                            {isFreeDouble ? (
-                                <SquareFreeButton label="FREE DOUBLE" onClick={doubleDown} disabled={!canDbl} />
-                            ) : (
-                                <CircleButton label="DOUBLE DOWN" icon="2x" color="#f39c12" hoverColor="#f1c40f"
-                                    onClick={doubleDown} disabled={!canDbl} size={56} />
-                            )}
+                            <CircleButton label="DOUBLE DOWN" icon="2x" color="#f39c12" hoverColor="#f1c40f"
+                                onClick={doubleDown} disabled={!canDbl} size={56} />
 
                             <CircleButton label="HIT" icon="+" color="#2ecc71" hoverColor="#27ae60"
                                 onClick={hit} disabled={!canHit} size={66} />
                             <CircleButton label="STAND" icon="−" color="#e74c3c" hoverColor="#c0392b"
                                 onClick={stand} disabled={!canStand} size={66} />
 
-                            {isFreeSplit ? (
-                                <SquareFreeButton label="FREE SPLIT" onClick={split} disabled={!canSpl} />
-                            ) : (
-                                <CircleButton label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
-                                    onClick={split} disabled={!canSpl} size={56} />
-                            )}
+                            <CircleButton label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
+                                onClick={split} disabled={!canSpl} size={56} />
                         </div>
 
                         {timer !== undefined && (
@@ -201,8 +155,8 @@ export default function ActionPanel({ timer }: { timer?: number }) {
                     </motion.div>
                 )}
 
-                {/* ── Betting Phase: Only show when bets are placed ── */}
-                {isBetting && hasBets && (
+                {/* ── Betting Phase: Betting controls ── */}
+                {isBetting && (
                     <motion.div
                         key="betting"
                         className="flex items-center gap-3"
@@ -210,20 +164,29 @@ export default function ActionPanel({ timer }: { timer?: number }) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
                     >
-                        <SmallButton label="UNDO" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={undoBet} disabled={!hasUndo} variant="ghost" />
-                        <SmallButton label="CLEAR" icon={<X className="w-3.5 h-3.5" />} onClick={clearAllBets} disabled={!hasBets} variant="danger" />
-                        <motion.button
-                            onClick={startDeal}
-                            disabled={!hasBets}
-                            className="px-8 py-3 rounded-full font-extrabold text-sm uppercase tracking-[0.2em] cursor-pointer
-                                bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30
-                                hover:shadow-emerald-500/50 hover:from-emerald-400 hover:to-emerald-500
-                                transition-all duration-300"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <div className="flex items-center justify-center"><Spade className="w-4 h-4 fill-current mr-1.5" /> DEAL</div>
-                        </motion.button>
+                        {hasBets ? (
+                            <>
+                                <SmallButton label="UNDO" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={undoBet} disabled={!hasUndo} variant="ghost" />
+                                <SmallButton label="CLEAR" icon={<X className="w-3.5 h-3.5" />} onClick={clearAllBets} disabled={!hasBets} variant="danger" />
+                                <SmallButton label="x2" icon={<span className="text-sm">2x</span>} onClick={rebet} disabled={false} variant="ghost" />
+                                <motion.button
+                                    onClick={startDeal}
+                                    disabled={!hasBets}
+                                    className="px-8 py-3 rounded-full font-extrabold text-sm uppercase tracking-[0.2em] cursor-pointer
+                                        bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30
+                                        hover:shadow-emerald-500/50 hover:from-emerald-400 hover:to-emerald-500
+                                        transition-all duration-300"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <div className="flex items-center justify-center"><Spade className="w-4 h-4 fill-current mr-1.5" /> DEAL</div>
+                                </motion.button>
+                            </>
+                        ) : (
+                            <div className="flex items-center" style={{ minHeight: '48px' }}>
+                                <SmallButton label="REBET" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={rebet} disabled={!hasPreviousBets} variant="ghost" />
+                            </div>
+                        )}
                     </motion.div>
                 )}
 

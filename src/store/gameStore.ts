@@ -28,6 +28,7 @@ export const useGameStoreBase = create<GameStore>()(
         bankroll: state.bankroll,
         matchHistory: state.matchHistory,
         lastDailyClaim: state.lastDailyClaim,
+        dailyClaimCount: state.dailyClaimCount,
       }),
     }
   )

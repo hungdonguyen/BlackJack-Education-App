@@ -7,13 +7,13 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
+import { Info, Home, X, Coins, Shield, Spade, Timer, Gift, ClipboardList, Plus, Minus, ChevronsUp, ArrowLeftRight, Sparkles, User } from 'lucide-react';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { getRoomConfig } from '@/utils/rooms';
 import { calculateHandValue, canSplit, canDoubleDown } from '@/utils/hand';
 import { getRules } from '@/rules';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Coins, Spade, Shield, Home, Timer, Sparkles, Gift, Info, X, ClipboardList, User } from 'lucide-react';
 import DealerArea from './DealerArea';
 import Seat from './Seat';
 import ChipRack from './ChipRack';
@@ -49,30 +49,15 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
     const isPlayerTurn = gamePhase === GamePhase.PLAYER_TURN;
     const isPayout = gamePhase === GamePhase.PAYOUT;
-    const isFreeBet = roomId === 'freebet';
+    const isVegasStrip = roomId === 'vegas_strip';
 
     const totalBet = seats
         .filter((s) => s.isActive)
         .reduce((sum, s) => sum + s.hands.reduce((hSum, h) => hSum + h.betAmount, 0), 0) +
         Object.values(useGameStore((s) => s.insuranceBets)).reduce((sum, amount) => sum + amount, 0);
 
-    // Detect free double/split eligibility using rules engine
     const currentSeat = seats[currentSeatIndex];
     const currentHand = currentSeat?.hands[currentSeat.currentHandIndex];
-    const freeStatus = useMemo(() => {
-        if (!isPlayerTurn || !currentHand || currentHand.status !== HandStatus.PLAYING) {
-            return { freeDouble: false, freeSplit: false };
-        }
-
-        const rules = getRules(roomId);
-        const doubleResult = rules.canDoubleDown(currentHand);
-        const splitResult = rules.canSplit(currentHand, currentSeat?.hands.length || 0);
-
-        return {
-            freeDouble: doubleResult.isFree,
-            freeSplit: splitResult.isFree
-        };
-    }, [isPlayerTurn, currentHand, roomId, currentSeat?.hands.length]);
 
     // Set current room in store
     useEffect(() => {
@@ -147,12 +132,12 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     // Claim cooldown timer (FIXED HOURS DISPLAY)
     useEffect(() => {
         const interval = setInterval(() => {
-            const TWO_HOURS = 2 * 60 * 60 * 1000;
+            const ONE_HOUR = 60 * 60 * 1000;
             const elapsed = Date.now() - lastDailyClaim;
-            if (elapsed >= TWO_HOURS) {
+            if (elapsed >= ONE_HOUR) {
                 setClaimCooldown('');
             } else {
-                const remaining = TWO_HOURS - elapsed;
+                const remaining = ONE_HOUR - elapsed;
                 const h = Math.floor(remaining / 3600000);
                 const m = Math.floor((remaining % 3600000) / 60000);
                 const s = Math.floor((remaining % 60000) / 1000);
@@ -164,11 +149,19 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
     const handleClaimDaily = () => {
         const success = claimDaily();
-        if (!success) return;
+        if (!success) {
+            triggerInsufficientFunds(); // Reuse visual warning here temporarily if claim fails validation unexpectedly
+            return;
+        }
     };
 
     // Logo paths
-    const logoPath = isFreeBet ? '/images/logo/freebet_blackjack_logo.png' : '/images/logo/blackjack_vip_logo.avif';
+    const logoPath = isVegasStrip ? '/images/logo/Vegas_trip_blackjack.png' : '/images/logo/blackjack_vip_logo.avif';
+
+    const insufficientFundsWarning = useGameStore(s => s.insufficientFundsWarning);
+    const dailyClaimCount = useGameStore(s => s.dailyClaimCount);
+    const triggerInsufficientFunds = useGameStore(s => s.triggerInsufficientFunds);
+    const isBonusClaim = (dailyClaimCount + 1) % 3 === 0;
 
     if (!isHydrated) {
         return (
@@ -237,117 +230,131 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                 <div className="absolute inset-0 z-10">
                     {/* Top HUD bar */}
                     <div className="absolute top-0 left-0 right-0 z-20">
-                        <div className="flex items-center justify-between px-4 py-2"
+                        <div className="flex items-start px-4 py-2"
                             style={{ background: 'linear-gradient(180deg, rgba(10,6,4,0.95) 0%, rgba(10,6,4,0.7) 70%, transparent 100%)' }}
                         >
-                            <div className="flex items-center gap-4">
-                                <GamePhaseIndicator phase={gamePhase} />
-                            </div>
-                            <div className="flex flex-1 items-center justify-end gap-3">
-                                {/* Logo fixed on right - Increased size 150% and made clickable */}
-                                <div
-                                    className="relative w-[480px] h-[120px] cursor-pointer hover:scale-105 transition-transform origin-right"
-                                    onClick={() => setShowLogoInfo(true)}
-                                >
-                                    <Image src={logoPath} alt={room.name} fill className="object-contain drop-shadow-xl" sizes="480px" />
+                            <div className="flex flex-col gap-0.5">
+                                <div className="flex items-center gap-4">
+                                    <GamePhaseIndicator phase={gamePhase} />
+                                </div>
+                                <div className="flex items-center gap-3 pl-0.5 mt-0.5">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: room.accentColor }}>
+                                        {room.name}
+                                    </span>
+                                    <span className="text-white/20 text-[9px]">|</span>
+                                    <span className="text-[9px] text-white/35 uppercase tracking-wider">
+                                        ${room.betRange[0].toLocaleString()} – ${room.betRange[1].toLocaleString()}
+                                    </span>
+                                    <span className="text-white/20 text-[9px]">|</span>
+                                    <span className="text-[9px] text-white/35 uppercase tracking-wider">5 Seats</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Logo Info Popup */}
-                    <AnimatePresence>
-                        {showLogoInfo && (
-                            <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                                <motion.div
-                                    className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
-                                    style={{
-                                        background: 'rgba(15, 10, 8, 0.98)',
-                                        border: `1px solid ${room.borderColor}`,
-                                        boxShadow: `0 0 60px ${room.accentColor}44`,
-                                    }}
-                                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                >
-                                    <button
-                                        onClick={() => setShowLogoInfo(false)}
-                                        className="absolute top-4 right-4 text-white/50 hover:text-white bg-black/50 hover:bg-black/80 w-8 h-8 rounded-full flex items-center justify-center transition-colors z-10"
-                                    >
-                                        <X size={18} />
-                                    </button>
+                    {/* Logo — top-right corner */}
+                    <div
+                        className="absolute top-2 right-3 z-20 cursor-pointer hover:scale-105 transition-transform origin-top-right"
+                        style={{ width: '170px', height: '75px' }}
+                        onClick={() => setShowLogoInfo(true)}
+                    >
+                        <Image src={logoPath} alt={room.name} fill className="object-contain drop-shadow-xl" sizes="170px" unoptimized />
+                    </div>
 
-                                    {/* Preview Header */}
-                                    <div className="h-[120px] relative flex items-center justify-center"
-                                        style={{ background: room.feltGradient }}
-                                    >
-                                        <div className="absolute inset-0 border-b border-white/10" />
-                                        <div className="relative w-3/4 h-3/4">
-                                            <Image
-                                                src={logoPath}
-                                                alt={room.name}
-                                                fill
-                                                className="object-contain drop-shadow-2xl"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Info Body */}
-                                    <div className="p-6">
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div>
-                                                <h3 className="text-xl font-black text-white/90 tracking-wide">{room.name}</h3>
-                                                <p className="text-xs font-bold uppercase tracking-[0.2em]"
-                                                    style={{ color: room.accentColor }}
-                                                >
-                                                    {room.subtitle}
-                                                </p>
-                                            </div>
-                                            <span className="text-3xl drop-shadow-md">{room.icon}</span>
-                                        </div>
-
-                                        <p className="text-white/60 text-sm leading-relaxed mb-6">
-                                            {room.description}
-                                        </p>
-
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
-                                                <span className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center gap-2">
-                                                    <Coins size={14} /> Bet Limits
-                                                </span>
-                                                <span className="text-sm font-black text-white/90">
-                                                    ${room.betRange[0]} - ${room.betRange[1].toLocaleString()}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
-                                                <span className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center gap-2">
-                                                    <Info size={14} /> Rules
-                                                </span>
-                                                <div className="text-right">
-                                                    <p className="text-xs font-bold text-white/70">{room.rules.blackjackPays}</p>
-                                                    <p className="text-xs font-bold text-white/70">{room.rules.dealerStands}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Footer Button */}
-                                    <div className="p-4 bg-black/40 border-t border-white/10">
-                                        <button
-                                            onClick={() => setShowLogoInfo(false)}
-                                            className="w-full py-3 rounded-xl font-bold uppercase tracking-widest text-sm transition-all text-black hover:scale-[1.02] active:scale-95"
-                                            style={{ background: room.accentColor }}
-                                        >
-                                            Close Info
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            </div>
-                        )}
-                    </AnimatePresence>
                 </div>
             </div>
+
+            {/* Logo Info Popup — outside z-10 layer so it renders above all game UI */}
+            <AnimatePresence>
+                {showLogoInfo && (
+                    <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div
+                            className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
+                            style={{
+                                background: 'rgba(15, 10, 8, 0.98)',
+                                border: `1px solid ${room.borderColor}`,
+                                boxShadow: `0 0 60px ${room.accentColor}44`,
+                            }}
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        >
+                            <button
+                                onClick={() => setShowLogoInfo(false)}
+                                className="absolute top-4 right-4 text-white/50 hover:text-white bg-black/50 hover:bg-black/80 w-8 h-8 rounded-full flex items-center justify-center transition-colors z-10"
+                            >
+                                <X size={18} />
+                            </button>
+
+                            {/* Preview Header */}
+                            <div className="h-[120px] relative flex items-center justify-center"
+                                style={{ background: room.feltGradient }}
+                            >
+                                <div className="absolute inset-0 border-b border-white/10" />
+                                <div className="relative w-3/4 h-3/4">
+                                    <Image
+                                        src={logoPath}
+                                        alt={room.name}
+                                        fill
+                                        className="object-contain drop-shadow-2xl"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Info Body */}
+                            <div className="p-6">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div>
+                                        <h3 className="text-xl font-black text-white/90 tracking-wide">{room.name}</h3>
+                                        <p className="text-xs font-bold uppercase tracking-[0.2em]"
+                                            style={{ color: room.accentColor }}
+                                        >
+                                            {room.subtitle}
+                                        </p>
+                                    </div>
+                                    <span className="text-3xl drop-shadow-md">{room.icon}</span>
+                                </div>
+
+                                <p className="text-white/60 text-sm leading-relaxed mb-6">
+                                    {room.description}
+                                </p>
+
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+                                        <span className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center gap-2">
+                                            <Coins size={14} /> Bet Limits
+                                        </span>
+                                        <span className="text-sm font-black text-white/90">
+                                            ${room.betRange[0]} - ${room.betRange[1].toLocaleString()}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+                                        <span className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center gap-2">
+                                            <Info size={14} /> Rules
+                                        </span>
+                                        <div className="text-right">
+                                            <p className="text-xs font-bold text-white/70">{room.rules.blackjackPays}</p>
+                                            <p className="text-xs font-bold text-white/70">{room.rules.dealerStands}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer Button */}
+                            <div className="p-4 bg-black/40 border-t border-white/10">
+                                <button
+                                    onClick={() => setShowLogoInfo(false)}
+                                    className="w-full py-3 rounded-xl font-bold uppercase tracking-widest text-sm transition-all text-black hover:scale-[1.02] active:scale-95"
+                                    style={{ background: room.accentColor }}
+                                >
+                                    Close Info
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Dealer Area — top center */}
             <div className="absolute top-[45px] left-1/2 -translate-x-1/2 z-15">
@@ -359,19 +366,19 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                 <PayoutPanel roomConfig={room} />
             </div>
 
-            {/* Match History — right side */}
-            <div className="absolute top-[100px] right-[20px] z-15">
+            {/* Match History — right side, always below logo */}
+            <div className="absolute top-[88px] right-[12px] z-15">
                 <HistoryPanel />
             </div>
 
             {/* Action Buttons — center */}
-            <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: '22%' }}>
+            <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: '42%' }}>
                 <ActionPanel timer={timer} />
             </div>
 
             {/* 5 Seats — inverted arc (middle lowest) */}
             <div className="absolute left-0 right-0 z-15" style={{ bottom: '65px' }}>
-                <div className="relative w-full max-w-[1200px] mx-auto" style={{ height: '240px' }}>
+                <div className="relative w-full max-w-[1500px] mx-auto" style={{ height: '240px' }}>
                     {[1, 2, 3, 4, 5].map((seatId) => {
                         const cfg = SEAT_ARC[seatId];
                         return (
@@ -390,13 +397,36 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             </div>
 
 
-            {/* ─── Win/Lose Notification ─── */}
+            {/* ─── Insufficient Funds Warning ─── */}
+            <AnimatePresence>
+                {insufficientFundsWarning && (
+                    <motion.div
+                        className="absolute top-[15%] left-1/2 -translate-x-1/2 z-[100]"
+                        initial={{ opacity: 0, scale: 0.8, y: -20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    >
+                        <div className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-900/90 to-rose-900/90 border border-red-500/50 flex items-center gap-3 backdrop-blur-md shadow-[0_0_40px_rgba(220,38,38,0.3)]">
+                            <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
+                                <span className="text-red-400 font-extrabold text-lg">!</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-red-100 font-bold uppercase tracking-widest text-sm">Insufficient Funds</span>
+                                <span className="text-red-400/80 text-[10px] uppercase font-semibold">Please claim or deposit more chips</span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ─── Win Notification Overlay ─── */}
             <AnimatePresence>
                 {
                     winNotification && (
                         <motion.div
-                            className="absolute left-1/2 -translate-x-1/2 z-[100]"
-                            style={{ top: '38%' }}
+                            className="absolute left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+                            style={{ top: '25%' }}
                             initial={{ opacity: 0, scale: 0.5, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.5, y: -20 }}
@@ -447,13 +477,25 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                         <div className="w-px h-8 bg-white/10" />
                         {/* Daily Claim */}
                         <button onClick={handleClaimDaily} disabled={!!claimCooldown}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer relative overflow-hidden group
                                     ${claimCooldown
                                     ? 'bg-white/5 border border-white/5 text-white/20 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 animate-pulse'
+                                    : isBonusClaim
+                                        ? 'bg-gradient-to-r from-amber-500/20 to-yellow-600/20 border border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/30 animate-pulse'
+                                        : 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 animate-pulse'
                                 }`}
                         >
-                            {claimCooldown ? <><Gift size={15} className="mr-1.5 inline" /> {claimCooldown}</> : <><Gift size={15} className="mr-1.5 inline" /> Claim $200</>}
+                            {!claimCooldown && isBonusClaim && (
+                                <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                                    animate={{ left: ['-100%', '200%'] }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                                />
+                            )}
+                            {claimCooldown ? (
+                                <><Gift size={15} className="mr-1.5 inline" /> {claimCooldown}</>
+                            ) : (
+                                <><Gift size={15} className={`mr-1.5 inline ${isBonusClaim ? 'text-yellow-300' : ''}`} /> Claim ${isBonusClaim ? '1,000' : '500'}{isBonusClaim && ' 🎯'}</>
+                            )}
                         </button>
                     </div>
 
@@ -483,11 +525,11 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
 /* ─── Seat positions: inverted arc (edges higher, center lower) ─── */
 const SEAT_ARC: Record<number, { x: string; y: string; scale: number; z: number }> = {
-    1: { x: '8%', y: '100px', scale: 1.125, z: 1 },  // 0.75 * 1.5
-    2: { x: '25%', y: '45px', scale: 1.275, z: 2 },  // 0.85 * 1.5
-    3: { x: '50%', y: '15px', scale: 1.425, z: 3 },  // 0.95 * 1.5
-    4: { x: '75%', y: '45px', scale: 1.275, z: 2 },  // 0.85 * 1.5
-    5: { x: '92%', y: '100px', scale: 1.125, z: 1 },  // 0.75 * 1.5
+    1: { x: '4%', y: '100px', scale: 1.125, z: 1 },  // spread further out
+    2: { x: '23%', y: '45px', scale: 1.275, z: 2 },
+    3: { x: '50%', y: '15px', scale: 1.425, z: 3 },
+    4: { x: '77%', y: '45px', scale: 1.275, z: 2 },
+    5: { x: '96%', y: '100px', scale: 1.125, z: 1 },
 };
 
 /* ─── Sub-components ─── */
@@ -550,7 +592,7 @@ function HistoryPanel() {
                         }
                     });
 
-                    const roomLabel = match.roomId === 'freebet' ? 'FB' : 'VIP';
+                    const roomLabel = match.roomId === 'vegas_strip' ? 'VS' : 'VIP';
 
                     // Determine overall label character based on net profit diff
                     let labelStr = 'P';
@@ -568,7 +610,7 @@ function HistoryPanel() {
                         <div key={match.id} className="flex items-center justify-between px-1.5 py-1 rounded bg-white/[0.02]">
                             <div className="flex items-center gap-1.5">
                                 <span className={`text-[7px] font-bold px-1 py-0.5 rounded
-                                    ${match.roomId === 'freebet' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}
+                                    ${match.roomId === 'vegas_strip' ? 'bg-purple-500/15 text-purple-400' : 'bg-amber-500/15 text-amber-400'}`}
                                 >{roomLabel}</span>
                                 <span className={`text-[9px] font-bold uppercase ${colorClass}`}>
                                     {labelStr}
@@ -592,11 +634,11 @@ function RulesModal({ room, onClose }: { room: ReturnType<typeof getRoomConfig>;
         >
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
             <motion.div
-                className="relative w-[480px] max-h-[80vh] overflow-y-auto rounded-2xl border border-amber-500/15"
+                className="relative w-[480px] max-h-[80vh] rounded-2xl border border-amber-500/15 flex flex-col overflow-hidden"
                 style={{ background: 'rgba(20, 12, 8, 0.95)', backdropFilter: 'blur(20px)' }}
                 initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
             >
-                <div className="p-6">
+                <div className="p-6 flex-1 overflow-y-auto pb-10">
                     <div className="flex items-center justify-between mb-5">
                         <h2 className="text-lg font-extrabold text-amber-400 uppercase tracking-[0.15em] flex items-center justify-center"><Info size={20} className="mr-2" /> {room.name} Rules</h2>
                         <button onClick={onClose}
@@ -604,39 +646,65 @@ function RulesModal({ room, onClose }: { room: ReturnType<typeof getRoomConfig>;
                         ><X size={16} /></button>
                     </div>
                     <div className="space-y-4 text-sm text-white/60">
-                        <RuleSection title="Objective" content="Beat the dealer without going over 21." />
-                        <RuleSection title="Card Values" content="2-10 = face value. J/Q/K = 10. Ace = 1 or 11." />
-                        <RuleSection title="Gameplay">
-                            <ul className="space-y-1.5 list-disc list-inside text-white/50 text-xs">
-                                <li><strong className="text-white/70">Hit</strong> — Take another card</li>
-                                <li><strong className="text-white/70">Stand</strong> — Keep hand</li>
-                                <li><strong className="text-white/70">Double Down</strong> — Double bet, take one card</li>
-                                <li><strong className="text-white/70">Split</strong> — Split a pair into two hands</li>
-                                <li><Timer size={14} className="inline mr-1 text-amber-400 -mt-0.5" /> <strong className="text-amber-400">30 seconds</strong> per hand, auto-stand on timeout</li>
-                            </ul>
+                        <RuleSection title="Objective" content="Beat the dealer's hand without going over 21. Face cards are worth 10. Aces are worth 1 or 11, whichever makes a better hand." />
+
+                        <RuleSection title="Actions & Glossary">
+                            <div className="grid grid-cols-1 gap-2 mt-1">
+                                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                    <strong className="text-white/80 block mb-0.5 text-xs"><Plus size={12} className="inline text-emerald-400 mr-1" />Hit</strong>
+                                    <p className="text-[10px] text-white/40 leading-snug">Take another card from the dealer to improve your hand total. You can hit as many times as you want until you reach 21 or Bust.</p>
+                                </div>
+                                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                    <strong className="text-white/80 block mb-0.5 text-xs"><Minus size={12} className="inline text-amber-400 mr-1" />Stand</strong>
+                                    <p className="text-[10px] text-white/40 leading-snug">Keep your current hand and end your turn. The dealer will then play their hand.</p>
+                                </div>
+                                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                    <strong className="text-white/80 block mb-0.5 text-xs"><ChevronsUp size={12} className="inline text-blue-400 mr-1" />Double Down</strong>
+                                    <p className="text-[10px] text-white/40 leading-snug">Double your initial bet in exchange for receiving exactly ONE more card, after which you automatically stand.</p>
+                                </div>
+                                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                    <strong className="text-white/80 block mb-0.5 text-xs"><ArrowLeftRight size={12} className="inline text-purple-400 mr-1" />Split</strong>
+                                    <p className="text-[10px] text-white/40 leading-snug">
+                                        {room.id === 'vegas_strip'
+                                            ? 'If your first two cards have the same point value (e.g. 8–8 or J–K), double your bet to split them into two separate hands. Aces may only be split once and receive one card each. Double after split is allowed. Maximum 4 hands per seat.'
+                                            : 'If your first two cards are the same rank (e.g. 8–8, J–J, K–K), double your bet to split them into two separate hands. Aces may be re-split. Maximum 4 hands per seat.'}
+                                    </p>
+                                </div>
+                                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                    <strong className="text-white/80 block mb-0.5 text-xs"><Shield size={12} className="inline text-yellow-400 mr-1" />Insurance</strong>
+                                    <p className="text-[10px] text-white/40 leading-snug">Offered when the dealer's face-up card is an Ace. Costs half your main bet. Pays 2:1 if the dealer's hidden card makes a Blackjack.</p>
+                                </div>
+                            </div>
                         </RuleSection>
+
                         <RuleSection title="Payouts">
-                            <ul className="space-y-1 list-disc list-inside text-white/50 text-xs">
-                                <li>{room.rules.blackjackPays}</li>
-                                <li>{room.rules.insurancePays}</li>
-                                <li>Regular win 1:1 · Push returns bet</li>
+                            <ul className="space-y-1 mt-1 list-disc list-inside text-white/50 text-xs bg-white/5 rounded-lg border border-white/5 p-3">
+                                <li><strong className="text-white/70">{room.rules.blackjackPays}</strong></li>
+                                <li><strong className="text-white/70">{room.rules.insurancePays}</strong></li>
+                                <li>Regular hand win pays <strong className="text-white/70">1 to 1</strong> (evens)</li>
+                                <li><strong>Push (Tie):</strong> You and the dealer have the same total. Your bet is returned to you.</li>
+                                <li><strong>Bust:</strong> A hand total exceeds 21. Automatic loss, regardless of the dealer's hand.</li>
                             </ul>
                         </RuleSection>
-                        <RuleSection title="Dealer Rules" content={room.rules.dealerStands} />
-                        {room.id === 'freebet' && (
-                            <RuleSection title="Free Bet Rules">
-                                <ul className="space-y-1 list-disc list-inside text-white/50 text-xs">
-                                    <li className="text-emerald-400">Free doubles on hard 9, 10, 11</li>
-                                    <li className="text-emerald-400">Free splits on all pairs (except 10s)</li>
-                                    <li className="text-amber-400">Dealer 22 pushes all non-busted hands</li>
-                                </ul>
-                            </RuleSection>
-                        )}
+
+                        <RuleSection title="Dealer Rules">
+                            <p className="text-xs text-white/50 leading-relaxed">{room.rules.dealerStands}</p>
+                            {room.id === 'classic' && (
+                                <p className="text-xs text-white/40 leading-relaxed mt-1">
+                                    The dealer must draw cards until reaching 17 or higher. On a <strong className="text-white/60">Soft 17</strong> (Ace + 6), the dealer <strong className="text-white/60">must hit</strong> again.
+                                </p>
+                            )}
+                            {room.id === 'vegas_strip' && (
+                                <p className="text-xs text-white/40 leading-relaxed mt-1">
+                                    The dealer stands on <strong className="text-white/60">all 17s</strong>, including Soft 17 (Ace + 6). This is more favourable to the player than Hit Soft 17.
+                                </p>
+                            )}
+                        </RuleSection>
                     </div>
                 </div>
                 {/* Educational Disclaimer */}
-                <div className="absolute bottom-2 left-0 right-0 text-center z-50 pointer-events-none">
-                    <p className="text-[10px] text-white/30 font-medium uppercase tracking-[0.1em] drop-shadow-md">
+                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent text-center z-50 pointer-events-none">
+                    <p className="text-[9px] text-white/30 font-medium uppercase tracking-[0.1em] drop-shadow-md">
                         This is a strictly educational project. No real money gambling is involved.
                     </p>
                 </div>

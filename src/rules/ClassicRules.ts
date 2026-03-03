@@ -16,11 +16,13 @@ export class ClassicRules implements IRules {
     }
 
     canSplit(hand: Hand, seatHandsLength: number): ActionValidity {
-        // Classic rule: Split up to 4 hands total (3 splits). Same value cards.
+        // Classic rule: Split up to 4 hands total (3 splits).
+        // Must be same RANK (same face: J-J, 10-10), not just same value.
+        // (J and K both = 10 but cannot be split in Classic)
         const allowed =
             hand.cards.length === 2 &&
             hand.status === HandStatus.PLAYING &&
-            hand.cards[0].value === hand.cards[1].value &&
+            hand.cards[0].rank === hand.cards[1].rank &&
             seatHandsLength < 4;
 
         return {

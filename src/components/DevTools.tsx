@@ -5,11 +5,14 @@
 // ============================================
 
 import { useGameStore } from '@/hooks/useGameStore';
+import { useRouter } from 'next/navigation';
 
 export default function DevTools() {
     const addFunds = useGameStore((s) => s.addFunds);
     const forceBlackjack = useGameStore((s) => s.forceBlackjack);
+    const forceBust = useGameStore((s) => s.forceBust);
     const forceSplitScenario = useGameStore((s) => s.forceSplitScenario);
+    const forceAceSplitScenario = useGameStore((s) => s.forceAceSplitScenario);
 
     // Only show in development
     if (process.env.NODE_ENV !== 'development') return null;
@@ -21,21 +24,46 @@ export default function DevTools() {
         }
     };
 
+    const router = useRouter();
+
     return (
-        <div className="fixed bottom-16 left-3 z-[100] opacity-20 hover:opacity-100 transition-opacity duration-300">
-            <div className="bg-black/90 backdrop-blur-sm rounded-lg border border-white/10 p-2 space-y-1">
-                <p className="text-[8px] text-white/40 font-mono uppercase tracking-widest mb-1">
-                    ⚙ Dev
-                </p>
-                <DevButton label="Force Blackjack" onClick={forceBlackjack} />
-                <DevButton label="Force Split (8s)" onClick={forceSplitScenario} />
-                <DevButton label="Add $10,000" onClick={() => addFunds(10_000)} />
-                <DevButton label="Add $1,000,000" onClick={() => addFunds(1_000_000)} />
-                <DevButton
-                    label="Clear Storage"
-                    onClick={handleClearStorage}
-                    variant="danger"
-                />
+        <div className="fixed bottom-16 left-3 z-[100] opacity-20 hover:opacity-100 transition-opacity duration-300 w-48">
+            <div className="bg-black/95 backdrop-blur-md rounded-xl border border-white/10 p-3 shadow-2xl">
+                <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
+                    <p className="text-[10px] text-emerald-400 font-mono uppercase tracking-widest font-bold">
+                        ⚙ Engine DevTools
+                    </p>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="space-y-1.5">
+                        <p className="text-[9px] text-white/40 uppercase tracking-widest px-1">Game States</p>
+                        <DevButton label="Force Blackjack" onClick={forceBlackjack} />
+                        <DevButton label="Force Bust (Lose)" onClick={forceBust} />
+                        <DevButton label="Force Split (8s)" onClick={forceSplitScenario} />
+                        <DevButton label="Force Split (Aces)" onClick={forceAceSplitScenario} />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <p className="text-[9px] text-white/40 uppercase tracking-widest px-1">Bankroll</p>
+                        <DevButton label="Add $10,000" onClick={() => addFunds(10_000)} />
+                        <DevButton label="Add $1,000,000" onClick={() => addFunds(1_000_000)} />
+                    </div>
+
+                    <div className="space-y-1.5 pt-2 border-t border-white/10">
+                        <p className="text-[9px] text-white/40 uppercase tracking-widest px-1">Rooms</p>
+                        <DevButton label="Vegas Strip" onClick={() => router.push('/game/vegas_strip')} />
+                        <DevButton label="VIP Classic" onClick={() => router.push('/game/classic')} />
+                    </div>
+
+                    <div className="pt-2 border-t border-white/10">
+                        <DevButton
+                            label="Clear Storage & Reset"
+                            onClick={handleClearStorage}
+                            variant="danger"
+                        />
+                    </div>
+                </div>
             </div>
         </div>
     );

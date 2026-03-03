@@ -1,11 +1,11 @@
 import { IRules } from './types';
 import { ClassicRules } from './ClassicRules';
-import { FreeBetRules } from './FreeBetRules';
+import { VegasStripRules } from './VegasStripRules';
 
 export function getRules(roomId: string): IRules {
     switch (roomId) {
-        case 'freebet':
-            return new FreeBetRules();
+        case 'vegas_strip':
+            return new VegasStripRules();
         case 'classic':
         default:
             return new ClassicRules();
@@ -14,4 +14,4 @@ export function getRules(roomId: string): IRules {
 
 export * from './types';
 export * from './ClassicRules';
-export * from './FreeBetRules';
+export * from './VegasStripRules';

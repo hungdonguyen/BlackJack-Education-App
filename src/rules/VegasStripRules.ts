@@ -1,44 +1,40 @@
 import { Hand, Card, HandValue } from '@/types/game';
 import { HandStatus } from '@/types/enums';
 import { IRules, ActionValidity, PayoutResult } from './types';
-import { isBlackjack, calculateHandValue } from '@/utils/hand';
+import { isBlackjack } from '@/utils/hand';
 
-export class FreeBetRules implements IRules {
+export class VegasStripRules implements IRules {
     blackjackPayoutMultiplier = 1.5; // 3:2
 
     canDoubleDown(hand: Hand): ActionValidity {
-        if (hand.cards.length !== 2 || hand.status !== HandStatus.PLAYING) {
-            return { allowed: false, isFree: false, cost: 0 };
-        }
-
-        // Free Double on hard 9, 10, 11
-        const hv = calculateHandValue(hand.cards);
-        const isFree = !hv.isSoft && [9, 10, 11].includes(hv.total);
+        // Double Down allowed on any two cards, EXCEPT if this hand is from splitting Aces.
+        const allowed = 
+            hand.cards.length === 2 && 
+            hand.status === HandStatus.PLAYING &&
+            !hand.isAceSplit;
 
         return {
-            allowed: true,
-            isFree,
-            cost: isFree ? 0 : hand.betAmount,
+            allowed,
+            isFree: false,
+            cost: hand.betAmount,
         };
     }
 
     canSplit(hand: Hand, seatHandsLength: number): ActionValidity {
-        if (hand.cards.length !== 2 || hand.status !== HandStatus.PLAYING || seatHandsLength >= 4) {
-            return { allowed: false, isFree: false, cost: 0 };
-        }
-
-        const isPair = hand.cards[0].value === hand.cards[1].value;
-        if (!isPair) {
-            return { allowed: false, isFree: false, cost: 0 };
-        }
-
-        // Free Split on all pairs EXCEPT 10-value cards (10, J, Q, K)
-        const isFree = hand.cards[0].value !== 10;
+        // Max 3 splits (4 hands total).
+        // Aces cannot be RE-SPLIT (if isAceSplit is true, forbid).
+        // Any 10-valued cards can be split (e.g., J and K can be split in Vegas Strip).
+        const allowed =
+            hand.cards.length === 2 &&
+            hand.status === HandStatus.PLAYING &&
+            hand.cards[0].value === hand.cards[1].value && // Value must match (10 & 10, Ace & Ace, etc)
+            seatHandsLength < 4 && 
+            !hand.isAceSplit; // Forbid re-splitting Aces
 
         return {
-            allowed: true,
-            isFree,
-            cost: isFree ? 0 : hand.betAmount,
+            allowed,
+            isFree: false,
+            cost: hand.betAmount,
         };
     }
 
@@ -51,7 +47,6 @@ export class FreeBetRules implements IRules {
         const playerHasBlackjack = playerHand.status === HandStatus.BLACKJACK;
         const dealerHasBlackjack = isBlackjack(dealerCards);
         const dealerBust = dealerValue.total > 21;
-        const dealer22 = dealerValue.total === 22;
 
         // Player Blackjack
         if (playerHasBlackjack) {
@@ -66,13 +61,8 @@ export class FreeBetRules implements IRules {
             return { status: HandStatus.LOST, payoutMultiplier: -1 };
         }
 
-        // Free Bet Rule: Dealer rolling exactly 22 pushes all non-busted player hands (except Blackjack, which is handled above)
-        if (dealer22) {
-            return { status: HandStatus.PUSH, payoutMultiplier: 0 };
-        }
-
-        // Dealer busts (23 or more) — player wins
-        if (dealerBust) { // We already checked for exactly 22 above
+        // Dealer busted — player wins
+        if (dealerBust) {
             return { status: HandStatus.WON, payoutMultiplier: 1 };
         }
 

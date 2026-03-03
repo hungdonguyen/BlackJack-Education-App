@@ -15,13 +15,13 @@ export default function LobbyPage() {
     const rooms = Object.values(ROOMS);
 
     return (
-        <div className="relative w-screen h-screen overflow-hidden select-none flex flex-col"
+        <div className="relative w-screen h-screen overflow-hidden select-none"
             style={{
                 background: 'radial-gradient(ellipse 120% 100% at 50% 30%, #301a10 0%, #1a0e0a 40%, #0d0705 100%)',
             }}
         >
-            {/* Top Bar */}
-            <div className="flex items-center justify-between px-6 py-4 relative z-10">
+            {/* Top Bar — absolute so it doesn't affect centering */}
+            <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-4">
                 <motion.button
                     onClick={() => router.push('/')}
                     className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors cursor-pointer"
@@ -33,22 +33,44 @@ export default function LobbyPage() {
                 <h1 className="text-lg font-extrabold text-amber-400/80 uppercase tracking-[0.3em] flex items-center justify-center">
                     <Home size={20} className="mr-2 mb-0.5" /> Lobby
                 </h1>
-                <div className="w-16" /> {/* Spacer */}
+                <div className="w-16" />
             </div>
 
-            {/* Room Cards */}
-            <div className="flex-1 flex items-center justify-center gap-8 px-8 relative z-10">
-                {rooms.map((room, index) => (
-                    <RoomCard key={room.id} room={room} index={index} onClick={() => router.push(`/game/${room.id}`)} />
-                ))}
+            {/* Center content — true full-screen vertical centering */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 z-10 px-8">
+                {/* Heading */}
+                <motion.div
+                    className="text-center"
+                    initial={{ opacity: 0, y: -16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1, duration: 0.6 }}
+                >
+                    <p className="text-[10px] uppercase tracking-[0.45em] text-amber-400/50 mb-1 font-sans">Welcome to</p>
+                    <h2
+                        className="text-3xl font-black uppercase tracking-[0.25em] text-transparent bg-clip-text leading-tight"
+                        style={{
+                            fontFamily: 'var(--font-cinzel), serif',
+                            backgroundImage: 'linear-gradient(135deg, #f5d280 0%, #d4a843 40%, #b8860b 70%, #f5d280 100%)',
+                            filter: 'drop-shadow(0 0 18px rgba(212,168,67,0.7)) drop-shadow(0 0 40px rgba(212,168,67,0.35))',
+                        }}
+                    >
+                        Educational Blackjack
+                    </h2>
+                    <div className="flex items-center justify-center gap-3 mt-2">
+                        <div className="h-px w-16 bg-gradient-to-r from-transparent to-amber-400/40" />
+                        <span className="text-amber-400/40 text-[9px] tracking-[0.5em] uppercase font-sans">Choose Your Table</span>
+                        <div className="h-px w-16 bg-gradient-to-l from-transparent to-amber-400/40" />
+                    </div>
+                </motion.div>
+
+                {/* Room Cards — items-stretch ensures equal height */}
+                <div className="flex items-stretch justify-center gap-8">
+                    {rooms.map((room, index) => (
+                        <RoomCard key={room.id} room={room} index={index} onClick={() => router.push(`/game/${room.id}`)} />
+                    ))}
+                </div>
             </div>
 
-            {/* Bottom hint */}
-            <div className="text-center pb-6 relative z-10">
-                <p className="text-white/15 text-[10px] uppercase tracking-[0.3em]">
-                    Choose a table to play
-                </p>
-            </div>
             {/* Educational Disclaimer */}
             <div className="absolute bottom-4 left-0 right-0 text-center z-50 pointer-events-none">
                 <p className="text-xs text-white/30 font-medium uppercase tracking-[0.1em]">
@@ -59,10 +81,18 @@ export default function LobbyPage() {
     );
 }
 
+import { useEffect, useState } from 'react';
+
 function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; onClick: () => void }) {
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     return (
         <motion.div
-            className="relative w-[380px] rounded-2xl overflow-hidden cursor-pointer group"
+            className="relative w-[380px] h-full flex flex-col rounded-2xl overflow-hidden cursor-pointer group"
             style={{
                 border: `1px solid ${room.borderColor}`,
                 boxShadow: `0 0 40px ${room.borderColor}`,
@@ -85,13 +115,14 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
 
                 {/* Room logo */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative w-full h-full p-2">
+                    <div className="relative w-[75%] h-[65%] mx-auto">
                         <Image
-                            src={room.id === 'freebet' ? '/images/logo/freebet_blackjack_logo.png' : '/images/logo/blackjack_vip_logo.avif'}
+                            src={room.id === 'vegas_strip' ? '/images/logo/Vegas_trip_blackjack.png' : '/images/logo/blackjack_vip_logo.avif'}
                             alt={room.name}
                             fill
                             className="object-contain drop-shadow-2xl"
                             sizes="(max-width: 768px) 100vw, 400px"
+                            unoptimized
                         />
                     </div>
                 </div>
@@ -115,7 +146,7 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
             </div>
 
             {/* Info section */}
-            <div className="p-5"
+            <div className="flex-1 flex flex-col p-5"
                 style={{ background: 'rgba(10, 6, 4, 0.95)' }}
             >
                 <div className="flex items-start justify-between mb-2">
@@ -130,12 +161,12 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
                     <span className="text-2xl">{room.icon}</span>
                 </div>
                 <p className="text-white/35 text-xs leading-relaxed mt-2">{room.description}</p>
-                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/5">
+                <div className="flex items-center gap-4 mt-auto pt-3 border-t border-white/5">
                     <span className="text-[9px] text-white/25 uppercase tracking-wider">
                         Min: ${room.betRange[0]}
                     </span>
                     <span className="text-[9px] text-white/25 uppercase tracking-wider">
-                        Max: ${room.betRange[1].toLocaleString()}
+                        Max: ${isMounted ? room.betRange[1].toLocaleString() : room.betRange[1]}
                     </span>
                     <span className="text-[9px] text-white/25 uppercase tracking-wider ml-auto">
                         5 Seats

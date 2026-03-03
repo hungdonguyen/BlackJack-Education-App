@@ -26,6 +26,7 @@ export interface Hand {
   isFreeDouble?: boolean;
   isFreeSplit?: boolean;
   freeBetAmount?: number;
+  isAceSplit?: boolean;
 }
 
 /** A seat / betting box at the table (1-5) */
@@ -90,12 +91,17 @@ export interface GameState {
   // Betting
   selectedChipValue: number;
   betHistory: { seatId: number; amount: number }[];
+  previousBets: { seatId: number; amount: number }[];
 
   // History
   matchHistory: MatchRecord[];
 
   // Daily claim
   lastDailyClaim: number;
+  dailyClaimCount: number;
+
+  // UI Warnings
+  insufficientFundsWarning: boolean;
 
   // Insurance
   insuranceBets: Record<number, number>; // seatId -> insurance bet amount
@@ -115,6 +121,7 @@ export interface GameActions {
   clearBet: (seatId: number) => void;
   clearAllBets: () => void;
   selectChip: (value: number) => void;
+  rebet: () => void;
 
   // Game flow
   startDeal: () => void;
@@ -138,13 +145,17 @@ export interface GameActions {
   addFunds: (amount: number) => void;
   claimDaily: () => boolean;
   setCurrentRoom: (roomId: string) => void;
+  triggerInsufficientFunds: () => void;
+  clearInsufficientFunds: () => void;
 
   // Advance turn: move to the next hand/seat
   advanceToNextHand: () => void;
 
   // Dev tools
   forceBlackjack: () => void;
+  forceBust: () => void;
   forceSplitScenario: () => void;
+  forceAceSplitScenario: () => void;
 }
 
 /** Combined store type */

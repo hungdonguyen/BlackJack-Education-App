@@ -9,13 +9,13 @@ import { Rank, HandStatus } from '@/types/enums';
  * Calculate the total value of a hand, automatically adjusting Aces.
  * Returns the best total (≤21 if possible) and whether the hand is "soft".
  */
-export function calculateHandValue(cards: Card[]): HandValue {
+export function calculateHandValue(cards: Card[], includeHidden: boolean = false): HandValue {
   let total = 0;
   let aceCount = 0;
 
   for (const card of cards) {
-    // Skip hidden cards (dealer's hole card)
-    if (card.isHidden) continue;
+    // Skip hidden cards (dealer's hole card) unless specifically requested
+    if (card.isHidden && !includeHidden) continue;
 
     total += card.value;
     if (card.rank === Rank.ACE) {
@@ -41,12 +41,12 @@ export function isBust(cards: Card[]): boolean {
 }
 
 /** Check if a hand is a natural Blackjack (exactly 2 cards totaling 21) */
-export function isBlackjack(cards: Card[]): boolean {
+export function isBlackjack(cards: Card[], includeHidden: boolean = false): boolean {
   if (cards.length !== 2) return false;
-  // Only count visible cards for the check
-  const visibleCards = cards.filter((c) => !c.isHidden);
+  // Only count visible cards for the check, unless peeking at hidden cards
+  const visibleCards = includeHidden ? cards : cards.filter((c) => !c.isHidden);
   if (visibleCards.length !== 2) return false;
-  return calculateHandValue(visibleCards).total === 21;
+  return calculateHandValue(visibleCards, includeHidden).total === 21;
 }
 
 /** Check if a hand can be split (exactly 2 cards with the same value) */

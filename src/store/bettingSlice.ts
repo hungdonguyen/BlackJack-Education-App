@@ -19,7 +19,10 @@ export interface BettingSlice {
   selectedChipValue: number;
   betHistory: BetRecord[];
   lastDailyClaim: number;
+  dailyClaimCount: number;
   currentRoom: string;
+  previousBets: { seatId: number; amount: number }[];
+  insufficientFundsWarning: boolean;
 
   // Actions
   selectChip: (value: number) => void;
@@ -31,6 +34,9 @@ export interface BettingSlice {
   addFunds: (amount: number) => void;
   claimDaily: () => boolean;
   setCurrentRoom: (roomId: string) => void;
+  rebet: () => void;
+  triggerInsufficientFunds: () => void;
+  clearInsufficientFunds: () => void;
 }
 
 export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> = (set, get) => ({
@@ -38,7 +44,10 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   selectedChipValue: CHIP_VALUES[0],
   betHistory: [],
   lastDailyClaim: 0,
+  dailyClaimCount: 0,
   currentRoom: 'classic',
+  previousBets: [],
+  insufficientFundsWarning: false,
 
   selectChip: (value: number) => {
     set({ selectedChipValue: value });
@@ -47,7 +56,10 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   placeBet: (seatId: number, amount: number) => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
-    if (amount > state.bankroll) return;
+    if (amount > state.bankroll) {
+      get().triggerInsufficientFunds();
+      return;
+    }
 
     set((s) => ({
       bankroll: s.bankroll - amount,
@@ -130,6 +142,78 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     }));
   },
 
+  rebet: () => {
+    const state = get();
+    if (state.gamePhase !== GamePhase.BETTING) return;
+
+    // Determine current total bets on the table
+    let currentTotalBet = 0;
+    state.seats.forEach((s) => {
+      currentTotalBet += s.hands.reduce((sum, h) => sum + h.betAmount, 0);
+    });
+
+    // If there are bets, this functions as a "Double" (x2)
+    if (currentTotalBet > 0) {
+      if (currentTotalBet > state.bankroll) {
+        get().triggerInsufficientFunds();
+        return; // Not enough funds to double
+      }
+
+      set((s) => ({
+        bankroll: s.bankroll - currentTotalBet,
+        betHistory: [
+          ...s.betHistory,
+          // We don't record the full list of seats in history for a singular x2 action, 
+          // or we could record them iteratively. A simpler approach is just applying the double:
+          ...s.seats
+            .filter((st) => st.isActive && st.hands.some((h) => h.betAmount > 0))
+            .map((st) => ({
+              seatId: st.id,
+              amount: st.hands.reduce((sum, h) => sum + h.betAmount, 0),
+            })),
+        ],
+        seats: s.seats.map((seat) => {
+          if (!seat.isActive) return seat;
+          return {
+            ...seat,
+            hands: seat.hands.map((hand) => ({
+              ...hand,
+              betAmount: hand.betAmount * 2,
+            })),
+          };
+        }),
+      }));
+      return;
+    }
+
+    // Otherwise, this functions as "Rebet" from the previous round
+    if (state.previousBets.length === 0) return;
+
+    const previousTotal = state.previousBets.reduce((sum, b) => sum + b.amount, 0);
+    if (previousTotal > state.bankroll) {
+        get().triggerInsufficientFunds();
+        return;
+    }
+
+    set((s) => ({
+      bankroll: s.bankroll - previousTotal,
+      betHistory: [...s.betHistory, ...state.previousBets],
+      seats: s.seats.map((seat) => {
+        const prevBet = state.previousBets.find((b) => b.seatId === seat.id);
+        if (!prevBet) return seat;
+        
+        // Ensure seat is active if it had a previous bet
+        return {
+          ...seat,
+          isActive: true,
+          hands: seat.hands.map((hand, idx) =>
+            idx === 0 ? { ...hand, betAmount: prevBet.amount } : hand
+          ),
+        };
+      }),
+    }));
+  },
+
   toggleSeat: (seatId: number) => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
@@ -166,17 +250,34 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   claimDaily: () => {
     const state = get();
     const now = Date.now();
-    const TWO_HOURS = 2 * 60 * 60 * 1000;
-    if (now - state.lastDailyClaim < TWO_HOURS) return false;
+    const ONE_HOUR = 60 * 60 * 1000;
+    if (now - state.lastDailyClaim < ONE_HOUR) return false;
+
+    const isBonusClaim = (state.dailyClaimCount + 1) % 3 === 0;
+    const claimAmount = isBonusClaim ? 1000 : 500;
+
     set((s) => ({
-      bankroll: s.bankroll + 200,
+      bankroll: s.bankroll + claimAmount,
       lastDailyClaim: now,
+      dailyClaimCount: s.dailyClaimCount + 1,
     }));
     return true;
   },
 
   setCurrentRoom: (roomId: string) => {
     set({ currentRoom: roomId });
+  },
+
+  triggerInsufficientFunds: () => {
+    set({ insufficientFundsWarning: true });
+    // Auto-clear the warning after 2.5 seconds
+    setTimeout(() => {
+      set({ insufficientFundsWarning: false });
+    }, 2500);
+  },
+
+  clearInsufficientFunds: () => {
+    set({ insufficientFundsWarning: false });
   },
 });
 
