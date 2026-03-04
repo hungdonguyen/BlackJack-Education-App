@@ -23,6 +23,7 @@ import PortraitOverlay from './PortraitOverlay';
 import PayoutPanel from './PayoutPanel';
 import StrategyModal from './StrategyModal';
 import HandAdvisor from './HandAdvisor';
+import CardCountingPanel from './CardCountingPanel';
 import MatchDetailModal from './MatchDetailModal';
 import { loadHistory, appendHistory } from '@/utils/saveFile';
 
@@ -422,6 +423,11 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                 <HandAdvisor roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} />
             </div>
 
+            {/* Card Counting Panel — symmetric to Hand Advisor */}
+            <div className="absolute top-[45px] right-[210px] z-15">
+                <CardCountingPanel numDecks={room.gameRules.numberOfDecks} accentColor={room.accentColor} borderColor={room.borderColor} />
+            </div>
+
             {/* Match History — right side, always below logo */}
             <div className="absolute top-[88px] right-[12px] z-15">
                 <HistoryPanel onMatchClick={(idx) => setSelectedMatchIndex(idx)} />
@@ -488,8 +494,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                             exit={{ opacity: 0, scale: 0.5, y: -20 }}
                             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                         >
-                            <div className={`px-8 py-4 rounded-xl backdrop-blur-md border ${
-                                winNotification.isPush
+                            <div className={`px-8 py-4 rounded-xl backdrop-blur-md border ${winNotification.isPush
                                     ? 'bg-gradient-to-r from-sky-500/15 to-blue-500/15 border-sky-400/30'
                                     : winNotification.isWin
                                         ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-yellow-400/40'
@@ -503,8 +508,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                             : '0 0 40px rgba(220, 50, 50, 0.2)'
                                 }}
                             >
-                                <p className={`text-center text-sm font-bold uppercase tracking-[0.3em] mb-1 ${
-                                    winNotification.isPush
+                                <p className={`text-center text-sm font-bold uppercase tracking-[0.3em] mb-1 ${winNotification.isPush
                                         ? 'text-sky-300'
                                         : winNotification.isWin ? 'text-yellow-300' : 'text-red-300'
                                     }`}>

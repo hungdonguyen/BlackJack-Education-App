@@ -16,95 +16,95 @@ interface StrategyModalProps {
 }
 
 type Action = 'H' | 'S' | 'D' | 'DS' | 'SP' | 'SU';
-type Tab = 'hard' | 'soft' | 'pairs';
+type Tab = 'hard' | 'soft' | 'pairs' | 'counting';
 
 // Refined color palette matching casino aesthetic - gradient backgrounds
 const ACTION_STYLES: Record<Action, { bg: string; text: string; label: string; desc: string }> = {
-    H:  { bg: 'linear-gradient(135deg, #1b7a3e 0%, #14532d 100%)', text: '#d1fae5', label: 'H',  desc: 'Hit' },
-    S:  { bg: 'linear-gradient(135deg, #a8322c 0%, #8b1a1a 100%)', text: '#fde8e8', label: 'S',  desc: 'Stand' },
-    D:  { bg: 'linear-gradient(135deg, #c9983a 0%, #a67c2e 100%)', text: '#1a1206', label: 'D',  desc: 'Double Down' },
+    H: { bg: 'linear-gradient(135deg, #1b7a3e 0%, #14532d 100%)', text: '#d1fae5', label: 'H', desc: 'Hit' },
+    S: { bg: 'linear-gradient(135deg, #a8322c 0%, #8b1a1a 100%)', text: '#fde8e8', label: 'S', desc: 'Stand' },
+    D: { bg: 'linear-gradient(135deg, #c9983a 0%, #a67c2e 100%)', text: '#1a1206', label: 'D', desc: 'Double Down' },
     DS: { bg: 'linear-gradient(135deg, #1a7a7a 0%, #115e5e 100%)', text: '#ccfbf1', label: 'DS', desc: 'Double if allowed, else Stand' },
     SP: { bg: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', text: '#dbeafe', label: 'SP', desc: 'Split' },
     SU: { bg: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', text: '#ede9fe', label: 'SU', desc: 'Surrender if allowed, else Hit' },
 };
 
-const DEALER_UPCARDS = ['2','3','4','5','6','7','8','9','10','A'];
+const DEALER_UPCARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A'];
 
 // Strategy Data
-const HARD_ROWS  = ['5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20'];
-const SOFT_ROWS  = ['A,2','A,3','A,4','A,5','A,6','A,7','A,8','A,9'];
-const PAIR_ROWS  = ['2,2','3,3','4,4','5,5','6,6','7,7','8,8','9,9','10,10','A,A'];
+const HARD_ROWS = ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
+const SOFT_ROWS = ['A,2', 'A,3', 'A,4', 'A,5', 'A,6', 'A,7', 'A,8', 'A,9'];
+const PAIR_ROWS = ['2,2', '3,3', '4,4', '5,5', '6,6', '7,7', '8,8', '9,9', '10,10', 'A,A'];
 
 // Classic: 6 decks, H17, DAS
 const HARD_CLASSIC: Action[][] = [
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','D','D','D','D','H','H','H','H','H'],
-    ['D','D','D','D','D','D','D','D','H','H'],
-    ['D','D','D','D','D','D','D','D','D','H'],
-    ['H','H','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','S','S','S','S','S'],
-    ['S','S','S','S','S','S','S','S','S','S'], // 18
-    ['S','S','S','S','S','S','S','S','S','S'], // 19
-    ['S','S','S','S','S','S','S','S','S','S'], // 20
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H'],
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
 ];
 const SOFT_CLASSIC: Action[][] = [
-    ['H','H','H','D','D','H','H','H','H','H'],
-    ['H','H','H','D','D','H','H','H','H','H'],
-    ['H','H','D','D','D','H','H','H','H','H'],
-    ['H','H','D','D','D','H','H','H','H','H'],
-    ['H','D','D','D','D','H','H','H','H','H'],
-    ['S','DS','DS','DS','DS','S','S','H','H','H'],
-    ['S','S','S','S','S','S','S','S','S','S'],
-    ['S','S','S','S','S','S','S','S','S','S'],
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
 const PAIRS_CLASSIC: Action[][] = [
-    ['SP','SP','SP','SP','SP','SP','H','H','H','H'],
-    ['SP','SP','SP','SP','SP','SP','H','H','H','H'],
-    ['H','H','H','SP','SP','H','H','H','H','H'],
-    ['D','D','D','D','D','D','D','D','H','H'],
-    ['SP','SP','SP','SP','SP','H','H','H','H','H'],
-    ['SP','SP','SP','SP','SP','SP','H','H','H','H'],
-    ['SP','SP','SP','SP','SP','SP','SP','SP','SP','SP'],
-    ['SP','SP','SP','SP','SP','S','SP','SP','S','S'],
-    ['S','S','S','S','S','S','S','S','S','S'],
-    ['SP','SP','SP','SP','SP','SP','SP','SP','SP','SP'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
 ];
 
 // Vegas Strip: 4 decks, S17, DAS
 const HARD_VEGAS: Action[][] = [
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','D','D','D','D','H','H','H','H','H'],
-    ['D','D','D','D','D','D','D','D','H','H'],
-    ['D','D','D','D','D','D','D','D','D','D'],
-    ['H','H','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','S','S','S','S','S'],
-    ['S','S','S','S','S','S','S','S','S','S'], // 18
-    ['S','S','S','S','S','S','S','S','S','S'], // 19
-    ['S','S','S','S','S','S','S','S','S','S'], // 20
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D'],
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
 ];
 const SOFT_VEGAS: Action[][] = [
-    ['H','H','H','D','D','H','H','H','H','H'],
-    ['H','H','H','D','D','H','H','H','H','H'],
-    ['H','H','D','D','D','H','H','H','H','H'],
-    ['H','H','D','D','D','H','H','H','H','H'],
-    ['H','D','D','D','D','H','H','H','H','H'],
-    ['DS','DS','DS','DS','DS','S','S','H','H','H'],
-    ['S','S','S','S','DS','S','S','S','S','S'],
-    ['S','S','S','S','S','S','S','S','S','S'],
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['DS', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'DS', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
 const PAIRS_VEGAS: Action[][] = PAIRS_CLASSIC;
 
@@ -133,9 +133,10 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
             : (isVegas ? PAIRS_VEGAS : PAIRS_CLASSIC);
 
     const tabConfig: Record<Tab, { label: string; rowTitle: string }> = {
-        hard:  { label: 'Hard Totals', rowTitle: 'Hand' },
-        soft:  { label: 'Soft Totals', rowTitle: 'Hand' },
-        pairs: { label: 'Pairs',       rowTitle: 'Pair' },
+        hard: { label: 'Hard Totals', rowTitle: 'Hand' },
+        soft: { label: 'Soft Totals', rowTitle: 'Hand' },
+        pairs: { label: 'Pairs', rowTitle: 'Pair' },
+        counting: { label: 'Card Counting', rowTitle: '' },
     };
 
     return (
@@ -201,7 +202,7 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
 
                 {/* Tabs */}
                 <div className="flex px-6 pt-1" style={{ background: 'rgba(0,0,0,0.15)' }}>
-                    {(['hard','soft','pairs'] as Tab[]).map((t) => {
+                    {(['hard', 'soft', 'pairs', 'counting'] as Tab[]).map((t) => {
                         const active = tab === t;
                         return (
                             <button
@@ -227,160 +228,336 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                 {/* Chart Body */}
                 <div className="overflow-y-auto flex-1 px-6 pt-5 pb-6">
 
-                    {/* Proper HTML table for perfect alignment */}
-                    <div className="w-full overflow-x-auto">
-                        <table
-                            className="w-full border-separate"
-                            style={{ borderSpacing: '3px' }}
-                        >
-                            <thead>
-                                {/* Row 1: Player label + spanning Dealer label */}
-                                <tr>
-                                    <th
-                                        className="text-[10px] font-bold uppercase tracking-[0.15em] text-center align-bottom pb-1"
-                                        style={{
-                                            color: 'rgba(255,255,255,0.30)',
-                                            width: 64,
-                                            minWidth: 64,
-                                            fontFamily: "'Georgia', serif",
-                                        }}
-                                    >
-                                        {tabConfig[tab].rowTitle}
-                                    </th>
-                                    <th
-                                        colSpan={10}
-                                        className="text-[10px] font-bold uppercase tracking-[0.2em] text-center pb-1"
-                                        style={{
-                                            color: `${room.accentColor}80`,
-                                            fontFamily: "'Georgia', serif",
-                                        }}
-                                    >
-                                        {'\u2500\u2500'} Dealer&apos;s Upcard {'\u2500\u2500'}
-                                    </th>
-                                </tr>
-                                {/* Row 2: Empty + upcard values */}
-                                <tr>
-                                    <th style={{ width: 64, minWidth: 64 }} />
-                                    {DEALER_UPCARDS.map((u) => (
-                                        <th
-                                            key={u}
-                                            className="text-center text-[13px] font-extrabold py-2 rounded"
-                                            style={{
-                                                color: 'rgba(240,230,214,0.90)',
-                                                background: 'rgba(255,255,255,0.06)',
-                                                border: '1px solid rgba(255,255,255,0.05)',
-                                                minWidth: 52,
-                                                fontFamily: "'Georgia', serif",
-                                            }}
-                                        >
-                                            {u}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
+                    {tab === 'counting' ? (
+                        /* ─── Card Counting Guide ─── */
+                        <div className="space-y-5">
 
-                            <tbody>
-                                {/* Spacer row */}
-                                <tr><td colSpan={11} style={{ height: 4 }} /></tr>
+                            {/* Introduction */}
+                            <div>
+                                <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                    Hi-Lo Card Counting System
+                                </p>
+                                <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.55)' }}>
+                                    Card counting is a mathematical technique to track the ratio of high-to-low cards remaining in the shoe.
+                                    When more high cards remain (10s, Aces), the player has an advantage — blackjacks become more likely
+                                    and the dealer busts more often on stiff hands (12-16).
+                                </p>
+                            </div>
 
-                                {rows.map((row, rowIdx) => (
-                                    <tr key={row}>
-                                        {/* Row label */}
-                                        <td
-                                            className="text-center text-[13px] font-extrabold rounded"
-                                            style={{
-                                                color: 'rgba(240,230,214,0.80)',
-                                                background: 'rgba(255,255,255,0.06)',
-                                                border: '1px solid rgba(255,255,255,0.05)',
-                                                padding: '8px 6px',
-                                                width: 64,
-                                                minWidth: 64,
-                                                fontFamily: "'Georgia', serif",
-                                            }}
-                                        >
-                                            {row}
-                                        </td>
-                                        {/* Action cells */}
-                                        {data[rowIdx].map((action, colIdx) => {
-                                            const st = ACTION_STYLES[action];
-                                            return (
-                                                <motion.td
-                                                    key={colIdx}
-                                                    className="text-center text-[13px] font-extrabold rounded select-none cursor-default"
-                                                        style={{
-                                                            background: st.bg,
-                                                            color: st.text,
-                                                            padding: '8px 4px',
-                                                            minWidth: 52,
-                                                            textShadow: '0 1px 2px rgba(0,0,0,0.35)',
-                                                    }}
-                                                    whileHover={{ scale: 1.12, zIndex: 10 }}
-                                                    title={st.desc}
-                                                >
-                                                    {st.label}
-                                                </motion.td>
-                                            );
-                                        })}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            <Ornament color={room.accentColor} />
 
-                    {/* Ornament separator */}
-                    <Ornament color={room.accentColor} />
-
-                    {/* Legend */}
-                    <div className="mt-5 px-0.5">
-                        <p
-                            className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold"
-                            style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}
-                        >
-                            Legend
-                        </p>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                            {(Object.entries(ACTION_STYLES) as [Action, typeof ACTION_STYLES[Action]][]).map(([, st]) => (
-                                <div key={st.label} className="flex items-center gap-3">
-                                    <div
-                                        className="shrink-0 rounded text-center text-[13px] font-extrabold"
-                                        style={{
-                                            background: st.bg,
-                                            color: st.text,
-                                            textShadow: '0 1px 2px rgba(0,0,0,0.35)',
-                                            boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
-                                            minWidth: 44,
-                                            padding: '6px 8px',
-                                        }}
-                                    >
-                                        {st.label}
-                                    </div>
-                                    <span
-                                        className="text-[12px] font-medium leading-snug"
-                                        style={{ color: 'rgba(240,230,214,0.65)' }}
-                                    >
-                                        {st.desc}
-                                    </span>
+                            {/* Hi-Lo Values Table */}
+                            <div>
+                                <p className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                    Card Values
+                                </p>
+                                <div className="w-full overflow-x-auto">
+                                    <table className="w-full border-separate" style={{ borderSpacing: '3px' }}>
+                                        <thead>
+                                            <tr>
+                                                <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Card</th>
+                                                <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Value</th>
+                                                <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Why</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'linear-gradient(135deg, #1b7a3e 0%, #14532d 100%)', color: '#d1fae5' }}>2, 3, 4, 5, 6</td>
+                                                <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(34,197,94,0.15)', color: '#86efac' }}>+1</td>
+                                                <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>Low cards removed = favorable</td>
+                                            </tr>
+                                            <tr><td colSpan={3} style={{ height: 2 }} /></tr>
+                                            <tr>
+                                                <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(240,230,214,0.7)' }}>7, 8, 9</td>
+                                                <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}>0</td>
+                                                <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>Neutral — no impact</td>
+                                            </tr>
+                                            <tr><td colSpan={3} style={{ height: 2 }} /></tr>
+                                            <tr>
+                                                <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'linear-gradient(135deg, #a8322c 0%, #8b1a1a 100%)', color: '#fde8e8' }}>10, J, Q, K, A</td>
+                                                <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5' }}>−1</td>
+                                                <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>High cards removed = unfavorable</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            </div>
 
-                    {/* Footnote */}
-                    <div
-                        className="mt-5 px-4 py-3.5 rounded-lg"
-                        style={{
-                            background: `linear-gradient(135deg, ${room.accentColor}08 0%, transparent 100%)`,
-                            border: `1px solid ${room.accentColor}18`,
-                        }}
-                    >
-                        <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.45)' }}>
-                            <span className="font-bold" style={{ color: 'rgba(240,230,214,0.65)', fontFamily: "'Georgia', serif" }}>Note:</span>{' '}
-                            Mathematically optimal basic strategy derived from statistical probability.
-                            Apply consistently over many hands for best results.{' '}
-                            Theoretical RTP:{' '}
-                            <span className="font-black" style={{ color: room.accentColor }}>{room.rtp}</span>
-                        </p>
-                    </div>
+                            <Ornament color={room.accentColor} />
+
+                            {/* Running Count */}
+                            <div>
+                                <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                    Step 1: Running Count (RC)
+                                </p>
+                                <p className="text-[12px] leading-relaxed mb-2" style={{ color: 'rgba(240,230,214,0.55)' }}>
+                                    Start at <span className="font-bold" style={{ color: 'rgba(240,230,214,0.8)' }}>0</span> after the shuffle.
+                                    For every card you see dealt (to any player or the dealer), add or subtract its Hi-Lo value.
+                                </p>
+                                <div className="rounded-lg px-4 py-3" style={{ background: `linear-gradient(135deg, ${room.accentColor}08 0%, transparent 100%)`, border: `1px solid ${room.accentColor}18` }}>
+                                    <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.6)' }}>
+                                        <span className="font-bold" style={{ color: room.accentColor }}>Example:</span>{' '}
+                                        Cards dealt: 5 (+1), K (−1), 3 (+1), 7 (0), A (−1) → RC = <span className="font-black" style={{ color: '#86efac' }}>0</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* True Count */}
+                            <div>
+                                <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                    Step 2: True Count (TC)
+                                </p>
+                                <p className="text-[12px] leading-relaxed mb-2" style={{ color: 'rgba(240,230,214,0.55)' }}>
+                                    Divide the Running Count by the estimated number of decks remaining in the shoe.
+                                    This normalizes the count across different shoe sizes.
+                                </p>
+                                <div className="rounded-lg px-4 py-3" style={{ background: `linear-gradient(135deg, ${room.accentColor}08 0%, transparent 100%)`, border: `1px solid ${room.accentColor}18` }}>
+                                    <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.6)' }}>
+                                        <span className="font-bold" style={{ color: room.accentColor }}>Formula:</span>{' '}
+                                        TC = RC ÷ Decks Remaining
+                                    </p>
+                                    <p className="text-[11px] leading-relaxed mt-1" style={{ color: 'rgba(240,230,214,0.45)' }}>
+                                        Example: RC = +6, 3 decks left → TC = <span className="font-black" style={{ color: '#86efac' }}>+2.0</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <Ornament color={room.accentColor} />
+
+                            {/* Betting Strategy */}
+                            <div>
+                                <p className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                    Step 3: Betting Strategy
+                                </p>
+                                <div className="space-y-2">
+                                    {[
+                                        { tc: 'TC ≤ −3', label: 'Sit Out', color: '#f87171', bg: 'rgba(239,68,68,0.12)', desc: 'Very unfavorable. Bet minimum or skip the hand.' },
+                                        { tc: 'TC −3 to −1', label: 'Min Bet', color: '#fca5a5', bg: 'rgba(239,68,68,0.08)', desc: 'Unfavorable. Keep bets at minimum.' },
+                                        { tc: 'TC −1 to +1', label: 'Flat Bet', color: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.04)', desc: 'Neutral. Bet table minimum — no edge.' },
+                                        { tc: 'TC +1 to +3', label: 'Raise', color: '#93c5fd', bg: 'rgba(59,130,246,0.1)', desc: 'Slightly favorable. Bet 2-3× minimum.' },
+                                        { tc: 'TC +3 to +5', label: 'High Bet', color: '#86efac', bg: 'rgba(34,197,94,0.12)', desc: 'Very favorable. Bet 3-5× minimum.' },
+                                        { tc: 'TC ≥ +5', label: 'Max Bet', color: '#fcd34d', bg: 'rgba(234,179,8,0.12)', desc: 'Extremely favorable. Bet 5-8× minimum!' },
+                                    ].map((row) => (
+                                        <div key={row.tc} className="flex items-center gap-3 rounded-lg px-3 py-2" style={{ background: row.bg, border: `1px solid ${row.color}25` }}>
+                                            <span className="text-[10px] font-black tracking-wider shrink-0 w-[90px]" style={{ color: row.color }}>{row.tc}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-wider shrink-0 w-[60px]" style={{ color: row.color }}>{row.label}</span>
+                                            <span className="text-[10px]" style={{ color: 'rgba(240,230,214,0.5)' }}>{row.desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <Ornament color={room.accentColor} />
+
+                            {/* Strategy Deviations */}
+                            <div>
+                                <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                    Advanced: Key Deviations (Illustrious 18)
+                                </p>
+                                <p className="text-[12px] leading-relaxed mb-3" style={{ color: 'rgba(240,230,214,0.45)' }}>
+                                    At certain True Counts, you should deviate from basic strategy. These are the most important:
+                                </p>
+                                <div className="w-full overflow-x-auto">
+                                    <table className="w-full border-separate" style={{ borderSpacing: '2px' }}>
+                                        <thead>
+                                            <tr>
+                                                {['Hand', 'Dealer', 'TC', 'Action'].map((h) => (
+                                                    <th key={h} className="text-[9px] font-bold uppercase tracking-wider text-center py-1.5 rounded" style={{ color: `${room.accentColor}80`, background: 'rgba(255,255,255,0.06)', fontFamily: "'Georgia', serif" }}>{h}</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {[
+                                                { hand: '16', dlr: '10', tc: '+0', action: 'Stand', note: 'Instead of Hit' },
+                                                { hand: '15', dlr: '10', tc: '+4', action: 'Stand', note: 'Instead of Hit' },
+                                                { hand: '12', dlr: '2', tc: '+3', action: 'Stand', note: 'Instead of Hit' },
+                                                { hand: '12', dlr: '3', tc: '+2', action: 'Stand', note: 'Instead of Hit' },
+                                                { hand: '10', dlr: '10', tc: '+4', action: 'Double', note: 'Instead of Hit' },
+                                                { hand: '10', dlr: 'A', tc: '+4', action: 'Double', note: 'Instead of Hit' },
+                                                { hand: 'Ins', dlr: 'A', tc: '+3', action: 'Take Insurance', note: 'Usually decline' },
+                                            ].map((row, i) => (
+                                                <tr key={i}>
+                                                    <td className="text-[11px] font-bold text-center py-1.5 rounded" style={{ color: 'rgba(240,230,214,0.7)', background: 'rgba(255,255,255,0.04)' }}>{row.hand}</td>
+                                                    <td className="text-[11px] font-bold text-center py-1.5 rounded" style={{ color: 'rgba(240,230,214,0.7)', background: 'rgba(255,255,255,0.04)' }}>{row.dlr}</td>
+                                                    <td className="text-[11px] font-black text-center py-1.5 rounded" style={{ color: '#86efac', background: 'rgba(34,197,94,0.08)' }}>{row.tc}</td>
+                                                    <td className="text-[10px] font-bold text-center py-1.5 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.04)' }}>{row.action}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Footnote */}
+                            <div className="rounded-lg px-4 py-3.5" style={{ background: `linear-gradient(135deg, ${room.accentColor}08 0%, transparent 100%)`, border: `1px solid ${room.accentColor}18` }}>
+                                <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.45)' }}>
+                                    <span className="font-bold" style={{ color: 'rgba(240,230,214,0.65)', fontFamily: "'Georgia', serif" }}>Note:</span>{' '}
+                                    Card counting is a <span className="font-bold" style={{ color: 'rgba(240,230,214,0.7)' }}>legal</span> skill, not cheating.
+                                    However, casinos may ask counters to leave.
+                                    This tool is for <span className="font-bold" style={{ color: room.accentColor }}>educational purposes only</span> — practice your skills in this simulation!
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        /* ─── Strategy Charts ─── */
+                        <>
+
+                            {/* Proper HTML table for perfect alignment */}
+                            <div className="w-full overflow-x-auto">
+                                <table
+                                    className="w-full border-separate"
+                                    style={{ borderSpacing: '3px' }}
+                                >
+                                    <thead>
+                                        {/* Row 1: Player label + spanning Dealer label */}
+                                        <tr>
+                                            <th
+                                                className="text-[10px] font-bold uppercase tracking-[0.15em] text-center align-bottom pb-1"
+                                                style={{
+                                                    color: 'rgba(255,255,255,0.30)',
+                                                    width: 64,
+                                                    minWidth: 64,
+                                                    fontFamily: "'Georgia', serif",
+                                                }}
+                                            >
+                                                {tabConfig[tab].rowTitle}
+                                            </th>
+                                            <th
+                                                colSpan={10}
+                                                className="text-[10px] font-bold uppercase tracking-[0.2em] text-center pb-1"
+                                                style={{
+                                                    color: `${room.accentColor}80`,
+                                                    fontFamily: "'Georgia', serif",
+                                                }}
+                                            >
+                                                {'\u2500\u2500'} Dealer&apos;s Upcard {'\u2500\u2500'}
+                                            </th>
+                                        </tr>
+                                        {/* Row 2: Empty + upcard values */}
+                                        <tr>
+                                            <th style={{ width: 64, minWidth: 64 }} />
+                                            {DEALER_UPCARDS.map((u) => (
+                                                <th
+                                                    key={u}
+                                                    className="text-center text-[13px] font-extrabold py-2 rounded"
+                                                    style={{
+                                                        color: 'rgba(240,230,214,0.90)',
+                                                        background: 'rgba(255,255,255,0.06)',
+                                                        border: '1px solid rgba(255,255,255,0.05)',
+                                                        minWidth: 52,
+                                                        fontFamily: "'Georgia', serif",
+                                                    }}
+                                                >
+                                                    {u}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        {/* Spacer row */}
+                                        <tr><td colSpan={11} style={{ height: 4 }} /></tr>
+
+                                        {rows.map((row, rowIdx) => (
+                                            <tr key={row}>
+                                                {/* Row label */}
+                                                <td
+                                                    className="text-center text-[13px] font-extrabold rounded"
+                                                    style={{
+                                                        color: 'rgba(240,230,214,0.80)',
+                                                        background: 'rgba(255,255,255,0.06)',
+                                                        border: '1px solid rgba(255,255,255,0.05)',
+                                                        padding: '8px 6px',
+                                                        width: 64,
+                                                        minWidth: 64,
+                                                        fontFamily: "'Georgia', serif",
+                                                    }}
+                                                >
+                                                    {row}
+                                                </td>
+                                                {/* Action cells */}
+                                                {data[rowIdx].map((action, colIdx) => {
+                                                    const st = ACTION_STYLES[action];
+                                                    return (
+                                                        <motion.td
+                                                            key={colIdx}
+                                                            className="text-center text-[13px] font-extrabold rounded select-none cursor-default"
+                                                            style={{
+                                                                background: st.bg,
+                                                                color: st.text,
+                                                                padding: '8px 4px',
+                                                                minWidth: 52,
+                                                                textShadow: '0 1px 2px rgba(0,0,0,0.35)',
+                                                            }}
+                                                            whileHover={{ scale: 1.12, zIndex: 10 }}
+                                                            title={st.desc}
+                                                        >
+                                                            {st.label}
+                                                        </motion.td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Ornament separator */}
+                            <Ornament color={room.accentColor} />
+
+                            {/* Legend */}
+                            <div className="mt-5 px-0.5">
+                                <p
+                                    className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold"
+                                    style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}
+                                >
+                                    Legend
+                                </p>
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                                    {(Object.entries(ACTION_STYLES) as [Action, typeof ACTION_STYLES[Action]][]).map(([, st]) => (
+                                        <div key={st.label} className="flex items-center gap-3">
+                                            <div
+                                                className="shrink-0 rounded text-center text-[13px] font-extrabold"
+                                                style={{
+                                                    background: st.bg,
+                                                    color: st.text,
+                                                    textShadow: '0 1px 2px rgba(0,0,0,0.35)',
+                                                    boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                                                    minWidth: 44,
+                                                    padding: '6px 8px',
+                                                }}
+                                            >
+                                                {st.label}
+                                            </div>
+                                            <span
+                                                className="text-[12px] font-medium leading-snug"
+                                                style={{ color: 'rgba(240,230,214,0.65)' }}
+                                            >
+                                                {st.desc}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Footnote */}
+                            <div
+                                className="mt-5 px-4 py-3.5 rounded-lg"
+                                style={{
+                                    background: `linear-gradient(135deg, ${room.accentColor}08 0%, transparent 100%)`,
+                                    border: `1px solid ${room.accentColor}18`,
+                                }}
+                            >
+                                <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.45)' }}>
+                                    <span className="font-bold" style={{ color: 'rgba(240,230,214,0.65)', fontFamily: "'Georgia', serif" }}>Note:</span>{' '}
+                                    Mathematically optimal basic strategy derived from statistical probability.
+                                    Apply consistently over many hands for best results.{' '}
+                                    Theoretical RTP:{' '}
+                                    <span className="font-black" style={{ color: room.accentColor }}>{room.rtp}</span>
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </div>
             </motion.div>
         </motion.div>

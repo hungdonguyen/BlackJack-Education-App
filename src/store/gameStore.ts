@@ -7,13 +7,21 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { GameStore } from '@/types/game';
 import { createBettingSlice } from './bettingSlice';
 import { createGameFlowSlice } from './gameFlowSlice';
-import { tauriStorage, isTauriEnv } from '@/utils/saveFile';
+import { isTauriEnv } from '@/utils/saveFile';
 
 /**
  * Main game store combining all slices.
- * - In Tauri (desktop): persists bankroll/claims to AppData/save.json
- * - In browser (dev):   falls back to localStorage
- * Match history is managed separately in AppData/history.json
+ *
+ * Storage strategy:
+ * - Zustand persist ALWAYS uses localStorage (both browser dev and Tauri).
+ *   This avoids any race condition where Zustand's own setItem overwrites
+ *   save.json with default values before the manual load completes.
+ *
+ * - In Tauri mode, save.json is managed EXCLUSIVELY by useStoreHydration:
+ *     • On mount: reads save.json and applies the saved state manually.
+ *     • On change: a store subscriber writes updated values to save.json.
+ *
+ * Match history is managed separately in AppData/history.json.
  */
 export const useGameStoreBase = create<GameStore>()(
   persist(
@@ -23,18 +31,21 @@ export const useGameStoreBase = create<GameStore>()(
     }),
     {
       name: 'blackjack-storage',
+      // Always use localStorage — never tauriStorage here.
+      // save.json is handled by the manual mechanism in useStoreHydration.
       storage: createJSONStorage(() =>
-        isTauriEnv() ? tauriStorage : {
-          getItem: async (name: string) => localStorage.getItem(name),
-          setItem: async (name: string, value: string) => localStorage.setItem(name, value),
-          removeItem: async (name: string) => localStorage.removeItem(name),
-        }
+        typeof window !== 'undefined'
+          ? {
+              getItem: (name: string) => localStorage.getItem(name),
+              setItem: (name: string, value: string) => localStorage.setItem(name, value),
+              removeItem: (name: string) => localStorage.removeItem(name),
+            }
+          : {
+              getItem: () => null,
+              setItem: () => {},
+              removeItem: () => {},
+            }
       ),
-
-      // Persist bankroll and daily claims always.
-      // In browser/dev mode (no Tauri), also persist matchHistory to localStorage
-      // since we cannot write history.json. In Tauri mode, history is managed
-      // separately in AppData/history.json to avoid bloating save.json.
       partialize: (state) => ({
         bankroll: state.bankroll,
         lastDailyClaim: state.lastDailyClaim,
@@ -44,4 +55,3 @@ export const useGameStoreBase = create<GameStore>()(
     }
   )
 );
-
