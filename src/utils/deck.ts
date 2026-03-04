@@ -52,11 +52,13 @@ export function createShoe(numDecks: number = NUM_DECKS): Shoe {
   return shoe;
 }
 
-/** Fisher-Yates shuffle — shuffles the shoe in place and returns it */
+/** Fisher-Yates shuffle using CSPRNG (crypto.getRandomValues) */
 export function shuffleShoe(shoe: Shoe): Shoe {
   const shuffled = [...shoe];
+  const randomBuffer = new Uint32Array(shuffled.length);
+  crypto.getRandomValues(randomBuffer);
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randomBuffer[i] % (i + 1);
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
