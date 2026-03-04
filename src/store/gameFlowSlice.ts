@@ -45,6 +45,9 @@ export interface GameFlowSlice {
   forceDealerBust: () => void;
   forceInsurance: () => void;
   forceDoubleSetup: () => void;
+
+  // History
+  setMatchHistory: (records: MatchRecord[]) => void;
 }
 
 /** Get the current active hand being played */
@@ -599,7 +602,19 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
 
     const dealerValue = calculateHandValue(state.dealerHand.cards);
     const dealerBust = dealerValue.total > 21;
-    const bankrollBefore = state.bankroll;
+
+    let totalStaked = 0;
+    state.seats.forEach(seat => {
+      if (!seat.isActive) return;
+      seat.hands.forEach(hand => {
+        totalStaked += (hand.betAmount - (hand.freeBetAmount || 0));
+      });
+      if (state.insuranceBets[seat.id]) {
+        totalStaked += state.insuranceBets[seat.id];
+      }
+    });
+
+    const bankrollBefore = state.bankroll + totalStaked;
 
     let totalPayout = 0;
 
@@ -917,4 +932,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const s1   = pick((c) => c.value === 9);   // seat card 1
     shoe.push(hole, up, s2, s1);
     set({ shoe });
-  },});
+  },
+
+  setMatchHistory: (records: MatchRecord[]) => {
+    set({ matchHistory: records });
+  },
+});

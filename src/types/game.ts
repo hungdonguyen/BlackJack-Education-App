@@ -161,6 +161,9 @@ export interface GameActions {
   forceInsurance: () => void;
   forceDoubleSetup: () => void;
   setBankroll: (amount: number) => void;
+
+  // History
+  setMatchHistory: (records: MatchRecord[]) => void;
 }
 
 /** Combined store type */

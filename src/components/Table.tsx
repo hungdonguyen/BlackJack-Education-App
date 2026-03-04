@@ -23,6 +23,8 @@ import PortraitOverlay from './PortraitOverlay';
 import PayoutPanel from './PayoutPanel';
 import StrategyModal from './StrategyModal';
 import HandAdvisor from './HandAdvisor';
+import MatchDetailModal from './MatchDetailModal';
+import { loadHistory, appendHistory } from '@/utils/saveFile';
 
 const TURN_TIMER_SECONDS = 30;
 
@@ -38,6 +40,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const stand = useGameStore((s) => s.stand);
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
     const matchHistory = useGameStore((s) => s.matchHistory);
+    const setMatchHistory = useGameStore((s) => s.setMatchHistory);
     const lastDailyClaim = useGameStore((s) => s.lastDailyClaim);
     const claimDaily = useGameStore((s) => s.claimDaily);
     const setCurrentRoom = useGameStore((s) => s.setCurrentRoom);
@@ -53,6 +56,31 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const [timer, setTimer] = useState(TURN_TIMER_SECONDS);
     const [winNotification, setWinNotification] = useState<{ amount: number; isWin: boolean; isPush?: boolean } | null>(null);
     const [claimCooldown, setClaimCooldown] = useState('');
+    const [selectedMatchIndex, setSelectedMatchIndex] = useState<number | null>(null);
+
+    // ─── File Save: load history on mount, append on new records ─────────
+    const prevHistoryLen = useRef(matchHistory.length);
+
+    useEffect(() => {
+        if (!isHydrated) return;
+        loadHistory().then((records) => {
+            if (records.length > 0) {
+                // Update ref FIRST (synchronous) so the append effect below
+                // doesn't fire for records we just loaded from disk.
+                prevHistoryLen.current = records.length;
+                setMatchHistory(records);
+            }
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isHydrated]);
+
+    useEffect(() => {
+        if (matchHistory.length > prevHistoryLen.current) {
+            const latest = matchHistory[matchHistory.length - 1];
+            appendHistory(latest);
+        }
+        prevHistoryLen.current = matchHistory.length;
+    }, [matchHistory.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const isPlayerTurn = gamePhase === GamePhase.PLAYER_TURN;
     const isPayout = gamePhase === GamePhase.PAYOUT;
@@ -396,7 +424,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
             {/* Match History — right side, always below logo */}
             <div className="absolute top-[88px] right-[12px] z-15">
-                <HistoryPanel />
+                <HistoryPanel onMatchClick={(idx) => setSelectedMatchIndex(idx)} />
             </div>
 
             {/* Action Buttons — center */}
@@ -570,6 +598,19 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             <AnimatePresence>
                 {showStrategy && <StrategyModal room={room} onClose={() => setShowStrategy(false)} />}
             </AnimatePresence>
+
+            {/* Match Detail Modal */}
+            <AnimatePresence>
+                {selectedMatchIndex !== null && matchHistory[selectedMatchIndex] && (
+                    <MatchDetailModal
+                        match={matchHistory[selectedMatchIndex]}
+                        allMatches={matchHistory}
+                        currentIndex={selectedMatchIndex}
+                        onNavigate={(idx) => setSelectedMatchIndex(idx)}
+                        onClose={() => setSelectedMatchIndex(null)}
+                    />
+                )}
+            </AnimatePresence>
         </>
     );
 }
@@ -609,9 +650,11 @@ function GamePhaseIndicator({ phase }: { phase: GamePhase }) {
     );
 }
 
-function HistoryPanel() {
+function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void }) {
     const matchHistory = useGameStore((s) => s.matchHistory);
     const lastMatches = matchHistory.slice(-8).reverse();
+    // Map reversed display index back to the real matchHistory index
+    const totalLen = matchHistory.length;
 
     if (lastMatches.length === 0) return null;
 
@@ -625,9 +668,12 @@ function HistoryPanel() {
                 <span className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/40">History</span>
             </div>
             <div className="p-2 space-y-1 max-h-[250px] overflow-y-auto">
-                {lastMatches.map((match) => {
+                {lastMatches.map((match, displayIdx) => {
                     const result = match.seats[0]?.hands[0];
                     if (!result) return null;
+
+                    // Real index in the matchHistory array
+                    const realIdx = totalLen - 1 - displayIdx;
 
                     let diff = 0;
                     match.seats.forEach(s => {
@@ -658,7 +704,8 @@ function HistoryPanel() {
                     }
 
                     return (
-                        <div key={match.id} className="flex items-center justify-between px-1.5 py-1 rounded bg-white/[0.02]">
+                        <div key={match.id} onClick={() => onMatchClick(realIdx)}
+                            className="flex items-center justify-between px-1.5 py-1 rounded bg-white/2 hover:bg-white/5 cursor-pointer transition-colors">
                             <div className="flex items-center gap-1.5">
                                 <span className={`text-[7px] font-bold px-1 py-0.5 rounded
                                     ${match.roomId === 'vegas_strip' ? 'bg-purple-500/15 text-purple-400' : 'bg-amber-500/15 text-amber-400'}`}
