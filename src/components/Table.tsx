@@ -86,6 +86,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const isPlayerTurn = gamePhase === GamePhase.PLAYER_TURN;
     const isPayout = gamePhase === GamePhase.PAYOUT;
     const isVegasStrip = roomId === 'vegas_strip';
+    const isVegasDowntown = roomId === 'vegas_downtown';
 
     const totalBet = seats
         .filter((s) => s.isActive)
@@ -212,7 +213,11 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     };
 
     // Logo paths
-    const logoPath = isVegasStrip ? '/images/logo/Vegas_trip_blackjack.png' : '/images/logo/blackjack_vip_logo.avif';
+    const logoPath = roomId === 'vegas_strip'
+        ? '/images/logo/Vegas_trip_blackjack.png'
+        : roomId === 'vegas_downtown'
+        ? '/images/logo/Vegas_Downtown_Logo.png'
+        : '/images/logo/Classic_Online_Logo.png';
 
     const isBonusClaim = (dailyClaimCount + 1) % 3 === 0;
 
@@ -693,7 +698,7 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                         }
                     });
 
-                    const roomLabel = match.roomId === 'vegas_strip' ? 'VS' : 'VIP';
+                    const roomLabel = match.roomId === 'vegas_strip' ? 'VS' : match.roomId === 'vegas_downtown' ? 'VD' : 'VIP';
 
                     // Determine overall label character based on net profit diff
                     let labelStr = 'P';
@@ -712,7 +717,7 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                             className="flex items-center justify-between px-1.5 py-1 rounded bg-white/2 hover:bg-white/5 cursor-pointer transition-colors">
                             <div className="flex items-center gap-1.5">
                                 <span className={`text-[7px] font-bold px-1 py-0.5 rounded
-                                    ${match.roomId === 'vegas_strip' ? 'bg-purple-500/15 text-purple-400' : 'bg-amber-500/15 text-amber-400'}`}
+                                    ${match.roomId === 'vegas_strip' ? 'bg-purple-500/15 text-purple-400' : match.roomId === 'vegas_downtown' ? 'bg-sky-500/15 text-sky-400' : 'bg-amber-500/15 text-amber-400'}`}
                                 >{roomLabel}</span>
                                 <span className={`text-[9px] font-bold uppercase ${colorClass}`}>
                                     {labelStr}
@@ -767,7 +772,7 @@ function RulesModal({ room, onClose }: { room: ReturnType<typeof getRoomConfig>;
                                 <div className="bg-white/5 p-2 rounded-lg border border-white/5">
                                     <strong className="text-white/80 block mb-0.5 text-xs"><ArrowLeftRight size={12} className="inline text-purple-400 mr-1" />Split</strong>
                                     <p className="text-[10px] text-white/40 leading-snug">
-                                        {room.id === 'vegas_strip'
+                                        {room.id === 'vegas_strip' || room.id === 'vegas_downtown'
                                             ? 'If your first two cards have the same point value (e.g. 8–8 or J–K), double your bet to split them into two separate hands. Aces may only be split once and receive one card each. Double after split is allowed. Maximum 4 hands per seat.'
                                             : 'If your first two cards are the same rank (e.g. 8–8, J–J, K–K), double your bet to split them into two separate hands. Aces may be re-split. Maximum 4 hands per seat.'}
                                     </p>
@@ -799,6 +804,11 @@ function RulesModal({ room, onClose }: { room: ReturnType<typeof getRoomConfig>;
                             {room.id === 'vegas_strip' && (
                                 <p className="text-xs text-white/40 leading-relaxed mt-1">
                                     The dealer stands on <strong className="text-white/60">all 17s</strong>, including Soft 17 (Ace + 6). This is more favourable to the player than Hit Soft 17.
+                                </p>
+                            )}
+                            {room.id === 'vegas_downtown' && (
+                                <p className="text-xs text-white/40 leading-relaxed mt-1">
+                                    The dealer must hit on <strong className="text-white/60">Soft 17</strong> (Ace + 6).
                                 </p>
                             )}
                         </RuleSection>

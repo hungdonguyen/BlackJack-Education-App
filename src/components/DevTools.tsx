@@ -12,12 +12,12 @@ import { GamePhase } from '@/types/enums';
 
 // ─── Phase badge colours ───
 const PHASE_COLORS: Record<string, string> = {
-    [GamePhase.BETTING]:      'bg-amber-500/20 text-amber-300',
-    [GamePhase.DEALING]:      'bg-sky-500/20 text-sky-300',
-    [GamePhase.INSURANCE]:    'bg-yellow-500/20 text-yellow-300',
-    [GamePhase.PLAYER_TURN]:  'bg-emerald-500/20 text-emerald-300',
-    [GamePhase.DEALER_TURN]:  'bg-red-500/20 text-red-300',
-    [GamePhase.PAYOUT]:       'bg-purple-500/20 text-purple-300',
+    [GamePhase.BETTING]: 'bg-amber-500/20 text-amber-300',
+    [GamePhase.DEALING]: 'bg-sky-500/20 text-sky-300',
+    [GamePhase.INSURANCE]: 'bg-yellow-500/20 text-yellow-300',
+    [GamePhase.PLAYER_TURN]: 'bg-emerald-500/20 text-emerald-300',
+    [GamePhase.DEALER_TURN]: 'bg-red-500/20 text-red-300',
+    [GamePhase.PAYOUT]: 'bg-purple-500/20 text-purple-300',
 };
 
 // Display a card as short string e.g. "A♠", "K♥"
@@ -31,36 +31,36 @@ export default function DevTools() {
     const router = useRouter();
 
     // ─── Store selectors ───
-    const gamePhase          = useGameStore((s) => s.gamePhase);
-    const bankroll           = useGameStore((s) => s.bankroll);
-    const seats              = useGameStore((s) => s.seats);
-    const dealerHand         = useGameStore((s) => s.dealerHand);
-    const shoe               = useGameStore((s) => s.shoe);
-    const currentSeatIndex   = useGameStore((s) => s.currentSeatIndex);
-    const matchHistory       = useGameStore((s) => s.matchHistory);
-    const addFunds           = useGameStore((s) => s.addFunds);
-    const setBankroll        = useGameStore((s) => s.setBankroll);
-    const forceBlackjack     = useGameStore((s) => s.forceBlackjack);
-    const forceBust          = useGameStore((s) => s.forceBust);
-    const forcePush          = useGameStore((s) => s.forcePush);
-    const forceDealerBust    = useGameStore((s) => s.forceDealerBust);
-    const forceInsurance     = useGameStore((s) => s.forceInsurance);
-    const forceDoubleSetup   = useGameStore((s) => s.forceDoubleSetup);
+    const gamePhase = useGameStore((s) => s.gamePhase);
+    const bankroll = useGameStore((s) => s.bankroll);
+    const seats = useGameStore((s) => s.seats);
+    const dealerHand = useGameStore((s) => s.dealerHand);
+    const shoe = useGameStore((s) => s.shoe);
+    const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
+    const matchHistory = useGameStore((s) => s.matchHistory);
+    const addFunds = useGameStore((s) => s.addFunds);
+    const setBankroll = useGameStore((s) => s.setBankroll);
+    const forceBlackjack = useGameStore((s) => s.forceBlackjack);
+    const forceBust = useGameStore((s) => s.forceBust);
+    const forcePush = useGameStore((s) => s.forcePush);
+    const forceDealerBust = useGameStore((s) => s.forceDealerBust);
+    const forceInsurance = useGameStore((s) => s.forceInsurance);
+    const forceDoubleSetup = useGameStore((s) => s.forceDoubleSetup);
     const forceSplitScenario = useGameStore((s) => s.forceSplitScenario);
     const forceAceSplitScenario = useGameStore((s) => s.forceAceSplitScenario);
-    const calculatePayouts   = useGameStore((s) => s.calculatePayouts);
-    const resetRound         = useGameStore((s) => s.resetRound);
+    const calculatePayouts = useGameStore((s) => s.calculatePayouts);
+    const resetRound = useGameStore((s) => s.resetRound);
 
-    const [collapsed, setCollapsed]         = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
     const [bankrollInput, setBankrollInput] = useState('');
-    const [openSection, setOpenSection]     = useState<string | null>('state');
+    const [openSection, setOpenSection] = useState<string | null>('state');
 
     // Only show in development
     if (process.env.NODE_ENV !== 'development') return null;
 
     const activeSeats = seats.filter((s) => s.isActive);
     const dealerVisible = dealerHand.cards.filter((c) => !c.isHidden);
-    const dealerValue   = dealerVisible.length > 0 ? calculateHandValue(dealerVisible) : null;
+    const dealerValue = dealerVisible.length > 0 ? calculateHandValue(dealerVisible) : null;
 
     const handleClearStorage = () => {
         if (typeof window !== 'undefined') {
@@ -130,10 +130,10 @@ export default function DevTools() {
                                             const hv = hand.cards.length > 0 ? calculateHandValue(hand.cards) : null;
                                             const statusColor =
                                                 hand.status === 'BUST' ? 'bg-red-500/20 text-red-400' :
-                                                hand.status === 'BLACKJACK' ? 'bg-yellow-500/20 text-yellow-300' :
-                                                hand.status === 'WON' ? 'bg-emerald-500/15 text-emerald-400' :
-                                                hand.status === 'LOST' ? 'bg-red-500/15 text-red-400' :
-                                                hand.status === 'PUSH' ? 'bg-sky-500/15 text-sky-400' : 'text-white/15';
+                                                    hand.status === 'BLACKJACK' ? 'bg-yellow-500/20 text-yellow-300' :
+                                                        hand.status === 'WON' ? 'bg-emerald-500/15 text-emerald-400' :
+                                                            hand.status === 'LOST' ? 'bg-red-500/15 text-red-400' :
+                                                                hand.status === 'PUSH' ? 'bg-sky-500/15 text-sky-400' : 'text-white/15';
                                             return (
                                                 <div key={hi} className="mb-0.5">
                                                     <div className="flex flex-wrap gap-0.5 mb-0.5">
@@ -162,25 +162,25 @@ export default function DevTools() {
                             badge={gamePhase !== GamePhase.BETTING ? '⚡ BETTING only' : undefined}>
                             <div className="space-y-0.5">
                                 <GroupLabel>Player hand</GroupLabel>
-                                <DevBtn label="Blackjack  (A + K)"     onClick={forceBlackjack}      disabled={gamePhase !== GamePhase.BETTING} />
-                                <DevBtn label="Bust  (16 → hit 10)"    onClick={forceBust}           disabled={gamePhase !== GamePhase.BETTING} />
-                                <DevBtn label="Push  (20 vs 20)"       onClick={forcePush}           disabled={gamePhase !== GamePhase.BETTING} color="sky" />
-                                <DevBtn label="Double  (9 + 2 = 11)"   onClick={forceDoubleSetup}    disabled={gamePhase !== GamePhase.BETTING} color="sky" />
+                                <DevBtn label="Blackjack  (A + K)" onClick={forceBlackjack} disabled={gamePhase !== GamePhase.BETTING} />
+                                <DevBtn label="Bust  (16 → hit 10)" onClick={forceBust} disabled={gamePhase !== GamePhase.BETTING} />
+                                <DevBtn label="Push  (20 vs 20)" onClick={forcePush} disabled={gamePhase !== GamePhase.BETTING} color="sky" />
+                                <DevBtn label="Double  (9 + 2 = 11)" onClick={forceDoubleSetup} disabled={gamePhase !== GamePhase.BETTING} color="sky" />
                                 <GroupLabel className="mt-2">Dealer outcome</GroupLabel>
-                                <DevBtn label="Dealer Bust (6+10 hit)" onClick={forceDealerBust}     disabled={gamePhase !== GamePhase.BETTING} color="orange" />
-                                <DevBtn label="Insurance  (Ace up)"    onClick={forceInsurance}      disabled={gamePhase !== GamePhase.BETTING} color="orange" />
+                                <DevBtn label="Dealer Bust (6+10 hit)" onClick={forceDealerBust} disabled={gamePhase !== GamePhase.BETTING} color="orange" />
+                                <DevBtn label="Insurance  (Ace up)" onClick={forceInsurance} disabled={gamePhase !== GamePhase.BETTING} color="orange" />
                                 <GroupLabel className="mt-2">Split</GroupLabel>
-                                <DevBtn label="Split  8 – 8"           onClick={forceSplitScenario}    disabled={gamePhase !== GamePhase.BETTING} color="purple" />
-                                <DevBtn label="Split  A – A"           onClick={forceAceSplitScenario} disabled={gamePhase !== GamePhase.BETTING} color="purple" />
+                                <DevBtn label="Split  8 – 8" onClick={forceSplitScenario} disabled={gamePhase !== GamePhase.BETTING} color="purple" />
+                                <DevBtn label="Split  A – A" onClick={forceAceSplitScenario} disabled={gamePhase !== GamePhase.BETTING} color="purple" />
                             </div>
                         </DevSection>
 
                         {/* ══ PHASE CONTROLS ══ */}
                         <DevSection title="Phase Controls" id="phase" open={openSection} toggle={toggleSection}>
                             <div className="space-y-0.5">
-                                <DevBtn label="⏩ Skip to Payout"  onClick={calculatePayouts}
+                                <DevBtn label="⏩ Skip to Payout" onClick={calculatePayouts}
                                     disabled={gamePhase === GamePhase.BETTING || gamePhase === GamePhase.PAYOUT} color="purple" />
-                                <DevBtn label="↺ Reset Round"       onClick={resetRound}
+                                <DevBtn label="↺ Reset Round" onClick={resetRound}
                                     disabled={gamePhase === GamePhase.BETTING} color="orange" />
                             </div>
                         </DevSection>
@@ -188,9 +188,9 @@ export default function DevTools() {
                         {/* ══ BANKROLL ══ */}
                         <DevSection title="Bankroll" id="bankroll" open={openSection} toggle={toggleSection}>
                             <div className="space-y-0.5 mb-2">
-                                <DevBtn label="+$1,000"              onClick={() => addFunds(1_000)} />
-                                <DevBtn label="+$10,000"             onClick={() => addFunds(10_000)} />
-                                <DevBtn label="+$1,000,000"          onClick={() => addFunds(1_000_000)} />
+                                <DevBtn label="+$1,000" onClick={() => addFunds(1_000)} />
+                                <DevBtn label="+$10,000" onClick={() => addFunds(10_000)} />
+                                <DevBtn label="+$1,000,000" onClick={() => addFunds(1_000_000)} />
                                 <DevBtn label="Set $0  (test broke)" onClick={() => setBankroll(0)} color="danger" />
                             </div>
                             <div className="flex gap-1.5">
@@ -211,10 +211,11 @@ export default function DevTools() {
                         {/* ══ NAVIGATION ══ */}
                         <DevSection title="Navigation" id="nav" open={openSection} toggle={toggleSection}>
                             <div className="space-y-0.5">
-                                <DevBtn label="Classic VIP"  onClick={() => router.push('/game/classic')} />
-                                <DevBtn label="Vegas Strip"  onClick={() => router.push('/game/vegas_strip')} color="purple" />
-                                <DevBtn label="Lobby"        onClick={() => router.push('/lobby')} color="sky" />
-                                <DevBtn label="Home"         onClick={() => router.push('/')} color="sky" />
+                                <DevBtn label="Classic VIP" onClick={() => router.push('/game/classic')} />
+                                <DevBtn label="Vegas Strip" onClick={() => router.push('/game/vegas_strip')} color="purple" />
+                                <DevBtn label="Vegas Dwtwn" onClick={() => router.push('/game/vegas_downtown')} color="sky" />
+                                <DevBtn label="Lobby" onClick={() => router.push('/lobby')} color="sky" />
+                                <DevBtn label="Home" onClick={() => router.push('/')} color="sky" />
                             </div>
                         </DevSection>
 
@@ -277,17 +278,16 @@ function DevBtn({
     disabled?: boolean;
 }) {
     const colors: Record<string, string> = {
-        green:  'text-emerald-400 hover:bg-emerald-500/15',
-        sky:    'text-sky-300 hover:bg-sky-500/15',
+        green: 'text-emerald-400 hover:bg-emerald-500/15',
+        sky: 'text-sky-300 hover:bg-sky-500/15',
         purple: 'text-violet-400 hover:bg-violet-500/15',
         orange: 'text-orange-400 hover:bg-orange-500/15',
         danger: 'text-red-400 hover:bg-red-500/15',
     };
     return (
         <button onClick={onClick} disabled={disabled}
-            className={`block w-full text-left px-2 py-1 rounded text-[10px] transition-colors duration-100 ${
-                disabled ? 'text-white/15 cursor-not-allowed' : `cursor-pointer ${colors[color]}`
-            }`}
+            className={`block w-full text-left px-2 py-1 rounded text-[10px] transition-colors duration-100 ${disabled ? 'text-white/15 cursor-not-allowed' : `cursor-pointer ${colors[color]}`
+                }`}
         >
             {label}
         </button>

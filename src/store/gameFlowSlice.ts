@@ -114,8 +114,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     // Check if shoe needs reshuffling
     let shoe = [...state.shoe];
     const numDecks = currentRoomCfg.gameRules.numberOfDecks;
+    const reshuffleThreshold = currentRoomCfg.gameRules.reshuffleThreshold;
     
-    if (shoe.length === 0 || shouldReshuffle(shoe, numDecks)) {
+    if (shoe.length === 0 || shouldReshuffle(shoe, numDecks, reshuffleThreshold)) {
       shoe = shuffleShoe(createShoe(numDecks));
     }
 
@@ -784,8 +785,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     let shoe = state.shoe;
     const roomCfg = getRoomConfig(state.currentRoom);
     const numDecks = roomCfg.gameRules.numberOfDecks;
+    const reshuffleThreshold = roomCfg.gameRules.reshuffleThreshold;
     
-    if (shouldReshuffle(shoe, numDecks)) {
+    if (shouldReshuffle(shoe, numDecks, reshuffleThreshold)) {
       shoe = shuffleShoe(createShoe(numDecks));
     }
 

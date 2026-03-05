@@ -17,7 +17,7 @@ export default function HomePage() {
   const router = useRouter();
   const [accepted, setAccepted] = useState(false);
   const [showStrategy, setShowStrategy] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<'classic' | 'vegas_strip'>('classic');
+  const [selectedRoom, setSelectedRoom] = useState<'classic' | 'vegas_strip' | 'vegas_downtown'>('classic');
 
   const isHydrated = useStoreHydration();
   const bankroll = useGameStore((s) => s.bankroll);
@@ -227,7 +227,7 @@ export default function HomePage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                 >
-                  {(['classic', 'vegas_strip'] as const).map((roomId) => {
+                  {(['classic', 'vegas_strip', 'vegas_downtown'] as const).map((roomId) => {
                     const room = ROOMS[roomId];
                     const isActive = selectedRoom === roomId;
                     return (

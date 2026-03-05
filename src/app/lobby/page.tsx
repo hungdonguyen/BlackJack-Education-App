@@ -117,7 +117,7 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className="relative w-[75%] h-[65%] mx-auto">
                         <Image
-                            src={room.id === 'vegas_strip' ? '/images/logo/Vegas_trip_blackjack.png' : '/images/logo/blackjack_vip_logo.avif'}
+                            src={room.id === 'vegas_strip' ? '/images/logo/Vegas_trip_blackjack.png' : room.id === 'vegas_downtown' ? '/images/logo/Vegas_Downtown_Logo.png' : '/images/logo/Classic_Online_Logo.png'}
                             alt={room.name}
                             fill
                             className="object-contain drop-shadow-2xl"

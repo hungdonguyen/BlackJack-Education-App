@@ -7,7 +7,11 @@ export class ClassicRules implements IRules {
     blackjackPayoutMultiplier = 1.5; // 3:2
 
     canDoubleDown(hand: Hand): ActionValidity {
-        const allowed = hand.cards.length === 2 && hand.status === HandStatus.PLAYING;
+        // DAS allowed on regular splits; NOT on Ace splits (Ace split receives only 1 card).
+        const allowed =
+            hand.cards.length === 2 &&
+            hand.status === HandStatus.PLAYING &&
+            !hand.isAceSplit;
         return {
             allowed,
             isFree: false,
@@ -16,14 +20,16 @@ export class ClassicRules implements IRules {
     }
 
     canSplit(hand: Hand, seatHandsLength: number): ActionValidity {
-        // Classic rule: Split up to 4 hands total (3 splits).
+        // Classic Online rule: Split only once (max 2 hands per seat).
         // Must be same RANK (same face: J-J, 10-10), not just same value.
-        // (J and K both = 10 but cannot be split in Classic)
+        // (J and K both = 10 but cannot be split in Classic Online)
+        // Aces cannot be re-split.
         const allowed =
             hand.cards.length === 2 &&
             hand.status === HandStatus.PLAYING &&
             hand.cards[0].rank === hand.cards[1].rank &&
-            seatHandsLength < 4;
+            seatHandsLength < 2 &&
+            !hand.isAceSplit;
 
         return {
             allowed,

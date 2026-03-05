@@ -64,10 +64,12 @@ export function shuffleShoe(shoe: Shoe): Shoe {
   return shuffled;
 }
 
-/** Check if the shoe needs reshuffling (≤25% cards remaining) */
-export function shouldReshuffle(shoe: Shoe, numDecks: number = NUM_DECKS): boolean {
+/** Check if the shoe needs reshuffling.
+ *  @param threshold - fraction of total cards at which to reshuffle (default: RESHUFFLE_THRESHOLD = 0.25)
+ */
+export function shouldReshuffle(shoe: Shoe, numDecks: number = NUM_DECKS, threshold: number = RESHUFFLE_THRESHOLD): boolean {
   const totalCards = numDecks * 52;
-  return shoe.length <= totalCards * RESHUFFLE_THRESHOLD;
+  return shoe.length <= totalCards * threshold;
 }
 
 /** Deal a card from the top of the shoe (mutates the shoe array) */

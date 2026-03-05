@@ -16,22 +16,22 @@ import { HandStatus, Rank, Suit } from '@/types/enums';
 
 const RANK_VALUE: Record<Rank, number> = {
     [Rank.ACE]: 11,
-    [Rank.TWO]: 2,   [Rank.THREE]: 3, [Rank.FOUR]: 4,
-    [Rank.FIVE]: 5,  [Rank.SIX]: 6,   [Rank.SEVEN]: 7,
-    [Rank.EIGHT]: 8, [Rank.NINE]: 9,  [Rank.TEN]: 10,
+    [Rank.TWO]: 2, [Rank.THREE]: 3, [Rank.FOUR]: 4,
+    [Rank.FIVE]: 5, [Rank.SIX]: 6, [Rank.SEVEN]: 7,
+    [Rank.EIGHT]: 8, [Rank.NINE]: 9, [Rank.TEN]: 10,
     [Rank.JACK]: 10, [Rank.QUEEN]: 10, [Rank.KING]: 10,
 };
 
 const SUIT_PREFIX: Record<Suit, string> = {
     [Suit.HEARTS]: 'H', [Suit.DIAMONDS]: 'D',
-    [Suit.CLUBS]: 'C',  [Suit.SPADES]: 'S',
+    [Suit.CLUBS]: 'C', [Suit.SPADES]: 'S',
 };
 
 const RANK_SUFFIX: Record<Rank, string> = {
-    [Rank.ACE]: 'A',   [Rank.TWO]: '2',   [Rank.THREE]: '3',
-    [Rank.FOUR]: '4',  [Rank.FIVE]: '5',  [Rank.SIX]: '6',
+    [Rank.ACE]: 'A', [Rank.TWO]: '2', [Rank.THREE]: '3',
+    [Rank.FOUR]: '4', [Rank.FIVE]: '5', [Rank.SIX]: '6',
     [Rank.SEVEN]: '7', [Rank.EIGHT]: '8', [Rank.NINE]: '9',
-    [Rank.TEN]: '10',  [Rank.JACK]: 'J',  [Rank.QUEEN]: 'Q', [Rank.KING]: 'K',
+    [Rank.TEN]: '10', [Rank.JACK]: 'J', [Rank.QUEEN]: 'Q', [Rank.KING]: 'K',
 };
 
 function cardPath(suit: Suit, rank: Rank) {
@@ -71,13 +71,13 @@ function MiniCard({ suit, rank }: { suit: Suit; rank: Rank }) {
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
-    [HandStatus.WON]:       { label: 'WIN',       className: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' },
+    [HandStatus.WON]: { label: 'WIN', className: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' },
     [HandStatus.BLACKJACK]: { label: 'BLACKJACK', className: 'bg-amber-500/20  text-amber-300  border border-amber-500/30' },
-    [HandStatus.LOST]:      { label: 'LOSE',      className: 'bg-red-500/20    text-red-300    border border-red-500/30' },
-    [HandStatus.BUST]:      { label: 'BUST',      className: 'bg-red-600/20    text-red-400    border border-red-600/30' },
-    [HandStatus.PUSH]:      { label: 'PUSH',      className: 'bg-white/10      text-white/60   border border-white/20' },
-    [HandStatus.STAND]:     { label: 'STAND',     className: 'bg-white/10      text-white/60   border border-white/20' },
-    [HandStatus.PLAYING]:   { label: '—',         className: 'bg-white/10      text-white/40   border border-white/10' },
+    [HandStatus.LOST]: { label: 'LOSE', className: 'bg-red-500/20    text-red-300    border border-red-500/30' },
+    [HandStatus.BUST]: { label: 'BUST', className: 'bg-red-600/20    text-red-400    border border-red-600/30' },
+    [HandStatus.PUSH]: { label: 'PUSH', className: 'bg-white/10      text-white/60   border border-white/20' },
+    [HandStatus.STAND]: { label: 'STAND', className: 'bg-white/10      text-white/60   border border-white/20' },
+    [HandStatus.PLAYING]: { label: '—', className: 'bg-white/10      text-white/40   border border-white/10' },
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ export default function MatchDetailModal({
     onNavigate,
     onClose,
 }: MatchDetailModalProps) {
-    const roomLabel = match.roomId === 'vegas_strip' ? 'Vegas Strip' : 'Classic';
+    const roomLabel = match.roomId === 'vegas_strip' ? 'Vegas Strip' : match.roomId === 'vegas_downtown' ? 'Vegas Downtown' : 'Classic';
 
     // Net P&L for the round
     let totalBet = 0;
