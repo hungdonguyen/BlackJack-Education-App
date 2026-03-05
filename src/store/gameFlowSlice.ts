@@ -482,13 +482,19 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const newCard2 = dealCard(shoe);
 
     const isSplitAces = card1.value === 11;
-    const initialStatus = isSplitAces ? HandStatus.STAND : HandStatus.PLAYING;
+
+    // Check if the split hand immediately results in a 21
+    const is21Hand1 = !isSplitAces && calculateHandValue([card1, newCard1]).total === 21;
+    const is21Hand2 = !isSplitAces && calculateHandValue([card2, newCard2]).total === 21;
+
+    const initialStatus1 = (isSplitAces || is21Hand1) ? HandStatus.STAND : HandStatus.PLAYING;
+    const initialStatus2 = (isSplitAces || is21Hand2) ? HandStatus.STAND : HandStatus.PLAYING;
 
     const hand1: Hand = {
       id: `seat-${seat.id}-hand-${Date.now()}-1`,
       cards: [card1, newCard1],
       betAmount: splitBet,
-      status: initialStatus,
+      status: initialStatus1,
       freeBetAmount: currentHand.freeBetAmount,
       isAceSplit: isSplitAces,
     };
@@ -496,14 +502,14 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const hand2: Hand = {
       id: `seat-${seat.id}-hand-${Date.now()}-2`,
       cards: [card2, newCard2],
-      betAmount: splitBet, // Standard bet amount is same
-      status: initialStatus,
+      betAmount: splitBet,
+      status: initialStatus2,
       freeBetAmount: currentHand.freeBetAmount,
       isAceSplit: isSplitAces,
     };
 
     // A 21 on a split hand is not considered a Natural Blackjack, 
-    // so we leave the status as PLAYING (or STAND if it's Split Aces).
+    // but the status will automatically advance to STAND via initialStatus.
 
     const updatedSeats = state.seats.map((s, seatIdx) => {
       if (seatIdx !== state.currentSeatIndex) return s;
