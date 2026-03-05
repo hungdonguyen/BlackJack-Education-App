@@ -187,7 +187,7 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                                 Basic Strategy
                             </h2>
                             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] mt-0.5" style={{ color: `${room.accentColor}cc` }}>
-                                {room.name} {'\u2014'} {isVegas ? '4 Decks \u00b7 S17 \u00b7 Double After Split' : '6 Decks \u00b7 H17 \u00b7 Double After Split'}
+                                {room.name} {'\u2014'} {isVegas ? '4 Decks \u00b7 S17 \u00b7 Double After Split' : '6 Decks \u00b7 H17 \u00b7 Double After Split'} {'\u00b7'} {room.gameRules.allowSurrender ? 'Allow Surrender' : 'No Surrender'}
                             </p>
                         </div>
                     </div>

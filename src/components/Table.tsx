@@ -495,10 +495,10 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                         >
                             <div className={`px-8 py-4 rounded-xl backdrop-blur-md border ${winNotification.isPush
-                                    ? 'bg-gradient-to-r from-sky-500/15 to-blue-500/15 border-sky-400/30'
-                                    : winNotification.isWin
-                                        ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-yellow-400/40'
-                                        : 'bg-gradient-to-r from-red-500/20 to-red-700/20 border-red-400/30'
+                                ? 'bg-gradient-to-r from-sky-500/15 to-blue-500/15 border-sky-400/30'
+                                : winNotification.isWin
+                                    ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-yellow-400/40'
+                                    : 'bg-gradient-to-r from-red-500/20 to-red-700/20 border-red-400/30'
                                 }`}
                                 style={{
                                     boxShadow: winNotification.isPush
@@ -509,8 +509,8 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                 }}
                             >
                                 <p className={`text-center text-sm font-bold uppercase tracking-[0.3em] mb-1 ${winNotification.isPush
-                                        ? 'text-sky-300'
-                                        : winNotification.isWin ? 'text-yellow-300' : 'text-red-300'
+                                    ? 'text-sky-300'
+                                    : winNotification.isWin ? 'text-yellow-300' : 'text-red-300'
                                     }`}>
                                     {winNotification.isPush ? 'PUSH' : winNotification.isWin ? 'YOU WIN' : 'YOU LOSE'}
                                 </p>
@@ -578,17 +578,17 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
                     <div className="flex items-center gap-3">
                         <button onClick={() => setShowStrategy(true)}
-                            className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/50 text-[11px] font-bold uppercase tracking-wider hover:bg-white/10 hover:text-white/70 transition-all cursor-pointer"
-                        ><BookOpen size={14} className="mr-1 inline -mt-0.5" /> Strategy</button>
+                            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
+                        ><BookOpen size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Strategy</button>
                         <button onClick={() => setShowRules(true)}
-                            className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/50 text-[11px] font-bold uppercase tracking-wider hover:bg-white/10 hover:text-white/70 transition-all cursor-pointer"
-                        ><Info size={14} className="mr-1 inline -mt-0.5" /> Rules</button>
+                            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
+                        ><Info size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Rules</button>
                         <button onClick={() => router.push('/lobby')}
-                            className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/50 text-[11px] font-bold uppercase tracking-wider hover:bg-white/10 hover:text-white/70 transition-all cursor-pointer"
-                        ><Home size={14} className="mr-1 inline -mt-0.5" /> Lobby</button>
+                            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
+                        ><Home size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Lobby</button>
                         <button onClick={() => router.push('/')}
-                            className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/50 text-[11px] font-bold uppercase tracking-wider hover:bg-white/10 hover:text-white/70 transition-all cursor-pointer"
-                        ><Home size={14} className="mr-1 inline -mt-0.5" /> Home</button>
+                            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
+                        ><Home size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Home</button>
                     </div>
                 </div>
             </div>

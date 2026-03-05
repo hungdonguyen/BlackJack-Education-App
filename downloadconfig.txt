@@ -1,0 +1,7 @@
+Bản Portable / Executable trực tiếp (Mở lên chơi luôn, không cần cài đặt): 
+
+c:\Users\Maytinh\Desktop\BlackJack_Web\src-tauri\target\release\educational-blackjack.exe
+
+Bản Setup / Installer (File cài đặt setup vào máy): 
+
+c:\Users\Maytinh\Desktop\BlackJack_Web\src-tauri\target\release\bundle\nsis\Educational BlackJack_0.1.0_x64-setup.exe

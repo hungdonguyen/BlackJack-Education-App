@@ -60,20 +60,7 @@ export async function writeSaveFile(content: string): Promise<void> {
     }
 }
 
-// ─── Zustand Custom Storage Adapter ────────────────────────────────────
 
-export const tauriStorage = {
-    getItem: (_name: string) => readSaveFile(),
-    setItem: (_name: string, value: string) => writeSaveFile(value),
-    removeItem: async (_name: string) => {
-        if (!isTauriEnv()) return;
-        try {
-            const { remove, exists, BaseDirectory } = await getFs();
-            const ok = await exists(SAVE_FILE, { baseDir: BaseDirectory.AppConfig });
-            if (ok) await remove(SAVE_FILE, { baseDir: BaseDirectory.AppConfig });
-        } catch { /* ignore */ }
-    },
-};
 
 // ─── History File ───────────────────────────────────────────────────────
 

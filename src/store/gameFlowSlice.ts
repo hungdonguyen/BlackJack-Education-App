@@ -88,11 +88,18 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
 
-    // Must have at least one active seat with a bet
-    const hasActiveBets = state.seats.some(
-      (s) => s.isActive && s.hands.some((h) => h.betAmount > 0)
+    const currentRoomCfg = getRoomConfig(state.currentRoom);
+    const minBet = currentRoomCfg.betRange[0];
+
+    // Must have at least one active seat with a valid minimum bet
+    const activeSeatsList = state.seats.filter(s => s.isActive);
+    if (activeSeatsList.length === 0) return;
+
+    const hasValidBet = activeSeatsList.some(s => 
+      s.hands.reduce((sum, h) => sum + h.betAmount, 0) >= minBet
     );
-    if (!hasActiveBets) return;
+
+    if (!hasValidBet) return;
 
     // Transition to DEALING phase immediately to hide betting UI
     // Capture previous bets to allow rebet/x2 in the next round
@@ -106,15 +113,14 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
 
     // Check if shoe needs reshuffling
     let shoe = [...state.shoe];
-    const roomCfg = getRoomConfig(state.currentRoom);
-    const numDecks = roomCfg.gameRules.numberOfDecks;
+    const numDecks = currentRoomCfg.gameRules.numberOfDecks;
     
     if (shoe.length === 0 || shouldReshuffle(shoe, numDecks)) {
       shoe = shuffleShoe(createShoe(numDecks));
     }
 
     // Active seats that need cards
-    const activeSeats = state.seats.filter(
+    const dealingSeats = state.seats.filter(
       (s) => s.isActive && s.hands.some((h) => h.betAmount > 0)
     );
 
@@ -143,13 +149,13 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     };
 
     // --- First round of cards ---
-    for (const seat of activeSeats) {
+    for (const seat of dealingSeats) {
       await dealToSeat(seat.id);
     }
     await dealToDealer(false); // Face-up card
 
     // --- Second round of cards ---
-    for (const seat of activeSeats) {
+    for (const seat of dealingSeats) {
       await dealToSeat(seat.id);
     }
     await dealToDealer(true); // Hole card (hidden)
@@ -225,26 +231,35 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const state = get();
     if (state.gamePhase !== GamePhase.INSURANCE) return;
 
-    // Calculate insurance bets: half the original bet per active seat
-    const newInsuranceBets: Record<number, number> = {};
-    let totalInsuranceCost = 0;
+    const currentSeat = state.seats[state.currentSeatIndex];
+    if (!currentSeat || !currentSeat.isActive) return;
 
-    state.seats.forEach((seat) => {
-      if (!seat.isActive) return;
-      const mainBet = seat.hands[0]?.betAmount ?? 0;
-      if (mainBet > 0) {
-        const insuranceAmount = Math.floor(mainBet / 2);
-        if (insuranceAmount <= state.bankroll - totalInsuranceCost) {
-          newInsuranceBets[seat.id] = insuranceAmount;
-          totalInsuranceCost += insuranceAmount;
-        }
-      }
-    });
+    const mainBet = currentSeat.hands[0]?.betAmount ?? 0;
+    const insuranceAmount = Math.floor(mainBet / 2);
 
-    const updatedSeats = state.seats;
+    if (insuranceAmount > state.bankroll || insuranceAmount <= 0) {
+      return; 
+    }
 
-    // Find first playable hand from the UPDATED seats
-    const firstPlayableIndex = updatedSeats.findIndex(
+    const newInsuranceBets = { ...state.insuranceBets, [currentSeat.id]: insuranceAmount };
+    const newBankroll = state.bankroll - insuranceAmount;
+
+    // Find next playable seat starting from currentSeatIndex + 1
+    const nextSeatIndex = state.seats.findIndex(
+      (s, idx) => idx > state.currentSeatIndex && s.isActive && s.hands.some((h) => h.betAmount > 0 && h.status === HandStatus.PLAYING)
+    );
+
+    if (nextSeatIndex !== -1) {
+      set({
+        insuranceBets: newInsuranceBets,
+        bankroll: newBankroll,
+        currentSeatIndex: nextSeatIndex,
+      });
+      return;
+    }
+
+    // No more seats to ask for insurance.
+    const firstPlayableIndex = state.seats.findIndex(
       (s) => s.isActive && s.hands.some((h) => h.betAmount > 0 && h.status === HandStatus.PLAYING)
     );
 
@@ -252,9 +267,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const nextPhase = dealerHasBJ ? GamePhase.DEALER_TURN : (firstPlayableIndex === -1 ? GamePhase.DEALER_TURN : GamePhase.PLAYER_TURN);
 
     set({
-      seats: updatedSeats,
       insuranceBets: newInsuranceBets,
-      bankroll: state.bankroll - totalInsuranceCost,
+      bankroll: newBankroll,
       gamePhase: nextPhase,
       currentSeatIndex: firstPlayableIndex === -1 ? 0 : firstPlayableIndex,
     });
@@ -268,7 +282,19 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const state = get();
     if (state.gamePhase !== GamePhase.INSURANCE) return;
 
-    // Find first playable hand
+    // Find next playable seat starting from currentSeatIndex + 1
+    const nextSeatIndex = state.seats.findIndex(
+      (s, idx) => idx > state.currentSeatIndex && s.isActive && s.hands.some((h) => h.betAmount > 0 && h.status === HandStatus.PLAYING)
+    );
+
+    if (nextSeatIndex !== -1) {
+      set({
+        currentSeatIndex: nextSeatIndex,
+      });
+      return;
+    }
+
+    // No more seats to ask for insurance.
     const firstPlayableIndex = state.seats.findIndex(
       (s) => s.isActive && s.hands.some((h) => h.betAmount > 0 && h.status === HandStatus.PLAYING)
     );
@@ -277,7 +303,6 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const nextPhase = dealerHasBJ ? GamePhase.DEALER_TURN : (firstPlayableIndex === -1 ? GamePhase.DEALER_TURN : GamePhase.PLAYER_TURN);
 
     set({
-      insuranceBets: {},
       gamePhase: nextPhase,
       currentSeatIndex: firstPlayableIndex === -1 ? 0 : firstPlayableIndex,
     });
@@ -294,7 +319,14 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const currentHand = getCurrentHand(state);
     if (!currentHand || currentHand.status !== HandStatus.PLAYING) return;
 
-    const shoe = [...state.shoe];
+    let shoe = [...state.shoe];
+
+    if (shoe.length === 0) {
+      const roomCfg = getRoomConfig(state.currentRoom);
+      const numDecks = roomCfg.gameRules.numberOfDecks;
+      shoe = shuffleShoe(createShoe(numDecks));
+    }
+
     const newCard = dealCard(shoe);
 
     const updatedSeats = state.seats.map((seat, seatIdx) => {
@@ -308,10 +340,13 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           const busted = isBust(newCards);
           const is21 = !busted && calculateHandValue(newCards).total === 21;
 
+          // If it was an Ace split, they only get one card and must stand
+          const mustStand = hand.isAceSplit || is21;
+
           return {
             ...hand,
             cards: newCards,
-            status: busted ? HandStatus.BUST : is21 ? HandStatus.STAND : HandStatus.PLAYING,
+            status: busted ? HandStatus.BUST : mustStand ? HandStatus.STAND : HandStatus.PLAYING,
           };
         }),
       };
@@ -369,7 +404,14 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     if (!allowed) return;
     if (cost > state.bankroll) return;
 
-    const shoe = [...state.shoe];
+    let shoe = [...state.shoe];
+
+    if (shoe.length === 0) {
+      const roomCfg = getRoomConfig(state.currentRoom);
+      const numDecks = roomCfg.gameRules.numberOfDecks;
+      shoe = shuffleShoe(createShoe(numDecks));
+    }
+
     const newCard = dealCard(shoe);
 
     const updatedSeats = state.seats.map((seat, seatIdx) => {
@@ -423,11 +465,19 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     if (cost > state.bankroll) return;
 
     const splitBet = currentHand.betAmount;
-    const shoe = [...state.shoe];
+    let shoe = [...state.shoe];
 
     // Create two new hands from the split
     const card1 = currentHand.cards[0];
     const card2 = currentHand.cards[1];
+
+    if (shoe.length < 2) {
+      const roomCfg = getRoomConfig(state.currentRoom);
+      const numDecks = roomCfg.gameRules.numberOfDecks;
+      const newShoe = shuffleShoe(createShoe(numDecks));
+      shoe = [...shoe, ...newShoe]; // prepend remaining cards if any
+    }
+
     const newCard1 = dealCard(shoe);
     const newCard2 = dealCard(shoe);
 
@@ -435,7 +485,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const initialStatus = isSplitAces ? HandStatus.STAND : HandStatus.PLAYING;
 
     const hand1: Hand = {
-      id: `seat-${seat.id}-hand-${seat.hands.length}`,
+      id: `seat-${seat.id}-hand-${Date.now()}-1`,
       cards: [card1, newCard1],
       betAmount: splitBet,
       status: initialStatus,
@@ -444,7 +494,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     };
 
     const hand2: Hand = {
-      id: `seat-${seat.id}-hand-${seat.hands.length + 1}`,
+      id: `seat-${seat.id}-hand-${Date.now()}-2`,
       cards: [card2, newCard2],
       betAmount: splitBet, // Standard bet amount is same
       status: initialStatus,
@@ -452,11 +502,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       isAceSplit: isSplitAces,
     };
 
-    // Check for blackjack on split hands (Split Aces do not get Blackjack)
-    if (!isSplitAces) {
-      if (isBlackjack(hand1.cards)) hand1.status = HandStatus.BLACKJACK;
-      if (isBlackjack(hand2.cards)) hand2.status = HandStatus.BLACKJACK;
-    }
+    // A 21 on a split hand is not considered a Natural Blackjack, 
+    // so we leave the status as PLAYING (or STAND if it's Split Aces).
 
     const updatedSeats = state.seats.map((s, seatIdx) => {
       if (seatIdx !== state.currentSeatIndex) return s;
@@ -573,14 +620,24 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         // Wait 1 seconds before drawing next card
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        const newCard = dealCard(shoe);
+        // Refetch latest state inside loop to avoid stale shoe
+        const currentState = get();
+        let currentShoe = [...currentState.shoe];
+
+        if (currentShoe.length === 0) {
+          const roomCfg = getRoomConfig(currentState.currentRoom);
+          const numDecks = roomCfg.gameRules.numberOfDecks;
+          currentShoe = shuffleShoe(createShoe(numDecks));
+        }
+
+        const newCard = dealCard(currentShoe);
         dealerCards.push(newCard);
         dealerValue = calculateHandValue(dealerCards);
 
         // Update state so UI shows the new card
         set({
-          shoe: [...shoe],
           dealerHand: { cards: [...dealerCards] },
+          shoe: currentShoe,
         });
       }
     }

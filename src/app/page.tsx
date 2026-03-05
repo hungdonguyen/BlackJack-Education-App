@@ -222,10 +222,10 @@ export default function HomePage() {
               <div className="fixed inset-0 z-[200]">
                 {/* Room selector floating above modal */}
                 <motion.div
-                  className="absolute top-4 left-1/2 -translate-x-1/2 z-[210] flex items-center gap-2"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
+                  className="absolute top-8 left-8 z-[210] flex flex-col items-start gap-3"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
                 >
                   {(['classic', 'vegas_strip'] as const).map((roomId) => {
                     const room = ROOMS[roomId];

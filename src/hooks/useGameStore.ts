@@ -61,6 +61,46 @@ export function useStoreHydration(): boolean {
           if (!cancelled) setIsHydrated(true);
         });
 
+      // Debounce utility to prevent rapid I/O causing race conditions
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const debounce = <F extends (...args: any[]) => void>(func: F, waitFor: number) => {
+        let timeout: NodeJS.Timeout | null = null;
+        return (...args: Parameters<F>) => {
+          if (timeout) clearTimeout(timeout);
+          timeout = setTimeout(() => func(...args), waitFor);
+        };
+      };
+
+      const saveState = async (state: GameStore) => {
+        try {
+          // Merge with any extra fields (e.g. legalAgreed) already in the file
+          const existing = await readSaveFile();
+          const base = existing ? JSON.parse(existing) : {};
+          base.state = {
+            ...(base.state || {}),
+            bankroll: state.bankroll,
+            lastDailyClaim: state.lastDailyClaim,
+            dailyClaimCount: state.dailyClaimCount,
+          };
+          base.version = 0;
+          await writeSaveFile(JSON.stringify(base));
+        } catch (err) {
+          // fallback: write without merge
+          await writeSaveFile(
+            JSON.stringify({
+              state: {
+                bankroll: state.bankroll,
+                lastDailyClaim: state.lastDailyClaim,
+                dailyClaimCount: state.dailyClaimCount,
+              },
+              version: 0,
+            })
+          );
+        }
+      };
+
+      const debouncedSave = debounce(saveState, 500);
+
       // Subscribe: write to save.json whenever bankroll/claims change
       const unsubState = useGameStoreBase.subscribe((state, prevState) => {
         if (
@@ -68,30 +108,7 @@ export function useStoreHydration(): boolean {
           state.lastDailyClaim !== prevState.lastDailyClaim ||
           state.dailyClaimCount !== prevState.dailyClaimCount
         ) {
-          // Merge with any extra fields (e.g. legalAgreed) already in the file
-          readSaveFile()
-            .then((existing) => {
-              const base = existing ? JSON.parse(existing) : {};
-              base.state = {
-                ...(base.state || {}),
-                bankroll: state.bankroll,
-                lastDailyClaim: state.lastDailyClaim,
-                dailyClaimCount: state.dailyClaimCount,
-              };
-              base.version = 0;
-              return writeSaveFile(JSON.stringify(base));
-            })
-            .catch(() => {
-              // fallback: write without merge
-              writeSaveFile(JSON.stringify({
-                state: {
-                  bankroll: state.bankroll,
-                  lastDailyClaim: state.lastDailyClaim,
-                  dailyClaimCount: state.dailyClaimCount,
-                },
-                version: 0,
-              }));
-            });
+          debouncedSave(state);
         }
       });
 
@@ -99,19 +116,10 @@ export function useStoreHydration(): boolean {
         cancelled = true;
         unsubState();
       };
-    }
-
-    // ── Browser/dev mode: wait for Zustand's localStorage hydration ──────────
-    const unsub = useGameStoreBase.persist.onFinishHydration(() => {
-      if (!cancelled) setIsHydrated(true);
-    });
-    if (useGameStoreBase.persist.hasHydrated()) {
+    } else {
+      // Not a Tauri Env, just load app instantly in browser
       setIsHydrated(true);
     }
-    return () => {
-      cancelled = true;
-      unsub();
-    };
   }, []);
 
   return isHydrated;

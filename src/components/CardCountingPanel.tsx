@@ -9,6 +9,7 @@ import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, Rank } from '@/types/enums';
+import { Info } from 'lucide-react';
 import { Card } from '@/types/game';
 
 // ─── Hi-Lo Card Counting Values ───────────────────────────────────────────────
@@ -111,6 +112,24 @@ export default function CardCountingPanel({
         }
         runningCount = -shoeSum; // balanced deck: total sum = 0, so dealt = -remaining
 
+        // The runningCount above assumes all cards removed from the shoe have been seen.
+        // However, face-down (hidden) cards on the table haven't been seen by the player yet.
+        // We must subtract their value from the running count until they are revealed.
+        for (const card of dealerHand.cards) {
+            if (card.isHidden) {
+                runningCount -= getHiLoValue(card.rank);
+            }
+        }
+        for (const seat of seats) {
+            for (const hand of seat.hands) {
+                for (const card of hand.cards) {
+                    if (card.isHidden) {
+                        runningCount -= getHiLoValue(card.rank);
+                    }
+                }
+            }
+        }
+
         const trueCount = runningCount / decksRemaining;
 
         // Betting advice based on true count
@@ -212,7 +231,7 @@ export default function CardCountingPanel({
                                 <span style={{ color: accentColor, fontSize: 11, fontWeight: 900 }}>🃏</span>
                             </div>
                             <span
-                                className="text-[9.5px] font-black uppercase tracking-[0.22em]"
+                                className="text-[11px] font-black uppercase tracking-[0.22em] font-sans"
                                 style={{ color: 'rgba(220,200,170,0.8)' }}
                             >
                                 Card Count
@@ -220,7 +239,7 @@ export default function CardCountingPanel({
                         </div>
                         <div className="flex items-center gap-1.5">
                             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#22c55e' }} />
-                            <span className="text-[8px] font-bold uppercase tracking-[0.18em]" style={{ color: '#22c55e90' }}>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.18em] font-sans" style={{ color: '#22c55e90' }}>
                                 HI-LO
                             </span>
                         </div>
@@ -230,28 +249,26 @@ export default function CardCountingPanel({
                     <div className="px-3.5 pt-3 pb-2.5">
                         <div className="flex items-center gap-1.5 mb-2.5">
                             <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${accentColor}40, transparent)` }} />
-                            <span className="text-[7.5px] font-black uppercase tracking-[0.28em] text-white/30">Count</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.28em] text-white/30 font-sans">Count</span>
                             <div className="h-px flex-1" style={{ background: `linear-gradient(270deg, ${accentColor}40, transparent)` }} />
                         </div>
 
                         <div className="flex items-center justify-around">
                             {/* Running Count */}
-                            <div className="flex flex-col items-center gap-1">
-                                <motion.span
-                                    key={analysis.runningCount}
-                                    className="text-2xl font-black tabular-nums leading-none"
+                            <div className="flex flex-col items-center flex-1">
+                                <span
+                                    className="text-[26px] font-black tabular-nums leading-none font-sans"
                                     style={{
-                                        color: analysis.runningCount > 0 ? '#86efac' : analysis.runningCount < 0 ? '#fca5a5' : 'rgba(255,255,255,0.5)',
+                                        color: analysis.runningCount > 0 ? '#86efac' : analysis.runningCount < 0 ? '#fca5a5' : '#e5e5e5',
+                                        textShadow: `0 0 20px ${analysis.runningCount > 0 ? 'rgba(34,197,94,0.3)' : analysis.runningCount < 0 ? 'rgba(239,68,68,0.3)' : 'transparent'}`
                                     }}
-                                    initial={{ scale: 1.2 }}
-                                    animate={{ scale: 1 }}
                                 >
                                     {analysis.runningCount > 0 ? '+' : ''}{analysis.runningCount}
-                                </motion.span>
-                                <span className="text-[7.5px] font-bold uppercase tracking-[0.18em] text-white/30">Running</span>
+                                </span>
+                                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40 mt-1 font-sans">Running</span>
                             </div>
 
-                            {/* Divider */}
+                            {/* Divider line */}
                             <div className="flex flex-col items-center gap-0.5 opacity-30">
                                 <span className="text-white/40 text-[9px]">♦</span>
                                 <div className="w-px h-8 bg-white/10" />
@@ -259,19 +276,17 @@ export default function CardCountingPanel({
                             </div>
 
                             {/* True Count */}
-                            <div className="flex flex-col items-center gap-1">
-                                <motion.span
-                                    key={Math.round(analysis.trueCount * 10)}
-                                    className="text-2xl font-black tabular-nums leading-none"
+                            <div className="flex flex-col items-center flex-1">
+                                <span
+                                    className="text-[26px] font-black tabular-nums leading-none font-sans"
                                     style={{
-                                        color: analysis.trueCount > 0 ? '#86efac' : analysis.trueCount < 0 ? '#fca5a5' : 'rgba(255,255,255,0.5)',
+                                        color: analysis.trueCount > 0 ? '#86efac' : analysis.trueCount < 0 ? '#fca5a5' : '#e5e5e5',
+                                        textShadow: `0 0 20px ${analysis.trueCount > 0 ? 'rgba(34,197,94,0.3)' : analysis.trueCount < 0 ? 'rgba(239,68,68,0.3)' : 'transparent'}`
                                     }}
-                                    initial={{ scale: 1.2 }}
-                                    animate={{ scale: 1 }}
                                 >
-                                    {analysis.trueCount > 0 ? '+' : ''}{analysis.trueCount.toFixed(1)}
-                                </motion.span>
-                                <span className="text-[7.5px] font-bold uppercase tracking-[0.18em] text-white/30">True</span>
+                                    {analysis.trueCount > 0 ? '+' : ''}{analysis.trueCount % 1 === 0 ? analysis.trueCount : analysis.trueCount.toFixed(1)}
+                                </span>
+                                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40 mt-1 font-sans">True</span>
                             </div>
                         </div>
 
@@ -297,17 +312,17 @@ export default function CardCountingPanel({
                                     transition={{ duration: 0.5, ease: 'easeOut' }}
                                 />
                             </div>
-                            <div className="flex justify-between text-[6px] text-white/15 font-bold uppercase tracking-wider mt-0.5">
-                                <span>−10</span>
-                                <span>0</span>
+                            <div className="flex justify-between text-[8px] text-white/25 mt-1 font-bold font-sans">
+                                <span>-10</span>
+                                <span className="text-white/40">0</span>
                                 <span>+10</span>
                             </div>
-                        </div>
 
-                        {/* Deck info */}
-                        <p className="text-center mt-1.5 text-[7px] font-semibold tracking-[0.08em]" style={{ color: 'rgba(180,155,110,0.5)' }}>
-                            {analysis.decksRemaining.toFixed(1)} decks remaining · {analysis.cardsRemaining} cards
-                        </p>
+                            {/* Decks remaining info */}
+                            <p className="text-center mt-3 text-[9px] font-bold tracking-[0.08em] font-sans" style={{ color: 'rgba(180,155,110,0.6)' }}>
+                                {analysis.decksRemaining.toFixed(1)} decks remaining · {analysis.cardsRemaining} cards
+                            </p>
+                        </div>
                     </div>
 
                     {/* Separator */}
@@ -320,62 +335,49 @@ export default function CardCountingPanel({
                     </div>
 
                     {/* ── Betting Advice ── */}
-                    <div className="px-3.5 pt-2 pb-3">
+                    <div className="px-3.5 pt-2 pb-3.5">
                         <div className="flex items-center gap-1.5 mb-2.5">
                             <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${accentColor}40, transparent)` }} />
-                            <span className="text-[7.5px] font-black uppercase tracking-[0.28em] text-white/30">Bet Advice</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.28em] text-white/30 font-sans">Bet Advice</span>
                             <div className="h-px flex-1" style={{ background: `linear-gradient(270deg, ${accentColor}40, transparent)` }} />
                         </div>
 
-                        <motion.div
-                            key={analysis.advice.label}
+                        {/* Advice Badge */}
+                        <div
                             className="rounded-xl px-3 py-2.5 flex items-center gap-3"
                             style={{
                                 background: analysis.advice.bgColor,
                                 border: `1px solid ${analysis.advice.color}40`,
-                                boxShadow: `0 0 15px ${analysis.advice.color}15`,
                             }}
-                            initial={{ scale: 0.92, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
                         >
-                            <div
-                                className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-black text-[9px] leading-none uppercase tracking-wider"
-                                style={{
-                                    background: `${analysis.advice.color}20`,
-                                    border: `2px solid ${analysis.advice.color}50`,
-                                    color: analysis.advice.color,
-                                }}
-                            >
-                                {analysis.advice.label.split(' ')[0]}
+                            <div className="font-black uppercase tracking-[0.12em] text-[12px] leading-tight font-sans text-center px-1" style={{ color: analysis.advice.color }}>
+                                {analysis.advice.label}
                             </div>
-                            <div className="flex flex-col gap-0.5 min-w-0">
-                                <span className="font-black uppercase tracking-[0.12em] text-[10px] leading-tight truncate" style={{ color: analysis.advice.color }}>
-                                    {analysis.advice.label}
-                                </span>
-                                <span className="text-[7.5px] font-medium leading-tight" style={{ color: 'rgba(200,180,150,0.6)' }}>
-                                    {analysis.advice.desc}
-                                </span>
+                            <div className="text-[10.5px] font-bold leading-tight font-sans border-l pl-2" style={{ borderColor: `${analysis.advice.color}30`, color: 'rgba(200,180,150,0.8)' }}>
+                                {analysis.advice.desc}
                             </div>
-                        </motion.div>
+                        </div>
+
 
                         {/* Player edge */}
-                        <div className="flex items-center justify-between mt-2.5 px-1">
-                            <div className="flex items-center gap-1">
-                                <span className="text-[7px] uppercase tracking-[0.12em] text-white/20 font-bold">Player Edge</span>
-                                <span
-                                    className="text-[9px] font-black tabular-nums"
-                                    style={{
-                                        color: analysis.playerEdge > 0 ? '#86efac' : analysis.playerEdge < -1 ? '#fca5a5' : 'rgba(255,255,255,0.4)',
-                                    }}
-                                >
+                        <div className="flex items-center justify-between mt-4 px-1">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[8px] uppercase tracking-[0.12em] text-white/30 font-bold font-sans">Player Edge</span>
+                                <span className="text-[11px] font-black tabular-nums" style={{ color: analysis.playerEdge > 0 ? '#86efac' : analysis.playerEdge < 0 ? '#fca5a5' : '#e5e5e5' }}>
                                     {analysis.playerEdge > 0 ? '+' : ''}{analysis.playerEdge.toFixed(1)}%
                                 </span>
                             </div>
-                            <div className="flex items-center gap-1">
-                                <span className="text-[7px] uppercase tracking-[0.12em] text-white/20 font-bold">System</span>
-                                <span className="text-[9px] font-black tabular-nums" style={{ color: accentColor }}>Hi-Lo</span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[8px] uppercase tracking-[0.12em] text-white/30 font-bold font-sans">System</span>
+                                <span className="text-[11px] font-black" style={{ color: '#22c55e' }}>Hi-Lo</span>
                             </div>
+                        </div>
+
+                        {/* More Details Link */}
+                        <div className="flex items-center justify-center mt-4 pt-3 border-t border-white/5 font-sans">
+                            <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5 cursor-pointer hover:text-white/70 transition-colors">
+                                <Info size={11} /> Find out more details in Strategy
+                            </span>
                         </div>
                     </div>
                 </motion.div>

@@ -41,6 +41,11 @@ export class ClassicRules implements IRules {
         const playerHasBlackjack = playerHand.status === HandStatus.BLACKJACK;
         const dealerHasBlackjack = isBlackjack(dealerCards);
         const dealerBust = dealerValue.total > 21;
+        const playerBust = playerValue.total > 21;
+
+        if (playerBust) {
+            return { status: HandStatus.LOST, payoutMultiplier: -1 };
+        }
 
         // Player Blackjack
         if (playerHasBlackjack) {

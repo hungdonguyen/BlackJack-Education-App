@@ -10,6 +10,7 @@ import { GamePhase, HandStatus } from '@/types/enums';
 import { calculateHandValue, canSplit, canDoubleDown, getHandDisplayValue } from '@/utils/hand';
 import { Shield, Check, X, Undo2, Spade, Home, Sparkles } from 'lucide-react';
 import { getRules } from '@/rules';
+import { getRoomConfig } from '@/utils/rooms';
 
 export default function ActionPanel({ timer }: { timer?: number }) {
     const gamePhase = useGameStore((s) => s.gamePhase);
@@ -42,6 +43,8 @@ export default function ActionPanel({ timer }: { timer?: number }) {
 
     const currentRoom = useGameStore((s) => s.currentRoom);
     const rules = getRules(currentRoom);
+    const roomConfig = getRoomConfig(currentRoom);
+    const minBet = roomConfig.betRange[0];
 
     let canHit = isPlayerTurn && isPlaying;
     let canStand = isPlayerTurn && isPlaying;
@@ -58,18 +61,24 @@ export default function ActionPanel({ timer }: { timer?: number }) {
         canSpl = result.allowed && bankroll >= result.cost;
     }
 
-    const hasBets = seats.some((s) => s.isActive && s.hands.some((h) => h.betAmount > 0));
+    // The game can start if at least one active seat places a minimum bet.
+    // Empty seats will simply be skipped by startDeal().
+    const activeSeatsList = seats.filter(s => s.isActive);
+    const hasBets = activeSeatsList.some(s => {
+        const totalSeatBet = s.hands.reduce((sum, h) => sum + h.betAmount, 0);
+        return totalSeatBet >= minBet;
+    });
+
     const hasUndo = betHistory.length > 0;
     const previousBets = useGameStore((s) => s.previousBets);
     const hasPreviousBets = previousBets && previousBets.length > 0;
 
     // Calculate total insurance cost for display
-    const totalInsuranceCost = isInsurance
-        ? seats.filter(s => s.isActive).reduce((total, seat) => {
-            const mainBet = seat.hands[0]?.betAmount ?? 0;
-            return total + Math.floor(mainBet / 2);
-        }, 0)
+    // Calculate total insurance cost for display (per seat)
+    const totalInsuranceCost = isInsurance && currentSeat
+        ? Math.floor((currentSeat.hands[0]?.betAmount ?? 0) / 2)
         : 0;
+    const canInsurance = bankroll >= totalInsuranceCost;
 
     return (
         <div className="flex flex-col items-center" style={{ minHeight: '80px', justifyContent: 'center' }}>
@@ -135,10 +144,14 @@ export default function ActionPanel({ timer }: { timer?: number }) {
                             <div className="flex items-center gap-3 justify-center">
                                 <motion.button
                                     onClick={acceptInsurance}
-                                    className="px-6 py-2.5 rounded-full font-extrabold text-xs uppercase tracking-wider cursor-pointer
-                                        bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30
-                                        hover:shadow-emerald-500/50 transition-all"
-                                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                    disabled={!canInsurance}
+                                    className={`px-6 py-2.5 rounded-full font-extrabold text-xs uppercase tracking-wider transition-all
+                                        ${canInsurance
+                                            ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 cursor-pointer'
+                                            : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
+                                        }`}
+                                    whileHover={canInsurance ? { scale: 1.05 } : {}}
+                                    whileTap={canInsurance ? { scale: 0.95 } : {}}
                                 >
                                     <Check className="w-3.5 h-3.5 mr-1" /> Accept
                                 </motion.button>
