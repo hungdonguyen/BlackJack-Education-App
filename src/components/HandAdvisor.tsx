@@ -244,6 +244,7 @@ function getStrategyAction(
     dealerUpRank: string,
     strategyType: string,
     canSplit: boolean,
+    canSurrender: boolean,
 ): Action {
     const dIdx = getDealerIdx(dealerUpRank);
     if (dIdx < 0) return 'H';
@@ -267,15 +268,15 @@ function getStrategyAction(
         action = tbl[clampedTotal - 5]?.[dIdx] ?? (total >= 17 ? 'S' : 'H');
     }
 
-    // Downgrade actions that are only allowed on the initial 2 cards
+    // Downgrade actions that are only allowed on the initial 2 cards or specific contexts
     if (cards.length > 2) {
-        if (action === 'D') {
-            action = 'H';
-        } else if (action === 'DS') {
-            action = 'S';
-        } else if (action === 'SU') {
-            action = total >= 17 ? 'S' : 'H';
-        }
+        if (action === 'D') action = 'H';
+        else if (action === 'DS') action = 'S';
+    }
+
+    // Explicitly fallback if Surrender is mathematically recommended but contextually impossible
+    if (action === 'SU' && !canSurrender) {
+        action = total >= 17 ? 'S' : 'H';
     }
 
     return action;
@@ -404,7 +405,11 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
         const showBustRisk = total > 11;
         const bust = showBustRisk ? computeBustStats(cards, shoe) : null;
         const canSplitHand = currentSeat.hands.length < 4;
-        const basicAction = getStrategyAction(cards, total, isSoft, dealerUpCard.rank, strategyType, canSplitHand);
+
+        // True late surrender is only valid on the original first 2 cards (not split hands)
+        const canSurrenderNow = cards.length === 2 && currentSeat.hands.length === 1 && room.gameRules.allowSurrender;
+
+        const basicAction = getStrategyAction(cards, total, isSoft, dealerUpCard.rank, strategyType, canSplitHand, canSurrenderNow);
         const dealerNorm = normRank(dealerUpCard.rank);
 
         // ── Card counting deviation check ──
@@ -434,10 +439,13 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
                 if (cards.length > 2) {
                     if (action === 'D') action = 'H';
                     if (action === 'SP') action = basicAction; // can't split after initial
-                    if (action === 'SU') action = total >= 17 ? 'S' : 'H';
-                    // If downgraded action equals basic, no real deviation
-                    if (action === basicAction) deviation = null;
                 }
+                if (action === 'SU' && !canSurrenderNow) {
+                    action = total >= 17 ? 'S' : 'H';
+                }
+
+                // If downgraded action equals basic, no real deviation
+                if (action === basicAction) deviation = null;
             }
         }
 
