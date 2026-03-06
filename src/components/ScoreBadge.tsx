@@ -21,6 +21,7 @@ const STATUS_CONFIG: Record<HandStatus, { bg: string; glow: string; text: string
     [HandStatus.LOST]: { bg: 'bg-red-950/70 border-red-500/30', glow: '', text: 'text-red-400', label: 'LOSE' },
     [HandStatus.PUSH]: { bg: 'bg-gray-900/80 border-gray-400/30', glow: '', text: 'text-gray-300', label: 'PUSH' },
     [HandStatus.BLACKJACK]: { bg: 'bg-amber-950/80 border-amber-400/60', glow: 'shadow-[0_0_20px_rgba(245,158,11,0.5)]', text: 'text-amber-300', label: 'BJ!' },
+    [HandStatus.SURRENDERED]: { bg: 'bg-orange-950/80 border-orange-500/40', glow: 'shadow-[0_0_10px_rgba(249,115,22,0.3)]', text: 'text-orange-400', label: 'SURRENDER' },
 };
 
 export default function ScoreBadge({ value, status, delay = 0 }: ScoreBadgeProps) {

@@ -40,7 +40,7 @@ export interface RoomConfig {
 }
 
 import React from 'react';
-import { Spade, Ticket } from 'lucide-react';
+import { Spade, Ticket, Anchor } from 'lucide-react';
 
 export const ROOMS: Record<string, RoomConfig> = {
     classic: {
@@ -115,6 +115,30 @@ export const ROOMS: Record<string, RoomConfig> = {
         rtp: '99.62%',
         icon: <Ticket className="w-5 h-5 drop-shadow-md text-sky-400" />,
         accentColor: '#38bdf8',
+    },
+    atlantic_city: {
+        id: 'atlantic_city',
+        name: 'Atlantic City',
+        subtitle: 'East Coast 8-Deck Classic',
+        description: 'Atlantic City Rules — 8 Decks, Dealer stands on all 17s (S17). Peek on Ace & 10. Double on any two cards. Double after split (DAS). Split up to 4 hands, mixed 10s allowed. Split Aces receive 1 card only, no re-split. Late Surrender allowed.',
+        feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #0f2b2b 0%, #082020 25%, #041515 50%, #020b0b 80%, #010606 100%)',
+        bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #0a1f1f 0%, #051010 50%, #020808 100%)',
+        borderColor: 'rgba(20, 184, 166, 0.15)',
+        rules: {
+            blackjackPays: 'Blackjack Pays 3 to 2',
+            insurancePays: 'Insurance Pays 2 to 1',
+            dealerStands: 'Dealer stands on all 17s (S17)',
+        },
+        gameRules: {
+            numberOfDecks: 8,
+            dealerHitsSoft17: false,
+            allowSurrender: true,
+        },
+        blackjackMultiplier: 1.5,
+        betRange: [1, 1_000_000],
+        rtp: '99.65%',
+        icon: <Anchor className="w-5 h-5 drop-shadow-md text-teal-400" />,
+        accentColor: '#14b8a6',
     },
 };
 

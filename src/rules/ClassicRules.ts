@@ -38,6 +38,11 @@ export class ClassicRules implements IRules {
         };
     }
 
+    canSurrender(_hand: Hand): ActionValidity {
+        // Classic Online: No surrender allowed.
+        return { allowed: false, isFree: false, cost: 0 };
+    }
+
     evaluateHand(
         playerHand: Hand,
         playerValue: HandValue,

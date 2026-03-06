@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { calculateHandValue, canSplit, canDoubleDown, getHandDisplayValue } from '@/utils/hand';
-import { Shield, Check, X, Undo2, Spade, Home, Sparkles } from 'lucide-react';
+import { Shield, Check, X, Undo2, Spade, Home, Sparkles, Flag } from 'lucide-react';
 import { getRules } from '@/rules';
 import { getRoomConfig } from '@/utils/rooms';
 
@@ -22,6 +22,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const stand = useGameStore((s) => s.stand);
     const doubleDown = useGameStore((s) => s.doubleDown);
     const split = useGameStore((s) => s.split);
+    const surrender = useGameStore((s) => s.surrender);
     const startDeal = useGameStore((s) => s.startDeal);
     const resetRound = useGameStore((s) => s.resetRound);
     const undoBet = useGameStore((s) => s.undoBet);
@@ -59,6 +60,12 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     if (isPlayerTurn && isPlaying && currentHand) {
         const result = rules.canSplit(currentHand, currentSeat?.hands.length || 0);
         canSpl = result.allowed && bankroll >= result.cost;
+    }
+
+    let canSur = false;
+    if (isPlayerTurn && isPlaying && currentHand) {
+        const result = rules.canSurrender(currentHand);
+        canSur = result.allowed;
     }
 
     // The game can start if at least one active seat places a minimum bet.
@@ -115,6 +122,11 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
 
                             <CircleButton label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
                                 onClick={split} disabled={!canSpl} size={45} />
+
+                            {roomConfig.gameRules.allowSurrender && (
+                                <CircleButton label="SURRENDER" icon={<Flag className="w-4 h-4" />} color="#9b59b6" hoverColor="#8e44ad"
+                                    onClick={surrender} disabled={!canSur} size={45} />
+                            )}
                         </div>
                     </motion.div>
                 )}

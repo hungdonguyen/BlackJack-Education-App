@@ -32,6 +32,7 @@ export interface GameFlowSlice {
   stand: () => void;
   doubleDown: () => void;
   split: () => void;
+  surrender: () => void;
   acceptInsurance: () => void;
   declineInsurance: () => void;
   advanceToNextHand: () => void;
@@ -460,6 +461,43 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     get().advanceToNextHand();
   },
 
+  surrender: () => {
+    const state = get();
+    if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+
+    const currentHand = getCurrentHand(state);
+    if (!currentHand || currentHand.status !== HandStatus.PLAYING) return;
+
+    const rules = getRules(state.currentRoom);
+    const { allowed } = rules.canSurrender(currentHand);
+    if (!allowed) return;
+
+    // Late Surrender: player forfeits hand and gets 50% of bet back.
+    const refund = currentHand.betAmount / 2;
+
+    const updatedSeats = state.seats.map((seat, seatIdx) => {
+      if (seatIdx !== state.currentSeatIndex) return seat;
+      return {
+        ...seat,
+        hands: seat.hands.map((hand, handIdx) => {
+          if (handIdx !== seat.currentHandIndex) return hand;
+          return {
+            ...hand,
+            status: HandStatus.SURRENDERED,
+            isSurrendered: true,
+          };
+        }),
+      };
+    });
+
+    set({
+      seats: updatedSeats,
+      bankroll: state.bankroll + refund,
+    });
+
+    get().advanceToNextHand();
+  },
+
   split: () => {
     const state = get();
 
@@ -614,22 +652,22 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       isHidden: false,
     }));
 
-    // Check if all player hands are busted — if so, dealer doesn't need to draw
-    const allBusted = state.seats
+    // Check if all player hands are busted or surrendered — if so, dealer doesn't need to draw
+    const allBustedOrSurrendered = state.seats
       .filter((s) => s.isActive)
-      .every((s) => s.hands.every((h) => h.status === HandStatus.BUST));
+      .every((s) => s.hands.every((h) => h.status === HandStatus.BUST || h.status === HandStatus.SURRENDERED));
 
-    // Check if all non-bust player hands are blackjacks — dealer doesn't need to draw
-    const allBlackjackOrBust = state.seats
+    // Check if all non-bust/surrender player hands are blackjacks — dealer doesn't need to draw
+    const allResolvedOrBlackjack = state.seats
       .filter((s) => s.isActive)
       .every((s) => s.hands.every((h) =>
-        h.status === HandStatus.BUST || h.status === HandStatus.BLACKJACK
+        h.status === HandStatus.BUST || h.status === HandStatus.SURRENDERED || h.status === HandStatus.BLACKJACK
       ));
 
     // Initial reveal
     set({ dealerHand: { cards: [...dealerCards] } });
 
-    if (!allBusted && !allBlackjackOrBust) {
+    if (!allBustedOrSurrendered && !allResolvedOrBlackjack) {
       const roomCfg = getRoomConfig(state.currentRoom);
       const hitsSoft17 = roomCfg.gameRules.dealerHitsSoft17;
 
@@ -725,11 +763,13 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         hands: seat.hands.map((hand) => {
           if (hand.betAmount === 0) return hand;
 
-          // Already resolved (e.g., Bust, or Even Money)
-          if (hand.status === HandStatus.BUST || hand.status === HandStatus.WON) {
+          // Already resolved (e.g., Bust, Even Money, or Surrendered)
+          if (hand.status === HandStatus.BUST || hand.status === HandStatus.WON || hand.status === HandStatus.SURRENDERED) {
             return {
               ...hand,
-              status: hand.status === HandStatus.BUST ? HandStatus.LOST : HandStatus.WON,
+              status: hand.status === HandStatus.BUST ? HandStatus.LOST
+                : hand.status === HandStatus.SURRENDERED ? HandStatus.SURRENDERED
+                : HandStatus.WON,
             };
           }
 
@@ -778,6 +818,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
                   ? hand.betAmount * rules.blackjackPayoutMultiplier
                   : hand.status === HandStatus.PUSH
                   ? 0
+                  : hand.status === HandStatus.SURRENDERED
+                  ? -(hand.betAmount / 2)
                   : -(hand.betAmount - (hand.freeBetAmount || 0)),
               cards: hand.cards.map((c) => ({ suit: c.suit, rank: c.rank })),
             })),

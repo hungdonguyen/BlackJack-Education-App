@@ -109,6 +109,37 @@ const SOFT_VEGAS: Action[][] = [
 ];
 const PAIRS_VEGAS: Action[][] = PAIRS_CLASSIC;
 
+// Atlantic City: 8 decks, S17, DAS, Late Surrender
+const HARD_AC: Action[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D'], // 11 — Double vs A
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'SU', 'H'], // 15 — SU vs 10
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'SU', 'SU', 'SU'], // 16 — SU vs 9, 10, A
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+const SOFT_AC: Action[][] = [
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+const PAIRS_AC: Action[][] = PAIRS_CLASSIC;
+
 // Ornament divider
 function Ornament({ color }: { color: string }) {
     return (
@@ -124,14 +155,14 @@ function Ornament({ color }: { color: string }) {
 
 export default function StrategyModal({ room, onClose }: StrategyModalProps) {
     const [tab, setTab] = useState<Tab>('hard');
-    const isVegas = room.id === 'vegas_strip';
+    const strategyType = room.id === 'atlantic_city' ? 'ac' : (room.id === 'vegas_strip' || room.id === 'vegas_downtown') ? 'vegas' : 'classic';
 
     const rows = tab === 'hard' ? HARD_ROWS : tab === 'soft' ? SOFT_ROWS : PAIR_ROWS;
     const data = tab === 'hard'
-        ? (isVegas ? HARD_VEGAS : HARD_CLASSIC)
+        ? (strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC)
         : tab === 'soft'
-            ? (isVegas ? SOFT_VEGAS : SOFT_CLASSIC)
-            : (isVegas ? PAIRS_VEGAS : PAIRS_CLASSIC);
+            ? (strategyType === 'ac' ? SOFT_AC : strategyType === 'vegas' ? SOFT_VEGAS : SOFT_CLASSIC)
+            : (strategyType === 'ac' ? PAIRS_AC : strategyType === 'vegas' ? PAIRS_VEGAS : PAIRS_CLASSIC);
 
     const tabConfig: Record<Tab, { label: string; rowTitle: string }> = {
         hard: { label: 'Hard Totals', rowTitle: 'Hand' },

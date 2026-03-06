@@ -63,8 +63,8 @@ export default function LobbyPage() {
                     </div>
                 </motion.div>
 
-                {/* Room Cards — items-stretch ensures equal height */}
-                <div className="flex items-stretch justify-center gap-8">
+                {/* Room Cards — items-stretch ensures equal height, grid handles responsiveness */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 xl:gap-6 w-full max-w-[1500px]">
                     {rooms.map((room, index) => (
                         <RoomCard key={room.id} room={room} index={index} onClick={() => router.push(`/game/${room.id}`)} />
                     ))}
@@ -92,7 +92,7 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
 
     return (
         <motion.div
-            className="relative w-[380px] h-full flex flex-col rounded-2xl overflow-hidden cursor-pointer group"
+            className="relative w-full h-full flex flex-col rounded-2xl overflow-hidden cursor-pointer group"
             style={{
                 border: `1px solid ${room.borderColor}`,
                 boxShadow: `0 0 40px ${room.borderColor}`,
@@ -117,7 +117,7 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className="relative w-[75%] h-[65%] mx-auto">
                         <Image
-                            src={room.id === 'vegas_strip' ? '/images/logo/Vegas_trip_blackjack.png' : room.id === 'vegas_downtown' ? '/images/logo/Vegas_Downtown_Logo.png' : '/images/logo/Classic_Online_Logo.png'}
+                            src={room.id === 'vegas_strip' ? '/images/logo/Vegas_trip_blackjack.png' : room.id === 'vegas_downtown' ? '/images/logo/Vegas_Downtown_Logo.png' : room.id === 'atlantic_city' ? '/images/logo/Atlantic.png' : '/images/logo/Classic_Online_Logo.png'}
                             alt={room.name}
                             fill
                             className="object-contain drop-shadow-2xl"

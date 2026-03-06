@@ -38,6 +38,11 @@ export class VegasStripRules implements IRules {
         };
     }
 
+    canSurrender(_hand: Hand): ActionValidity {
+        // Vegas Strip: No surrender allowed.
+        return { allowed: false, isFree: false, cost: 0 };
+    }
+
     evaluateHand(
         playerHand: Hand,
         playerValue: HandValue,

@@ -38,6 +38,11 @@ export class VegasDowntownRules implements IRules {
         };
     }
 
+    canSurrender(_hand: Hand): ActionValidity {
+        // Vegas Downtown: No surrender allowed.
+        return { allowed: false, isFree: false, cost: 0 };
+    }
+
     evaluateHand(
         playerHand: Hand,
         playerValue: HandValue,

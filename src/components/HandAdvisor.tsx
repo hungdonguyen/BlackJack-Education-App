@@ -82,6 +82,36 @@ const SOFT_VEGAS: Action[][] = [
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
 
+// Atlantic City: 8 decks, S17, DAS, Late Surrender
+const HARD_AC: Action[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 6
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 7
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 8
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // 9
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 10
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D'], // 11 — Double vs A in AC
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'SU', 'H'], // 15 — SU vs 10
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'SU', 'SU', 'SU'], // 16 — SU vs 9, 10, A
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 17
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
+];
+const SOFT_AC: Action[][] = [
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A,2
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A,3
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A,4
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A,5
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A,6
+    ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'], // A,7
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // A,8
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // A,9
+];
+
 // Pairs
 const PAIRS_TABLE: Action[][] = [
     ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 2,2
@@ -212,7 +242,7 @@ function getStrategyAction(
     total: number,
     isSoft: boolean,
     dealerUpRank: string,
-    isVegas: boolean,
+    strategyType: string,
     canSplit: boolean,
 ): Action {
     const dIdx = getDealerIdx(dealerUpRank);
@@ -225,15 +255,15 @@ function getStrategyAction(
         action = PAIRS_TABLE[pairIdx][dIdx];
         if (action === 'SP' && !canSplit) {
             const clampedTotal = Math.min(Math.max(total, 5), 20);
-            const tbl = isVegas ? HARD_VEGAS : HARD_CLASSIC;
+            const tbl = strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC;
             action = tbl[clampedTotal - 5]?.[dIdx] ?? 'H';
         }
     } else if (isSoft && total >= 13 && total <= 20) {
-        const tbl = isVegas ? SOFT_VEGAS : SOFT_CLASSIC;
+        const tbl = strategyType === 'ac' ? SOFT_AC : strategyType === 'vegas' ? SOFT_VEGAS : SOFT_CLASSIC;
         action = tbl[total - 13]?.[dIdx] ?? 'H';
     } else {
         const clampedTotal = Math.min(Math.max(total, 5), 20);
-        const tbl = isVegas ? HARD_VEGAS : HARD_CLASSIC;
+        const tbl = strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC;
         action = tbl[clampedTotal - 5]?.[dIdx] ?? (total >= 17 ? 'S' : 'H');
     }
 
@@ -357,7 +387,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
     const showCardCounting = useGameStore((s) => s.showCardCounting);
 
     const room = getRoomConfig(roomId);
-    const isVegas = roomId === 'vegas_strip';
+    const strategyType = roomId === 'atlantic_city' ? 'ac' : (roomId === 'vegas_strip' || roomId === 'vegas_downtown') ? 'vegas' : 'classic';
     const isVisible = gamePhase === GamePhase.PLAYER_TURN;
 
     // Gather current hand & dealer upcard
@@ -374,7 +404,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
         const showBustRisk = total > 11;
         const bust = showBustRisk ? computeBustStats(cards, shoe) : null;
         const canSplitHand = currentSeat.hands.length < 4;
-        const basicAction = getStrategyAction(cards, total, isSoft, dealerUpCard.rank, isVegas, canSplitHand);
+        const basicAction = getStrategyAction(cards, total, isSoft, dealerUpCard.rank, strategyType, canSplitHand);
         const dealerNorm = normRank(dealerUpCard.rank);
 
         // ── Card counting deviation check ──
@@ -418,7 +448,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
             showBustRisk, cardCount: cards.length,
             deviation, basicAction, trueCount,
         };
-    }, [currentHand, dealerUpCard, shoe, isVegas, showCardCounting, seats, dealerHand, room]);
+    }, [currentHand, dealerUpCard, shoe, strategyType, showCardCounting, seats, dealerHand, room]);
 
     const bdr = borderColor ?? `${accentColor}30`;
 

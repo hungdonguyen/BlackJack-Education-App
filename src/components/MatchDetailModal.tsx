@@ -75,6 +75,7 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
     [HandStatus.BLACKJACK]: { label: 'BLACKJACK', className: 'bg-amber-500/20  text-amber-300  border border-amber-500/30' },
     [HandStatus.LOST]: { label: 'LOSE', className: 'bg-red-500/20    text-red-300    border border-red-500/30' },
     [HandStatus.BUST]: { label: 'BUST', className: 'bg-red-600/20    text-red-400    border border-red-600/30' },
+    [HandStatus.SURRENDERED]: { label: 'SURRENDER', className: 'bg-orange-500/20 text-orange-400 border border-orange-500/30' },
     [HandStatus.PUSH]: { label: 'PUSH', className: 'bg-white/10      text-white/60   border border-white/20' },
     [HandStatus.STAND]: { label: 'STAND', className: 'bg-white/10      text-white/60   border border-white/20' },
     [HandStatus.PLAYING]: { label: '—', className: 'bg-white/10      text-white/40   border border-white/10' },

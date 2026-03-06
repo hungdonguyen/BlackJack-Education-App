@@ -33,6 +33,7 @@ export enum HandStatus {
   LOST = 'LOST',
   PUSH = 'PUSH',
   BLACKJACK = 'BLACKJACK',
+  SURRENDERED = 'SURRENDERED',
 }
 
 export enum GamePhase {

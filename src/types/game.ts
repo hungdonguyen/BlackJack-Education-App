@@ -28,6 +28,7 @@ export interface Hand {
   isFreeSplit?: boolean;
   freeBetAmount?: number;
   isAceSplit?: boolean;
+  isSurrendered?: boolean;
 }
 
 /** A seat / betting box at the table (1-5) */
@@ -131,6 +132,7 @@ export interface GameActions {
   stand: () => void;
   doubleDown: () => void;
   split: () => void;
+  surrender: () => void;
   acceptInsurance: () => void;
   declineInsurance: () => void;
 

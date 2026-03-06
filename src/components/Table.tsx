@@ -7,7 +7,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
-import { Info, Home, X, Coins, Shield, Spade, Timer, Gift, ClipboardList, Plus, Minus, ChevronsUp, ArrowLeftRight, Sparkles, User, BookOpen, Settings, LayoutGrid } from 'lucide-react';
+import { Info, Home, X, Coins, Shield, Spade, Timer, Gift, ClipboardList, Plus, Minus, ChevronsUp, ArrowLeftRight, Sparkles, User, BookOpen, Settings, LayoutGrid, Flag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { getRoomConfig } from '@/utils/rooms';
 import { calculateHandValue, canSplit, canDoubleDown } from '@/utils/hand';
@@ -708,30 +708,39 @@ function GamePhaseIndicator({ phase }: { phase: GamePhase }) {
 }
 
 function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void }) {
-    const router = useRouter();
+    const [page, setPage] = useState(1);
     const matchHistory = useGameStore((s) => s.matchHistory);
-    const lastMatches = matchHistory.slice(-8).reverse();
-    // Map reversed display index back to the real matchHistory index
     const totalLen = matchHistory.length;
+    const ITEMS_PER_PAGE = 8;
+    const totalPages = Math.max(1, Math.ceil(totalLen / ITEMS_PER_PAGE));
 
-    if (lastMatches.length === 0) return null;
+    // Ensure page is bounds-checked
+    const currentPage = Math.min(Math.max(1, page), totalPages);
+
+    // Reverse matchHistory to show latest first
+    const sortedHistory = useMemo(() => [...matchHistory].reverse(), [matchHistory]);
+
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const currentMatches = sortedHistory.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    if (totalLen === 0) return null;
 
     return (
-        <motion.div className="w-[200px] rounded-xl overflow-hidden"
-            style={{ background: 'rgba(10, 6, 4, 0.8)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.05)' }}
+        <motion.div className="w-[200px] rounded-xl overflow-hidden flex flex-col"
+            style={{ background: 'rgba(10, 6, 4, 0.8)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.05)', maxHeight: '310px' }}
             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
         >
-            <div className="px-3 py-2 border-b border-white/5 flex items-center">
+            <div className="px-3 py-2 border-b border-white/5 flex items-center shrink-0">
                 <ClipboardList size={12} className="mr-1.5 text-white/40" />
                 <span className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/40">History</span>
             </div>
-            <div className="p-2 space-y-1 max-h-[250px] overflow-y-auto">
-                {lastMatches.map((match, displayIdx) => {
+            <div className="p-2 space-y-1 overflow-y-auto flex-1 custom-scrollbar">
+                {currentMatches.map((match, displayIdx) => {
                     const result = match.seats[0]?.hands[0];
                     if (!result) return null;
 
                     // Real index in the matchHistory array
-                    const realIdx = totalLen - 1 - displayIdx;
+                    const realIdx = totalLen - 1 - (startIndex + displayIdx);
 
                     let diff = 0;
                     match.seats.forEach(s => {
@@ -747,7 +756,7 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                         }
                     });
 
-                    const roomLabel = match.roomId === 'vegas_strip' ? 'VS' : match.roomId === 'vegas_downtown' ? 'VD' : 'VIP';
+                    const roomLabel = match.roomId === 'vegas_strip' ? 'VS' : match.roomId === 'vegas_downtown' ? 'VD' : match.roomId === 'atlantic_city' ? 'AC' : 'VIP';
 
                     // Check if any seat had insurance
                     const hadInsurance = match.seats.some(s => s.insuranceCost && s.insuranceCost > 0);
@@ -760,7 +769,7 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                         labelStr = result.result === HandStatus.BLACKJACK ? 'BJ' : 'W';
                         colorClass = 'text-emerald-400';
                     } else if (diff < 0) {
-                        labelStr = 'L';
+                        labelStr = result.result === HandStatus.SURRENDERED ? 'SUR' : 'L';
                         colorClass = 'text-red-400';
                     }
 
@@ -769,7 +778,7 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                             className="flex items-center justify-between px-1.5 py-1 rounded bg-white/2 hover:bg-white/5 cursor-pointer transition-colors">
                             <div className="flex items-center gap-1.5">
                                 <span className={`text-[7px] font-bold px-1 py-0.5 rounded
-                                    ${match.roomId === 'vegas_strip' ? 'bg-purple-500/15 text-purple-400' : match.roomId === 'vegas_downtown' ? 'bg-sky-500/15 text-sky-400' : 'bg-amber-500/15 text-amber-400'}`}
+                                    ${match.roomId === 'vegas_strip' ? 'bg-purple-500/15 text-purple-400' : match.roomId === 'vegas_downtown' ? 'bg-sky-500/15 text-sky-400' : match.roomId === 'atlantic_city' ? 'bg-orange-500/15 text-orange-400' : 'bg-amber-500/15 text-amber-400'}`}
                                 >{roomLabel}</span>
                                 <span className={`text-[9px] font-bold uppercase ${colorClass}`}>
                                     {labelStr}
@@ -785,13 +794,26 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                     );
                 })}
             </div>
-            {totalLen > 0 && (
-                <button
-                    onClick={() => router.push('/history')}
-                    className="w-full py-1.5 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors text-[9px] font-bold uppercase tracking-widest border-t border-white/5"
-                >
-                    Detailed History
-                </button>
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between px-2 py-1.5 border-t border-white/5 bg-white/5 shrink-0">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="p-1 text-white/40 hover:text-white disabled:opacity-20 cursor-pointer transition-colors hover:bg-white/10 rounded"
+                    >
+                        <ChevronLeft size={14} />
+                    </button>
+                    <span className="text-[9px] font-bold text-white/30 tracking-widest">
+                        {currentPage} / {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="p-1 text-white/40 hover:text-white disabled:opacity-20 cursor-pointer transition-colors hover:bg-white/10 rounded"
+                    >
+                        <ChevronRight size={14} />
+                    </button>
+                </div>
             )}
         </motion.div>
     );
@@ -844,6 +866,12 @@ function RulesModal({ room, onClose }: { room: ReturnType<typeof getRoomConfig>;
                                     <strong className="text-white/80 block mb-0.5 text-xs"><Shield size={12} className="inline text-yellow-400 mr-1" />Insurance</strong>
                                     <p className="text-[10px] text-white/40 leading-snug">Offered when the dealer's face-up card is an Ace. Costs half your main bet. Pays 2:1 if the dealer's hidden card makes a Blackjack.</p>
                                 </div>
+                                {room.gameRules.allowSurrender && (
+                                    <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                        <strong className="text-white/80 block mb-0.5 text-xs"><Flag size={12} className="inline text-orange-400 mr-1" />Surrender</strong>
+                                        <p className="text-[10px] text-white/40 leading-snug">Forfeit your hand and lose half your initial bet. Available on your first two cards before any other actions are taken.</p>
+                                    </div>
+                                )}
                             </div>
                         </RuleSection>
 

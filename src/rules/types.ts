@@ -19,6 +19,9 @@ export interface IRules {
     /** Check if a hand can be split, and if it's free. */
     canSplit(hand: Hand, seatHandsLength: number): ActionValidity;
 
+    /** Check if a hand can surrender (Late Surrender). */
+    canSurrender(hand: Hand): ActionValidity;
+
     /**
      * Evaluate the player's outcome against the dealer's outcome.
      * Returns the resulting HandStatus (WON, LOST, PUSH, BLACKJACK) and the payout multiplier.
