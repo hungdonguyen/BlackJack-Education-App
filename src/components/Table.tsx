@@ -7,7 +7,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
-import { Info, Home, X, Coins, Shield, Spade, Timer, Gift, ClipboardList, Plus, Minus, ChevronsUp, ArrowLeftRight, Sparkles, User, BookOpen } from 'lucide-react';
+import { Info, Home, X, Coins, Shield, Spade, Timer, Gift, ClipboardList, Plus, Minus, ChevronsUp, ArrowLeftRight, Sparkles, User, BookOpen, Settings, LayoutGrid } from 'lucide-react';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { getRoomConfig } from '@/utils/rooms';
 import { calculateHandValue, canSplit, canDoubleDown } from '@/utils/hand';
@@ -25,9 +25,11 @@ import StrategyModal from './StrategyModal';
 import HandAdvisor from './HandAdvisor';
 import CardCountingPanel from './CardCountingPanel';
 import MatchDetailModal from './MatchDetailModal';
+import SettingsModal from './SettingsModal';
 import { loadHistory, appendHistory } from '@/utils/saveFile';
 
 const TURN_TIMER_SECONDS = 30;
+const INSURANCE_TIMER_SECONDS = 10;
 
 export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const room = getRoomConfig(roomId);
@@ -35,11 +37,13 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
     const initializeShoe = useGameStore((s) => s.initializeShoe);
     const shoe = useGameStore((s) => s.shoe);
+    const declineInsurance = useGameStore((s) => s.declineInsurance);
     const gamePhase = useGameStore((s) => s.gamePhase);
     const bankroll = useGameStore((s) => s.bankroll);
     const seats = useGameStore((s) => s.seats);
     const stand = useGameStore((s) => s.stand);
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
+    const actionCounter = useGameStore((s) => s.actionCounter);
     const matchHistory = useGameStore((s) => s.matchHistory);
     const setMatchHistory = useGameStore((s) => s.setMatchHistory);
     const lastDailyClaim = useGameStore((s) => s.lastDailyClaim);
@@ -53,11 +57,16 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
     const [showRules, setShowRules] = useState(false);
     const [showStrategy, setShowStrategy] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const [showLogoInfo, setShowLogoInfo] = useState(false);
     const [timer, setTimer] = useState(TURN_TIMER_SECONDS);
+    const [insuranceTimer, setInsuranceTimer] = useState(INSURANCE_TIMER_SECONDS);
     const [winNotification, setWinNotification] = useState<{ amount: number; isWin: boolean; isPush?: boolean } | null>(null);
     const [claimCooldown, setClaimCooldown] = useState('');
     const [selectedMatchIndex, setSelectedMatchIndex] = useState<number | null>(null);
+
+    const showHandAdvisor = useGameStore((s) => s.showHandAdvisor);
+    const showCardCounting = useGameStore((s) => s.showCardCounting);
 
     // ─── File Save: load history on mount, append on new records ─────────
     const prevHistoryLen = useRef(matchHistory.length);
@@ -84,6 +93,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     }, [matchHistory.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const isPlayerTurn = gamePhase === GamePhase.PLAYER_TURN;
+    const isInsurance = gamePhase === GamePhase.INSURANCE;
     const isPayout = gamePhase === GamePhase.PAYOUT;
     const isVegasStrip = roomId === 'vegas_strip';
     const isVegasDowntown = roomId === 'vegas_downtown';
@@ -132,7 +142,33 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             setTimer(TURN_TIMER_SECONDS);
         }
         return () => clearInterval(interval);
-    }, [isPlayerTurn, stand, currentSeatIndex, currentSeat?.currentHandIndex]);
+    }, [isPlayerTurn, stand, currentSeatIndex, currentSeat?.currentHandIndex, actionCounter]);
+
+    // 10-second insurance timer — auto-decline if expired
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        let expired = false;
+
+        if (isInsurance) {
+            setInsuranceTimer(INSURANCE_TIMER_SECONDS);
+            interval = setInterval(() => {
+                setInsuranceTimer((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        if (!expired) {
+                            expired = true;
+                            setTimeout(() => declineInsurance(), 0);
+                        }
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } else {
+            setInsuranceTimer(INSURANCE_TIMER_SECONDS);
+        }
+        return () => clearInterval(interval);
+    }, [isInsurance, declineInsurance, currentSeatIndex]);
 
     // Win notification on payout
     useEffect(() => {
@@ -216,8 +252,8 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const logoPath = roomId === 'vegas_strip'
         ? '/images/logo/Vegas_trip_blackjack.png'
         : roomId === 'vegas_downtown'
-        ? '/images/logo/Vegas_Downtown_Logo.png'
-        : '/images/logo/Classic_Online_Logo.png';
+            ? '/images/logo/Vegas_Downtown_Logo.png'
+            : '/images/logo/Classic_Online_Logo.png';
 
     const isBonusClaim = (dailyClaimCount + 1) % 3 === 0;
 
@@ -424,14 +460,18 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             </div>
 
             {/* Hand Advisor — next to PayoutPanel */}
-            <div className="absolute top-[45px] left-[280px] z-15">
-                <HandAdvisor roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} />
-            </div>
+            {showHandAdvisor && (
+                <div className="absolute top-[45px] left-[285px] z-15">
+                    <HandAdvisor roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} />
+                </div>
+            )}
 
             {/* Card Counting Panel — symmetric to Hand Advisor */}
-            <div className="absolute top-[45px] right-[210px] z-15">
-                <CardCountingPanel numDecks={room.gameRules.numberOfDecks} accentColor={room.accentColor} borderColor={room.borderColor} />
-            </div>
+            {showCardCounting && (
+                <div className="absolute top-[45px] right-[285px] z-15">
+                    <CardCountingPanel numDecks={room.gameRules.numberOfDecks} accentColor={room.accentColor} borderColor={room.borderColor} />
+                </div>
+            )}
 
             {/* Match History — right side, always below logo */}
             <div className="absolute top-[88px] right-[12px] z-15">
@@ -440,7 +480,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
             {/* Action Buttons — center */}
             <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: '33%' }}>
-                <ActionPanel timer={timer} />
+                <ActionPanel timer={timer} insuranceTimer={isInsurance ? insuranceTimer : undefined} currentInsuranceSeat={isInsurance ? seats[currentSeatIndex]?.id : undefined} />
             </div>
 
             {/* 5 Seats — inverted arc (middle lowest) */}
@@ -588,9 +628,12 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                         <button onClick={() => setShowRules(true)}
                             className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
                         ><Info size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Rules</button>
+                        <button onClick={() => setShowSettings(true)}
+                            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
+                        ><Settings size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Settings</button>
                         <button onClick={() => router.push('/lobby')}
                             className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
-                        ><Home size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Lobby</button>
+                        ><LayoutGrid size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Lobby</button>
                         <button onClick={() => router.push('/')}
                             className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
                         ><Home size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Home</button>
@@ -606,6 +649,11 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             {/* Strategy Modal */}
             <AnimatePresence>
                 {showStrategy && <StrategyModal room={room} onClose={() => setShowStrategy(false)} />}
+            </AnimatePresence>
+
+            {/* Settings Modal */}
+            <AnimatePresence>
+                {showSettings && <SettingsModal accentColor={room.accentColor} borderColor={room.borderColor} onClose={() => setShowSettings(false)} />}
             </AnimatePresence>
 
             {/* Match Detail Modal */}
@@ -660,6 +708,7 @@ function GamePhaseIndicator({ phase }: { phase: GamePhase }) {
 }
 
 function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void }) {
+    const router = useRouter();
     const matchHistory = useGameStore((s) => s.matchHistory);
     const lastMatches = matchHistory.slice(-8).reverse();
     // Map reversed display index back to the real matchHistory index
@@ -700,6 +749,9 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
 
                     const roomLabel = match.roomId === 'vegas_strip' ? 'VS' : match.roomId === 'vegas_downtown' ? 'VD' : 'VIP';
 
+                    // Check if any seat had insurance
+                    const hadInsurance = match.seats.some(s => s.insuranceCost && s.insuranceCost > 0);
+
                     // Determine overall label character based on net profit diff
                     let labelStr = 'P';
                     let colorClass = 'text-white/40';
@@ -722,6 +774,9 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                                 <span className={`text-[9px] font-bold uppercase ${colorClass}`}>
                                     {labelStr}
                                 </span>
+                                {hadInsurance && (
+                                    <span className="text-[7px] px-1 py-0.5 rounded bg-yellow-500/15 text-yellow-400 font-bold" title="Insurance purchased">🛡</span>
+                                )}
                             </div>
                             <span className={`text-[9px] font-bold tabular-nums ${diff >= 0 ? 'text-emerald-400/80' : 'text-red-400/80'}`}>
                                 {diff >= 0 ? '+' : ''}{diff}
@@ -730,6 +785,14 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                     );
                 })}
             </div>
+            {totalLen > 0 && (
+                <button
+                    onClick={() => router.push('/history')}
+                    className="w-full py-1.5 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors text-[9px] font-bold uppercase tracking-widest border-t border-white/5"
+                >
+                    Detailed History
+                </button>
+            )}
         </motion.div>
     );
 }
@@ -795,22 +858,15 @@ function RulesModal({ room, onClose }: { room: ReturnType<typeof getRoomConfig>;
                         </RuleSection>
 
                         <RuleSection title="Dealer Rules">
+                            <p className="text-xs text-white/50 leading-relaxed font-bold mb-1">Plays with {room.gameRules.numberOfDecks} Decks</p>
                             <p className="text-xs text-white/50 leading-relaxed">{room.rules.dealerStands}</p>
-                            {room.id === 'classic' && (
-                                <p className="text-xs text-white/40 leading-relaxed mt-1">
-                                    The dealer must draw cards until reaching 17 or higher. On a <strong className="text-white/60">Soft 17</strong> (Ace + 6), the dealer <strong className="text-white/60">must hit</strong> again.
-                                </p>
-                            )}
-                            {room.id === 'vegas_strip' && (
-                                <p className="text-xs text-white/40 leading-relaxed mt-1">
-                                    The dealer stands on <strong className="text-white/60">all 17s</strong>, including Soft 17 (Ace + 6). This is more favourable to the player than Hit Soft 17.
-                                </p>
-                            )}
-                            {room.id === 'vegas_downtown' && (
-                                <p className="text-xs text-white/40 leading-relaxed mt-1">
-                                    The dealer must hit on <strong className="text-white/60">Soft 17</strong> (Ace + 6).
-                                </p>
-                            )}
+
+                            <p className="text-xs text-white/40 leading-relaxed mt-1">
+                                {room.gameRules.dealerHitsSoft17
+                                    ? <span>The dealer must draw cards until reaching 17 or higher. On a <strong className="text-white/60">Soft 17</strong> (Ace + 6), the dealer <strong className="text-white/60">must hit</strong> again.</span>
+                                    : <span>The dealer stands on <strong className="text-white/60">all 17s</strong>, including Soft 17 (Ace + 6).</span>
+                                }
+                            </p>
                         </RuleSection>
                     </div>
                 </div>

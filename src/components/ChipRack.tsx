@@ -21,7 +21,7 @@ export default function ChipRack() {
 
     return (
         <div className="flex items-end gap-1">
-            {CHIP_VALUES.map((value) => {
+            {CHIP_VALUES.filter(v => v >= 1).map((value) => {
                 const isSelected = selectedChipValue === value;
                 const canAfford = bankroll >= value;
                 const isDisabled = !isBettingPhase || !canAfford;

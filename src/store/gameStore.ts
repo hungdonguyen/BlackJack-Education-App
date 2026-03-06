@@ -6,8 +6,10 @@ import { create } from 'zustand';
 import { GameStore } from '@/types/game';
 import { createBettingSlice } from './bettingSlice';
 import { createGameFlowSlice } from './gameFlowSlice';
+import { createSettingsSlice } from './settingsSlice';
 
 export const useGameStoreBase = create<GameStore>()((...a) => ({
   ...createBettingSlice(...a),
   ...createGameFlowSlice(...a),
+  ...createSettingsSlice(...a),
 }));

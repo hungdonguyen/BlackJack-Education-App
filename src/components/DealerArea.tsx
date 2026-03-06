@@ -9,7 +9,7 @@ import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { getHandDisplayValue } from '@/utils/hand';
 import { getRoomConfig } from '@/utils/rooms';
-import { RESHUFFLE_THRESHOLD } from '@/utils/constants';
+
 import { Shuffle } from 'lucide-react';
 import CardComponent from './CardComponent';
 import ScoreBadge from './ScoreBadge';
@@ -17,21 +17,21 @@ import ScoreBadge from './ScoreBadge';
 // ─── Shoe Indicator ───────────────────────────────────────────────────────────
 
 function ShoeIndicator() {
-    const shoe           = useGameStore((s) => s.shoe);
-    const currentRoom    = useGameStore((s) => s.currentRoom);
-    const gamePhase      = useGameStore((s) => s.gamePhase);
+    const shoe = useGameStore((s) => s.shoe);
+    const currentRoom = useGameStore((s) => s.currentRoom);
+    const gamePhase = useGameStore((s) => s.gamePhase);
     const initializeShoe = useGameStore((s) => s.initializeShoe);
-    const roomCfg        = getRoomConfig(currentRoom);
-    const isBetting      = gamePhase === GamePhase.BETTING;
-    const numDecks    = roomCfg.gameRules.numberOfDecks;
-    const totalCards  = numDecks * 52;
-    const remaining   = shoe.length;
-    const pct         = totalCards > 0 ? remaining / totalCards : 1;
-    const reshufflePct = RESHUFFLE_THRESHOLD;         // 0.25
-    const warningPct   = reshufflePct + 0.15;         // warn at 40%
-    const reshuffleAt  = Math.floor(totalCards * reshufflePct);
+    const roomCfg = getRoomConfig(currentRoom);
+    const isBetting = gamePhase === GamePhase.BETTING;
+    const numDecks = roomCfg.gameRules.numberOfDecks;
+    const totalCards = numDecks * 52;
+    const remaining = shoe.length;
+    const pct = totalCards > 0 ? remaining / totalCards : 1;
+    const reshufflePct = roomCfg.gameRules.reshuffleThreshold ?? 0.25;
+    const warningPct = reshufflePct + 0.15;
+    const reshuffleAt = Math.floor(totalCards * reshufflePct);
 
-    const isUrgent  = pct <= reshufflePct;
+    const isUrgent = pct <= reshufflePct;
     const isWarning = !isUrgent && pct <= warningPct;
 
     const barColor = isUrgent
@@ -147,13 +147,17 @@ function ShoeIndicator() {
                         initial={{ opacity: 0, scale: 0.8, y: 4 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.8, y: 4 }}
-                        whileHover={{ scale: 1.08,
-                            backgroundColor: isUrgent ? 'rgba(239,68,68,0.28)' : 'rgba(255,255,255,0.10)' }}
+                        whileHover={{
+                            scale: 1.08,
+                            backgroundColor: isUrgent ? 'rgba(239,68,68,0.28)' : 'rgba(255,255,255,0.10)'
+                        }}
                         whileTap={{ scale: 0.92 }}
                     >
                         <Shuffle
-                            style={{ width: 9, height: 9,
-                                color: isUrgent ? '#ef4444' : 'rgba(255,255,255,0.4)' }}
+                            style={{
+                                width: 9, height: 9,
+                                color: isUrgent ? '#ef4444' : 'rgba(255,255,255,0.4)'
+                            }}
                         />
                         <span
                             className="text-[7px] font-bold uppercase tracking-wide"
@@ -220,8 +224,8 @@ export default function DealerArea() {
                 <div
                     className="relative flex items-end justify-center"
                     style={{
-                        minHeight: '123px',
-                        minWidth: hasCards ? `${86 + (dealerHand.cards.length - 1) * 30}px` : '88px',
+                        minHeight: '133px',
+                        minWidth: hasCards ? `${95 + (dealerHand.cards.length - 1) * 33}px` : '97px',
                     }}
                 >
                     {dealerHand.cards.map((card, idx) => (
@@ -237,7 +241,7 @@ export default function DealerArea() {
 
                     {/* Empty placeholder */}
                     {!hasCards && (
-                        <div className="w-[86px] h-[123px] rounded-lg border border-dashed border-white/[0.08] flex items-center justify-center"
+                        <div className="w-[95px] h-[133px] rounded-lg border border-dashed border-white/[0.08] flex items-center justify-center"
                             style={{ background: 'rgba(255,255,255,0.02)' }}
                         >
                             <span className="text-white/[0.08] text-2xl">🂠</span>

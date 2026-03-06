@@ -8,10 +8,12 @@
 import { useMemo, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
-import { GamePhase } from '@/types/enums';
+import { GamePhase, Rank } from '@/types/enums';
 import { calculateHandValue } from '@/utils/hand';
 import { Card } from '@/types/game';
-import { Info } from 'lucide-react';
+import { Info, TrendingUp } from 'lucide-react';
+import { getDeviation, Deviation } from '@/utils/countingDeviations';
+import { getRoomConfig } from '@/utils/rooms';
 
 // ─── Strategy tables (mirrors StrategyModal) ──────────────────────────────────
 
@@ -265,6 +267,49 @@ function computeBustStats(cards: Card[], shoe: Card[]) {
     };
 }
 
+// ─── Hi-Lo helpers (shared logic with CardCountingPanel) ──────────────────
+
+function getHiLoValue(rank: Rank): number {
+    switch (rank) {
+        case Rank.TWO: case Rank.THREE: case Rank.FOUR: case Rank.FIVE: case Rank.SIX:
+            return +1;
+        case Rank.SEVEN: case Rank.EIGHT: case Rank.NINE:
+            return 0;
+        case Rank.TEN: case Rank.JACK: case Rank.QUEEN: case Rank.KING: case Rank.ACE:
+            return -1;
+        default:
+            return 0;
+    }
+}
+
+function computeTrueCount(
+    shoe: Card[],
+    dealerCards: Card[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    seats: any[],
+    numDecks: number,
+): number {
+    // Running count = -(sum of Hi-Lo values remaining in shoe) for a balanced deck
+    let shoeSum = 0;
+    for (const card of shoe) shoeSum += getHiLoValue(card.rank);
+    let runningCount = -shoeSum;
+
+    // Subtract hidden (unseen) cards from running count
+    for (const card of dealerCards) {
+        if (card.isHidden) runningCount -= getHiLoValue(card.rank);
+    }
+    for (const seat of seats) {
+        for (const hand of seat.hands) {
+            for (const card of hand.cards) {
+                if (card.isHidden) runningCount -= getHiLoValue(card.rank);
+            }
+        }
+    }
+
+    const decksRemaining = Math.max(shoe.length / 52, 0.5);
+    return runningCount / decksRemaining;
+}
+
 // Circular ring SVG
 function RingGauge({ pct, color, size = 56 }: { pct: number; color: string; size?: number }) {
     const id = useId();
@@ -309,7 +354,9 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
     const dealerHand = useGameStore((s) => s.dealerHand);
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
     const shoe = useGameStore((s) => s.shoe);
+    const showCardCounting = useGameStore((s) => s.showCardCounting);
 
+    const room = getRoomConfig(roomId);
     const isVegas = roomId === 'vegas_strip';
     const isVisible = gamePhase === GamePhase.PLAYER_TURN;
 
@@ -326,13 +373,52 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
 
         const showBustRisk = total > 11;
         const bust = showBustRisk ? computeBustStats(cards, shoe) : null;
-        const canSplit = currentSeat.hands.length < 4;
-        const action = getStrategyAction(cards, total, isSoft, dealerUpCard.rank, isVegas, canSplit);
-        const meta = ACTION_META[action];
+        const canSplitHand = currentSeat.hands.length < 4;
+        const basicAction = getStrategyAction(cards, total, isSoft, dealerUpCard.rank, isVegas, canSplitHand);
         const dealerNorm = normRank(dealerUpCard.rank);
 
-        return { total, isSoft, cards, bust, action, meta, dealerNorm, showBustRisk, cardCount: cards.length };
-    }, [currentHand, dealerUpCard, shoe, isVegas]);
+        // ── Card counting deviation check ──
+        let action: Action = basicAction;
+        let deviation: Deviation | null = null;
+        let trueCount = 0;
+
+        if (showCardCounting) {
+            trueCount = computeTrueCount(shoe, dealerHand.cards, seats, room.gameRules.numberOfDecks);
+
+            // Check if current hand is a pair (for split deviations)
+            const isPairHand = cards.length === 2 && cards[0].value === cards[1].value;
+
+            deviation = getDeviation(
+                total,
+                isSoft,
+                isPairHand,
+                dealerNorm,
+                trueCount,
+                room.gameRules.dealerHitsSoft17,
+                room.gameRules.allowSurrender,
+            );
+
+            if (deviation) {
+                action = deviation.deviationAction as Action;
+                // Downgrade double/split if not on initial 2 cards
+                if (cards.length > 2) {
+                    if (action === 'D') action = 'H';
+                    if (action === 'SP') action = basicAction; // can't split after initial
+                    if (action === 'SU') action = total >= 17 ? 'S' : 'H';
+                    // If downgraded action equals basic, no real deviation
+                    if (action === basicAction) deviation = null;
+                }
+            }
+        }
+
+        const meta = ACTION_META[action];
+
+        return {
+            total, isSoft, cards, bust, action, meta, dealerNorm,
+            showBustRisk, cardCount: cards.length,
+            deviation, basicAction, trueCount,
+        };
+    }, [currentHand, dealerUpCard, shoe, isVegas, showCardCounting, seats, dealerHand, room]);
 
     const bdr = borderColor ?? `${accentColor}30`;
 
@@ -341,7 +427,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
             {isVisible && analysis && (
                 <motion.div
                     key="hand-advisor"
-                    className="w-64 rounded-2xl overflow-hidden flex flex-col"
+                    className="w-56 rounded-2xl overflow-hidden flex flex-col"
                     style={{
                         background: 'linear-gradient(180deg, rgba(12,7,4,0.97) 0%, rgba(8,5,3,0.97) 100%)',
                         backdropFilter: 'blur(14px)',
@@ -461,18 +547,54 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
                         {/* Section label */}
                         <div className="flex items-center gap-1.5 mb-2.5">
                             <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${accentColor}40, transparent)` }} />
-                            <span className="text-[9px] font-black uppercase tracking-[0.28em] text-white/30 font-sans">Strategy Advice</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.28em] text-white/30 font-sans">
+                                {analysis.deviation ? 'Count Deviation' : 'Strategy Advice'}
+                            </span>
                             <div className="h-px flex-1" style={{ background: `linear-gradient(270deg, ${accentColor}40, transparent)` }} />
                         </div>
+
+                        {/* Deviation indicator badge */}
+                        {analysis.deviation && (
+                            <motion.div
+                                className="rounded-lg px-2.5 py-2 mb-2.5 flex flex-col gap-1.5"
+                                style={{
+                                    background: 'rgba(245,158,11,0.12)',
+                                    border: '1px solid rgba(245,158,11,0.35)',
+                                    boxShadow: '0 0 16px rgba(245,158,11,0.15)',
+                                }}
+                                initial={{ opacity: 0, y: -4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                            >
+                                <div className="flex items-center gap-1.5">
+                                    <TrendingUp size={12} className="text-amber-400 flex-shrink-0" />
+                                    <span className="text-[8px] font-black uppercase tracking-[0.15em] text-amber-400">
+                                        {analysis.deviation.id.startsWith('I18') ? 'Illustrious 18' : analysis.deviation.id.startsWith('F4') ? 'Fab 4' : 'Deviation'}
+                                        {' — Rule #'}{analysis.deviation.id.split('-')[1]}
+                                    </span>
+                                </div>
+                                <p className="text-[8.5px] font-bold text-amber-200/80 leading-snug">
+                                    {analysis.deviation.description}
+                                </p>
+                                <div className="flex items-center gap-1 text-[8px] font-bold text-amber-300/60">
+                                    <span>TC {analysis.trueCount > 0 ? '+' : ''}{analysis.trueCount % 1 === 0 ? analysis.trueCount : analysis.trueCount.toFixed(1)}</span>
+                                    <span className="text-amber-400/40">•</span>
+                                    <span>Index {analysis.deviation.direction === 'gte' ? '≥' : '<'} {analysis.deviation.index > 0 ? '+' : ''}{analysis.deviation.index}</span>
+                                    <span className="text-amber-400/40">•</span>
+                                    <span className="line-through opacity-50">{ACTION_META[analysis.basicAction as Action]?.shortLabel ?? analysis.basicAction}</span>
+                                    <span>→</span>
+                                    <span className="text-amber-300 font-black">{analysis.meta.shortLabel}</span>
+                                </div>
+                            </motion.div>
+                        )}
 
                         {/* Action badge */}
                         <motion.div
                             key={analysis.action}
                             className="rounded-xl px-3 py-2.5 flex items-center gap-3"
                             style={{
-                                background: analysis.meta.bg,
-                                border: `1px solid ${analysis.meta.border}`,
-                                boxShadow: `0 0 20px ${analysis.meta.glow}`,
+                                background: analysis.deviation ? 'rgba(245,158,11,0.15)' : analysis.meta.bg,
+                                border: `1px solid ${analysis.deviation ? 'rgba(245,158,11,0.45)' : analysis.meta.border}`,
+                                boxShadow: `0 0 20px ${analysis.deviation ? 'rgba(245,158,11,0.25)' : analysis.meta.glow}`,
                             }}
                             initial={{ scale: 0.92, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -482,10 +604,10 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
                             <div
                                 className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-black text-base leading-none"
                                 style={{
-                                    background: `${analysis.meta.glow}`,
-                                    border: `2px solid ${analysis.meta.border}`,
-                                    color: analysis.meta.color,
-                                    textShadow: `0 0 12px ${analysis.meta.glow}`,
+                                    background: analysis.deviation ? 'rgba(245,158,11,0.25)' : `${analysis.meta.glow}`,
+                                    border: `2px solid ${analysis.deviation ? 'rgba(245,158,11,0.5)' : analysis.meta.border}`,
+                                    color: analysis.deviation ? '#fcd34d' : analysis.meta.color,
+                                    textShadow: `0 0 12px ${analysis.deviation ? 'rgba(245,158,11,0.4)' : analysis.meta.glow}`,
                                     fontSize: analysis.action.length > 1 ? '10px' : '16px',
                                     letterSpacing: '0.02em',
                                 }}
@@ -495,7 +617,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
 
                             {/* Text */}
                             <div className="flex flex-col gap-0.5 min-w-0">
-                                <span className="font-black uppercase tracking-[0.12em] text-[13px] leading-tight truncate font-sans" style={{ color: analysis.meta.color }}>
+                                <span className="font-black uppercase tracking-[0.12em] text-[13px] leading-tight truncate font-sans" style={{ color: analysis.deviation ? '#fcd34d' : analysis.meta.color }}>
                                     {analysis.meta.label}
                                 </span>
                                 <span className="text-[10.5px] font-bold leading-tight font-sans" style={{ color: 'rgba(200,180,150,0.8)' }}>
@@ -507,9 +629,12 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
                         {/* Reasoning */}
                         <p
                             className="mt-3 text-[10px] leading-[1.55] font-semibold px-1 font-sans"
-                            style={{ color: 'rgba(180,155,110,0.7)' }}
+                            style={{ color: analysis.deviation ? 'rgba(245,185,100,0.8)' : 'rgba(180,155,110,0.7)' }}
                         >
-                            {analysis.meta.reasoning(analysis.total, analysis.isSoft, analysis.dealerNorm)}
+                            {analysis.deviation
+                                ? analysis.deviation.description
+                                : analysis.meta.reasoning(analysis.total, analysis.isSoft, analysis.dealerNorm)
+                            }
                         </p>
 
                         {/* Hand summary row */}

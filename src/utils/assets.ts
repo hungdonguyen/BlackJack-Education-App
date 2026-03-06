@@ -55,6 +55,7 @@ export function getCardBackPath(): string {
 
 /** Chip value to base filename mapping */
 const CHIP_FILENAMES: Record<number, string> = {
+  0.5: 'chip-0.5',
   1: 'chip-1',
   5: 'chip-5',
   25: 'chip-25',

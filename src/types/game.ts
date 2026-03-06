@@ -3,6 +3,7 @@
 // ============================================
 
 import { Suit, Rank, HandStatus, GamePhase } from './enums';
+import { SettingsSlice } from '@/store/settingsSlice';
 
 /** A single playing card */
 export interface Card {
@@ -87,6 +88,7 @@ export interface GameState {
 
   // Turn tracking
   currentSeatIndex: number;
+  actionCounter: number;
 
   // Betting
   selectedChipValue: number;
@@ -167,4 +169,4 @@ export interface GameActions {
 }
 
 /** Combined store type */
-export type GameStore = GameState & GameActions;
+export type GameStore = GameState & GameActions & SettingsSlice;

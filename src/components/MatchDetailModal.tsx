@@ -8,7 +8,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, X, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ArrowLeft, Shield } from 'lucide-react';
 import { MatchRecord } from '@/types/game';
 import { HandStatus, Rank, Suit } from '@/types/enums';
 
@@ -99,16 +99,20 @@ export default function MatchDetailModal({
 }: MatchDetailModalProps) {
     const roomLabel = match.roomId === 'vegas_strip' ? 'Vegas Strip' : match.roomId === 'vegas_downtown' ? 'Vegas Downtown' : 'Classic';
 
-    // Net P&L for the round
+    // Net P&L for the round (including insurance)
     let totalBet = 0;
     let totalWin = 0;
+    let totalInsuranceCost = 0;
+    let totalInsurancePayout = 0;
     match.seats.forEach(s => {
         s.hands.forEach(h => {
             totalBet += h.betAmount;
             totalWin += h.payout;
         });
+        if (s.insuranceCost) totalInsuranceCost += s.insuranceCost;
+        if (s.insurancePayout) totalInsurancePayout += s.insurancePayout;
     });
-    const netPnl = totalWin;
+    const netPnl = totalWin - totalInsuranceCost + totalInsurancePayout;
 
     const dealerScore = calcScore(match.dealerCards);
 
@@ -182,60 +186,101 @@ export default function MatchDetailModal({
 
                         {/* Rows */}
                         <div className="space-y-2">
-                            {match.seats.map((seat) =>
-                                seat.hands.map((hand, hIdx) => {
-                                    const score = calcScore(hand.cards);
-                                    const statusInfo = STATUS_STYLES[hand.result] ?? STATUS_STYLES[HandStatus.PUSH];
-                                    const pnl = hand.payout;
-                                    const label = seat.hands.length > 1
-                                        ? `Seat ${seat.seatId} · Hand ${hIdx + 1}`
-                                        : `Seat ${seat.seatId}`;
+                            {match.seats.map((seat) => (
+                                <div key={seat.seatId}>
+                                    {seat.hands.map((hand, hIdx) => {
+                                        const score = calcScore(hand.cards);
+                                        const statusInfo = STATUS_STYLES[hand.result] ?? STATUS_STYLES[HandStatus.PUSH];
+                                        const pnl = hand.payout;
+                                        const label = seat.hands.length > 1
+                                            ? `Seat ${seat.seatId} · Hand ${hIdx + 1}`
+                                            : `Seat ${seat.seatId}`;
 
-                                    return (
-                                        <div key={`${seat.seatId}-${hIdx}`}
-                                            className="grid items-center gap-x-1 rounded-lg px-2 py-2"
+                                        return (
+                                            <div key={`${seat.seatId}-${hIdx}`}
+                                                className="grid items-center gap-x-1 rounded-lg px-2 py-2"
+                                                style={{
+                                                    gridTemplateColumns: '80px 1fr 56px 64px 72px',
+                                                    background: 'rgba(255,255,255,0.025)',
+                                                    border: '1px solid rgba(255,255,255,0.04)',
+                                                }}>
+                                                {/* Seat label + status */}
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-white/70">{label}</p>
+                                                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full mt-0.5 inline-block ${statusInfo.className}`}>
+                                                        {statusInfo.label}
+                                                    </span>
+                                                </div>
+
+                                                {/* Cards */}
+                                                <div className="flex gap-1 flex-wrap">
+                                                    {hand.cards.map((c, ci) => (
+                                                        <MiniCard key={ci} suit={c.suit as Suit} rank={c.rank as Rank} />
+                                                    ))}
+                                                </div>
+
+                                                {/* Score */}
+                                                <div className="text-center">
+                                                    <span className="text-[15px] font-black text-white tabular-nums">{score}</span>
+                                                </div>
+
+                                                {/* Bet */}
+                                                <div className="text-right">
+                                                    <span className="text-[11px] font-bold text-white/70 tabular-nums">
+                                                        {hand.betAmount.toLocaleString()}
+                                                    </span>
+                                                </div>
+
+                                                {/* Win/Loss */}
+                                                <div className="text-right">
+                                                    <span className={`text-[13px] font-black tabular-nums ${pnl > 0 ? 'text-emerald-400' : pnl < 0 ? 'text-red-400' : 'text-white/40'}`}>
+                                                        {pnl > 0 ? '+' : ''}{pnl.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {/* Insurance row */}
+                                    {seat.insuranceCost && seat.insuranceCost > 0 && (
+                                        <div className="rounded-lg px-2 py-2 mt-1"
                                             style={{
-                                                gridTemplateColumns: '80px 1fr 56px 64px 72px',
-                                                background: 'rgba(255,255,255,0.025)',
-                                                border: '1px solid rgba(255,255,255,0.04)',
+                                                background: 'rgba(250,204,21,0.04)',
+                                                border: '1px solid rgba(250,204,21,0.1)',
                                             }}>
-                                            {/* Seat label + status */}
-                                            <div>
-                                                <p className="text-[10px] font-bold text-white/70">{label}</p>
-                                                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full mt-0.5 inline-block ${statusInfo.className}`}>
-                                                    {statusInfo.label}
-                                                </span>
-                                            </div>
-
-                                            {/* Cards */}
-                                            <div className="flex gap-1 flex-wrap">
-                                                {hand.cards.map((c, ci) => (
-                                                    <MiniCard key={ci} suit={c.suit as Suit} rank={c.rank as Rank} />
-                                                ))}
-                                            </div>
-
-                                            {/* Score */}
-                                            <div className="text-center">
-                                                <span className="text-[15px] font-black text-white tabular-nums">{score}</span>
-                                            </div>
-
-                                            {/* Bet */}
-                                            <div className="text-right">
-                                                <span className="text-[11px] font-bold text-white/70 tabular-nums">
-                                                    {hand.betAmount.toLocaleString()}
-                                                </span>
-                                            </div>
-
-                                            {/* Win/Loss */}
-                                            <div className="text-right">
-                                                <span className={`text-[13px] font-black tabular-nums ${pnl > 0 ? 'text-emerald-400' : pnl < 0 ? 'text-red-400' : 'text-white/40'}`}>
-                                                    {pnl > 0 ? '+' : ''}{pnl.toLocaleString()}
-                                                </span>
+                                            <div className="grid items-center gap-x-1" style={{ gridTemplateColumns: '80px 1fr 56px 64px 72px' }}>
+                                                <div className="flex items-center gap-1">
+                                                    <Shield size={11} className="text-yellow-400" />
+                                                    <span className="text-[9px] font-bold text-yellow-400/80 uppercase">Insurance</span>
+                                                </div>
+                                                <div className="text-[9px] text-yellow-300/60 font-bold">
+                                                    {seat.insurancePayout && seat.insurancePayout > 0
+                                                        ? '✓ Dealer had Blackjack — Insurance paid 2:1'
+                                                        : '✗ Dealer did not have Blackjack'
+                                                    }
+                                                </div>
+                                                <div />
+                                                <div className="text-right">
+                                                    <span className="text-[10px] font-bold text-yellow-400/60 tabular-nums">
+                                                        -{seat.insuranceCost.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <div className="text-right">
+                                                    {seat.insurancePayout && seat.insurancePayout > 0 ? (
+                                                        <span className="text-[12px] font-black text-emerald-400 tabular-nums">
+                                                            +{(seat.insurancePayout - seat.insuranceCost).toLocaleString()}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[12px] font-black text-red-400 tabular-nums">
+                                                            -{seat.insuranceCost.toLocaleString()}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    );
-                                })
-                            )}
+                                    )}
+                                </div>
+                            ))}
                         </div>
 
                         {/* Total Row */}

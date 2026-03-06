@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useGameStoreBase } from '@/store/gameStore';
 import { GameStore } from '@/types/game';
+import { DealerSpeed } from '@/store/settingsSlice';
 import { isTauriEnv, readSaveFile, writeSaveFile } from '@/utils/saveFile';
 
 export function useGameStore<T>(selector: (state: GameStore) => T): T {
@@ -45,6 +46,15 @@ export function useStoreHydration(): boolean {
                   patch.lastDailyClaim = parsed.state.lastDailyClaim;
                 if (typeof parsed.state.dailyClaimCount === 'number')
                   patch.dailyClaimCount = parsed.state.dailyClaimCount;
+                // Settings
+                if (parsed.state.dealerSpeed === 'normal' || parsed.state.dealerSpeed === 'fast')
+                  patch.dealerSpeed = parsed.state.dealerSpeed as DealerSpeed;
+                if (typeof parsed.state.soundEnabled === 'boolean')
+                  patch.soundEnabled = parsed.state.soundEnabled;
+                if (typeof parsed.state.showHandAdvisor === 'boolean')
+                  patch.showHandAdvisor = parsed.state.showHandAdvisor;
+                if (typeof parsed.state.showCardCounting === 'boolean')
+                  patch.showCardCounting = parsed.state.showCardCounting;
                 if (Object.keys(patch).length > 0) {
                   useGameStoreBase.setState(patch);
                 }
@@ -81,6 +91,10 @@ export function useStoreHydration(): boolean {
             bankroll: state.bankroll,
             lastDailyClaim: state.lastDailyClaim,
             dailyClaimCount: state.dailyClaimCount,
+            dealerSpeed: state.dealerSpeed,
+            soundEnabled: state.soundEnabled,
+            showHandAdvisor: state.showHandAdvisor,
+            showCardCounting: state.showCardCounting,
           };
           base.version = 0;
           await writeSaveFile(JSON.stringify(base));
@@ -92,6 +106,10 @@ export function useStoreHydration(): boolean {
                 bankroll: state.bankroll,
                 lastDailyClaim: state.lastDailyClaim,
                 dailyClaimCount: state.dailyClaimCount,
+                dealerSpeed: state.dealerSpeed,
+                soundEnabled: state.soundEnabled,
+                showHandAdvisor: state.showHandAdvisor,
+                showCardCounting: state.showCardCounting,
               },
               version: 0,
             })
@@ -106,7 +124,11 @@ export function useStoreHydration(): boolean {
         if (
           state.bankroll !== prevState.bankroll ||
           state.lastDailyClaim !== prevState.lastDailyClaim ||
-          state.dailyClaimCount !== prevState.dailyClaimCount
+          state.dailyClaimCount !== prevState.dailyClaimCount ||
+          state.dealerSpeed !== prevState.dealerSpeed ||
+          state.soundEnabled !== prevState.soundEnabled ||
+          state.showHandAdvisor !== prevState.showHandAdvisor ||
+          state.showCardCounting !== prevState.showCardCounting
         ) {
           debouncedSave(state);
         }

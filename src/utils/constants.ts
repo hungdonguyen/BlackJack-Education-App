@@ -4,7 +4,7 @@
 
 /** Available chip denominations */
 export const CHIP_VALUES = [
-  1, 5, 25, 100, 500, 1_000, 5_000, 25_000, 100_000, 500_000, 1_000_000,
+  0.5, 1, 5, 25, 100, 500, 1_000, 5_000, 25_000, 100_000, 500_000, 1_000_000,
 ] as const;
 
 /** Number of standard decks in the shoe */
@@ -24,6 +24,7 @@ export const DEFAULT_BANKROLL = 10_000;
 
 /** Chip display labels */
 export const CHIP_LABELS: Record<number, string> = {
+  0.5: '$0.5',
   1: '$1',
   5: '$5',
   25: '$25',
@@ -39,6 +40,7 @@ export const CHIP_LABELS: Record<number, string> = {
 
 /** Chip colors for CSS styling */
 export const CHIP_COLORS: Record<number, { bg: string; border: string; text: string }> = {
+  0.5: { bg: 'bg-indigo-300', border: 'border-indigo-400', text: 'text-indigo-900' },
   1: { bg: 'bg-gray-100', border: 'border-gray-400', text: 'text-gray-700' },
   5: { bg: 'bg-red-600', border: 'border-red-800', text: 'text-white' },
   25: { bg: 'bg-green-600', border: 'border-green-800', text: 'text-white' },

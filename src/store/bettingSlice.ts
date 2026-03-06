@@ -270,7 +270,17 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   },
 
   setCurrentRoom: (roomId: string) => {
-    set({ currentRoom: roomId });
+    const state = get() as any;
+    if (state.currentRoom === roomId) return;
+
+    const currentShoe = state.shoe;
+    const savedShoes = state.savedShoes || {};
+
+    set({ 
+      currentRoom: roomId,
+      savedShoes: { ...savedShoes, [state.currentRoom]: currentShoe },
+      shoe: savedShoes[roomId] || []
+    } as any);
   },
 
   triggerInsufficientFunds: () => {

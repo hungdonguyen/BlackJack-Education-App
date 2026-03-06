@@ -12,7 +12,7 @@ import { Shield, Check, X, Undo2, Spade, Home, Sparkles } from 'lucide-react';
 import { getRules } from '@/rules';
 import { getRoomConfig } from '@/utils/rooms';
 
-export default function ActionPanel({ timer }: { timer?: number }) {
+export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSeat }: { timer?: number; insuranceTimer?: number; currentInsuranceSeat?: number }) {
     const gamePhase = useGameStore((s) => s.gamePhase);
     const seats = useGameStore((s) => s.seats);
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
@@ -76,7 +76,7 @@ export default function ActionPanel({ timer }: { timer?: number }) {
     // Calculate total insurance cost for display
     // Calculate total insurance cost for display (per seat)
     const totalInsuranceCost = isInsurance && currentSeat
-        ? Math.floor((currentSeat.hands[0]?.betAmount ?? 0) / 2)
+        ? (currentSeat.hands[0]?.betAmount ?? 0) / 2
         : 0;
     const canInsurance = bankroll >= totalInsuranceCost;
 
@@ -129,12 +129,29 @@ export default function ActionPanel({ timer }: { timer?: number }) {
                         exit={{ opacity: 0, scale: 0.8 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     >
+                        {/* Insurance timer */}
+                        {insuranceTimer !== undefined && (
+                            <motion.div
+                                className={`flex items-center justify-center rounded-full border-2 bg-black/80 backdrop-blur-md shadow-xl
+                                    ${insuranceTimer <= 3 ? 'border-red-500/80' : insuranceTimer <= 5 ? 'border-yellow-500/80 text-yellow-500' : 'border-yellow-400/80 text-yellow-400'}`}
+                                style={{ width: 46, height: 46 }}
+                                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}
+                            >
+                                <span className={`text-lg font-black tabular-nums ${insuranceTimer <= 3 ? 'text-red-500 animate-pulse' : ''}`}>{insuranceTimer}</span>
+                            </motion.div>
+                        )}
+
                         <div className="px-6 py-3 rounded-xl bg-black/60 backdrop-blur-md border border-yellow-400/20 text-center"
                             style={{ boxShadow: '0 0 30px rgba(250, 204, 21, 0.15)' }}
                         >
                             <p className="text-yellow-400 text-sm flex items-center justify-center font-extrabold uppercase tracking-[0.2em] mb-1">
                                 <Shield className="w-4 h-4 mr-1.5" /> Insurance?
                             </p>
+                            {currentInsuranceSeat && (
+                                <p className="text-amber-300/80 text-[11px] font-bold uppercase tracking-wider mb-1">
+                                    🎯 Seat {currentInsuranceSeat}
+                                </p>
+                            )}
                             <p className="text-white/40 text-[10px] mb-3">
                                 Dealer shows Ace · Pays 2:1 if dealer has Blackjack
                             </p>

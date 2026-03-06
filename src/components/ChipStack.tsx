@@ -48,7 +48,7 @@ export default function ChipStack({ amount, maxDisplay = 15 }: ChipStackProps) {
                                     src={getChipImagePath(val)}
                                     alt={`$${val} chip`}
                                     fill
-                                    className="object-cover scale-[1.15]"
+                                    className={`object-cover scale-[1.15] ${val === 0.5 ? 'brightness-125 sepia-[0.3] hue-rotate-[190deg] saturate-150' : ''}`}
                                     sizes="40px"
                                 />
                             </div>

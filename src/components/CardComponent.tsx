@@ -21,14 +21,14 @@ interface CardComponentProps {
 }
 
 const SIZE_MAP = {
-    sm: { width: 64, height: 93 },   // 80% of 80x116
-    md: { width: 86, height: 123 },  // 80% of 107x154
-    lg: { width: 106, height: 153 }, // 80% of 132x191
+    sm: { width: 57, height: 84 },   // ~10% increase
+    md: { width: 76, height: 110 },  // ~10% increase
+    lg: { width: 95, height: 136 },  // ~10% increase
 };
 
 // Natural rotation for fanned cards (subtle, like a real dealer)
 const FAN_ROTATIONS = [0, 3, -2, 5, -3, 4, -1, 6];
-const FAN_OFFSETS = { sm: 26, md: 30, lg: 34 }; // 80% of original
+const FAN_OFFSETS = { sm: 23, md: 26, lg: 31 }; // ~10% increase
 
 export default function CardComponent({
     card,

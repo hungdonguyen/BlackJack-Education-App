@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, BookOpen } from 'lucide-react';
 import { RoomConfig } from '@/utils/rooms';
+import { I18_S17, I18_H17, FAB_4 } from '@/utils/countingDeviations';
 
 interface StrategyModalProps {
     room: RoomConfig;
@@ -187,7 +188,7 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                                 Basic Strategy
                             </h2>
                             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] mt-0.5" style={{ color: `${room.accentColor}cc` }}>
-                                {room.name} {'\u2014'} {isVegas ? '4 Decks \u00b7 S17 \u00b7 Double After Split' : '6 Decks \u00b7 H17 \u00b7 Double After Split'} {'\u00b7'} {room.gameRules.allowSurrender ? 'Allow Surrender' : 'No Surrender'}
+                                {room.name} {'\u2014'} {room.gameRules.numberOfDecks} Decks {'\u00b7'} {room.gameRules.dealerHitsSoft17 ? 'H17' : 'S17'} {'\u00b7'} Double After Split {'\u00b7'} {room.gameRules.allowSurrender ? 'Allow Surrender' : 'No Surrender'}
                             </p>
                         </div>
                     </div>
@@ -352,35 +353,39 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                             {/* Strategy Deviations */}
                             <div>
                                 <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
-                                    Advanced: Key Deviations (Illustrious 18)
+                                    Advanced: Key Deviations (Illustrious 18 + Fab 4)
                                 </p>
                                 <p className="text-[12px] leading-relaxed mb-3" style={{ color: 'rgba(240,230,214,0.45)' }}>
-                                    At certain True Counts, you should deviate from basic strategy. These are the most important:
+                                    At certain True Counts, you should deviate from basic strategy. These are the most important deviations, and the Hand Advisor will automatically adapt to them if enabled:
                                 </p>
                                 <div className="w-full overflow-x-auto">
                                     <table className="w-full border-separate" style={{ borderSpacing: '2px' }}>
                                         <thead>
                                             <tr>
-                                                {['Hand', 'Dealer', 'TC', 'Action'].map((h) => (
+                                                {['ID', 'Hand', 'Dealer', 'TC', 'Action / Description'].map((h) => (
                                                     <th key={h} className="text-[9px] font-bold uppercase tracking-wider text-center py-1.5 rounded" style={{ color: `${room.accentColor}80`, background: 'rgba(255,255,255,0.06)', fontFamily: "'Georgia', serif" }}>{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {[
-                                                { hand: '16', dlr: '10', tc: '+0', action: 'Stand', note: 'Instead of Hit' },
-                                                { hand: '15', dlr: '10', tc: '+4', action: 'Stand', note: 'Instead of Hit' },
-                                                { hand: '12', dlr: '2', tc: '+3', action: 'Stand', note: 'Instead of Hit' },
-                                                { hand: '12', dlr: '3', tc: '+2', action: 'Stand', note: 'Instead of Hit' },
-                                                { hand: '10', dlr: '10', tc: '+4', action: 'Double', note: 'Instead of Hit' },
-                                                { hand: '10', dlr: 'A', tc: '+4', action: 'Double', note: 'Instead of Hit' },
-                                                { hand: 'Ins', dlr: 'A', tc: '+3', action: 'Take Insurance', note: 'Usually decline' },
-                                            ].map((row, i) => (
+                                            {[...(room.gameRules.dealerHitsSoft17 ? I18_H17 : I18_S17), ...FAB_4].map((dev, i) => (
                                                 <tr key={i}>
-                                                    <td className="text-[11px] font-bold text-center py-1.5 rounded" style={{ color: 'rgba(240,230,214,0.7)', background: 'rgba(255,255,255,0.04)' }}>{row.hand}</td>
-                                                    <td className="text-[11px] font-bold text-center py-1.5 rounded" style={{ color: 'rgba(240,230,214,0.7)', background: 'rgba(255,255,255,0.04)' }}>{row.dlr}</td>
-                                                    <td className="text-[11px] font-black text-center py-1.5 rounded" style={{ color: '#86efac', background: 'rgba(34,197,94,0.08)' }}>{row.tc}</td>
-                                                    <td className="text-[10px] font-bold text-center py-1.5 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.04)' }}>{row.action}</td>
+                                                    <td className="text-[10px] font-bold text-center py-1.5 rounded whitespace-nowrap px-2" style={{ color: 'rgba(245,158,11,0.8)', background: 'rgba(245,158,11,0.08)' }}>
+                                                        {dev.id}
+                                                    </td>
+                                                    <td className="text-[11px] font-bold text-center py-1.5 rounded whitespace-nowrap px-2" style={{ color: 'rgba(240,230,214,0.7)', background: 'rgba(255,255,255,0.04)' }}>
+                                                        {dev.playerTotal === 0 ? 'Ins' : (dev.isPair ? `${dev.playerTotal / 2},${dev.playerTotal / 2}` : (dev.isSoft ? `A,${dev.playerTotal - 11}` : dev.playerTotal))}
+                                                    </td>
+                                                    <td className="text-[11px] font-bold text-center py-1.5 rounded" style={{ color: 'rgba(240,230,214,0.7)', background: 'rgba(255,255,255,0.04)' }}>
+                                                        {dev.dealerUpcard}
+                                                    </td>
+                                                    <td className="text-[11px] font-black text-center py-1.5 rounded whitespace-nowrap px-2" style={{ color: dev.direction === 'gte' ? '#86efac' : '#fca5a5', background: dev.direction === 'gte' ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)' }}>
+                                                        {dev.direction === 'gte' ? '≥ ' : '< '}
+                                                        {dev.index > 0 ? '+' : ''}{dev.index}
+                                                    </td>
+                                                    <td className="text-[10px] font-medium text-left py-1.5 px-3 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.04)' }}>
+                                                        {dev.description}
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>

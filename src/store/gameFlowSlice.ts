@@ -11,16 +11,19 @@ import { getRules } from '@/rules';
 import { getRoomConfig } from '@/utils/rooms';
 import { BLACKJACK_PAYOUT } from '@/utils/constants';
 import { createEmptyHand } from './bettingSlice';
+import { SPEED_DELAYS } from './settingsSlice';
 
 export interface GameFlowSlice {
   // State
   shoe: Card[];
+  savedShoes: Record<string, Card[]>;
   gamePhase: GamePhase;
   seats: GameStore['seats'];
   dealerHand: GameStore['dealerHand'];
   currentSeatIndex: number;
   matchHistory: MatchRecord[];
   insuranceBets: Record<number, number>;
+  actionCounter: number;
   
   // Actions
   initializeShoe: () => void;
@@ -64,6 +67,7 @@ function findFirstActiveSeatIndex(state: GameStore): number {
 
 export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice> = (set, get) => ({
   shoe: [],
+  savedShoes: {},
   gamePhase: GamePhase.BETTING,
   seats: Array.from({ length: 5 }, (_, i) => ({
     id: i + 1,
@@ -75,6 +79,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   currentSeatIndex: 0,
   matchHistory: [],
   insuranceBets: {},
+  actionCounter: 0,
 
   initializeShoe: () => {
     const state = get();
@@ -129,7 +134,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const dealerCards: Card[] = [];
 
     const dealToSeat = async (seatId: number) => {
-      await new Promise((resolve) => setTimeout(resolve, 800)); // 0.8s between dealt cards
+      const delays = SPEED_DELAYS[get().dealerSpeed];
+      await new Promise((resolve) => setTimeout(resolve, delays.dealCard));
       const seatIndex = newSeats.findIndex((s) => s.id === seatId);
       const card = dealCard(shoe);
       newSeats = [...newSeats]; // copy array
@@ -144,7 +150,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     };
 
     const dealToDealer = async (isHidden: boolean = false) => {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const delays = SPEED_DELAYS[get().dealerSpeed];
+      await new Promise((resolve) => setTimeout(resolve, delays.dealCard));
       dealerCards.push(dealCard(shoe, isHidden));
       set({ dealerHand: { cards: [...dealerCards] }, shoe: [...shoe] });
     };
@@ -162,7 +169,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     await dealToDealer(true); // Hole card (hidden)
 
     // Wait a brief moment after all cards are dealt before checking for Blackjacks
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const postDealDelay = SPEED_DELAYS[get().dealerSpeed].postDeal;
+    await new Promise((resolve) => setTimeout(resolve, postDealDelay));
 
     // Check for natural Blackjacks
     const finalSeats = newSeats.map((seat) => {
@@ -236,7 +244,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     if (!currentSeat || !currentSeat.isActive) return;
 
     const mainBet = currentSeat.hands[0]?.betAmount ?? 0;
-    const insuranceAmount = Math.floor(mainBet / 2);
+    const insuranceAmount = mainBet / 2;
 
     if (insuranceAmount > state.bankroll || insuranceAmount <= 0) {
       return; 
@@ -320,6 +328,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const currentHand = getCurrentHand(state);
     if (!currentHand || currentHand.status !== HandStatus.PLAYING) return;
 
+    // Increment action counter to reset turn timer
+    set({ actionCounter: state.actionCounter + 1 });
+
     let shoe = [...state.shoe];
 
     if (shoe.length === 0) {
@@ -394,6 +405,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
 
     const currentHand = getCurrentHand(state);
+
+    // Increment action counter to reset turn timer
+    set({ actionCounter: state.actionCounter + 1 });
     if (!currentHand || currentHand.status !== HandStatus.PLAYING) return;
 
     const seat = state.seats[state.currentSeatIndex];
@@ -448,6 +462,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
 
   split: () => {
     const state = get();
+
+    // Increment action counter to reset turn timer
+    set({ actionCounter: state.actionCounter + 1 });
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
 
     const seat = state.seats[state.currentSeatIndex];
@@ -624,8 +641,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         dealerValue.total < 17 || 
         (dealerValue.total === 17 && dealerValue.isSoft && hitsSoft17)
       ) {
-        // Wait 1 seconds before drawing next card
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Wait before drawing next card
+        const hitDelay = SPEED_DELAYS[get().dealerSpeed].dealerHit;
+        await new Promise((resolve) => setTimeout(resolve, hitDelay));
 
         // Refetch latest state inside loop to avoid stale shoe
         const currentState = get();
@@ -650,7 +668,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     }
 
     // Small delay before payout phase for visual pacing
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const prePayoutDelay = SPEED_DELAYS[get().dealerSpeed].prePayout;
+    await new Promise((resolve) => setTimeout(resolve, prePayoutDelay));
 
     set({
       gamePhase: GamePhase.PAYOUT,

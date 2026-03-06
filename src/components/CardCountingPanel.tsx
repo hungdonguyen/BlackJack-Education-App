@@ -203,7 +203,7 @@ export default function CardCountingPanel({
             {isVisible && (
                 <motion.div
                     key="card-counting"
-                    className="w-64 rounded-2xl overflow-hidden flex flex-col"
+                    className="w-56 rounded-2xl overflow-hidden flex flex-col"
                     style={{
                         background: 'linear-gradient(180deg, rgba(12,7,4,0.97) 0%, rgba(8,5,3,0.97) 100%)',
                         backdropFilter: 'blur(14px)',

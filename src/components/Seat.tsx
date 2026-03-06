@@ -32,6 +32,7 @@ export default function Seat({ seatId, style }: SeatProps) {
 
     const isBetting = gamePhase === GamePhase.BETTING;
     const isCurrentTurn = gamePhase === GamePhase.PLAYER_TURN && currentSeatIndex === seatId - 1;
+    const isInsuranceTurn = gamePhase === GamePhase.INSURANCE && currentSeatIndex === seatId - 1;
     const insuranceBet = useGameStore((s) => s.insuranceBets[seatId] ?? 0);
     const totalBet = seat.hands.reduce((sum, h) => sum + h.betAmount, 0) + insuranceBet;
     const hasCards = seat.isActive && seat.hands.some(h => h.cards.length > 0);
@@ -59,8 +60,8 @@ export default function Seat({ seatId, style }: SeatProps) {
         <div className="flex flex-col items-center" style={style}>
             {/* ─── Cards Area (above circle, higher z-index) ─── */}
             {hasCards && (
-                <div className="relative min-w-[60px] flex items-end justify-center mb-4"
-                    style={{ zIndex: 10, minHeight: '120px', paddingTop: '38px' }}
+                <div className="relative min-w-[49px] flex items-end justify-center mb-4"
+                    style={{ zIndex: 10, minHeight: '97px', paddingTop: '31px' }}
                 >
                     {seat.hands.map((hand, handIdx) => {
                         // Is this the currently active hand?
@@ -71,16 +72,16 @@ export default function Seat({ seatId, style }: SeatProps) {
                         return (
                             <div key={hand.id}
                                 className={`relative ${handIdx > 0 ? 'ml-5' : ''}`}
-                                style={{ minWidth: `${56 + (hand.cards.length - 1) * 22}px`, height: '93px' }}
+                                style={{ minWidth: `${45 + (hand.cards.length - 1) * 18}px`, height: '76px' }}
                             >
                                 {/* Hand Score (Above Cards) */}
                                 {hand.cards.length > 0 && (
-                                    <div className={`absolute -top-10 left-1/2 -translate-x-1/2 z-20 flex justify-center transition-all ${isActiveHand ? 'scale-110' : 'scale-90 opacity-80'}`}>
+                                    <div className={`absolute -top-8 left-1/2 -translate-x-1/2 z-20 flex justify-center transition-all ${isActiveHand ? 'scale-100' : 'scale-[0.73] opacity-80'}`}>
                                         <motion.div
                                             key={`hand-${hand.id}-${hand.cards.length}`}
                                             className={`flex items-center justify-center rounded-full border-2 
                                                 ${isActiveHand ? 'border-amber-400 bg-black/90 text-amber-400' : 'border-white/20 bg-black/80 text-white'} 
-                                                backdrop-blur-sm shadow-lg px-1.5 min-w-[32px] h-[32px]`}
+                                                backdrop-blur-sm shadow-lg px-1 min-w-[26px] h-[26px]`}
                                             initial={{ scale: 0, opacity: 0 }}
                                             animate={{ scale: 1, opacity: 1 }}
                                             transition={{
@@ -90,7 +91,7 @@ export default function Seat({ seatId, style }: SeatProps) {
                                                 delay: Math.max(0, (hand.cards.length - 1) * 0.18 + 0.4)
                                             }}
                                         >
-                                            <span className="text-sm font-black tabular-nums whitespace-nowrap">
+                                            <span className="text-[10px] font-black tabular-nums whitespace-nowrap">
                                                 {getHandDisplayValue(hand.cards)}
                                             </span>
                                         </motion.div>
@@ -191,6 +192,15 @@ export default function Seat({ seatId, style }: SeatProps) {
                     <motion.div className="absolute inset-[-3px] rounded-full border-2 border-amber-400/50"
                         animate={{ scale: [1, 1.08, 1], opacity: [0.5, 1, 0.5] }}
                         transition={{ duration: 2, repeat: Infinity }}
+                    />
+                )}
+
+                {/* Glow ring for insurance decision */}
+                {isInsuranceTurn && (
+                    <motion.div className="absolute inset-[-4px] rounded-full border-2 border-yellow-400/60"
+                        style={{ boxShadow: '0 0 20px rgba(250,204,21,0.3)' }}
+                        animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 1.2, repeat: Infinity }}
                     />
                 )}
             </motion.div>
