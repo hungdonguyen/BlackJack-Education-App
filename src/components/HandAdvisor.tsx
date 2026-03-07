@@ -17,7 +17,7 @@ import { getRoomConfig } from '@/utils/rooms';
 
 // ─── Strategy tables (mirrors StrategyModal) ──────────────────────────────────
 
-type Action = 'H' | 'S' | 'D' | 'DS' | 'SP' | 'SU';
+type Action = 'H' | 'S' | 'D' | 'DS' | 'SP' | 'SU' | 'FD' | 'FSP';
 
 const DEALER_UPCARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A'] as const;
 const PAIR_ROWS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A'] as const;
@@ -59,6 +59,24 @@ const HARD_VEGAS: Action[][] = [
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
+const HARD_FA: Action[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 9
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 10
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 11
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
 
 // Soft (row index = total − 13, totals 13-20)
 const SOFT_CLASSIC: Action[][] = [
@@ -79,6 +97,16 @@ const SOFT_VEGAS: Action[][] = [
     ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['DS', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
     ['S', 'S', 'S', 'S', 'DS', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+const SOFT_FA: Action[][] = [
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
 
@@ -124,6 +152,19 @@ const PAIRS_TABLE: Action[][] = [
     ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'], // 9,9
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],       // 10,10
     ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'], // A,A
+];
+
+const PAIRS_FA: Action[][] = [
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 2,2
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 3,3
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 4,4
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'],         // 5,5 is Hard 10 -> Free Double
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 6,6
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 7,7
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 8,8
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 9,9
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],                   // 10,10 (Regular rules, stand)
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // A,A
 ];
 
 // ─── Action metadata ──────────────────────────────────────────────────────────
@@ -216,6 +257,26 @@ const ACTION_META: Record<Action, {
         reasoning: (t, _s, d) =>
             `Total ${t} vs Dealer (${d}) — Win rate < 25%, Surrendering is optimal to minimise losses`,
     },
+    FD: {
+        label: 'FREE ACTION DOUBLE',
+        shortLabel: 'FD',
+        color: '#facc15',
+        glow: 'rgba(250,204,21,0.5)',
+        border: 'rgba(250,204,21,0.6)',
+        bg: 'rgba(161,98,7,0.3)',
+        desc: 'Double with free chips',
+        reasoning: (t, _s, _d) => `Hard ${t} — Always take the Free Action Double, it's risk-free profit!`,
+    },
+    FSP: {
+        label: 'FREE ACTION SPLIT',
+        shortLabel: 'FSP',
+        color: '#facc15',
+        glow: 'rgba(250,204,21,0.5)',
+        border: 'rgba(250,204,21,0.6)',
+        bg: 'rgba(161,98,7,0.3)',
+        desc: 'Split hand with free chips',
+        reasoning: (_t, _s, _d) => `Non-10 pair — Always take the Free Action Split, double your chances for free!`,
+    },
 };
 
 // ─── Utility helpers ──────────────────────────────────────────────────────────
@@ -253,24 +314,24 @@ function getStrategyAction(
 
     const pairIdx = getPairRowIdx(cards);
     if (pairIdx >= 0) {
-        action = PAIRS_TABLE[pairIdx][dIdx];
-        if (action === 'SP' && !canSplit) {
+        action = strategyType === 'free_action' ? PAIRS_FA[pairIdx][dIdx] : PAIRS_TABLE[pairIdx][dIdx];
+        if ((action === 'SP' || action === 'FSP') && !canSplit) {
             const clampedTotal = Math.min(Math.max(total, 5), 20);
-            const tbl = strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC;
+            const tbl = strategyType === 'free_action' ? HARD_FA : strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC;
             action = tbl[clampedTotal - 5]?.[dIdx] ?? 'H';
         }
     } else if (isSoft && total >= 13 && total <= 20) {
-        const tbl = strategyType === 'ac' ? SOFT_AC : strategyType === 'vegas' ? SOFT_VEGAS : SOFT_CLASSIC;
+        const tbl = strategyType === 'free_action' ? SOFT_FA : strategyType === 'ac' ? SOFT_AC : strategyType === 'vegas' ? SOFT_VEGAS : SOFT_CLASSIC;
         action = tbl[total - 13]?.[dIdx] ?? 'H';
     } else {
         const clampedTotal = Math.min(Math.max(total, 5), 20);
-        const tbl = strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC;
+        const tbl = strategyType === 'free_action' ? HARD_FA : strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC;
         action = tbl[clampedTotal - 5]?.[dIdx] ?? (total >= 17 ? 'S' : 'H');
     }
 
     // Downgrade actions that are only allowed on the initial 2 cards or specific contexts
     if (cards.length > 2) {
-        if (action === 'D') action = 'H';
+        if (action === 'D' || action === 'FD') action = 'H';
         else if (action === 'DS') action = 'S';
     }
 
@@ -388,7 +449,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
     const showCardCounting = useGameStore((s) => s.showCardCounting);
 
     const room = getRoomConfig(roomId);
-    const strategyType = roomId === 'atlantic_city' ? 'ac' : (roomId === 'vegas_strip' || roomId === 'vegas_downtown') ? 'vegas' : 'classic';
+    const strategyType = roomId === 'free_action' ? 'free_action' : roomId === 'atlantic_city' ? 'ac' : (roomId === 'vegas_strip' || roomId === 'vegas_downtown') ? 'vegas' : 'classic';
     const isVisible = gamePhase === GamePhase.PLAYER_TURN;
 
     // Gather current hand & dealer upcard

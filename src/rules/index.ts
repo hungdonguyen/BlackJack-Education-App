@@ -3,6 +3,7 @@ import { ClassicRules } from './ClassicRules';
 import { VegasStripRules } from './VegasStripRules';
 import { VegasDowntownRules } from './VegasDowntownRules';
 import { AtlanticCityRules } from './AtlanticCityRules';
+import { FreeActionRules } from './FreeActionRules';
 
 export function getRules(roomId: string): IRules {
     switch (roomId) {
@@ -12,6 +13,8 @@ export function getRules(roomId: string): IRules {
             return new VegasDowntownRules();
         case 'atlantic_city':
             return new AtlanticCityRules();
+        case 'free_action':
+            return new FreeActionRules();
         case 'classic':
         default:
             return new ClassicRules();
@@ -23,3 +26,4 @@ export * from './ClassicRules';
 export * from './VegasStripRules';
 export * from './VegasDowntownRules';
 export * from './AtlanticCityRules';
+export * from './FreeActionRules';

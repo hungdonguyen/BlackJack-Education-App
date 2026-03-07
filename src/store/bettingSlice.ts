@@ -6,6 +6,7 @@ import { StateCreator } from 'zustand';
 import { GameStore } from '@/types/game';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { CHIP_VALUES, DEFAULT_BANKROLL } from '@/utils/constants';
+import { getRoomConfig } from '@/utils/rooms';
 
 /** A record of a single bet placement for undo */
 export interface BetRecord {
@@ -22,7 +23,9 @@ export interface BettingSlice {
   dailyClaimCount: number;
   currentRoom: string;
   previousBets: { seatId: number; amount: number }[];
+  previousSideBets: Record<number, number>;
   insufficientFundsWarning: boolean;
+  sideBets: Record<number, number>;
 
   // Actions
   selectChip: (value: number) => void;
@@ -38,6 +41,8 @@ export interface BettingSlice {
   triggerInsufficientFunds: () => void;
   clearInsufficientFunds: () => void;
   setBankroll: (amount: number) => void;
+  placeSideBet: (seatId: number, amount: number) => void;
+  clearSideBet: (seatId: number) => void;
 }
 
 export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> = (set, get) => ({
@@ -48,7 +53,9 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   dailyClaimCount: 0,
   currentRoom: 'classic',
   previousBets: [],
+  previousSideBets: {},
   insufficientFundsWarning: false,
+  sideBets: {},
 
   selectChip: (value: number) => {
     set({ selectedChipValue: value });
@@ -86,9 +93,19 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
 
     const lastBet = state.betHistory[state.betHistory.length - 1];
 
+    // If this undo will drop the seat's main bet to 0, also return its side bet
+    const affectedSeat = state.seats.find(s => s.id === lastBet.seatId);
+    const newMainBet = affectedSeat
+      ? affectedSeat.hands.reduce((sum, h) => sum + h.betAmount, 0) - lastBet.amount
+      : 0;
+    const sideRefund = newMainBet <= 0 ? (state.sideBets[lastBet.seatId] || 0) : 0;
+    const newSideBets = { ...state.sideBets };
+    if (sideRefund > 0) delete newSideBets[lastBet.seatId];
+
     set((s) => ({
-      bankroll: s.bankroll + lastBet.amount,
+      bankroll: s.bankroll + lastBet.amount + sideRefund,
       betHistory: s.betHistory.slice(0, -1),
+      sideBets: newSideBets,
       seats: s.seats.map((seat) => {
         if (seat.id !== lastBet.seatId) return seat;
         return {
@@ -109,11 +126,16 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     const seat = state.seats.find((s) => s.id === seatId);
     if (!seat) return;
 
-    const refund = seat.hands.reduce((sum, hand) => sum + hand.betAmount, 0);
+    const mainRefund = seat.hands.reduce((sum, hand) => sum + hand.betAmount, 0);
+    // Also refund any side bet since main bet is gone
+    const sideRefund = state.sideBets[seatId] || 0;
+    const newSideBets = { ...state.sideBets };
+    if (sideRefund > 0) delete newSideBets[seatId];
 
     set((s) => ({
-      bankroll: s.bankroll + refund,
+      bankroll: s.bankroll + mainRefund + sideRefund,
       betHistory: s.betHistory.filter((b: { seatId: number; amount: number }) => b.seatId !== seatId),
+      sideBets: newSideBets,
       seats: s.seats.map((st) => {
         if (st.id !== seatId) return st;
         return {
@@ -128,14 +150,16 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
 
-    const totalRefund = state.seats.reduce(
+    const mainRefund = state.seats.reduce(
       (sum, seat) => sum + seat.hands.reduce((s, h) => s + h.betAmount, 0),
       0
     );
+    const sideRefund = Object.values(state.sideBets).reduce((sum, v) => sum + v, 0);
 
     set((s) => ({
-      bankroll: s.bankroll + totalRefund,
+      bankroll: s.bankroll + mainRefund + sideRefund,
       betHistory: [],
+      sideBets: {},
       seats: s.seats.map((seat) => ({
         ...seat,
         hands: seat.hands.map((hand) => ({ ...hand, betAmount: 0 })),
@@ -190,7 +214,8 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     // Otherwise, this functions as "Rebet" from the previous round
     if (state.previousBets.length === 0) return;
 
-    const previousTotal = state.previousBets.reduce((sum, b) => sum + b.amount, 0);
+    const previousSideBetTotal = Object.values(state.previousSideBets).reduce((sum, v) => sum + v, 0);
+    const previousTotal = state.previousBets.reduce((sum, b) => sum + b.amount, 0) + previousSideBetTotal;
     if (previousTotal > state.bankroll) {
         get().triggerInsufficientFunds();
         return;
@@ -199,6 +224,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     set((s) => ({
       bankroll: s.bankroll - previousTotal,
       betHistory: [...s.betHistory, ...state.previousBets],
+      sideBets: { ...state.previousSideBets },
       seats: s.seats.map((seat) => {
         const prevBet = state.previousBets.find((b) => b.seatId === seat.id);
         if (!prevBet) return seat;
@@ -255,8 +281,8 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   claimDaily: () => {
     const state = get();
     const now = Date.now();
-    const ONE_HOUR = 60 * 60 * 1000;
-    if (now - state.lastDailyClaim < ONE_HOUR) return false;
+    const THIRTY_MIN = 30 * 60 * 1000;
+    if (now - state.lastDailyClaim < THIRTY_MIN) return false;
 
     const isBonusClaim = (state.dailyClaimCount + 1) % 3 === 0;
     const claimAmount = isBonusClaim ? 1000 : 500;
@@ -293,6 +319,37 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
 
   clearInsufficientFunds: () => {
     set({ insufficientFundsWarning: false });
+  },
+
+  placeSideBet: (seatId: number, amount: number) => {
+    const state = get();
+    if (state.gamePhase !== GamePhase.BETTING) return;
+    const roomCfg = getRoomConfig(state.currentRoom);
+    if (!roomCfg.hasSideBet) return;
+    // Require a main bet on this seat before placing a side bet
+    const seat = state.seats.find(s => s.id === seatId);
+    if (!seat || seat.hands.reduce((sum, h) => sum + h.betAmount, 0) === 0) return;
+    if (amount > state.bankroll) {
+      get().triggerInsufficientFunds();
+      return;
+    }
+    set({
+      bankroll: state.bankroll - amount,
+      sideBets: { ...state.sideBets, [seatId]: (state.sideBets[seatId] || 0) + amount },
+    });
+  },
+
+  clearSideBet: (seatId: number) => {
+    const state = get();
+    if (state.gamePhase !== GamePhase.BETTING) return;
+    const refund = state.sideBets[seatId] || 0;
+    if (refund <= 0) return;
+    const newSideBets = { ...state.sideBets };
+    delete newSideBets[seatId];
+    set({
+      bankroll: state.bankroll + refund,
+      sideBets: newSideBets,
+    });
   },
 });
 

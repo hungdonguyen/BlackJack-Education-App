@@ -16,7 +16,7 @@ interface StrategyModalProps {
     onClose: () => void;
 }
 
-type Action = 'H' | 'S' | 'D' | 'DS' | 'SP' | 'SU';
+type Action = 'H' | 'S' | 'D' | 'DS' | 'SP' | 'SU' | 'FD' | 'FSP';
 type Tab = 'hard' | 'soft' | 'pairs' | 'counting';
 
 // Refined color palette matching casino aesthetic - gradient backgrounds
@@ -27,6 +27,8 @@ const ACTION_STYLES: Record<Action, { bg: string; text: string; label: string; d
     DS: { bg: 'linear-gradient(135deg, #1a7a7a 0%, #115e5e 100%)', text: '#ccfbf1', label: 'DS', desc: 'Double if allowed, else Stand' },
     SP: { bg: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', text: '#dbeafe', label: 'SP', desc: 'Split' },
     SU: { bg: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', text: '#ede9fe', label: 'SU', desc: 'Surrender if allowed, else Hit' },
+    FD: { bg: 'linear-gradient(135deg, #d4a843 0%, #b8922e 100%)', text: '#1a1206', label: 'FD', desc: 'Free Action Double' },
+    FSP: { bg: 'linear-gradient(135deg, #e8c547 0%, #ccad3a 100%)', text: '#1a1206', label: 'FSP', desc: 'Free Action Split' },
 };
 
 const DEALER_UPCARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A'];
@@ -76,6 +78,48 @@ const PAIRS_CLASSIC: Action[][] = [
     ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
     ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
+];
+
+// Free Action rules
+const HARD_FA: Action[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 9
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 10
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 11
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+const SOFT_FA: Action[][] = [
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+const PAIRS_FA: Action[][] = [
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'],
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
 ];
 
 // Vegas Strip: 4 decks, S17, DAS
@@ -155,14 +199,14 @@ function Ornament({ color }: { color: string }) {
 
 export default function StrategyModal({ room, onClose }: StrategyModalProps) {
     const [tab, setTab] = useState<Tab>('hard');
-    const strategyType = room.id === 'atlantic_city' ? 'ac' : (room.id === 'vegas_strip' || room.id === 'vegas_downtown') ? 'vegas' : 'classic';
+    const strategyType = room.id === 'free_action' ? 'free_action' : room.id === 'atlantic_city' ? 'ac' : (room.id === 'vegas_strip' || room.id === 'vegas_downtown') ? 'vegas' : 'classic';
 
     const rows = tab === 'hard' ? HARD_ROWS : tab === 'soft' ? SOFT_ROWS : PAIR_ROWS;
     const data = tab === 'hard'
-        ? (strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC)
+        ? (strategyType === 'free_action' ? HARD_FA : strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC)
         : tab === 'soft'
-            ? (strategyType === 'ac' ? SOFT_AC : strategyType === 'vegas' ? SOFT_VEGAS : SOFT_CLASSIC)
-            : (strategyType === 'ac' ? PAIRS_AC : strategyType === 'vegas' ? PAIRS_VEGAS : PAIRS_CLASSIC);
+            ? (strategyType === 'free_action' ? SOFT_FA : strategyType === 'ac' ? SOFT_AC : strategyType === 'vegas' ? SOFT_VEGAS : SOFT_CLASSIC)
+            : (strategyType === 'free_action' ? PAIRS_FA : strategyType === 'ac' ? PAIRS_AC : strategyType === 'vegas' ? PAIRS_VEGAS : PAIRS_CLASSIC);
 
     const tabConfig: Record<Tab, { label: string; rowTitle: string }> = {
         hard: { label: 'Hard Totals', rowTitle: 'Hand' },
@@ -588,10 +632,64 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                                     <span className="font-bold" style={{ color: 'rgba(240,230,214,0.65)', fontFamily: "'Georgia', serif" }}>Note:</span>{' '}
                                     Mathematically optimal basic strategy derived from statistical probability.
                                     Apply consistently over many hands for best results.{' '}
-                                    Theoretical RTP:{' '}
-                                    <span className="font-black" style={{ color: room.accentColor }}>{room.rtp}</span>
+                                    {room.hasSideBet && room.baseGameRtp ? (
+                                        <>
+                                            Base Game RTP:{' '}
+                                            <span className="font-black" style={{ color: room.accentColor }}>{room.baseGameRtp}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            Theoretical RTP:{' '}
+                                            <span className="font-black" style={{ color: room.accentColor }}>{room.rtp}</span>
+                                        </>
+                                    )}
                                 </p>
                             </div>
+
+                            {/* Side Bet Strategy — Free Action only */}
+                            {room.isFreeAction && (
+                                <>
+                                    <Ornament color={room.accentColor} />
+                                    <div className="mt-3">
+                                        <p className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                            Multi Action Bonus — Side Bet
+                                        </p>
+                                        <div className="space-y-3">
+                                            <div className="rounded-lg px-4 py-3" style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.18)' }}>
+                                                <p className="text-[11px] font-bold mb-1" style={{ color: 'rgba(250,204,21,0.8)' }}>What is it?</p>
+                                                <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.5)' }}>
+                                                    The Multi Action Bonus is a side bet that pays based on how many Free Actions (Free Doubles + Free Splits)
+                                                    you trigger during a round. More Free Actions = bigger payout.
+                                                </p>
+                                            </div>
+                                            <div className="rounded-lg px-4 py-3" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)' }}>
+                                                <p className="text-[11px] font-bold mb-1" style={{ color: 'rgba(252,165,165,0.9)' }}>House Edge Warning</p>
+                                                <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.5)' }}>
+                                                    Side bets carry a <span className="font-bold text-red-400">significantly higher house edge</span> than the main game.
+                                                    {room.sideBetRtp ? (
+                                                        <>
+                                                            {' '}Side Bet RTP: <span className="font-bold text-red-400">{room.sideBetRtp}</span> vs Base Game: <span className="font-bold" style={{ color: room.accentColor }}>{room.baseGameRtp}</span>.
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {' '}The Multi Action Bonus has a much lower RTP than the base game ({room.rtp}).
+                                                        </>
+                                                    )}
+                                                    {' '}In the long run, side bets will cost you more than the main game.
+                                                </p>
+                                            </div>
+                                            <div className="rounded-lg px-4 py-3" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.18)' }}>
+                                                <p className="text-[11px] font-bold mb-1" style={{ color: 'rgba(134,239,172,0.9)' }}>When to play?</p>
+                                                <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.5)' }}>
+                                                    Only place the side bet when you&apos;re feeling lucky and want some extra excitement.
+                                                    It&apos;s purely for entertainment — <span className="font-bold" style={{ color: room.accentColor }}>never rely on it for profit</span>.
+                                                    Keep your side bet small relative to your main bet.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </>
                     )}
                 </div>

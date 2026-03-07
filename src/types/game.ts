@@ -37,6 +37,10 @@ export interface Seat {
   isActive: boolean;
   hands: Hand[];
   currentHandIndex: number;
+  /** Multi Action Bonus side bet amount */
+  sideBetAmount?: number;
+  /** Free Action tokens collected this round */
+  freeActionTokens?: number;
 }
 
 /** The dealer's hand */
@@ -53,6 +57,9 @@ export interface MatchRecord {
     seatId: number;
     insuranceCost?: number;
     insurancePayout?: number;
+    sideBetAmount?: number;
+    sideBetPayout?: number;
+    freeActionTokens?: number;
     hands: {
       betAmount: number;
       result: HandStatus;
@@ -95,6 +102,7 @@ export interface GameState {
   selectedChipValue: number;
   betHistory: { seatId: number; amount: number }[];
   previousBets: { seatId: number; amount: number }[];
+  previousSideBets: Record<number, number>;
 
   // History
   matchHistory: MatchRecord[];
@@ -108,6 +116,9 @@ export interface GameState {
 
   // Insurance
   insuranceBets: Record<number, number>; // seatId -> insurance bet amount
+
+  // Side bets (Free Action room)
+  sideBets: Record<number, number>; // seatId -> side bet amount
 }
 
 /** All actions available on the game store */
@@ -125,6 +136,10 @@ export interface GameActions {
   clearAllBets: () => void;
   selectChip: (value: number) => void;
   rebet: () => void;
+
+  // Side bets
+  placeSideBet: (seatId: number, amount: number) => void;
+  clearSideBet: (seatId: number) => void;
 
   // Game flow
   startDeal: () => void;

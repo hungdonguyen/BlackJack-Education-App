@@ -76,7 +76,7 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
     [HandStatus.LOST]: { label: 'LOSE', className: 'bg-red-500/20    text-red-300    border border-red-500/30' },
     [HandStatus.BUST]: { label: 'BUST', className: 'bg-red-600/20    text-red-400    border border-red-600/30' },
     [HandStatus.SURRENDERED]: { label: 'SURRENDER', className: 'bg-orange-500/20 text-orange-400 border border-orange-500/30' },
-    [HandStatus.PUSH]: { label: 'PUSH', className: 'bg-white/10      text-white/60   border border-white/20' },
+    [HandStatus.PUSH]: { label: 'TIE', className: 'bg-slate-500/15  text-slate-300  border border-slate-400/25' },
     [HandStatus.STAND]: { label: 'STAND', className: 'bg-white/10      text-white/60   border border-white/20' },
     [HandStatus.PLAYING]: { label: '—', className: 'bg-white/10      text-white/40   border border-white/10' },
 };
@@ -98,13 +98,15 @@ export default function MatchDetailModal({
     onNavigate,
     onClose,
 }: MatchDetailModalProps) {
-    const roomLabel = match.roomId === 'vegas_strip' ? 'Vegas Strip' : match.roomId === 'vegas_downtown' ? 'Vegas Downtown' : 'Classic';
+    const roomLabel = match.roomId === 'vegas_strip' ? 'Vegas Strip' : match.roomId === 'vegas_downtown' ? 'Vegas Downtown' : match.roomId === 'atlantic_city' ? 'Atlantic City' : match.roomId === 'free_action' ? 'Free Action' : 'Classic';
 
     // Net P&L for the round (including insurance)
     let totalBet = 0;
     let totalWin = 0;
     let totalInsuranceCost = 0;
     let totalInsurancePayout = 0;
+    let totalSideBetCost = 0;
+    let totalSideBetPayout = 0;
     match.seats.forEach(s => {
         s.hands.forEach(h => {
             totalBet += h.betAmount;
@@ -112,8 +114,10 @@ export default function MatchDetailModal({
         });
         if (s.insuranceCost) totalInsuranceCost += s.insuranceCost;
         if (s.insurancePayout) totalInsurancePayout += s.insurancePayout;
+        if (s.sideBetAmount) totalSideBetCost += s.sideBetAmount;
+        if (s.sideBetPayout) totalSideBetPayout += s.sideBetPayout;
     });
-    const netPnl = totalWin - totalInsuranceCost + totalInsurancePayout;
+    const netPnl = totalWin - totalInsuranceCost + totalInsurancePayout - totalSideBetCost + totalSideBetPayout;
 
     const dealerScore = calcScore(match.dealerCards);
 
@@ -187,69 +191,84 @@ export default function MatchDetailModal({
 
                         {/* Rows */}
                         <div className="space-y-2">
-                            {match.seats.map((seat) => (
-                                <div key={seat.seatId}>
-                                    {seat.hands.map((hand, hIdx) => {
-                                        const score = calcScore(hand.cards);
-                                        const statusInfo = STATUS_STYLES[hand.result] ?? STATUS_STYLES[HandStatus.PUSH];
-                                        const pnl = hand.payout;
-                                        const label = seat.hands.length > 1
-                                            ? `Seat ${seat.seatId} · Hand ${hIdx + 1}`
-                                            : `Seat ${seat.seatId}`;
+                            {match.seats.map((seat) => {
+                                const seatBet = seat.hands.reduce((s, h) => s + h.betAmount, 0)
+                                    + (seat.insuranceCost ?? 0)
+                                    + (seat.sideBetAmount ?? 0);
+                                const seatPnl = seat.hands.reduce((s, h) => s + h.payout, 0)
+                                    - (seat.insuranceCost ?? 0) + (seat.insurancePayout ?? 0)
+                                    - (seat.sideBetAmount ?? 0) + (seat.sideBetPayout ?? 0);
+                                const hasExtras = seat.hands.length > 1
+                                    || !!(seat.insuranceCost && seat.insuranceCost > 0)
+                                    || !!(seat.sideBetAmount && seat.sideBetAmount > 0);
 
-                                        return (
-                                            <div key={`${seat.seatId}-${hIdx}`}
-                                                className="grid items-center gap-x-1 rounded-lg px-2 py-2"
+                                return (
+                                    <div key={seat.seatId} className="rounded-lg overflow-hidden"
+                                        style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+
+                                        {/* Hand rows */}
+                                        {seat.hands.map((hand, hIdx) => {
+                                            const score = calcScore(hand.cards);
+                                            const statusInfo = STATUS_STYLES[hand.result] ?? STATUS_STYLES[HandStatus.PUSH];
+                                            const pnl = hand.payout;
+                                            const label = seat.hands.length > 1
+                                                ? `Seat ${seat.seatId} · Hand ${hIdx + 1}`
+                                                : `Seat ${seat.seatId}`;
+                                            const isLastHand = hIdx === seat.hands.length - 1;
+
+                                            return (
+                                                <div key={`${seat.seatId}-${hIdx}`}
+                                                    className="grid items-center gap-x-1 px-2 py-2"
+                                                    style={{
+                                                        gridTemplateColumns: '80px 1fr 56px 64px 72px',
+                                                        background: 'rgba(255,255,255,0.025)',
+                                                        borderBottom: (!isLastHand || hasExtras) ? '1px solid rgba(255,255,255,0.04)' : undefined,
+                                                    }}>
+                                                    {/* Seat label + status */}
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-white/70">{label}</p>
+                                                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full mt-0.5 inline-block ${statusInfo.className}`}>
+                                                            {statusInfo.label}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Cards */}
+                                                    <div className="flex gap-1 flex-wrap">
+                                                        {hand.cards.map((c, ci) => (
+                                                            <MiniCard key={ci} suit={c.suit as Suit} rank={c.rank as Rank} />
+                                                        ))}
+                                                    </div>
+
+                                                    {/* Score */}
+                                                    <div className="text-center">
+                                                        <span className="text-[15px] font-black text-white tabular-nums">{score}</span>
+                                                    </div>
+
+                                                    {/* Bet */}
+                                                    <div className="text-right">
+                                                        <span className="text-[11px] font-bold text-white/70 tabular-nums">
+                                                            {hand.betAmount.toLocaleString()}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Win/Loss */}
+                                                    <div className="text-right">
+                                                        <span className={`text-[13px] font-black tabular-nums ${pnl > 0 ? 'text-emerald-400' : pnl < 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                                                            {pnl > 0 ? '+' : ''}{pnl.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        {/* Insurance row */}
+                                        {seat.insuranceCost && seat.insuranceCost > 0 && (
+                                            <div className="grid items-center gap-x-1 px-2 py-1.5"
                                                 style={{
                                                     gridTemplateColumns: '80px 1fr 56px 64px 72px',
-                                                    background: 'rgba(255,255,255,0.025)',
-                                                    border: '1px solid rgba(255,255,255,0.04)',
+                                                    background: 'rgba(250,204,21,0.03)',
+                                                    borderBottom: '1px solid rgba(255,255,255,0.04)',
                                                 }}>
-                                                {/* Seat label + status */}
-                                                <div>
-                                                    <p className="text-[10px] font-bold text-white/70">{label}</p>
-                                                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full mt-0.5 inline-block ${statusInfo.className}`}>
-                                                        {statusInfo.label}
-                                                    </span>
-                                                </div>
-
-                                                {/* Cards */}
-                                                <div className="flex gap-1 flex-wrap">
-                                                    {hand.cards.map((c, ci) => (
-                                                        <MiniCard key={ci} suit={c.suit as Suit} rank={c.rank as Rank} />
-                                                    ))}
-                                                </div>
-
-                                                {/* Score */}
-                                                <div className="text-center">
-                                                    <span className="text-[15px] font-black text-white tabular-nums">{score}</span>
-                                                </div>
-
-                                                {/* Bet */}
-                                                <div className="text-right">
-                                                    <span className="text-[11px] font-bold text-white/70 tabular-nums">
-                                                        {hand.betAmount.toLocaleString()}
-                                                    </span>
-                                                </div>
-
-                                                {/* Win/Loss */}
-                                                <div className="text-right">
-                                                    <span className={`text-[13px] font-black tabular-nums ${pnl > 0 ? 'text-emerald-400' : pnl < 0 ? 'text-red-400' : 'text-white/40'}`}>
-                                                        {pnl > 0 ? '+' : ''}{pnl.toLocaleString()}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-
-                                    {/* Insurance row */}
-                                    {seat.insuranceCost && seat.insuranceCost > 0 && (
-                                        <div className="rounded-lg px-2 py-2 mt-1"
-                                            style={{
-                                                background: 'rgba(250,204,21,0.04)',
-                                                border: '1px solid rgba(250,204,21,0.1)',
-                                            }}>
-                                            <div className="grid items-center gap-x-1" style={{ gridTemplateColumns: '80px 1fr 56px 64px 72px' }}>
                                                 <div className="flex items-center gap-1">
                                                     <Shield size={11} className="text-yellow-400" />
                                                     <span className="text-[9px] font-bold text-yellow-400/80 uppercase">Insurance</span>
@@ -278,10 +297,70 @@ export default function MatchDetailModal({
                                                     )}
                                                 </div>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
+                                        )}
+
+                                        {/* Side Bet row */}
+                                        {seat.sideBetAmount && seat.sideBetAmount > 0 && (
+                                            <div className="grid items-center gap-x-1 px-2 py-1.5"
+                                                style={{
+                                                    gridTemplateColumns: '80px 1fr 56px 64px 72px',
+                                                    background: 'rgba(234,179,8,0.03)',
+                                                    borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                }}>
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-[9px] font-extrabold text-yellow-500 uppercase tracking-wider">⚡ Bonus</span>
+                                                </div>
+                                                <div className="text-[9px] text-yellow-300/70 font-bold">
+                                                    {seat.freeActionTokens && seat.freeActionTokens > 0
+                                                        ? `✓ Collected ${seat.freeActionTokens} Free Action Token${seat.freeActionTokens > 1 ? 's' : ''}`
+                                                        : '✗ No Free Actions taken'
+                                                    }
+                                                </div>
+                                                <div />
+                                                <div className="text-right">
+                                                    <span className="text-[10px] font-bold text-yellow-500/80 tabular-nums">
+                                                        {seat.sideBetAmount.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <div className="text-right">
+                                                    {seat.sideBetPayout && seat.sideBetPayout > 0 ? (
+                                                        <span className="text-[12px] font-black text-emerald-400 tabular-nums">
+                                                            +{(seat.sideBetPayout - seat.sideBetAmount).toLocaleString()}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[12px] font-black text-red-400 tabular-nums">
+                                                            -{seat.sideBetAmount.toLocaleString()}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Per-seat total — only when extras exist */}
+                                        {hasExtras && (
+                                            <div className="grid items-center gap-x-1 px-2 py-1.5"
+                                                style={{
+                                                    gridTemplateColumns: '80px 1fr 56px 64px 72px',
+                                                    background: 'rgba(255,255,255,0.04)',
+                                                }}>
+                                                <span className="text-[9px] font-extrabold uppercase tracking-[0.1em] text-white/50">Seat {seat.seatId} Total</span>
+                                                <div />
+                                                <div />
+                                                <div className="text-right">
+                                                    <span className="text-[10px] font-bold text-white/50 tabular-nums">
+                                                        {seatBet.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className={`text-[12px] font-black tabular-nums ${seatPnl > 0 ? 'text-emerald-400' : seatPnl < 0 ? 'text-red-400' : 'text-white/40'}`}>
+                                                        {seatPnl > 0 ? '+' : ''}{seatPnl.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         {/* Total Row */}

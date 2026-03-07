@@ -65,7 +65,7 @@ export default function LobbyPage() {
                 </motion.div>
 
                 {/* Room Cards — items-stretch ensures equal height, grid handles responsiveness */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 xl:gap-6 w-full max-w-[1500px]">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 xl:gap-5 w-full max-w-[1200px]">
                     {rooms.map((room, index) => (
                         <RoomCard key={room.id} room={room} index={index} onClick={() => router.push(`/game/${room.id}`)} />
                     ))}
@@ -104,7 +104,7 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
             onClick={onClick}
         >
             {/* Table preview */}
-            <div className="h-[200px] relative overflow-hidden"
+            <div className="h-[140px] relative overflow-hidden"
                 style={{ background: room.feltGradient }}
             >
                 {/* Felt texture */}
@@ -114,9 +114,9 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
 
                 {/* Room logo */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative w-[75%] h-[65%] mx-auto">
+                    <div className="relative w-[70%] h-[60%] mx-auto">
                         <Image
-                            src={room.id === 'vegas_strip' ? '/images/logo/Vegas_trip_blackjack.png' : room.id === 'vegas_downtown' ? '/images/logo/Vegas_Downtown_Logo.png' : room.id === 'atlantic_city' ? '/images/logo/Atlantic.png' : '/images/logo/Classic_Online_Logo.png'}
+                            src={room.id === 'free_action' ? '/images/logo/rooms/freeaction.png' : room.id === 'vegas_strip' ? '/images/logo/rooms/vegas_strip.png' : room.id === 'vegas_downtown' ? '/images/logo/rooms/vegas_downtown.png' : room.id === 'atlantic_city' ? '/images/logo/rooms/atlantic.png' : '/images/logo/rooms/classic.png'}
                             alt={room.name}
                             fill
                             className="object-contain drop-shadow-2xl"
@@ -159,8 +159,8 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
                     </div>
                     <span className="text-2xl">{room.icon}</span>
                 </div>
-                <p className="text-white/35 text-xs leading-relaxed mt-2">{room.description}</p>
-                <div className="flex items-center gap-4 mt-auto pt-3 border-t border-white/5">
+                <p className="text-white/35 text-[10px] leading-relaxed mt-1.5">{room.description}</p>
+                <div className="flex items-center gap-3 mt-auto pt-2.5 border-t border-white/5">
                     <span className="text-[9px] text-white/25 uppercase tracking-wider">
                         Min: ${room.betRange[0]}
                     </span>
@@ -168,7 +168,10 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
                         Max: ${isMounted ? room.betRange[1].toLocaleString() : room.betRange[1]}
                     </span>
                     <span className="text-[9px] uppercase tracking-wider ml-auto font-bold" style={{ color: room.accentColor }}>
-                        RTP {room.rtp}
+                        {room.hasSideBet && room.baseGameRtp && room.sideBetRtp
+                            ? <>RTP {room.baseGameRtp} · <span className="text-red-400">Side Bet {room.sideBetRtp}</span></>
+                            : <>RTP {room.rtp}</>
+                        }
                     </span>
                 </div>
             </div>

@@ -33,14 +33,22 @@ export interface RoomConfig {
     betRange: [number, number];
     /** Theoretical Return to Player % */
     rtp: string;
+    /** Theoretical RTP for the base game only (without side bets) */
+    baseGameRtp?: string;
+    /** Theoretical RTP for the side bet */
+    sideBetRtp?: string;
     /** Room icon component */
     icon: React.ReactNode;
     /** Accent color for UI elements */
     accentColor: string;
+    /** Whether this room has a side bet */
+    hasSideBet?: boolean;
+    /** Whether this room is a Free Action variant */
+    isFreeAction?: boolean;
 }
 
 import React from 'react';
-import { Spade, Ticket, Anchor } from 'lucide-react';
+import { Spade, Ticket, Anchor, Zap } from 'lucide-react';
 
 export const ROOMS: Record<string, RoomConfig> = {
     classic: {
@@ -115,6 +123,34 @@ export const ROOMS: Record<string, RoomConfig> = {
         rtp: '99.62%',
         icon: <Ticket className="w-5 h-5 drop-shadow-md text-sky-400" />,
         accentColor: '#38bdf8',
+    },
+    free_action: {
+        id: 'free_action',
+        name: 'Free Action Blackjack',
+        subtitle: 'Free Bets & Golden Rewards',
+        description: 'Free Action Rules — 6 Decks, Dealer hits Soft 17 (H17). Free Double on Hard 9, 10, 11 (no cost). Free Split all pairs except 10-value cards. Push on Dealer 22. Multi Action Bonus side bet available. Blackjack pays 3 to 2.',
+        feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #2a1f0a 0%, #1f170a 25%, #151005 50%, #0a0802 80%, #050401 100%)',
+        bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #1a1408 0%, #0f0c05 50%, #080602 100%)',
+        borderColor: 'rgba(234, 179, 8, 0.18)',
+        rules: {
+            blackjackPays: 'Blackjack Pays 3 to 2',
+            insurancePays: 'Insurance Pays 2 to 1',
+            dealerStands: 'Dealer hits Soft 17 (H17)',
+        },
+        gameRules: {
+            numberOfDecks: 6,
+            dealerHitsSoft17: true,
+            allowSurrender: false,
+        },
+        blackjackMultiplier: 1.5,
+        betRange: [1, 1_000_000],
+        rtp: '98.86%',
+        baseGameRtp: '99.07%',
+        sideBetRtp: '91.37%',
+        icon: <Zap className="w-5 h-5 drop-shadow-md text-yellow-400 fill-yellow-400" />,
+        accentColor: '#eab308',
+        hasSideBet: true,
+        isFreeAction: true,
     },
     atlantic_city: {
         id: 'atlantic_city',

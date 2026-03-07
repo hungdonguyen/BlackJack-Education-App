@@ -7,7 +7,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Spade, Wallet, BookOpen, TrendingUp, Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import { Wallet, BookOpen, TrendingUp, Sparkles, Zap } from 'lucide-react';
 import LegalAgreementModal from '@/components/LegalAgreementModal';
 import StrategyModal from '@/components/StrategyModal';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
@@ -17,7 +18,7 @@ export default function HomePage() {
   const router = useRouter();
   const [accepted, setAccepted] = useState(false);
   const [showStrategy, setShowStrategy] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<'classic' | 'vegas_strip' | 'vegas_downtown'>('classic');
+  const [selectedRoom, setSelectedRoom] = useState<'classic' | 'vegas_strip' | 'vegas_downtown' | 'free_action' | 'atlantic_city'>('classic');
 
   const isHydrated = useStoreHydration();
   const bankroll = useGameStore((s) => s.bankroll);
@@ -147,11 +148,30 @@ export default function HomePage() {
             {/* Logo / Title */}
             <div className="text-center">
               <motion.div
-                className="mb-4 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]"
-                animate={{ rotate: [0, 360] }}
-                transition={{ duration: 3, repeat: 2, repeatDelay: 5 }}
+                className="mb-5 mx-auto relative"
+                style={{ width: 120, height: 120 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
               >
-                <Spade className="w-16 h-16 mx-auto fill-current" />
+                {/* Glow ring */}
+                <motion.div
+                  className="absolute inset-0 rounded-full pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(circle, rgba(212,168,67,0.18) 0%, transparent 70%)',
+                    filter: 'blur(12px)',
+                  }}
+                  animate={{ opacity: [0.6, 1, 0.6] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <Image
+                  src="/images/logo/app/logo.png"
+                  alt="Blackjack Logo"
+                  fill
+                  sizes="120px"
+                  className="object-contain drop-shadow-[0_0_20px_rgba(212,168,67,0.4)]"
+                  priority
+                />
               </motion.div>
               <h1
                 className="text-5xl font-black text-transparent bg-clip-text"
@@ -192,19 +212,30 @@ export default function HomePage() {
                 {/* Quick Play */}
                 <motion.button
                   onClick={() => router.push('/game/classic')}
-                  className="text-white/30 text-xs uppercase tracking-[0.3em] hover:text-white/60 transition-colors cursor-pointer"
-                  whileHover={{ y: -2 }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] cursor-pointer transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: 'rgba(255,255,255,0.55)',
+                  }}
+                  whileHover={{ y: -2, scale: 1.04, backgroundColor: 'rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.85)' }}
+                  whileTap={{ scale: 0.96 }}
                 >
-                  Quick Play →
+                  <Zap size={13} />
+                  Quick Play
                 </motion.button>
-
-                <span className="text-white/10 text-xs">|</span>
 
                 {/* Strategy Button */}
                 <motion.button
                   onClick={() => setShowStrategy(true)}
-                  className="flex items-center gap-1.5 text-amber-400/50 text-xs uppercase tracking-[0.2em] hover:text-amber-400/90 transition-all cursor-pointer"
-                  whileHover={{ y: -2 }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] cursor-pointer transition-all"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(212,168,67,0.12) 0%, rgba(212,168,67,0.06) 100%)',
+                    border: '1px solid rgba(212,168,67,0.25)',
+                    color: 'rgba(212,168,67,0.7)',
+                  }}
+                  whileHover={{ y: -2, scale: 1.04 }}
+                  whileTap={{ scale: 0.96 }}
                 >
                   <BookOpen size={13} />
                   Strategy Guide
@@ -227,7 +258,7 @@ export default function HomePage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                 >
-                  {(['classic', 'vegas_strip', 'vegas_downtown'] as const).map((roomId) => {
+                  {(['classic', 'vegas_strip', 'vegas_downtown', 'free_action', 'atlantic_city'] as const).map((roomId) => {
                     const room = ROOMS[roomId];
                     const isActive = selectedRoom === roomId;
                     return (

@@ -177,6 +177,8 @@ function ShoeIndicator() {
 export default function DealerArea() {
     const dealerHand = useGameStore((s) => s.dealerHand);
     const gamePhase = useGameStore((s) => s.gamePhase);
+    const currentRoom = useGameStore((s) => s.currentRoom);
+    const roomCfg = getRoomConfig(currentRoom);
 
     const hasCards = dealerHand.cards.length > 0;
     const showAllValues = gamePhase === GamePhase.DEALER_TURN || gamePhase === GamePhase.PAYOUT;
@@ -205,6 +207,7 @@ export default function DealerArea() {
                     <span className="text-[10px] text-white/30 uppercase tracking-[0.3em] font-bold">
                         Dealer Hand
                     </span>
+
                     {hasCards && (
                         <ScoreBadge
                             value={totalValue}

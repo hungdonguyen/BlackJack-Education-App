@@ -13,6 +13,9 @@ import { BLACKJACK_PAYOUT } from '@/utils/constants';
 import { createEmptyHand } from './bettingSlice';
 import { SPEED_DELAYS } from './settingsSlice';
 
+/** Guard flag — prevents concurrent dealerPlay execution */
+let _dealerPlayLock = false;
+
 export interface GameFlowSlice {
   // State
   shoe: Card[];
@@ -115,7 +118,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       if (activeBet > 0) currentBets.push({ seatId: s.id, amount: activeBet });
     });
 
-    set({ gamePhase: GamePhase.DEALING, previousBets: currentBets });
+    set({ gamePhase: GamePhase.DEALING, previousBets: currentBets, previousSideBets: { ...state.sideBets } });
 
     // Check if shoe needs reshuffling
     let shoe = [...state.shoe];
@@ -418,7 +421,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const { allowed, isFree, cost } = rules.canDoubleDown(currentHand);
 
     if (!allowed) return;
-    if (cost > state.bankroll) return;
+    if (!isFree && cost > state.bankroll) return;
 
     let shoe = [...state.shoe];
 
@@ -432,8 +435,12 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
 
     const updatedSeats = state.seats.map((seat, seatIdx) => {
       if (seatIdx !== state.currentSeatIndex) return seat;
+
+      const newTokens = isFree ? (seat.freeActionTokens || 0) + 1 : (seat.freeActionTokens || 0);
+
       return {
         ...seat,
+        freeActionTokens: newTokens,
         hands: seat.hands.map((hand, handIdx) => {
           if (handIdx !== seat.currentHandIndex) return hand;
 
@@ -443,9 +450,10 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           return {
             ...hand,
             cards: newCards,
-            betAmount: hand.betAmount + cost,
+            betAmount: hand.betAmount + (isFree ? hand.betAmount : cost),
             status: busted ? HandStatus.BUST : HandStatus.STAND,
-            freeBetAmount: hand.freeBetAmount,
+            isFreeDouble: isFree ? true : hand.isFreeDouble,
+            freeBetAmount: isFree ? (hand.freeBetAmount || 0) + hand.betAmount : hand.freeBetAmount,
           };
         }),
       };
@@ -454,7 +462,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     set({
       shoe,
       seats: updatedSeats,
-      bankroll: state.bankroll - cost,
+      bankroll: isFree ? state.bankroll : state.bankroll - cost,
     });
 
     // Double down always ends the hand (force stand), advance
@@ -518,7 +526,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const { allowed, isFree, cost } = rules.canSplit(currentHand, seat.hands.length);
 
     if (!allowed) return;
-    if (cost > state.bankroll) return;
+    if (!isFree && cost > state.bankroll) return;
 
     const splitBet = currentHand.betAmount;
     let shoe = [...state.shoe];
@@ -553,6 +561,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       status: initialStatus1,
       freeBetAmount: currentHand.freeBetAmount,
       isAceSplit: isSplitAces,
+      isFreeSplit: isFree ? true : currentHand.isFreeSplit,
     };
 
     const hand2: Hand = {
@@ -560,12 +569,16 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       cards: [card2, newCard2],
       betAmount: splitBet,
       status: initialStatus2,
-      freeBetAmount: currentHand.freeBetAmount,
+      freeBetAmount: isFree ? splitBet : currentHand.freeBetAmount,
       isAceSplit: isSplitAces,
+      isFreeSplit: isFree ? true : currentHand.isFreeSplit,
     };
 
     // A 21 on a split hand is not considered a Natural Blackjack, 
     // but the status will automatically advance to STAND via initialStatus.
+
+    // Track free action tokens
+    const newTokens = isFree ? (seat.freeActionTokens || 0) + 1 : (seat.freeActionTokens || 0);
 
     const updatedSeats = state.seats.map((s, seatIdx) => {
       if (seatIdx !== state.currentSeatIndex) return s;
@@ -577,13 +590,14 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         ...s,
         hands: newHands,
         currentHandIndex: seat.currentHandIndex,
+        freeActionTokens: newTokens,
       };
     });
 
     set({
       shoe,
       seats: updatedSeats,
-      bankroll: state.bankroll - cost,
+      bankroll: isFree ? state.bankroll : state.bankroll - cost,
     });
 
     // If first split hand is already resolved, advance
@@ -640,9 +654,13 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   },
 
   dealerPlay: async () => {
+    // Prevent concurrent execution (race condition in fast mode)
+    if (_dealerPlayLock) return;
     const state = get();
     if (state.gamePhase !== GamePhase.DEALER_TURN) return;
+    _dealerPlayLock = true;
 
+    try {
     let shoe = [...state.shoe];
     let dealerCards = [...state.dealerHand.cards];
 
@@ -683,6 +701,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         const hitDelay = SPEED_DELAYS[get().dealerSpeed].dealerHit;
         await new Promise((resolve) => setTimeout(resolve, hitDelay));
 
+        // Bail out if phase changed externally (e.g. reset)
+        if (get().gamePhase !== GamePhase.DEALER_TURN) return;
+
         // Refetch latest state inside loop to avoid stale shoe
         const currentState = get();
         let currentShoe = [...currentState.shoe];
@@ -715,6 +736,17 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
 
     // Auto-calculate payouts
     setTimeout(() => get().calculatePayouts(), 0);
+
+    } catch (err) {
+      console.error('[dealerPlay] Error during dealer turn:', err);
+      // Force transition to PAYOUT to prevent stuck state
+      if (get().gamePhase === GamePhase.DEALER_TURN) {
+        set({ gamePhase: GamePhase.PAYOUT });
+        setTimeout(() => get().calculatePayouts(), 0);
+      }
+    } finally {
+      _dealerPlayLock = false;
+    }
   },
 
   calculatePayouts: () => {
@@ -732,6 +764,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       });
       if (state.insuranceBets[seat.id]) {
         totalStaked += state.insuranceBets[seat.id];
+      }
+      if (state.sideBets[seat.id]) {
+        totalStaked += state.sideBets[seat.id];
       }
     });
 
@@ -793,6 +828,37 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       };
     });
 
+    const bankrollAfterHands = state.bankroll + totalPayout;
+
+    // ═══ MULTI ACTION BONUS SIDE BET ═══
+    const SIDE_BET_PAYOUTS: Record<number, number> = {
+      1: 3,    // 3:1
+      2: 10,   // 10:1
+      3: 40,   // 40:1
+      4: 100,  // 100:1
+      5: 150,  // 150:1
+      6: 250,  // 250:1
+      7: 250,  // 250:1
+      8: 250,  // 250:1
+    };
+
+    const sideBetPayouts: Record<number, number> = {};
+    for (const [seatIdStr, sideBetAmount] of Object.entries(state.sideBets)) {
+      const seatId = Number(seatIdStr);
+      if (sideBetAmount <= 0) continue;
+
+      const seat = updatedSeats.find(s => s.id === seatId);
+      const tokens = seat?.freeActionTokens || 0;
+      const multiplier = SIDE_BET_PAYOUTS[tokens] || 0;
+
+      if (multiplier > 0) {
+        const payout = sideBetAmount + (sideBetAmount * multiplier); // Return bet + winnings
+        totalPayout += payout;
+        sideBetPayouts[seatId] = payout;
+      }
+      // If no tokens, side bet is lost (already deducted in placeSideBet)
+    }
+
     const bankrollAfter = state.bankroll + totalPayout;
 
     // Create match record
@@ -806,6 +872,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           seatId: seat.id,
           insuranceCost: state.insuranceBets[seat.id],
           insurancePayout: insurancePayouts[seat.id],
+          sideBetAmount: state.sideBets[seat.id],
+          sideBetPayout: sideBetPayouts[seat.id],
+          freeActionTokens: seat.freeActionTokens,
           hands: seat.hands
             .filter((h) => h.betAmount > 0)
             .map((hand) => ({
@@ -858,10 +927,13 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       dealerHand: { cards: [] },
       currentSeatIndex: 0,
       insuranceBets: {},
+      sideBets: {},
       seats: state.seats.map((seat) => ({
         ...seat,
         hands: [createEmptyHand(seat.id, 0)],
         currentHandIndex: 0,
+        freeActionTokens: 0,
+        sideBetAmount: 0,
       })),
     });
   },

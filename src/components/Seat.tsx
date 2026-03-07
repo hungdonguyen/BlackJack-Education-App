@@ -5,7 +5,8 @@
 // ============================================
 
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Flame } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { getChipImagePath } from '@/utils/assets';
@@ -13,6 +14,7 @@ import { getHandDisplayValue } from '@/utils/hand';
 import CardComponent from './CardComponent';
 import ScoreBadge from './ScoreBadge';
 import ChipStack from './ChipStack';
+import { getRoomConfig } from '@/utils/rooms';
 
 interface SeatProps {
     seatId: number;
@@ -27,6 +29,11 @@ export default function Seat({ seatId, style }: SeatProps) {
     const placeBet = useGameStore((s) => s.placeBet);
     const clearBet = useGameStore((s) => s.clearBet);
     const toggleSeat = useGameStore((s) => s.toggleSeat);
+    const currentRoom = useGameStore((s) => s.currentRoom);
+    const placeSideBet = useGameStore((s) => s.placeSideBet);
+    const clearSideBet = useGameStore((s) => s.clearSideBet);
+    const sideBets = useGameStore((s) => s.sideBets);
+    const roomConfig = getRoomConfig(currentRoom);
 
     if (!seat) return null;
 
@@ -34,7 +41,9 @@ export default function Seat({ seatId, style }: SeatProps) {
     const isCurrentTurn = gamePhase === GamePhase.PLAYER_TURN && currentSeatIndex === seatId - 1;
     const isInsuranceTurn = gamePhase === GamePhase.INSURANCE && currentSeatIndex === seatId - 1;
     const insuranceBet = useGameStore((s) => s.insuranceBets[seatId] ?? 0);
-    const totalBet = seat.hands.reduce((sum, h) => sum + h.betAmount, 0) + insuranceBet;
+    const sideBetAmount = sideBets[seatId] || 0;
+    const mainBet = seat.hands.reduce((sum, h) => sum + h.betAmount, 0);
+    const totalBet = mainBet + insuranceBet;
     const hasCards = seat.isActive && seat.hands.some(h => h.cards.length > 0);
 
     const handleClick = () => {
@@ -57,7 +66,75 @@ export default function Seat({ seatId, style }: SeatProps) {
     };
 
     return (
-        <div className="flex flex-col items-center" style={style}>
+        <div className="relative flex flex-col items-center" style={style}>
+            {/* ─── Side Bet Toggle (Free Action room only) ─── */}
+            {roomConfig.hasSideBet && seat.isActive && isBetting && (
+                <div className="absolute -left-[62px] top-1/2 -translate-y-1/2 flex flex-col items-center" style={{ zIndex: 12 }}>
+                    <div className="relative">
+                        <motion.button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (sideBetAmount > 0) {
+                                    clearSideBet(seatId);
+                                } else if (mainBet > 0) {
+                                    placeSideBet(seatId, selectedChipValue);
+                                }
+                                // no-op if no main bet — store also guards this
+                            }}
+                            disabled={sideBetAmount === 0 && mainBet === 0}
+                            title={sideBetAmount === 0 && mainBet === 0 ? 'Place a main bet first' : undefined}
+                            className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all border-2 overflow-hidden
+                                ${sideBetAmount === 0 && mainBet === 0
+                                    ? 'border-white/8 opacity-35 cursor-not-allowed'
+                                    : sideBetAmount > 0
+                                        ? 'border-yellow-400/60 shadow-[0_0_16px_rgba(250,204,21,0.4)] cursor-pointer'
+                                        : 'border-white/15 hover:border-yellow-400/40 cursor-pointer'
+                                }`}
+                            style={{
+                                background: sideBetAmount > 0
+                                    ? 'radial-gradient(circle at 35% 35%, #fcd34d, #d97706)'
+                                    : 'rgba(255,255,255,0.05)',
+                            }}
+                            whileHover={sideBetAmount > 0 || mainBet > 0 ? { scale: 1.12 } : {}}
+                            whileTap={sideBetAmount > 0 || mainBet > 0 ? { scale: 0.9 } : {}}
+                        >
+                            <Image
+                                src="/images/logo/bonus/multiaction.png"
+                                alt="Multi Action Bonus"
+                                width={32}
+                                height={32}
+                                className={`object-contain ${sideBetAmount > 0 ? 'drop-shadow-lg' : 'opacity-40'}`}
+                                unoptimized
+                            />
+                        </motion.button>
+                        {/* Chip stack overlaying the bonus bet circle */}
+                        {sideBetAmount > 0 && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 13 }}>
+                                <ChipStack amount={sideBetAmount} />
+                            </div>
+                        )}
+                    </div>
+                    {sideBetAmount > 0 && (
+                        <span className="block text-center text-[7px] font-black text-yellow-400 mt-0.5 tabular-nums">
+                            ${sideBetAmount}
+                        </span>
+                    )}
+                    <span className="text-[6px] font-extrabold uppercase tracking-[0.1em] text-yellow-500/60 mt-0.5 whitespace-nowrap">
+                        Multi Action Bonus
+                    </span>
+                </div>
+            )}
+
+            {/* Side bet indicator during play */}
+            {roomConfig.hasSideBet && sideBetAmount > 0 && !isBetting && (
+                <div className="mb-1" style={{ zIndex: 12 }}>
+                    <span className="px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider
+                        bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-400/30 text-yellow-300">
+                        ⚡ BONUS ${sideBetAmount}
+                        {seat.freeActionTokens ? ` · ${seat.freeActionTokens}✦` : ''}
+                    </span>
+                </div>
+            )}
             {/* ─── Cards Area (above circle, higher z-index) ─── */}
             {hasCards && (
                 <div className="relative min-w-[49px] flex items-end justify-center mb-4"
@@ -71,8 +148,8 @@ export default function Seat({ seatId, style }: SeatProps) {
 
                         return (
                             <div key={hand.id}
-                                className={`relative ${handIdx > 0 ? 'ml-5' : ''}`}
-                                style={{ minWidth: `${45 + (hand.cards.length - 1) * 18}px`, height: '76px' }}
+                                className={`relative ${handIdx > 0 ? 'ml-8' : ''}`}
+                                style={{ minWidth: `${50 + (hand.cards.length - 1) * 20}px`, height: '76px' }}
                             >
                                 {/* Hand Score (Above Cards) */}
                                 {hand.cards.length > 0 && (
@@ -117,6 +194,45 @@ export default function Seat({ seatId, style }: SeatProps) {
                                         size="sm"
                                     />
                                 ))}
+
+                                {/* Bust overlay */}
+                                <AnimatePresence>
+                                    {hand.status === HandStatus.BUST && (
+                                        <motion.div
+                                            className="absolute inset-0 rounded-lg flex flex-col items-center justify-center"
+                                            style={{ zIndex: 30 }}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.25 }}
+                                        >
+                                            {/* Dim layer over cards */}
+                                            <div
+                                                className="absolute inset-0 rounded-lg"
+                                                style={{ background: 'rgba(0,0,0,0.42)', backdropFilter: 'blur(0.5px)' }}
+                                            />
+                                            {/* BUST label */}
+                                            <motion.div
+                                                className="relative z-10 flex flex-col items-center gap-0.5"
+                                                initial={{ scale: 0.5, y: 4 }}
+                                                animate={{ scale: 1, y: 0 }}
+                                                transition={{ type: 'spring', stiffness: 500, damping: 18, delay: 0.05 }}
+                                            >
+                                                <Flame
+                                                    size={18}
+                                                    className="text-orange-400"
+                                                    style={{ filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.9))' }}
+                                                />
+                                                <span
+                                                    className="text-[9px] font-black uppercase tracking-[0.18em] text-red-300"
+                                                    style={{ textShadow: '0 0 8px rgba(239,68,68,0.8)' }}
+                                                >
+                                                    Bust
+                                                </span>
+                                            </motion.div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         );
                     })}
@@ -155,8 +271,8 @@ export default function Seat({ seatId, style }: SeatProps) {
                                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                             >
                                 {(hand.isFreeSplit || hand.isFreeDouble) && (
-                                    <span className="text-emerald-400 text-[6px] font-black uppercase mb-0.5 tracking-wider bg-emerald-900/50 px-1 rounded-sm border border-emerald-500/30">
-                                        FREE
+                                    <span className="text-emerald-400 text-[5px] font-black uppercase mb-0.5 tracking-wider bg-emerald-900/50 px-1 rounded-sm border border-emerald-500/30">
+                                        {hand.isFreeDouble ? 'FA DBL' : 'FA SPL'}
                                     </span>
                                 )}
                                 <ChipStack amount={hand.betAmount} />

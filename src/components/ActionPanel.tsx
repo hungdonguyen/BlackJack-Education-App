@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { calculateHandValue, canSplit, canDoubleDown, getHandDisplayValue } from '@/utils/hand';
-import { Shield, Check, X, Undo2, Spade, Home, Sparkles, Flag } from 'lucide-react';
+import { Shield, Check, X, Undo2, Spade, Home, Sparkles, Flag, Zap } from 'lucide-react';
 import { getRules } from '@/rules';
 import { getRoomConfig } from '@/utils/rooms';
 
@@ -51,15 +51,19 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     let canStand = isPlayerTurn && isPlaying;
 
     let canDbl = false;
+    let isDblFree = false;
     if (isPlayerTurn && isPlaying && currentHand) {
         const result = rules.canDoubleDown(currentHand);
-        canDbl = result.allowed && bankroll >= result.cost;
+        isDblFree = result.isFree;
+        canDbl = result.allowed && (result.isFree || bankroll >= result.cost);
     }
 
     let canSpl = false;
+    let isSplFree = false;
     if (isPlayerTurn && isPlaying && currentHand) {
         const result = rules.canSplit(currentHand, currentSeat?.hands.length || 0);
-        canSpl = result.allowed && bankroll >= result.cost;
+        isSplFree = result.isFree;
+        canSpl = result.allowed && (result.isFree || bankroll >= result.cost);
     }
 
     let canSur = false;
@@ -112,16 +116,26 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                         )}
 
                         <div className="flex items-center gap-3">
-                            <CircleButton label="DOUBLE DOWN" icon="2x" color="#f39c12" hoverColor="#f1c40f"
-                                onClick={doubleDown} disabled={!canDbl} size={45} />
+                            {isDblFree ? (
+                                <FreeCircleButton label="FREE ACTION DOUBLE" icon={<Zap className="w-4 h-4" />}
+                                    onClick={doubleDown} disabled={!canDbl} size={50} />
+                            ) : (
+                                <CircleButton label="DOUBLE DOWN" icon="2x" color="#f39c12" hoverColor="#f1c40f"
+                                    onClick={doubleDown} disabled={!canDbl} size={45} />
+                            )}
 
                             <CircleButton label="HIT" icon="+" color="#2ecc71" hoverColor="#27ae60"
                                 onClick={hit} disabled={!canHit} size={53} />
                             <CircleButton label="STAND" icon="−" color="#e74c3c" hoverColor="#c0392b"
                                 onClick={stand} disabled={!canStand} size={53} />
 
-                            <CircleButton label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
-                                onClick={split} disabled={!canSpl} size={45} />
+                            {isSplFree ? (
+                                <FreeCircleButton label="FREE ACTION SPLIT" icon={<Zap className="w-4 h-4" />}
+                                    onClick={split} disabled={!canSpl} size={50} />
+                            ) : (
+                                <CircleButton label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
+                                    onClick={split} disabled={!canSpl} size={45} />
+                            )}
 
                             {roomConfig.gameRules.allowSurrender && (
                                 <CircleButton label="SURRENDER" icon={<Flag className="w-4 h-4" />} color="#9b59b6" hoverColor="#8e44ad"
@@ -357,3 +371,58 @@ function SquareFreeButton({ label, onClick, disabled }: { label: string; onClick
         </motion.button>
     );
 }
+
+// ── FreeCircleButton — Golden shimmer for FREE actions ──
+interface FreeCircleButtonProps {
+    label: string; icon: React.ReactNode;
+    onClick: () => void; disabled: boolean; size: number;
+}
+
+function FreeCircleButton({ label, icon, onClick, disabled, size }: FreeCircleButtonProps) {
+    return (
+        <motion.button
+            onClick={onClick} disabled={disabled}
+            className="flex flex-col items-center gap-1.5 cursor-pointer"
+            style={{ opacity: disabled ? 0.2 : 1 }}
+            whileHover={disabled ? {} : { scale: 1.15, y: -5 }}
+            whileTap={disabled ? {} : { scale: 0.88 }}
+        >
+            <motion.div
+                className="rounded-full flex items-center justify-center shadow-xl relative overflow-hidden"
+                style={{
+                    width: size, height: size,
+                    background: disabled
+                        ? 'rgba(100,100,100,0.3)'
+                        : 'linear-gradient(135deg, #fcd34d 0%, #f59e0b 30%, #d97706 60%, #fbbf24 100%)',
+                    boxShadow: disabled
+                        ? 'none'
+                        : '0 4px 25px rgba(251, 191, 36, 0.6), 0 0 50px rgba(234, 179, 8, 0.3), inset 0 1px 0 rgba(255,255,255,0.5)',
+                    border: `2px solid ${disabled ? 'rgba(100,100,100,0.2)' : '#fcd34d'}`,
+                }}
+                animate={disabled ? {} : {
+                    boxShadow: [
+                        '0 4px 25px rgba(251, 191, 36, 0.6), 0 0 50px rgba(234, 179, 8, 0.3)',
+                        '0 4px 35px rgba(251, 191, 36, 0.9), 0 0 70px rgba(234, 179, 8, 0.5)',
+                        '0 4px 25px rgba(251, 191, 36, 0.6), 0 0 50px rgba(234, 179, 8, 0.3)',
+                    ],
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+            >
+                {/* Shimmer sweep */}
+                {!disabled && (
+                    <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                        initial={{ x: '-100%' }}
+                        animate={{ x: '200%' }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    />
+                )}
+                <span className="text-black font-black drop-shadow-sm relative z-10" style={{ fontSize: size * 0.35 }}>{icon}</span>
+            </motion.div>
+            <span className="text-[8px] font-black text-yellow-400 uppercase tracking-wider whitespace-nowrap drop-shadow-[0_0_6px_rgba(250,204,21,0.6)]">
+                ✦ {label}
+            </span>
+        </motion.button>
+    );
+}
+

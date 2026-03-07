@@ -62,6 +62,15 @@ export default function HistoryPage() {
                                             <span className="text-xs font-black uppercase text-amber-400/80 px-2 py-0.5 bg-amber-500/10 rounded border border-amber-500/20 tracking-wider">
                                                 Room: {match.roomId}
                                             </span>
+                                            {(() => {
+                                                const netChange = match.bankrollAfter - match.bankrollBefore;
+                                                const isPush = netChange === 0;
+                                                return (
+                                                    <span className={`text-xs font-black uppercase px-2 py-0.5 rounded border tracking-wider ${isPush ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' : netChange > 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                                                        {isPush ? 'PUSH' : netChange > 0 ? 'WIN' : 'LOSE'} {!isPush && `${netChange > 0 ? '+' : ''}$${netChange.toLocaleString()}`}
+                                                    </span>
+                                                );
+                                            })()}
                                         </div>
                                         <div className="text-xs font-bold tracking-wider text-white/50">
                                             Balance: ${match.bankrollBefore.toLocaleString()} → ${match.bankrollAfter.toLocaleString()}
@@ -125,6 +134,14 @@ export default function HistoryPage() {
                                                                     <span className="text-yellow-400/70">🛡 Insurance: ${seat.insuranceCost}</span>
                                                                     <span className={seat.insurancePayout ? 'text-yellow-400' : 'text-red-400/70'}>
                                                                         {seat.insurancePayout ? `+${seat.insurancePayout}` : `-${seat.insuranceCost}`}
+                                                                    </span>
+                                                                </div>
+                                                            ) : null}
+                                                            {seat.sideBetAmount ? (
+                                                                <div className="mt-2 pt-2 border-t border-white/5 flex justify-between items-center text-[10px] font-bold">
+                                                                    <span className="text-yellow-400/70">⚡ Bonus: ${seat.sideBetAmount}{seat.freeActionTokens ? ` · ${seat.freeActionTokens}✦` : ''}</span>
+                                                                    <span className={seat.sideBetPayout ? 'text-yellow-400' : 'text-red-400/70'}>
+                                                                        {seat.sideBetPayout ? `+${seat.sideBetPayout}` : `-${seat.sideBetAmount}`}
                                                                     </span>
                                                                 </div>
                                                             ) : null}

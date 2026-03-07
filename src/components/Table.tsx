@@ -170,6 +170,16 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         return () => clearInterval(interval);
     }, [isInsurance, declineInsurance, currentSeatIndex]);
 
+    // Safety: recover from stuck DEALER_TURN (e.g. async error in dealerPlay)
+    const dealerPlay = useGameStore((s) => s.dealerPlay);
+    useEffect(() => {
+        if (gamePhase !== GamePhase.DEALER_TURN) return;
+        const safetyTimeout = setTimeout(() => {
+            dealerPlay();
+        }, 10_000);
+        return () => clearTimeout(safetyTimeout);
+    }, [gamePhase, dealerPlay]);
+
     // Win notification on payout
     useEffect(() => {
         if (isPayout && matchHistory.length > 0) {
@@ -195,6 +205,13 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                 if (seat.insurancePayout) {
                     totalPayouts += seat.insurancePayout;
                 }
+                // Include side bet results in the notification
+                if (seat.sideBetAmount) {
+                    totalPayouts -= seat.sideBetAmount;
+                }
+                if (seat.sideBetPayout) {
+                    totalPayouts += seat.sideBetPayout;
+                }
             });
 
             if (totalPayouts > 0) {
@@ -215,19 +232,18 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
     // Claim cooldown timer — only runs when a cooldown is actually active
     useEffect(() => {
-        const ONE_HOUR = 60 * 60 * 1000;
+        const THIRTY_MIN = 30 * 60 * 1000;
 
         const tick = () => {
             const elapsed = Date.now() - lastDailyClaim;
-            if (elapsed >= ONE_HOUR) {
+            if (elapsed >= THIRTY_MIN) {
                 setClaimCooldown('');
                 return true; // cooldown expired — stop the interval
             }
-            const remaining = ONE_HOUR - elapsed;
-            const h = Math.floor(remaining / 3600000);
-            const m = Math.floor((remaining % 3600000) / 60000);
+            const remaining = THIRTY_MIN - elapsed;
+            const m = Math.floor(remaining / 60000);
             const s = Math.floor((remaining % 60000) / 1000);
-            setClaimCooldown(h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`);
+            setClaimCooldown(`${m}m ${s}s`);
             return false;
         };
 
@@ -253,7 +269,11 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         ? '/images/logo/Vegas_trip_blackjack.png'
         : roomId === 'vegas_downtown'
             ? '/images/logo/Vegas_Downtown_Logo.png'
-            : '/images/logo/Classic_Online_Logo.png';
+            : roomId === 'free_action'
+                ? '/images/logo/rooms/freeaction.png'
+                : roomId === 'atlantic_city'
+                    ? '/images/logo/Atlantic.png'
+                    : '/images/logo/Classic_Online_Logo.png';
 
     const isBonusClaim = (dailyClaimCount + 1) % 3 === 0;
 
@@ -352,7 +372,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                         style={{ width: '170px', height: '75px' }}
                         onClick={() => setShowLogoInfo(true)}
                     >
-                        <Image src={logoPath} alt={room.name} fill className="object-contain drop-shadow-xl" sizes="170px" unoptimized />
+                        <Image src={logoPath} alt={room.name} fill className="object-contain" sizes="170px" unoptimized />
                     </div>
 
                 </div>
@@ -438,7 +458,18 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                             <Sparkles size={14} /> RTP
                                         </span>
                                         <div className="text-right">
-                                            <p className="text-sm font-black" style={{ color: room.accentColor }}>{room.rtp}</p>
+                                            {room.hasSideBet && room.baseGameRtp && room.sideBetRtp ? (
+                                                <>
+                                                    <p className="text-[11px] font-bold text-white/50">
+                                                        Base Game: <span className="font-black" style={{ color: room.accentColor }}>{room.baseGameRtp}</span>
+                                                    </p>
+                                                    <p className="text-[11px] font-bold text-white/50">
+                                                        Side Bet: <span className="font-black text-red-400">{room.sideBetRtp}</span>
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <p className="text-sm font-black" style={{ color: room.accentColor }}>{room.rtp}</p>
+                                            )}
                                             <p className="text-[10px] text-white/30">Theoretical Return to Player</p>
                                         </div>
                                     </div>
@@ -540,24 +571,24 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                         >
                             <div className={`px-8 py-4 rounded-xl backdrop-blur-md border ${winNotification.isPush
-                                ? 'bg-gradient-to-r from-sky-500/15 to-blue-500/15 border-sky-400/30'
+                                ? 'bg-gradient-to-r from-slate-500/15 to-gray-500/15 border-slate-400/30'
                                 : winNotification.isWin
                                     ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-yellow-400/40'
                                     : 'bg-gradient-to-r from-red-500/20 to-red-700/20 border-red-400/30'
                                 }`}
                                 style={{
                                     boxShadow: winNotification.isPush
-                                        ? '0 0 40px rgba(56, 189, 248, 0.2)'
+                                        ? '0 0 40px rgba(148, 163, 184, 0.2)'
                                         : winNotification.isWin
                                             ? '0 0 60px rgba(250, 204, 21, 0.3), 0 0 120px rgba(250, 204, 21, 0.1)'
                                             : '0 0 40px rgba(220, 50, 50, 0.2)'
                                 }}
                             >
                                 <p className={`text-center text-sm font-bold uppercase tracking-[0.3em] mb-1 ${winNotification.isPush
-                                    ? 'text-sky-300'
+                                    ? 'text-slate-300'
                                     : winNotification.isWin ? 'text-yellow-300' : 'text-red-300'
                                     }`}>
-                                    {winNotification.isPush ? 'PUSH' : winNotification.isWin ? 'YOU WIN' : 'YOU LOSE'}
+                                    {winNotification.isPush ? 'TIE' : winNotification.isWin ? 'YOU WIN' : 'YOU LOSE'}
                                 </p>
                                 {!winNotification.isPush && (
                                     <p className={`text-center text-3xl font-black tabular-nums
@@ -566,7 +597,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                     </p>
                                 )}
                                 {winNotification.isPush && (
-                                    <p className="text-center text-xl font-bold text-sky-400/80">
+                                    <p className="text-center text-xl font-bold text-slate-400/80">
                                         Bet returned
                                     </p>
                                 )}
@@ -674,11 +705,11 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
 /* ─── Seat positions: inverted arc (edges higher, center lower) ─── */
 const SEAT_ARC: Record<number, { x: string; y: string; scale: number; z: number }> = {
-    1: { x: '4%', y: '80px', scale: 0.9, z: 1 },
-    2: { x: '23%', y: '36px', scale: 1.02, z: 2 },
+    1: { x: '8%', y: '80px', scale: 0.9, z: 1 },
+    2: { x: '26%', y: '36px', scale: 1.02, z: 2 },
     3: { x: '50%', y: '12px', scale: 1.14, z: 3 },
-    4: { x: '77%', y: '36px', scale: 1.02, z: 2 },
-    5: { x: '96%', y: '80px', scale: 0.9, z: 1 },
+    4: { x: '74%', y: '36px', scale: 1.02, z: 2 },
+    5: { x: '92%', y: '80px', scale: 0.9, z: 1 },
 };
 
 /* ─── Sub-components ─── */
@@ -754,16 +785,22 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                         if (s.insurancePayout) {
                             diff += s.insurancePayout;
                         }
+                        if (s.sideBetAmount) {
+                            diff -= s.sideBetAmount;
+                        }
+                        if (s.sideBetPayout) {
+                            diff += s.sideBetPayout;
+                        }
                     });
 
-                    const roomLabel = match.roomId === 'vegas_strip' ? 'VS' : match.roomId === 'vegas_downtown' ? 'VD' : match.roomId === 'atlantic_city' ? 'AC' : 'VIP';
+                    const roomLabel = match.roomId === 'vegas_strip' ? 'VS' : match.roomId === 'vegas_downtown' ? 'VD' : match.roomId === 'atlantic_city' ? 'AC' : match.roomId === 'free_action' ? 'FA' : 'VIP';
 
                     // Check if any seat had insurance
                     const hadInsurance = match.seats.some(s => s.insuranceCost && s.insuranceCost > 0);
 
                     // Determine overall label character based on net profit diff
-                    let labelStr = 'P';
-                    let colorClass = 'text-white/40';
+                    let labelStr = 'T';
+                    let colorClass = 'text-slate-400';
 
                     if (diff > 0) {
                         labelStr = result.result === HandStatus.BLACKJACK ? 'BJ' : 'W';
@@ -778,7 +815,7 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                             className="flex items-center justify-between px-1.5 py-1 rounded bg-white/2 hover:bg-white/5 cursor-pointer transition-colors">
                             <div className="flex items-center gap-1.5">
                                 <span className={`text-[7px] font-bold px-1 py-0.5 rounded
-                                    ${match.roomId === 'vegas_strip' ? 'bg-purple-500/15 text-purple-400' : match.roomId === 'vegas_downtown' ? 'bg-sky-500/15 text-sky-400' : match.roomId === 'atlantic_city' ? 'bg-orange-500/15 text-orange-400' : 'bg-amber-500/15 text-amber-400'}`}
+                                    ${match.roomId === 'vegas_strip' ? 'bg-purple-500/15 text-purple-400' : match.roomId === 'vegas_downtown' ? 'bg-sky-500/15 text-sky-400' : match.roomId === 'atlantic_city' ? 'bg-orange-500/15 text-orange-400' : match.roomId === 'free_action' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-amber-500/15 text-amber-400'}`}
                                 >{roomLabel}</span>
                                 <span className={`text-[9px] font-bold uppercase ${colorClass}`}>
                                     {labelStr}
@@ -787,7 +824,7 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                                     <span className="text-[7px] px-1 py-0.5 rounded bg-yellow-500/15 text-yellow-400 font-bold" title="Insurance purchased">🛡</span>
                                 )}
                             </div>
-                            <span className={`text-[9px] font-bold tabular-nums ${diff >= 0 ? 'text-emerald-400/80' : 'text-red-400/80'}`}>
+                            <span className={`text-[9px] font-bold tabular-nums ${diff > 0 ? 'text-emerald-400/80' : diff < 0 ? 'text-red-400/80' : 'text-slate-400/80'}`}>
                                 {diff >= 0 ? '+' : ''}{diff}
                             </span>
                         </div>
