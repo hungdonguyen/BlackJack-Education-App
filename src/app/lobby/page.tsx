@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { ROOMS, RoomConfig } from '@/utils/rooms';
 import Image from 'next/image';
 import { ArrowLeft, Home } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function LobbyPage() {
     const router = useRouter();
@@ -80,8 +81,6 @@ export default function LobbyPage() {
         </div>
     );
 }
-
-import { useEffect, useState } from 'react';
 
 function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; onClick: () => void }) {
     const [isMounted, setIsMounted] = useState(false);
