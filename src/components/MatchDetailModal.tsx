@@ -220,7 +220,7 @@ export default function MatchDetailModal({
                                                     {/* Seat label + status */}
                                                     <div>
                                                         <p className="text-[10px] font-bold text-white/70">{label}</p>
-                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                        <div className="flex flex-wrap items-center gap-1 mt-0.5">
                                                             <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full inline-block ${statusInfo.className}`}>
                                                                 {statusInfo.label}
                                                             </span>
@@ -240,6 +240,11 @@ export default function MatchDetailModal({
                                                             ) : hand.isDoubleDown && (
                                                                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                                                                     DOUBLE
+                                                                </span>
+                                                            )}
+                                                            {match.roomId === 'iberian_21' && hand.result === HandStatus.WON && pnl > hand.betAmount && !hand.isDoubleDown && (
+                                                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                                                                    21 BONUS ({(pnl / hand.betAmount).toFixed(1)}x)
                                                                 </span>
                                                             )}
                                                         </div>

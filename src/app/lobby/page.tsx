@@ -38,17 +38,17 @@ export default function LobbyPage() {
             </div>
 
             {/* Center content — true full-screen vertical centering */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 z-10 px-8">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 z-10 px-8">
                 {/* Heading */}
                 <motion.div
-                    className="text-center"
+                    className="text-center mt-6"
                     initial={{ opacity: 0, y: -16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1, duration: 0.6 }}
                 >
-                    <p className="text-[10px] uppercase tracking-[0.45em] text-amber-400/50 mb-1 font-sans">Welcome to</p>
+                    <p className="text-[9px] uppercase tracking-[0.45em] text-amber-400/50 mb-1 font-sans">Welcome to</p>
                     <h2
-                        className="text-3xl font-black uppercase tracking-[0.25em] text-transparent bg-clip-text leading-tight"
+                        className="text-2xl font-black uppercase tracking-[0.25em] text-transparent bg-clip-text leading-tight"
                         style={{
                             fontFamily: 'var(--font-cinzel), serif',
                             backgroundImage: 'linear-gradient(135deg, #f5d280 0%, #d4a843 40%, #b8860b 70%, #f5d280 100%)',
@@ -57,15 +57,15 @@ export default function LobbyPage() {
                     >
                         Educational Blackjack
                     </h2>
-                    <div className="flex items-center justify-center gap-3 mt-2">
+                    <div className="flex items-center justify-center gap-3 mt-1.5">
                         <div className="h-px w-16 bg-gradient-to-r from-transparent to-amber-400/40" />
-                        <span className="text-amber-400/40 text-[9px] tracking-[0.5em] uppercase font-sans">Choose Your Table</span>
+                        <span className="text-amber-400/40 text-[8px] tracking-[0.5em] uppercase font-sans">Choose Your Table</span>
                         <div className="h-px w-16 bg-gradient-to-l from-transparent to-amber-400/40" />
                     </div>
                 </motion.div>
 
                 {/* Room Cards — items-stretch ensures equal height, grid handles responsiveness */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 xl:gap-5 w-full max-w-[1200px]">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 xl:gap-4 w-full max-w-[1100px]">
                     {rooms.map((room, index) => (
                         <RoomCard key={room.id} room={room} index={index} onClick={() => router.push(`/game/${room.id}`)} />
                     ))}
@@ -104,7 +104,7 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
             onClick={onClick}
         >
             {/* Table preview */}
-            <div className="h-[140px] relative overflow-hidden"
+            <div className="h-[110px] relative overflow-hidden"
                 style={{ background: room.feltGradient }}
             >
                 {/* Felt texture */}
@@ -114,9 +114,9 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
 
                 {/* Room logo */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative w-[70%] h-[60%] mx-auto">
+                    <div className="relative w-[60%] h-[75%] mx-auto">
                         <Image
-                            src={room.id === 'free_action' ? '/images/logo/rooms/freeaction.png' : room.id === 'vegas_strip' ? '/images/logo/rooms/vegas_strip.png' : room.id === 'vegas_downtown' ? '/images/logo/rooms/vegas_downtown.png' : room.id === 'atlantic_city' ? '/images/logo/rooms/atlantic.png' : '/images/logo/rooms/classic.png'}
+                            src={room.logoPath}
                             alt={room.name}
                             fill
                             className="object-contain drop-shadow-2xl"
@@ -124,13 +124,6 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
                             unoptimized
                         />
                     </div>
-                </div>
-
-                {/* Table text preview */}
-                <div className="absolute bottom-4 left-0 right-0 text-center">
-                    <p className="text-white/20 text-[10px] uppercase tracking-[0.3em] font-serif">
-                        {room.rules.blackjackPays}
-                    </p>
                 </div>
 
                 {/* Hover overlay */}
@@ -145,29 +138,29 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
             </div>
 
             {/* Info section */}
-            <div className="flex-1 flex flex-col p-5"
+            <div className="flex-1 flex flex-col p-4"
                 style={{ background: 'rgba(10, 6, 4, 0.95)' }}
             >
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start justify-between mb-1.5">
                     <div>
-                        <h3 className="text-lg font-extrabold text-white/90">{room.name}</h3>
-                        <p className="text-[11px] font-medium uppercase tracking-[0.15em]"
+                        <h3 className="text-[15px] font-extrabold text-white/90">{room.name}</h3>
+                        <p className="text-[9px] font-medium uppercase tracking-[0.15em] mt-0.5"
                             style={{ color: room.accentColor }}
                         >
                             {room.subtitle}
                         </p>
                     </div>
-                    <span className="text-2xl">{room.icon}</span>
+                    <span className="text-xl">{room.icon}</span>
                 </div>
-                <p className="text-white/35 text-[10px] leading-relaxed mt-1.5">{room.description}</p>
+                <p className="text-white/35 text-[9px] leading-relaxed mt-1">{room.description}</p>
                 <div className="flex items-center gap-3 mt-auto pt-2.5 border-t border-white/5">
-                    <span className="text-[9px] text-white/25 uppercase tracking-wider">
+                    <span className="text-[8px] text-white/25 uppercase tracking-wider">
                         Min: ${room.betRange[0]}
                     </span>
-                    <span className="text-[9px] text-white/25 uppercase tracking-wider">
+                    <span className="text-[8px] text-white/25 uppercase tracking-wider">
                         Max: ${isMounted ? room.betRange[1].toLocaleString() : room.betRange[1]}
                     </span>
-                    <span className="text-[9px] uppercase tracking-wider ml-auto font-bold" style={{ color: room.accentColor }}>
+                    <span className="text-[8px] uppercase tracking-wider ml-auto font-bold" style={{ color: room.accentColor }}>
                         {room.hasSideBet && room.baseGameRtp && room.sideBetRtp
                             ? <>RTP {room.baseGameRtp} · <span className="text-red-400">Side Bet {room.sideBetRtp}</span></>
                             : <>RTP {room.rtp}</>

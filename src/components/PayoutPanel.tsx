@@ -100,6 +100,28 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
                         </div>
                     </>
                 )}
+
+                {roomConfig?.id === 'iberian_21' && (
+                    <>
+                        <div className="px-3 py-2 border-t border-red-500/20 bg-red-500/10">
+                            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] flex items-center text-red-500">
+                                <CreditCard size={12} className="mr-1.5" /> 21 Bonus Payouts
+                            </span>
+                        </div>
+                        <div className="p-2.5 space-y-1.5">
+                            {[
+                                { label: '5-Card 21 / ♠♥♦♣ 6-7-8, 7-7-7', value: '3 : 2' },
+                                { label: '6-Card 21 / ♠♠ 6-7-8, 7-7-7', value: '2 : 1' },
+                                { label: '7+ Card 21 / ♠♠♠ 6-7-8, 7-7-7', value: '3 : 1' },
+                            ].map((p) => (
+                                <div key={p.label} className="flex items-center justify-between px-1">
+                                    <span className="text-[10px] font-medium text-red-200/80">{p.label}</span>
+                                    <span className="text-[10px] font-bold tabular-nums text-red-400">{p.value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
             </motion.div>
         </div>
     );

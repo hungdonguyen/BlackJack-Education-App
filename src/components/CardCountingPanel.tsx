@@ -11,34 +11,7 @@ import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, Rank } from '@/types/enums';
 import { Info } from 'lucide-react';
 import { Card } from '@/types/game';
-
-// ─── Hi-Lo Card Counting Values ───────────────────────────────────────────────
-// 2-6: +1 (low cards, favorable when removed)
-// 7-9:  0 (neutral)
-// 10-A: -1 (high cards, favorable when in shoe)
-
-function getHiLoValue(rank: Rank): number {
-    switch (rank) {
-        case Rank.TWO:
-        case Rank.THREE:
-        case Rank.FOUR:
-        case Rank.FIVE:
-        case Rank.SIX:
-            return +1;
-        case Rank.SEVEN:
-        case Rank.EIGHT:
-        case Rank.NINE:
-            return 0;
-        case Rank.TEN:
-        case Rank.JACK:
-        case Rank.QUEEN:
-        case Rank.KING:
-        case Rank.ACE:
-            return -1;
-        default:
-            return 0;
-    }
-}
+import { getCardValue, getInitialDeckSum, CountingSystem } from '@/utils/cardCounting';
 
 /** Collect all face-up (visible) cards from the current round */
 function getAllVisibleCards(
@@ -66,22 +39,33 @@ function getAllVisibleCards(
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface CardCountingPanelProps {
+    roomId: string; // Added to check for Iberian 21
     numDecks: number;
     accentColor?: string;
     borderColor?: string;
+    onOpenSettings?: () => void;
+    onOpenStrategy?: () => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function CardCountingPanel({
+    roomId,
     numDecks,
     accentColor = '#d4a843',
     borderColor,
+    onOpenSettings,
+    onOpenStrategy,
 }: CardCountingPanelProps) {
     const gamePhase = useGameStore((s) => s.gamePhase);
     const seats = useGameStore((s) => s.seats);
     const dealerHand = useGameStore((s) => s.dealerHand);
     const shoe = useGameStore((s) => s.shoe);
+    const userSystem = useGameStore((s) => s.countSystem);
+
+    // Only allow Katarina Walker in Iberian 21
+    const activeSystem: CountingSystem = (roomId === 'iberian_21' && userSystem === 'Katarina Walker') ? 'Katarina Walker' : 'Hi-Lo';
+    const omitTens = roomId === 'iberian_21';
 
     const isVisible =
         gamePhase === GamePhase.PLAYER_TURN ||
@@ -108,23 +92,26 @@ export default function CardCountingPanel({
         // because a balanced shoe sums to 0.
         let shoeSum = 0;
         for (const card of shoe) {
-            shoeSum += getHiLoValue(card.rank);
+            shoeSum += getCardValue(card.rank, activeSystem);
         }
-        runningCount = -shoeSum; // balanced deck: total sum = 0, so dealt = -remaining
+
+        const initialDeckSum = getInitialDeckSum(activeSystem, omitTens);
+        const initialShoeSum = numDecks * initialDeckSum;
+        runningCount = initialShoeSum - shoeSum;
 
         // The runningCount above assumes all cards removed from the shoe have been seen.
         // However, face-down (hidden) cards on the table haven't been seen by the player yet.
         // We must subtract their value from the running count until they are revealed.
         for (const card of dealerHand.cards) {
             if (card.isHidden) {
-                runningCount -= getHiLoValue(card.rank);
+                runningCount -= getCardValue(card.rank, activeSystem);
             }
         }
         for (const seat of seats) {
             for (const hand of seat.hands) {
                 for (const card of hand.cards) {
                     if (card.isHidden) {
-                        runningCount -= getHiLoValue(card.rank);
+                        runningCount -= getCardValue(card.rank, activeSystem);
                     }
                 }
             }
@@ -132,37 +119,45 @@ export default function CardCountingPanel({
 
         const trueCount = runningCount / decksRemaining;
 
-        // Betting advice based on true count
+        // For Hi-Lo in Iberian 21, the raw TC starts at ~-4 due to unbalanced deck.
+        // We normalize the bet advice TC by subtracting the expected baseline offset so
+        // an unplayed shoe reads as "neutral" rather than "sit out".
+        const baselineTc = (activeSystem === 'Hi-Lo' && omitTens)
+            ? (numDecks * 4) / numDecks * -1 // -4 per deck / numDecks = -4 baseline
+            : 0;
+        const adviceTrueCount = trueCount - baselineTc;
+
+        // Betting advice based on normalized true count
         let advice: { label: string; desc: string; color: string; bgColor: string };
-        if (trueCount >= 5) {
+        if (adviceTrueCount >= 5) {
             advice = {
                 label: 'MAX BET',
                 desc: 'Extremely favorable deck — Huge player edge. Increase bet 5-8× minimum',
                 color: '#fcd34d',
                 bgColor: 'rgba(234,179,8,0.15)',
             };
-        } else if (trueCount >= 3) {
+        } else if (adviceTrueCount >= 3) {
             advice = {
                 label: 'HIGH BET',
                 desc: 'Very favorable — Strong player advantage. Increase bet 3-5× minimum',
                 color: '#86efac',
                 bgColor: 'rgba(34,197,94,0.15)',
             };
-        } else if (trueCount >= 1) {
+        } else if (adviceTrueCount >= 1) {
             advice = {
                 label: 'RAISE BET',
                 desc: 'Slightly favorable — Increase bet 2-3× minimum',
                 color: '#93c5fd',
                 bgColor: 'rgba(59,130,246,0.15)',
             };
-        } else if (trueCount >= -1) {
+        } else if (adviceTrueCount >= -1) {
             advice = {
                 label: 'FLAT BET',
                 desc: 'Neutral deck — Bet minimum. No significant edge for either side',
                 color: 'rgba(255,255,255,0.5)',
                 bgColor: 'rgba(255,255,255,0.05)',
             };
-        } else if (trueCount >= -3) {
+        } else if (adviceTrueCount >= -3) {
             advice = {
                 label: 'MIN BET',
                 desc: 'Unfavorable — House edge is higher. Bet minimum or sit out',
@@ -179,7 +174,7 @@ export default function CardCountingPanel({
         }
 
         // Player edge estimate (rough): 0.5% per true count point above 0, base house edge ~0.5%
-        const playerEdge = (trueCount * 0.5) - 0.5;
+        const playerEdge = (adviceTrueCount * 0.5) - 0.5;
 
         return {
             runningCount,
@@ -191,7 +186,7 @@ export default function CardCountingPanel({
             playerEdge,
             visibleThisRound: visibleCards.length,
         };
-    }, [seats, dealerHand, shoe, numDecks]);
+    }, [seats, dealerHand, shoe, numDecks, activeSystem, omitTens]);
 
     const bdr = borderColor ?? `${accentColor}30`;
 
@@ -224,12 +219,6 @@ export default function CardCountingPanel({
                         }}
                     >
                         <div className="flex items-center gap-2">
-                            <div
-                                className="w-5 h-5 rounded-md flex items-center justify-center"
-                                style={{ background: `${accentColor}20`, border: `1px solid ${accentColor}35` }}
-                            >
-                                <span style={{ color: accentColor, fontSize: 11, fontWeight: 900 }}>🃏</span>
-                            </div>
                             <span
                                 className="text-[11px] font-black uppercase tracking-[0.22em] font-sans"
                                 style={{ color: 'rgba(220,200,170,0.8)' }}
@@ -239,8 +228,8 @@ export default function CardCountingPanel({
                         </div>
                         <div className="flex items-center gap-1.5">
                             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#22c55e' }} />
-                            <span className="text-[10px] font-bold uppercase tracking-[0.18em] font-sans" style={{ color: '#22c55e90' }}>
-                                HI-LO
+                            <span className="text-[10px] font-bold uppercase tracking-[0.12em] font-sans whitespace-nowrap" style={{ color: '#22c55e90' }}>
+                                {activeSystem === 'Katarina Walker' ? 'WALKER' : 'HI-LO'}
                             </span>
                         </div>
                     </div>
@@ -369,14 +358,15 @@ export default function CardCountingPanel({
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <span className="text-[8px] uppercase tracking-[0.12em] text-white/30 font-bold font-sans">System</span>
-                                <span className="text-[11px] font-black" style={{ color: '#22c55e' }}>Hi-Lo</span>
+                                <span className="text-[11px] font-black uppercase text-emerald-400 whitespace-nowrap">{activeSystem === 'Katarina Walker' ? 'Walker' : 'Hi-Lo'}</span>
                             </div>
                         </div>
 
                         {/* More Details Link */}
-                        <div className="flex items-center justify-center mt-4 pt-3 border-t border-white/5 font-sans">
+                        <div className="flex items-center justify-center mt-4 pt-3 border-t border-white/5 font-sans" onClick={roomId === 'iberian_21' ? onOpenSettings : onOpenStrategy}>
                             <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5 cursor-pointer hover:text-white/70 transition-colors">
-                                <Info size={11} /> Find out more details in Strategy
+                                <Info size={11} />
+                                {roomId === 'iberian_21' ? 'Change counting system in Settings' : 'Find out more details in Strategy'}
                             </span>
                         </div>
                     </div>

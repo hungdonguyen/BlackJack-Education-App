@@ -14,6 +14,7 @@ import { Card } from '@/types/game';
 import { Info, TrendingUp } from 'lucide-react';
 import { getDeviation, Deviation } from '@/utils/countingDeviations';
 import { getRoomConfig } from '@/utils/rooms';
+import { getCardValue, getInitialDeckSum, CountingSystem } from '@/utils/cardCounting';
 
 // ─── Strategy tables (mirrors StrategyModal) ──────────────────────────────────
 
@@ -359,20 +360,7 @@ function computeBustStats(cards: Card[], shoe: Card[]) {
     };
 }
 
-// ─── Hi-Lo helpers (shared logic with CardCountingPanel) ──────────────────
-
-function getHiLoValue(rank: Rank): number {
-    switch (rank) {
-        case Rank.TWO: case Rank.THREE: case Rank.FOUR: case Rank.FIVE: case Rank.SIX:
-            return +1;
-        case Rank.SEVEN: case Rank.EIGHT: case Rank.NINE:
-            return 0;
-        case Rank.TEN: case Rank.JACK: case Rank.QUEEN: case Rank.KING: case Rank.ACE:
-            return -1;
-        default:
-            return 0;
-    }
-}
+// ─── Card Counting helpers (shared logic) ──────────────────
 
 function computeTrueCount(
     shoe: Card[],
@@ -380,20 +368,24 @@ function computeTrueCount(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     seats: any[],
     numDecks: number,
+    activeSystem: CountingSystem,
+    omitTens: boolean
 ): number {
-    // Running count = -(sum of Hi-Lo values remaining in shoe) for a balanced deck
     let shoeSum = 0;
-    for (const card of shoe) shoeSum += getHiLoValue(card.rank);
-    let runningCount = -shoeSum;
+    for (const card of shoe) shoeSum += getCardValue(card.rank, activeSystem);
+
+    const initialDeckSum = getInitialDeckSum(activeSystem, omitTens);
+    const initialShoeSum = numDecks * initialDeckSum;
+    let runningCount = initialShoeSum - shoeSum;
 
     // Subtract hidden (unseen) cards from running count
     for (const card of dealerCards) {
-        if (card.isHidden) runningCount -= getHiLoValue(card.rank);
+        if (card.isHidden) runningCount -= getCardValue(card.rank, activeSystem);
     }
     for (const seat of seats) {
         for (const hand of seat.hands) {
             for (const card of hand.cards) {
-                if (card.isHidden) runningCount -= getHiLoValue(card.rank);
+                if (card.isHidden) runningCount -= getCardValue(card.rank, activeSystem);
             }
         }
     }
@@ -436,20 +428,25 @@ interface HandAdvisorProps {
     roomId: string;
     accentColor?: string;
     borderColor?: string;
+    onOpenStrategy?: () => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderColor }: HandAdvisorProps) {
+export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderColor, onOpenStrategy }: HandAdvisorProps) {
     const gamePhase = useGameStore((s) => s.gamePhase);
     const seats = useGameStore((s) => s.seats);
     const dealerHand = useGameStore((s) => s.dealerHand);
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
     const shoe = useGameStore((s) => s.shoe);
     const showCardCounting = useGameStore((s) => s.showCardCounting);
+    const userSystem = useGameStore((s) => s.countSystem);
+
+    const activeSystem: CountingSystem = (roomId === 'iberian_21' && userSystem === 'Katarina Walker') ? 'Katarina Walker' : 'Hi-Lo';
+    const omitTens = roomId === 'iberian_21';
 
     const room = getRoomConfig(roomId);
-    const strategyType = roomId === 'free_action' ? 'free_action' : roomId === 'atlantic_city' ? 'ac' : (roomId === 'vegas_strip' || roomId === 'vegas_downtown') ? 'vegas' : 'classic';
+    const strategyType = roomId === 'free_action' ? 'free_action' : roomId === 'iberian_21' ? 'iberian_21' : roomId === 'atlantic_city' ? 'ac' : (roomId === 'vegas_strip' || roomId === 'vegas_downtown') ? 'vegas' : 'classic';
     const isVisible = gamePhase === GamePhase.PLAYER_TURN;
 
     // Gather current hand & dealer upcard
@@ -479,7 +476,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
         let trueCount = 0;
 
         if (showCardCounting) {
-            trueCount = computeTrueCount(shoe, dealerHand.cards, seats, room.gameRules.numberOfDecks);
+            trueCount = computeTrueCount(shoe, dealerHand.cards, seats, room.gameRules.numberOfDecks, activeSystem, omitTens);
 
             // Check if current hand is a pair (for split deviations)
             const isPairHand = cards.length === 2 && cards[0].value === cards[1].value;
@@ -492,6 +489,8 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
                 trueCount,
                 room.gameRules.dealerHitsSoft17,
                 room.gameRules.allowSurrender,
+                roomId,
+                activeSystem
             );
 
             if (deviation) {
@@ -544,9 +543,6 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
                         style={{ background: `linear-gradient(90deg, ${accentColor}18, transparent)`, borderBottom: `1px solid ${accentColor}15` }}
                     >
                         <div className="flex items-center gap-2">
-                            <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${accentColor}20`, border: `1px solid ${accentColor}35` }}>
-                                <span style={{ color: accentColor, fontSize: 11, fontWeight: 900 }}>♠</span>
-                            </div>
                             <span className="text-[11px] font-black uppercase tracking-[0.22em] font-sans" style={{ color: 'rgba(220,200,170,0.8)' }}>
                                 Hand Advisor
                             </span>
@@ -755,7 +751,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
                         </div>
 
                         {/* More Details Link */}
-                        <div className="flex items-center justify-center mt-4 pt-3 border-t border-white/5 font-sans">
+                        <div className="flex items-center justify-center mt-4 pt-3 border-t border-white/5 font-sans" onClick={onOpenStrategy}>
                             <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5 cursor-pointer hover:text-white/70 transition-colors">
                                 <Info size={11} /> Find out more details in Strategy
                             </span>

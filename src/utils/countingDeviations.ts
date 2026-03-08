@@ -8,6 +8,9 @@
 // H17 changes 4 indices: 11vA, 10vA, 12v6, TT v6.
 //
 // Source: Don Schlesinger "Blackjack Attack" — Illustrious 18 & Fab 4.
+// Source: Katarina Walker "The Pro's Guide to Spanish 21" — Walker Indices.
+
+import { CountingSystem } from './cardCounting';
 
 export type DeviationAction = 'H' | 'S' | 'D' | 'SP' | 'SU';
 
@@ -84,6 +87,26 @@ export const FAB_4: Deviation[] = [
     { id: 'F4-4', playerTotal: 15, isSoft: false, isPair: false, dealerUpcard: 'A',  index: 1,  deviationAction: 'SU', basicAction: 'H', direction: 'gte', description: 'Surrender 15 vs A (instead of Hit)' },
 ];
 
+// ─── Iberian 21 (Spanish 21) Deviations ────────────────────────────────────
+
+export const IBERIAN_HILO: Deviation[] = [
+    { id: 'I21-H1', playerTotal: 0,  isSoft: false, isPair: false, dealerUpcard: 'A',  index: 9,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Take Insurance when TC ≥ +9' },
+    { id: 'I21-H2', playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '4',  index: 2,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 4 (instead of Hit)' },
+    { id: 'I21-H3', playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '5',  index: 1,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 5 (instead of Hit)' },
+    { id: 'I21-H4', playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '6',  index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 6 (instead of Hit)' },
+    { id: 'I21-H5', playerTotal: 13, isSoft: false, isPair: false, dealerUpcard: '2',  index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 13 vs 2 (instead of Hit)' },
+    { id: 'I21-H6', playerTotal: 13, isSoft: false, isPair: false, dealerUpcard: '3',  index: -1, deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 13 vs 3 (instead of Hit)' },
+];
+
+export const IBERIAN_WALKER: Deviation[] = [
+    { id: 'I21-W1', playerTotal: 0,  isSoft: false, isPair: false, dealerUpcard: 'A',  index: 7,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Take Insurance when TC ≥ +7' },
+    { id: 'I21-W2', playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '4',  index: 3,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 4 (instead of Hit)' },
+    { id: 'I21-W3', playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '5',  index: 1,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 5 (instead of Hit)' },
+    { id: 'I21-W4', playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '6',  index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 6 (instead of Hit)' },
+    { id: 'I21-W5', playerTotal: 13, isSoft: false, isPair: false, dealerUpcard: '2',  index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 13 vs 2 (instead of Hit)' },
+    { id: 'I21-W6', playerTotal: 13, isSoft: false, isPair: false, dealerUpcard: '3',  index: -1, deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 13 vs 3 (instead of Hit)' },
+];
+
 // ─── Lookup Function ───────────────────────────────────────────────────────
 
 /**
@@ -106,9 +129,17 @@ export function getDeviation(
     trueCount: number,
     dealerHitsS17: boolean,
     allowSurrender: boolean,
+    roomId: string = 'classic',
+    system: CountingSystem = 'Hi-Lo',
 ): Deviation | null {
-    const i18Table = dealerHitsS17 ? I18_H17 : I18_S17;
-    const allDeviations = [...i18Table, ...FAB_4];
+    let allDeviations: Deviation[] = [];
+
+    if (roomId === 'iberian_21') {
+        allDeviations = system === 'Katarina Walker' ? IBERIAN_WALKER : IBERIAN_HILO;
+    } else {
+        const i18Table = dealerHitsS17 ? I18_H17 : I18_S17;
+        allDeviations = [...i18Table, ...FAB_4];
+    }
 
     for (const dev of allDeviations) {
         // Skip insurance (playerTotal === 0) — handled separately

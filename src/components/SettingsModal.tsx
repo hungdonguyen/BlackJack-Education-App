@@ -10,21 +10,24 @@ import { useGameStore } from '@/hooks/useGameStore';
 import { DealerSpeed } from '@/store/settingsSlice';
 
 interface SettingsModalProps {
+    roomId: string;
     accentColor: string;
     borderColor: string;
     onClose: () => void;
 }
 
-export default function SettingsModal({ accentColor, borderColor, onClose }: SettingsModalProps) {
+export default function SettingsModal({ roomId, accentColor, borderColor, onClose }: SettingsModalProps) {
     const dealerSpeed = useGameStore((s) => s.dealerSpeed);
     const soundEnabled = useGameStore((s) => s.soundEnabled);
     const showHandAdvisor = useGameStore((s) => s.showHandAdvisor);
     const showCardCounting = useGameStore((s) => s.showCardCounting);
+    const countSystem = useGameStore((s) => s.countSystem);
 
     const setDealerSpeed = useGameStore((s) => s.setDealerSpeed);
     const setSoundEnabled = useGameStore((s) => s.setSoundEnabled);
     const setShowHandAdvisor = useGameStore((s) => s.setShowHandAdvisor);
     const setShowCardCounting = useGameStore((s) => s.setShowCardCounting);
+    const setCountSystem = useGameStore((s) => s.setCountSystem);
 
     return (
         <motion.div className="absolute inset-0 z-[200] flex items-center justify-center"
@@ -122,6 +125,32 @@ export default function SettingsModal({ accentColor, borderColor, onClose }: Set
                             onChange={setShowCardCounting}
                         />
                     </SettingRow>
+
+                    {showCardCounting && roomId === 'iberian_21' && (
+                        <>
+                            <Divider />
+                            <SettingRow
+                                icon={<Settings size={18} className="text-amber-400" />}
+                                label="Counting System"
+                                description="Hi-Lo or Katarina Walker (Iberian 21 only)"
+                            >
+                                <div className="flex rounded-lg overflow-hidden border border-white/10">
+                                    <SpeedButton
+                                        label="Hi-Lo"
+                                        active={countSystem === 'Hi-Lo'}
+                                        accentColor={accentColor}
+                                        onClick={() => setCountSystem('Hi-Lo')}
+                                    />
+                                    <SpeedButton
+                                        label="K. Walker"
+                                        active={countSystem === 'Katarina Walker'}
+                                        accentColor={accentColor}
+                                        onClick={() => setCountSystem('Katarina Walker')}
+                                    />
+                                </div>
+                            </SettingRow>
+                        </>
+                    )}
                 </div>
 
                 {/* Footer */}
@@ -167,8 +196,8 @@ function SpeedButton({ label, active, accentColor, onClick }: {
         <button
             onClick={onClick}
             className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${active
-                    ? 'text-black'
-                    : 'text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10'
+                ? 'text-black'
+                : 'text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10'
                 }`}
             style={active ? { background: accentColor } : undefined}
         >

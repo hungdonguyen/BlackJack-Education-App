@@ -60,6 +60,8 @@ export function useStoreHydration(): boolean {
                   patch.showHandAdvisor = parsed.state.showHandAdvisor;
                 if (typeof parsed.state.showCardCounting === 'boolean')
                   patch.showCardCounting = parsed.state.showCardCounting;
+                if (parsed.state.countSystem === 'Hi-Lo' || parsed.state.countSystem === 'Katarina Walker')
+                  patch.countSystem = parsed.state.countSystem;
               }
             } catch (err) {
               console.warn('[useStoreHydration] Failed to parse save.json:', err);
@@ -101,6 +103,7 @@ export function useStoreHydration(): boolean {
             soundEnabled: state.soundEnabled,
             showHandAdvisor: state.showHandAdvisor,
             showCardCounting: state.showCardCounting,
+            countSystem: state.countSystem,
           };
           base.version = 0;
           await writeSaveFile(JSON.stringify(base));
@@ -116,6 +119,7 @@ export function useStoreHydration(): boolean {
                 soundEnabled: state.soundEnabled,
                 showHandAdvisor: state.showHandAdvisor,
                 showCardCounting: state.showCardCounting,
+                countSystem: state.countSystem,
               },
               version: 0,
             })
@@ -135,7 +139,8 @@ export function useStoreHydration(): boolean {
           state.dealerSpeed !== prevState.dealerSpeed ||
           state.soundEnabled !== prevState.soundEnabled ||
           state.showHandAdvisor !== prevState.showHandAdvisor ||
-          state.showCardCounting !== prevState.showCardCounting
+          state.showCardCounting !== prevState.showCardCounting ||
+          state.countSystem !== prevState.countSystem
         ) {
           debouncedSave(state);
         }

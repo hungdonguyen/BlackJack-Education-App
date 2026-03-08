@@ -462,14 +462,14 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             {/* Hand Advisor — next to PayoutPanel */}
             {showHandAdvisor && (
                 <div className="absolute top-[45px] left-[285px] z-15">
-                    <HandAdvisor roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} />
+                    <HandAdvisor roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} onOpenStrategy={() => setShowStrategy(true)} />
                 </div>
             )}
 
-            {/* Card Counting Panel — symmetric to Hand Advisor */}
+            {/* Card Counting Panel — right side next to history */}
             {showCardCounting && (
-                <div className="absolute top-[45px] right-[285px] z-15">
-                    <CardCountingPanel numDecks={room.gameRules.numberOfDecks} accentColor={room.accentColor} borderColor={room.borderColor} />
+                <div className="absolute top-[88px] z-15" style={{ right: 216 }}>
+                    <CardCountingPanel roomId={roomId} numDecks={room.gameRules.numberOfDecks} accentColor={room.accentColor} borderColor={room.borderColor} onOpenSettings={() => setShowSettings(true)} onOpenStrategy={() => setShowStrategy(true)} />
                 </div>
             )}
 
@@ -653,7 +653,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
             {/* Settings Modal */}
             <AnimatePresence>
-                {showSettings && <SettingsModal accentColor={room.accentColor} borderColor={room.borderColor} onClose={() => setShowSettings(false)} />}
+                {showSettings && <SettingsModal roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} onClose={() => setShowSettings(false)} />}
             </AnimatePresence>
 
             {/* Match Detail Modal */}

@@ -89,7 +89,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const state = get();
     const roomCfg = getRoomConfig(state.currentRoom);
     const numDecks = roomCfg.gameRules.numberOfDecks;
-    const shoe = shuffleShoe(createShoe(numDecks));
+    const omitTens = roomCfg.gameRules.omitTens;
+    const shoe = shuffleShoe(createShoe(numDecks, omitTens));
     set({ shoe });
   },
 
@@ -124,9 +125,10 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     let shoe = [...state.shoe];
     const numDecks = currentRoomCfg.gameRules.numberOfDecks;
     const reshuffleThreshold = currentRoomCfg.gameRules.reshuffleThreshold;
+    const omitTens = currentRoomCfg.gameRules.omitTens;
     
-    if (shoe.length === 0 || shouldReshuffle(shoe, numDecks, reshuffleThreshold)) {
-      shoe = shuffleShoe(createShoe(numDecks));
+    if (shoe.length === 0 || shouldReshuffle(shoe, numDecks, reshuffleThreshold, omitTens)) {
+      shoe = shuffleShoe(createShoe(numDecks, omitTens));
     }
 
     // Active seats that need cards
@@ -340,7 +342,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     if (shoe.length === 0) {
       const roomCfg = getRoomConfig(state.currentRoom);
       const numDecks = roomCfg.gameRules.numberOfDecks;
-      shoe = shuffleShoe(createShoe(numDecks));
+      const omitTens = roomCfg.gameRules.omitTens;
+      shoe = shuffleShoe(createShoe(numDecks, omitTens));
     }
 
     const newCard = dealCard(shoe);
@@ -417,6 +420,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const seat = state.seats[state.currentSeatIndex];
     if (!seat) return;
 
+    const roomCfg = getRoomConfig(state.currentRoom);
     const rules = getRules(state.currentRoom);
     const { allowed, isFree, cost } = rules.canDoubleDown(currentHand);
 
@@ -426,9 +430,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     let shoe = [...state.shoe];
 
     if (shoe.length === 0) {
-      const roomCfg = getRoomConfig(state.currentRoom);
       const numDecks = roomCfg.gameRules.numberOfDecks;
-      shoe = shuffleShoe(createShoe(numDecks));
+      const omitTens = roomCfg.gameRules.omitTens;
+      shoe = shuffleShoe(createShoe(numDecks, omitTens));
     }
 
     const newCard = dealCard(shoe);
@@ -451,7 +455,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
             ...hand,
             cards: newCards,
             betAmount: hand.betAmount + (isFree ? hand.betAmount : cost),
-            status: busted ? HandStatus.BUST : HandStatus.STAND,
+            status: busted ? HandStatus.BUST : (roomCfg.gameRules.allowDoubleDownRescue ? HandStatus.PLAYING : HandStatus.STAND),
             isDoubleDown: true,
             isFreeActionDouble: isFree ? true : hand.isFreeActionDouble,
             freeActionBetAmount: isFree ? (hand.freeActionBetAmount || 0) + hand.betAmount : hand.freeActionBetAmount,
@@ -466,8 +470,11 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       bankroll: isFree ? state.bankroll : state.bankroll - cost,
     });
 
-    // Double down always ends the hand (force stand), advance
-    get().advanceToNextHand();
+    // If locked to STAND, auto-advance
+    const updatedHand = updatedSeats[state.currentSeatIndex].hands[seat.currentHandIndex];
+    if (updatedHand.status === HandStatus.STAND || updatedHand.status === HandStatus.BUST) {
+      setTimeout(() => get().advanceToNextHand(), 0);
+    }
   },
 
   surrender: () => {
@@ -539,7 +546,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     if (shoe.length < 2) {
       const roomCfg = getRoomConfig(state.currentRoom);
       const numDecks = roomCfg.gameRules.numberOfDecks;
-      const newShoe = shuffleShoe(createShoe(numDecks));
+      const omitTens = roomCfg.gameRules.omitTens;
+      const newShoe = shuffleShoe(createShoe(numDecks, omitTens));
       shoe = [...shoe, ...newShoe]; // prepend remaining cards if any
     }
 
@@ -714,7 +722,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         if (currentShoe.length === 0) {
           const roomCfg = getRoomConfig(currentState.currentRoom);
           const numDecks = roomCfg.gameRules.numberOfDecks;
-          currentShoe = shuffleShoe(createShoe(numDecks));
+          const omitTens = roomCfg.gameRules.omitTens;
+          currentShoe = shuffleShoe(createShoe(numDecks, omitTens));
         }
 
         const newCard = dealCard(currentShoe);
@@ -932,9 +941,10 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const roomCfg = getRoomConfig(state.currentRoom);
     const numDecks = roomCfg.gameRules.numberOfDecks;
     const reshuffleThreshold = roomCfg.gameRules.reshuffleThreshold;
+    const omitTens = roomCfg.gameRules.omitTens;
     
-    if (shouldReshuffle(shoe, numDecks, reshuffleThreshold)) {
-      shoe = shuffleShoe(createShoe(numDecks));
+    if (shouldReshuffle(shoe, numDecks, reshuffleThreshold, omitTens)) {
+      shoe = shuffleShoe(createShoe(numDecks, omitTens));
     }
 
     set({

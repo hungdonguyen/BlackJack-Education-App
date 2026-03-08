@@ -26,6 +26,10 @@ export interface RoomConfig {
         allowSurrender: boolean;
         /** Fraction of shoe remaining when reshuffle triggers. Default: 0.25 */
         reshuffleThreshold?: number;
+        /** If true, 10s are removed from the deck (Iberian 21 style) */
+        omitTens?: boolean;
+        /** If true, allows surrender after double down */
+        allowDoubleDownRescue?: boolean;
     };
     /** Blackjack payout multiplier (e.g. 1.5 for 3:2) */
     blackjackMultiplier: number;
@@ -182,6 +186,33 @@ export const ROOMS: Record<string, RoomConfig> = {
         icon: <Anchor className="w-5 h-5 drop-shadow-md text-teal-400" />,
         accentColor: '#14b8a6',
         logoPath: '/images/logo/rooms/atlantic.png',
+    },
+    iberian_21: {
+        id: 'iberian_21',
+        name: 'Iberian 21',
+        subtitle: 'Iberian 21 No-Ten Blackjack',
+        description: 'Iberian 21 Rules — 6 Decks. All 10s removed (48-card deck). Player 21 and Blackjack always win. Double down on any number of cards. Double Down Rescue (Surrender after Double Down allowed). Split up to 4 hands. Hit or Double after splitting Aces. Special bonus payouts for 5-7 card 21s and 6-7-8/7-7-7 21s.',
+        feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #3a0b0b 0%, #2d0707 25%, #1f0404 50%, #0f0101 80%, #050000 100%)',
+        bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #1f0505 0%, #100202 50%, #050000 100%)',
+        borderColor: 'rgba(239, 68, 68, 0.15)',
+        rules: {
+            blackjackPays: 'Blackjack & 21 Always Wins (3:2)',
+            insurancePays: 'Insurance Pays 2 to 1',
+            dealerStands: 'Dealer hits Soft 17, stands on Hard 17+',
+        },
+        gameRules: {
+            numberOfDecks: 6,
+            dealerHitsSoft17: true,
+            allowSurrender: true,
+            omitTens: true,
+            allowDoubleDownRescue: true,
+        },
+        blackjackMultiplier: 1.5,
+        betRange: [1, 1_000_000],
+        rtp: '99.50%', // High RTP due to player favorable rules
+        icon: <Spade className="w-5 h-5 drop-shadow-md text-red-500 fill-red-600" />,
+        accentColor: '#ef4444',
+        logoPath: '/images/logo/rooms/iberian21.png',
     },
 };
 

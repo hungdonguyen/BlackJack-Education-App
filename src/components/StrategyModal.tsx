@@ -9,7 +9,9 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, BookOpen } from 'lucide-react';
 import { RoomConfig } from '@/utils/rooms';
-import { I18_S17, I18_H17, FAB_4 } from '@/utils/countingDeviations';
+import { useGameStore } from '@/hooks/useGameStore';
+import { GameStore } from '@/types/game';
+import { I18_S17, I18_H17, FAB_4, IBERIAN_HILO, IBERIAN_WALKER } from '@/utils/countingDeviations';
 
 interface StrategyModalProps {
     room: RoomConfig;
@@ -161,19 +163,41 @@ const HARD_AC: Action[][] = [
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],
-    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D'], // 11 — Double vs A
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D'], // 11
     ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
     ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
     ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
-    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'SU', 'H'], // 15 — SU vs 10
-    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'SU', 'SU', 'SU'], // 16 — SU vs 9, 10, A
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'SU', 'H'], // 15
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'SU', 'SU', 'SU'], // 16
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
-const SOFT_AC: Action[][] = [
-    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+const SOFT_AC: Action[][] = SOFT_VEGAS;
+const PAIRS_AC: Action[][] = PAIRS_CLASSIC;
+
+// Iberian 21: 6 Decks, H17, No 10s. Strategy is hit-heavy.
+const HARD_IBERIAN: Action[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 6
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 7
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 8
+    ['H', 'H', 'H', 'H', 'D', 'H', 'H', 'H', 'H', 'H'], // 9
+    ['D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H'], // 10
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H'], // 11
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 15
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'SU', 'SU', 'SU'], // 16
+    ['SU', 'SU', 'S', 'S', 'S', 'S', 'S', 'SU', 'SU', 'SU'], // 17
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
+];
+const SOFT_IBERIAN: Action[][] = [
+    ['H', 'H', 'H', 'H', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
@@ -182,7 +206,18 @@ const SOFT_AC: Action[][] = [
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
-const PAIRS_AC: Action[][] = PAIRS_CLASSIC;
+const PAIRS_IBERIAN: Action[][] = [
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 7s (hit heavy due to 7-7-7 bonus)
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
+];
 
 // Ornament divider
 function Ornament({ color }: { color: string }) {
@@ -197,16 +232,24 @@ function Ornament({ color }: { color: string }) {
     );
 }
 
-export default function StrategyModal({ room, onClose }: StrategyModalProps) {
+export default function StrategyModal({
+    room,
+    onClose,
+}: StrategyModalProps) {
     const [tab, setTab] = useState<Tab>('hard');
-    const strategyType = room.id === 'free_action' ? 'free_action' : room.id === 'atlantic_city' ? 'ac' : (room.id === 'vegas_strip' || room.id === 'vegas_downtown') ? 'vegas' : 'classic';
+    const countSystem = useGameStore((s: GameStore) => s.countSystem);
+    const [countTab, setCountTab] = useState<'hilo' | 'kw'>(countSystem === 'Katarina Walker' ? 'kw' : 'hilo');
+
+    const isIberianHiLo = room.id === 'iberian_21' && countTab === 'hilo';
+
+    const strategyType = room.id === 'free_action' ? 'free_action' : room.id === 'iberian_21' ? 'iberian_21' : room.id === 'atlantic_city' ? 'ac' : (room.id === 'vegas_strip' || room.id === 'vegas_downtown') ? 'vegas' : 'classic';
 
     const rows = tab === 'hard' ? HARD_ROWS : tab === 'soft' ? SOFT_ROWS : PAIR_ROWS;
     const data = tab === 'hard'
-        ? (strategyType === 'free_action' ? HARD_FA : strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC)
+        ? (strategyType === 'free_action' ? HARD_FA : strategyType === 'iberian_21' ? HARD_IBERIAN : strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC)
         : tab === 'soft'
-            ? (strategyType === 'free_action' ? SOFT_FA : strategyType === 'ac' ? SOFT_AC : strategyType === 'vegas' ? SOFT_VEGAS : SOFT_CLASSIC)
-            : (strategyType === 'free_action' ? PAIRS_FA : strategyType === 'ac' ? PAIRS_AC : strategyType === 'vegas' ? PAIRS_VEGAS : PAIRS_CLASSIC);
+            ? (strategyType === 'free_action' ? SOFT_FA : strategyType === 'iberian_21' ? SOFT_IBERIAN : strategyType === 'ac' ? SOFT_AC : strategyType === 'vegas' ? SOFT_VEGAS : SOFT_CLASSIC)
+            : (strategyType === 'free_action' ? PAIRS_FA : strategyType === 'iberian_21' ? PAIRS_IBERIAN : strategyType === 'ac' ? PAIRS_AC : strategyType === 'vegas' ? PAIRS_VEGAS : PAIRS_CLASSIC);
 
     const tabConfig: Record<Tab, { label: string; rowTitle: string }> = {
         hard: { label: 'Hard Totals', rowTitle: 'Hand' },
@@ -307,112 +350,221 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                     {tab === 'counting' ? (
                         /* ─── Card Counting Guide ─── */
                         <div className="space-y-5">
-
-                            {/* Introduction */}
-                            <div>
-                                <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
-                                    Hi-Lo Card Counting System
-                                </p>
-                                <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.55)' }}>
-                                    Card counting is a mathematical technique to track the ratio of high-to-low cards remaining in the shoe.
-                                    When more high cards remain (10s, Aces), the player has an advantage — blackjacks become more likely
-                                    and the dealer busts more often on stiff hands (12-16).
-                                </p>
-                            </div>
-
-                            <Ornament color={room.accentColor} />
-
-                            {/* Hi-Lo Values Table */}
-                            <div>
-                                <p className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
-                                    Card Values
-                                </p>
-                                <div className="w-full overflow-x-auto">
-                                    <table className="w-full border-separate" style={{ borderSpacing: '3px' }}>
-                                        <thead>
-                                            <tr>
-                                                <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Card</th>
-                                                <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Value</th>
-                                                <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Why</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'linear-gradient(135deg, #1b7a3e 0%, #14532d 100%)', color: '#d1fae5' }}>2, 3, 4, 5, 6</td>
-                                                <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(34,197,94,0.15)', color: '#86efac' }}>+1</td>
-                                                <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>Low cards removed = favorable</td>
-                                            </tr>
-                                            <tr><td colSpan={3} style={{ height: 2 }} /></tr>
-                                            <tr>
-                                                <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(240,230,214,0.7)' }}>7, 8, 9</td>
-                                                <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}>0</td>
-                                                <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>Neutral — no impact</td>
-                                            </tr>
-                                            <tr><td colSpan={3} style={{ height: 2 }} /></tr>
-                                            <tr>
-                                                <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'linear-gradient(135deg, #a8322c 0%, #8b1a1a 100%)', color: '#fde8e8' }}>10, J, Q, K, A</td>
-                                                <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5' }}>−1</td>
-                                                <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>High cards removed = unfavorable</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                            {strategyType === 'iberian_21' && (
+                                <div className="flex justify-center mb-2">
+                                    <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 relative">
+                                        <button
+                                            onClick={() => setCountTab('hilo')}
+                                            className={`relative px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors z-10 ${countTab === 'hilo' ? 'text-black' : 'text-white/40 hover:text-white/70'}`}
+                                        >
+                                            Hi-Lo
+                                            {countTab === 'hilo' && (
+                                                <motion.div layoutId="count-tab-bg" className="absolute inset-0 rounded-md -z-10" style={{ background: room.accentColor }} transition={{ type: 'spring', stiffness: 500, damping: 30 }} />
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => setCountTab('kw')}
+                                            className={`relative px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors z-10 ${countTab === 'kw' ? 'text-black' : 'text-white/40 hover:text-white/70'}`}
+                                        >
+                                            Katarina Walker
+                                            {countTab === 'kw' && (
+                                                <motion.div layoutId="count-tab-bg" className="absolute inset-0 rounded-md -z-10" style={{ background: room.accentColor }} transition={{ type: 'spring', stiffness: 500, damping: 30 }} />
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
-                            <Ornament color={room.accentColor} />
+                            {countTab === 'kw' && strategyType === 'iberian_21' ? (
+                                <>
+                                    {/* Introduction */}
+                                    <div>
+                                        <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                            Katarina Walker System
+                                        </p>
+                                        <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.55)' }}>
+                                            Developed specifically for Iberian 21 by Katarina Walker. Because all 10s are removed, the deck dynamics change drastically. This advanced system perfectly captures the value of the remaining cards, assigning higher weights to 4s and 5s which are the most valuable cards for the dealer.
+                                        </p>
+                                    </div>
 
-                            {/* Running Count */}
-                            <div>
-                                <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
-                                    Step 1: Running Count (RC)
-                                </p>
-                                <p className="text-[12px] leading-relaxed mb-2" style={{ color: 'rgba(240,230,214,0.55)' }}>
-                                    Start at <span className="font-bold" style={{ color: 'rgba(240,230,214,0.8)' }}>0</span> after the shuffle.
-                                    For every card you see dealt (to any player or the dealer), add or subtract its Hi-Lo value.
-                                </p>
-                                <div className="rounded-lg px-4 py-3" style={{ background: `linear-gradient(135deg, ${room.accentColor}08 0%, transparent 100%)`, border: `1px solid ${room.accentColor}18` }}>
-                                    <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.6)' }}>
-                                        <span className="font-bold" style={{ color: room.accentColor }}>Example:</span>{' '}
-                                        Cards dealt: 5 (+1), K (−1), 3 (+1), 7 (0), A (−1) → RC = <span className="font-black" style={{ color: '#86efac' }}>0</span>
-                                    </p>
-                                </div>
-                            </div>
+                                    <Ornament color={room.accentColor} />
 
-                            {/* True Count */}
-                            <div>
-                                <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
-                                    Step 2: True Count (TC)
-                                </p>
-                                <p className="text-[12px] leading-relaxed mb-2" style={{ color: 'rgba(240,230,214,0.55)' }}>
-                                    Divide the Running Count by the estimated number of decks remaining in the shoe.
-                                    This normalizes the count across different shoe sizes.
-                                </p>
-                                <div className="rounded-lg px-4 py-3" style={{ background: `linear-gradient(135deg, ${room.accentColor}08 0%, transparent 100%)`, border: `1px solid ${room.accentColor}18` }}>
-                                    <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.6)' }}>
-                                        <span className="font-bold" style={{ color: room.accentColor }}>Formula:</span>{' '}
-                                        TC = RC ÷ Decks Remaining
-                                    </p>
-                                    <p className="text-[11px] leading-relaxed mt-1" style={{ color: 'rgba(240,230,214,0.45)' }}>
-                                        Example: RC = +6, 3 decks left → TC = <span className="font-black" style={{ color: '#86efac' }}>+2.0</span>
-                                    </p>
-                                </div>
-                            </div>
+                                    {/* Walker Values Table */}
+                                    <div>
+                                        <p className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                            Card Values
+                                        </p>
+                                        <div className="w-full overflow-x-auto">
+                                            <table className="w-full border-separate" style={{ borderSpacing: '3px' }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Card</th>
+                                                        <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Value</th>
+                                                        <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Impact</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'linear-gradient(135deg, #1b7a3e 0%, #14532d 100%)', color: '#d1fae5' }}>4, 5</td>
+                                                        <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(34,197,94,0.15)', color: '#86efac' }}>+2</td>
+                                                        <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>Highly favorable when removed</td>
+                                                    </tr>
+                                                    <tr><td colSpan={3} style={{ height: 2 }} /></tr>
+                                                    <tr>
+                                                        <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'linear-gradient(135deg, #1b7a3e 0%, #14532d 100%)', color: '#d1fae5' }}>2, 3, 6</td>
+                                                        <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(34,197,94,0.15)', color: '#86efac' }}>+1</td>
+                                                        <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>Favorable when removed</td>
+                                                    </tr>
+                                                    <tr><td colSpan={3} style={{ height: 2 }} /></tr>
+                                                    <tr>
+                                                        <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(240,230,214,0.7)' }}>7, 8</td>
+                                                        <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}>0</td>
+                                                        <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>Neutral</td>
+                                                    </tr>
+                                                    <tr><td colSpan={3} style={{ height: 2 }} /></tr>
+                                                    <tr>
+                                                        <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'linear-gradient(135deg, #a8322c 0%, #8b1a1a 100%)', color: '#fde8e8' }}>9, J, Q, K, A</td>
+                                                        <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5' }}>−1</td>
+                                                        <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>Unfavorable when removed</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
 
-                            <Ornament color={room.accentColor} />
+                                    <Ornament color={room.accentColor} />
 
-                            {/* Betting Strategy */}
+                                    {/* Running Count */}
+                                    <div>
+                                        <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                            Step 1: Running Count (RC)
+                                        </p>
+                                        <p className="text-[12px] leading-relaxed mb-2" style={{ color: 'rgba(240,230,214,0.55)' }}>
+                                            Unlike balanced systems, Katarina Walker for Iberian 21 is an unbalanced system (+8 per deck). Our Hand Advisor mathematically corrects this offset automatically so your display safely starts at 0.
+                                            For every card you see dealt, add or subtract its Walker value.
+                                        </p>
+                                    </div>
+
+                                    {/* True Count */}
+                                    <div>
+                                        <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold mt-4" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                            Step 2: True Count (TC)
+                                        </p>
+                                        <p className="text-[12px] leading-relaxed mb-2" style={{ color: 'rgba(240,230,214,0.55)' }}>
+                                            Divide the Running Count by the estimated number of decks remaining in the shoe to get the True Count.
+                                            Bet sizing and deviations in Iberian 21 are heavily linked to this True Count. Because of the sheer number of bonus payouts (7-7-7, 6-7-8) and player advantages, a positive True Count is extremely lucrative here.
+                                        </p>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    {/* Introduction */}
+                                    <div>
+                                        <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                            Hi-Lo System — Iberian 21 Version
+                                        </p>
+                                        <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.55)' }}>
+                                            Card counting using Hi-Lo in Iberian 21 is an <span style={{ color: 'rgba(240,230,214,0.8)', fontWeight: 700 }}>unbalanced system</span> — because all 10s are removed, the deck naturally starts at a Running Count of <span style={{ color: '#fca5a5', fontWeight: 700 }}>−24</span> (for 6 decks). This is intentional: it visually shows you how skewed the 48-card deck is compared to a normal shoe.
+                                            <br /><br />The <span style={{ color: 'rgba(240,230,214,0.8)', fontWeight: 700 }}>Bet Advice</span> panel automatically compensates for this baseline, so bet sizing guidance is always meaningful regardless of the starting offset.
+                                            Use Katarina Walker in Settings for a balanced alternative that starts at 0.
+                                        </p>
+                                    </div>
+
+                                    <Ornament color={room.accentColor} />
+
+                                    {/* Hi-Lo Values Table */}
+                                    <div>
+                                        <p className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                            Card Values
+                                        </p>
+                                        <div className="w-full overflow-x-auto">
+                                            <table className="w-full border-separate" style={{ borderSpacing: '3px' }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Card</th>
+                                                        <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Value</th>
+                                                        <th className="text-[10px] font-bold uppercase tracking-wider text-center py-2 rounded" style={{ color: 'rgba(240,230,214,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Georgia', serif" }}>Why</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'linear-gradient(135deg, #1b7a3e 0%, #14532d 100%)', color: '#d1fae5' }}>2, 3, 4, 5, 6</td>
+                                                        <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(34,197,94,0.15)', color: '#86efac' }}>+1</td>
+                                                        <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>Low cards removed = favorable</td>
+                                                    </tr>
+                                                    <tr><td colSpan={3} style={{ height: 2 }} /></tr>
+                                                    <tr>
+                                                        <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(240,230,214,0.7)' }}>7, 8, 9</td>
+                                                        <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}>0</td>
+                                                        <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>Neutral — no impact</td>
+                                                    </tr>
+                                                    <tr><td colSpan={3} style={{ height: 2 }} /></tr>
+                                                    <tr>
+                                                        <td className="text-[13px] font-extrabold text-center py-2.5 rounded" style={{ background: 'linear-gradient(135deg, #a8322c 0%, #8b1a1a 100%)', color: '#fde8e8' }}>10, J, Q, K, A</td>
+                                                        <td className="text-[15px] font-black text-center py-2.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5' }}>−1</td>
+                                                        <td className="text-[10px] text-center py-2.5 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(240,230,214,0.5)' }}>High cards removed = unfavorable</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <Ornament color={room.accentColor} />
+
+                                    {/* Running Count */}
+                                    <div>
+                                        <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                            Step 1: Running Count (RC)
+                                        </p>
+                                        <p className="text-[12px] leading-relaxed mb-2" style={{ color: 'rgba(240,230,214,0.55)' }}>
+                                            Start at <span className="font-bold" style={{ color: 'rgba(240,230,214,0.8)' }}>0</span> after the shuffle.
+                                            For every card you see dealt (to any player or the dealer), add or subtract its Hi-Lo value.
+                                        </p>
+                                        <div className="rounded-lg px-4 py-3" style={{ background: `linear-gradient(135deg, ${room.accentColor}08 0%, transparent 100%)`, border: `1px solid ${room.accentColor}18` }}>
+                                            <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.6)' }}>
+                                                <span className="font-bold" style={{ color: room.accentColor }}>Example:</span>{' '}
+                                                Cards dealt: 5 (+1), K (−1), 3 (+1), 7 (0), A (−1) → RC = <span className="font-black" style={{ color: '#86efac' }}>0</span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* True Count */}
+                                    <div>
+                                        <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
+                                            Step 2: True Count (TC)
+                                        </p>
+                                        <p className="text-[12px] leading-relaxed mb-2" style={{ color: 'rgba(240,230,214,0.55)' }}>
+                                            Divide the Running Count by the estimated number of decks remaining in the shoe.
+                                            This normalizes the count across different shoe sizes.
+                                        </p>
+                                        <div className="rounded-lg px-4 py-3" style={{ background: `linear-gradient(135deg, ${room.accentColor}08 0%, transparent 100%)`, border: `1px solid ${room.accentColor}18` }}>
+                                            <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.6)' }}>
+                                                <span className="font-bold" style={{ color: room.accentColor }}>Formula:</span>{' '}
+                                                TC = RC ÷ Decks Remaining
+                                            </p>
+                                            <p className="text-[11px] leading-relaxed mt-1" style={{ color: 'rgba(240,230,214,0.45)' }}>
+                                                Example: RC = +6, 3 decks left → TC = <span className="font-black" style={{ color: '#86efac' }}>+2.0</span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <Ornament color={room.accentColor} />
+                                </>
+                            )}
+
+                            {/* Betting Strategy (Shared across systems for simplicity of explanation) */}
                             <div>
                                 <p className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
                                     Step 3: Betting Strategy
                                 </p>
                                 <div className="space-y-2">
                                     {[
-                                        { tc: 'TC ≤ −3', label: 'Sit Out', color: '#f87171', bg: 'rgba(239,68,68,0.12)', desc: 'Very unfavorable. Bet minimum or skip the hand.' },
-                                        { tc: 'TC −3 to −1', label: 'Min Bet', color: '#fca5a5', bg: 'rgba(239,68,68,0.08)', desc: 'Unfavorable. Keep bets at minimum.' },
-                                        { tc: 'TC −1 to +1', label: 'Flat Bet', color: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.04)', desc: 'Neutral. Bet table minimum — no edge.' },
-                                        { tc: 'TC +1 to +3', label: 'Raise', color: '#93c5fd', bg: 'rgba(59,130,246,0.1)', desc: 'Slightly favorable. Bet 2-3× minimum.' },
-                                        { tc: 'TC +3 to +5', label: 'High Bet', color: '#86efac', bg: 'rgba(34,197,94,0.12)', desc: 'Very favorable. Bet 3-5× minimum.' },
-                                        { tc: 'TC ≥ +5', label: 'Max Bet', color: '#fcd34d', bg: 'rgba(234,179,8,0.12)', desc: 'Extremely favorable. Bet 5-8× minimum!' },
+                                        { tc: isIberianHiLo ? 'TC ≤ −7' : 'TC ≤ −3', label: 'Sit Out', color: '#f87171', bg: 'rgba(239,68,68,0.12)', desc: 'Very unfavorable. Bet minimum or skip the hand.' },
+                                        { tc: isIberianHiLo ? 'TC −7 to −5' : 'TC −3 to −1', label: 'Min Bet', color: '#fca5a5', bg: 'rgba(239,68,68,0.08)', desc: 'Unfavorable. Keep bets at minimum.' },
+                                        { tc: isIberianHiLo ? 'TC −5 to −3' : 'TC −1 to +1', label: 'Flat Bet', color: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.04)', desc: 'Neutral. Bet table minimum — no edge.' },
+                                        { tc: isIberianHiLo ? 'TC −3 to −1' : 'TC +1 to +3', label: 'Raise', color: '#93c5fd', bg: 'rgba(59,130,246,0.1)', desc: 'Slightly favorable. Bet 2-3× minimum.' },
+                                        { tc: isIberianHiLo ? 'TC −1 to +1' : 'TC +3 to +5', label: 'High Bet', color: '#86efac', bg: 'rgba(34,197,94,0.12)', desc: 'Very favorable. Bet 3-5× minimum.' },
+                                        { tc: isIberianHiLo ? 'TC ≥ +1' : 'TC ≥ +5', label: 'Max Bet', color: '#fcd34d', bg: 'rgba(234,179,8,0.12)', desc: 'Extremely favorable. Bet 5-8× minimum!' },
                                     ].map((row) => (
                                         <div key={row.tc} className="flex items-center gap-3 rounded-lg px-3 py-2" style={{ background: row.bg, border: `1px solid ${row.color}25` }}>
                                             <span className="text-[10px] font-black tracking-wider shrink-0 w-[90px]" style={{ color: row.color }}>{row.tc}</span>
@@ -428,11 +580,16 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                             {/* Strategy Deviations */}
                             <div>
                                 <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
-                                    Advanced: Key Deviations (Illustrious 18 + Fab 4)
+                                    {strategyType === 'iberian_21'
+                                        ? (countTab === 'kw' ? 'Iberian 21: Walker Indices' : 'Iberian 21: Hi-Lo Deviations')
+                                        : 'Advanced: Key Deviations (Illustrious 18 + Fab 4)'}
                                 </p>
                                 <p className="text-[12px] leading-relaxed mb-3" style={{ color: 'rgba(240,230,214,0.45)' }}>
-                                    At certain True Counts, you should deviate from basic strategy. These are the most important deviations, and the Hand Advisor will automatically adapt to them if enabled:
+                                    {strategyType === 'iberian_21'
+                                        ? `These indices are specifically for Iberian 21 using the ${countTab === 'kw' ? 'Katarina Walker' : 'Hi-Lo'} system. Deviate from basic strategy when the True Count (TC) reaches these thresholds:`
+                                        : "At certain True Counts, you should deviate from basic strategy. These are the most important deviations, and the Hand Advisor will automatically adapt to them if enabled:"}
                                 </p>
+
                                 <div className="w-full overflow-x-auto">
                                     <table className="w-full border-separate" style={{ borderSpacing: '2px' }}>
                                         <thead>
@@ -443,7 +600,10 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {[...(room.gameRules.dealerHitsSoft17 ? I18_H17 : I18_S17), ...FAB_4].map((dev, i) => (
+                                            {(strategyType === 'iberian_21'
+                                                ? (countTab === 'kw' ? IBERIAN_WALKER : IBERIAN_HILO)
+                                                : [...(room.gameRules.dealerHitsSoft17 ? I18_H17 : I18_S17), ...FAB_4]
+                                            ).map((dev, i) => (
                                                 <tr key={i}>
                                                     <td className="text-[10px] font-bold text-center py-1.5 rounded whitespace-nowrap px-2" style={{ color: 'rgba(245,158,11,0.8)', background: 'rgba(245,158,11,0.08)' }}>
                                                         {dev.id}
@@ -553,7 +713,7 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                                                         fontFamily: "'Georgia', serif",
                                                     }}
                                                 >
-                                                    {row}
+                                                    {row === '10,10' && strategyType === 'iberian_21' ? 'J,Q,K' : row}
                                                 </td>
                                                 {/* Action cells */}
                                                 {data[rowIdx].map((action, colIdx) => {

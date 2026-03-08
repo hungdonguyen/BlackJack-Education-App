@@ -13,12 +13,14 @@ export interface SettingsSlice {
   soundEnabled: boolean;
   showHandAdvisor: boolean;
   showCardCounting: boolean;
+  countSystem: 'Hi-Lo' | 'Katarina Walker';
 
   // Actions
   setDealerSpeed: (speed: DealerSpeed) => void;
   setSoundEnabled: (enabled: boolean) => void;
   setShowHandAdvisor: (show: boolean) => void;
   setShowCardCounting: (show: boolean) => void;
+  setCountSystem: (sys: 'Hi-Lo' | 'Katarina Walker') => void;
 }
 
 /** Delay maps keyed by dealer speed */
@@ -42,9 +44,11 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   soundEnabled: true,
   showHandAdvisor: true,
   showCardCounting: true,
+  countSystem: 'Katarina Walker',
 
   setDealerSpeed: (speed) => set({ dealerSpeed: speed }),
   setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
   setShowHandAdvisor: (show) => set({ showHandAdvisor: show }),
   setShowCardCounting: (show) => set({ showCardCounting: show }),
+  setCountSystem: (sys) => set({ countSystem: sys }),
 });

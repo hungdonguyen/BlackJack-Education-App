@@ -23,14 +23,16 @@ const RANK_VALUES: Record<Rank, number> = {
   [Rank.KING]: 10,
 };
 
-/** Create a single standard 52-card deck */
-export function createDeck(): Card[] {
+/** Create a single standard 52-card deck (or 48 cards if omitTens is true) */
+export function createDeck(omitTens: boolean = false): Card[] {
   const suits = Object.values(Suit);
   const ranks = Object.values(Rank);
   const deck: Card[] = [];
 
   for (const suit of suits) {
     for (const rank of ranks) {
+      if (omitTens && rank === Rank.TEN) continue;
+
       deck.push({
         suit,
         rank,
@@ -44,10 +46,10 @@ export function createDeck(): Card[] {
 }
 
 /** Create a shoe from multiple decks (default: 6 decks = 312 cards) */
-export function createShoe(numDecks: number = NUM_DECKS): Shoe {
+export function createShoe(numDecks: number = NUM_DECKS, omitTens: boolean = false): Shoe {
   const shoe: Shoe = [];
   for (let i = 0; i < numDecks; i++) {
-    shoe.push(...createDeck());
+    shoe.push(...createDeck(omitTens));
   }
   return shoe;
 }
@@ -67,8 +69,9 @@ export function shuffleShoe(shoe: Shoe): Shoe {
 /** Check if the shoe needs reshuffling.
  *  @param threshold - fraction of total cards at which to reshuffle (default: RESHUFFLE_THRESHOLD = 0.25)
  */
-export function shouldReshuffle(shoe: Shoe, numDecks: number = NUM_DECKS, threshold: number = RESHUFFLE_THRESHOLD): boolean {
-  const totalCards = numDecks * 52;
+export function shouldReshuffle(shoe: Shoe, numDecks: number = NUM_DECKS, threshold: number = RESHUFFLE_THRESHOLD, omitTens: boolean = false): boolean {
+  const cardsPerDeck = omitTens ? 48 : 52;
+  const totalCards = numDecks * cardsPerDeck;
   return shoe.length <= totalCards * threshold;
 }
 
