@@ -30,10 +30,10 @@ export const SPEED_DELAYS = {
     prePayout: 1000,  // ms before payout phase
   },
   fast: {
-    dealCard: 100,
+    dealCard: 50,
     postDeal: 50,
-    dealerHit: 150,
-    prePayout: 150,
+    dealerHit: 50,
+    prePayout: 50,
   },
 } as const;
 

@@ -45,6 +45,8 @@ export interface RoomConfig {
     hasSideBet?: boolean;
     /** Whether this room is a Free Action variant */
     isFreeAction?: boolean;
+    /** Path to the room logo image */
+    logoPath: string;
 }
 
 import React from 'react';
@@ -73,8 +75,9 @@ export const ROOMS: Record<string, RoomConfig> = {
         blackjackMultiplier: 1.5,
         betRange: [1, 1_000_000],
         rtp: '99.51%',
-        icon: <Spade className="w-5 h-5 fill-amber-300 stroke-amber-300 drop-shadow-md" />,
-        accentColor: '#d4a843',
+        icon: <Spade className="w-5 h-5 fill-red-500 stroke-red-500 drop-shadow-md" />,
+        accentColor: '#ef4444',
+        logoPath: '/images/logo/rooms/classic.png',
     },
     vegas_strip: {
         id: 'vegas_strip',
@@ -99,6 +102,7 @@ export const ROOMS: Record<string, RoomConfig> = {
         rtp: '99.65%',
         icon: <Ticket className="w-5 h-5 drop-shadow-md text-purple-400" />,
         accentColor: '#8b5cf6',
+        logoPath: '/images/logo/rooms/vegas_strip.png',
     },
     vegas_downtown: {
         id: 'vegas_downtown',
@@ -123,12 +127,13 @@ export const ROOMS: Record<string, RoomConfig> = {
         rtp: '99.62%',
         icon: <Ticket className="w-5 h-5 drop-shadow-md text-sky-400" />,
         accentColor: '#38bdf8',
+        logoPath: '/images/logo/rooms/vegas_downtown.png',
     },
     free_action: {
         id: 'free_action',
         name: 'Free Action Blackjack',
-        subtitle: 'Free Bets & Golden Rewards',
-        description: 'Free Action Rules — 6 Decks, Dealer hits Soft 17 (H17). Free Double on Hard 9, 10, 11 (no cost). Free Split all pairs except 10-value cards. Push on Dealer 22. Multi Action Bonus side bet available. Blackjack pays 3 to 2.',
+        subtitle: 'Golden Rewards & Free Actions',
+        description: 'Free Action Rules — 6 Decks, Dealer hits Soft 17 (H17). Free Double on Hard 9, 10, 11 (no cost). Free Split all pairs except 10-value cards. House 22 Tie Rules. Multi Action Bonus side bet available. Blackjack pays 3 to 2.',
         feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #2a1f0a 0%, #1f170a 25%, #151005 50%, #0a0802 80%, #050401 100%)',
         bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #1a1408 0%, #0f0c05 50%, #080602 100%)',
         borderColor: 'rgba(234, 179, 8, 0.18)',
@@ -151,6 +156,7 @@ export const ROOMS: Record<string, RoomConfig> = {
         accentColor: '#eab308',
         hasSideBet: true,
         isFreeAction: true,
+        logoPath: '/images/logo/rooms/freeaction.png',
     },
     atlantic_city: {
         id: 'atlantic_city',
@@ -175,6 +181,7 @@ export const ROOMS: Record<string, RoomConfig> = {
         rtp: '99.65%',
         icon: <Anchor className="w-5 h-5 drop-shadow-md text-teal-400" />,
         accentColor: '#14b8a6',
+        logoPath: '/images/logo/rooms/atlantic.png',
     },
 };
 

@@ -26,7 +26,7 @@ import HandAdvisor from './HandAdvisor';
 import CardCountingPanel from './CardCountingPanel';
 import MatchDetailModal from './MatchDetailModal';
 import SettingsModal from './SettingsModal';
-import { loadHistory, appendHistory } from '@/utils/saveFile';
+import { calculateMatchNetPnl, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
 
 const TURN_TIMER_SECONDS = 30;
 const INSURANCE_TIMER_SECONDS = 10;
@@ -68,29 +68,6 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const showHandAdvisor = useGameStore((s) => s.showHandAdvisor);
     const showCardCounting = useGameStore((s) => s.showCardCounting);
 
-    // ─── File Save: load history on mount, append on new records ─────────
-    const prevHistoryLen = useRef(matchHistory.length);
-
-    useEffect(() => {
-        if (!isHydrated) return;
-        loadHistory().then((records) => {
-            if (records.length > 0) {
-                // Update ref FIRST (synchronous) so the append effect below
-                // doesn't fire for records we just loaded from disk.
-                prevHistoryLen.current = records.length;
-                setMatchHistory(records);
-            }
-        });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isHydrated]);
-
-    useEffect(() => {
-        if (matchHistory.length > prevHistoryLen.current) {
-            const latest = matchHistory[matchHistory.length - 1];
-            appendHistory(latest);
-        }
-        prevHistoryLen.current = matchHistory.length;
-    }, [matchHistory.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const isPlayerTurn = gamePhase === GamePhase.PLAYER_TURN;
     const isInsurance = gamePhase === GamePhase.INSURANCE;
@@ -264,16 +241,8 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         }
     };
 
-    // Logo paths
-    const logoPath = roomId === 'vegas_strip'
-        ? '/images/logo/Vegas_trip_blackjack.png'
-        : roomId === 'vegas_downtown'
-            ? '/images/logo/Vegas_Downtown_Logo.png'
-            : roomId === 'free_action'
-                ? '/images/logo/rooms/freeaction.png'
-                : roomId === 'atlantic_city'
-                    ? '/images/logo/Atlantic.png'
-                    : '/images/logo/Classic_Online_Logo.png';
+    // Logo path from room config
+    const logoPath = room.logoPath;
 
     const isBonusClaim = (dailyClaimCount + 1) % 3 === 0;
 
@@ -748,8 +717,10 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
     // Ensure page is bounds-checked
     const currentPage = Math.min(Math.max(1, page), totalPages);
 
-    // Reverse matchHistory to show latest first
-    const sortedHistory = useMemo(() => [...matchHistory].reverse(), [matchHistory]);
+    // Sort history by timestamp descending to show latest first reliably
+    const sortedHistory = useMemo(() => {
+        return [...matchHistory].sort((a, b) => b.timestamp - a.timestamp);
+    }, [matchHistory]);
 
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const currentMatches = sortedHistory.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -773,58 +744,32 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                     // Real index in the matchHistory array
                     const realIdx = totalLen - 1 - (startIndex + displayIdx);
 
-                    let diff = 0;
-                    match.seats.forEach(s => {
-                        s.hands.forEach(h => {
-                            diff += h.payout;
-                        });
-
-                        if (s.insuranceCost) {
-                            diff -= s.insuranceCost;
-                        }
-                        if (s.insurancePayout) {
-                            diff += s.insurancePayout;
-                        }
-                        if (s.sideBetAmount) {
-                            diff -= s.sideBetAmount;
-                        }
-                        if (s.sideBetPayout) {
-                            diff += s.sideBetPayout;
-                        }
-                    });
-
-                    const roomLabel = match.roomId === 'vegas_strip' ? 'VS' : match.roomId === 'vegas_downtown' ? 'VD' : match.roomId === 'atlantic_city' ? 'AC' : match.roomId === 'free_action' ? 'FA' : 'VIP';
-
-                    // Check if any seat had insurance
+                    const diff = calculateMatchNetPnl(match);
+                    const { shortLabel, color: accentColor } = getRoomBadgeConfig(match.roomId);
                     const hadInsurance = match.seats.some(s => s.insuranceCost && s.insuranceCost > 0);
-
-                    // Determine overall label character based on net profit diff
-                    let labelStr = 'T';
-                    let colorClass = 'text-slate-400';
-
-                    if (diff > 0) {
-                        labelStr = result.result === HandStatus.BLACKJACK ? 'BJ' : 'W';
-                        colorClass = 'text-emerald-400';
-                    } else if (diff < 0) {
-                        labelStr = result.result === HandStatus.SURRENDERED ? 'SUR' : 'L';
-                        colorClass = 'text-red-400';
-                    }
+                    const { labelStr, colorClass } = getMatchOverallStatus(match, diff);
 
                     return (
                         <div key={match.id} onClick={() => onMatchClick(realIdx)}
-                            className="flex items-center justify-between px-1.5 py-1 rounded bg-white/2 hover:bg-white/5 cursor-pointer transition-colors">
+                            className="flex items-center justify-between px-1.5 py-1 rounded bg-white/2 hover:bg-white/5 cursor-pointer transition-colors border border-white/0 hover:border-white/5">
                             <div className="flex items-center gap-1.5">
-                                <span className={`text-[7px] font-bold px-1 py-0.5 rounded
-                                    ${match.roomId === 'vegas_strip' ? 'bg-purple-500/15 text-purple-400' : match.roomId === 'vegas_downtown' ? 'bg-sky-500/15 text-sky-400' : match.roomId === 'atlantic_city' ? 'bg-orange-500/15 text-orange-400' : match.roomId === 'free_action' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-amber-500/15 text-amber-400'}`}
-                                >{roomLabel}</span>
-                                <span className={`text-[9px] font-bold uppercase ${colorClass}`}>
+                                <span className="text-[7px] font-bold px-1 py-0.5 rounded tracking-wider border"
+                                    style={{
+                                        backgroundColor: `${accentColor}1A`, // 10% opacity 
+                                        color: accentColor,
+                                        borderColor: `${accentColor}33` // 20% opacity border
+                                    }}
+                                >
+                                    {shortLabel}
+                                </span>
+                                <span className={`text-[9px] font-bold uppercase tracking-wider ${colorClass}`}>
                                     {labelStr}
                                 </span>
                                 {hadInsurance && (
-                                    <span className="text-[7px] px-1 py-0.5 rounded bg-yellow-500/15 text-yellow-400 font-bold" title="Insurance purchased">🛡</span>
+                                    <span className="text-[7px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-500 border border-amber-500/20 font-bold" title="Insurance purchased">🛡</span>
                                 )}
                             </div>
-                            <span className={`text-[9px] font-bold tabular-nums ${diff > 0 ? 'text-emerald-400/80' : diff < 0 ? 'text-red-400/80' : 'text-slate-400/80'}`}>
+                            <span className={`text-[9px] font-bold tabular-nums tracking-widest ${diff > 0 ? 'text-emerald-400/90' : diff < 0 ? 'text-red-400/90' : 'text-slate-400/80'}`}>
                                 {diff >= 0 ? '+' : ''}{diff}
                             </span>
                         </div>

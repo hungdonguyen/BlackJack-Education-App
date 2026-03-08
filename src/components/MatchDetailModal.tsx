@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X, ArrowLeft, Shield } from 'lucide-react';
 import { MatchRecord } from '@/types/game';
 import { HandStatus, Rank, Suit } from '@/types/enums';
+import { calculateMatchStats, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -98,26 +99,18 @@ export default function MatchDetailModal({
     onNavigate,
     onClose,
 }: MatchDetailModalProps) {
-    const roomLabel = match.roomId === 'vegas_strip' ? 'Vegas Strip' : match.roomId === 'vegas_downtown' ? 'Vegas Downtown' : match.roomId === 'atlantic_city' ? 'Atlantic City' : match.roomId === 'free_action' ? 'Free Action' : 'Classic';
+    const { name: roomLabel } = getRoomBadgeConfig(match.roomId);
 
     // Net P&L for the round (including insurance)
-    let totalBet = 0;
-    let totalWin = 0;
-    let totalInsuranceCost = 0;
-    let totalInsurancePayout = 0;
-    let totalSideBetCost = 0;
-    let totalSideBetPayout = 0;
-    match.seats.forEach(s => {
-        s.hands.forEach(h => {
-            totalBet += h.betAmount;
-            totalWin += h.payout;
-        });
-        if (s.insuranceCost) totalInsuranceCost += s.insuranceCost;
-        if (s.insurancePayout) totalInsurancePayout += s.insurancePayout;
-        if (s.sideBetAmount) totalSideBetCost += s.sideBetAmount;
-        if (s.sideBetPayout) totalSideBetPayout += s.sideBetPayout;
-    });
-    const netPnl = totalWin - totalInsuranceCost + totalInsurancePayout - totalSideBetCost + totalSideBetPayout;
+    const {
+        totalBet,
+        totalWin,
+        totalInsuranceCost,
+        totalInsurancePayout,
+        totalSideBetCost,
+        totalSideBetPayout,
+        netPnl
+    } = calculateMatchStats(match);
 
     const dealerScore = calcScore(match.dealerCards);
 
@@ -227,9 +220,29 @@ export default function MatchDetailModal({
                                                     {/* Seat label + status */}
                                                     <div>
                                                         <p className="text-[10px] font-bold text-white/70">{label}</p>
-                                                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full mt-0.5 inline-block ${statusInfo.className}`}>
-                                                            {statusInfo.label}
-                                                        </span>
+                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full inline-block ${statusInfo.className}`}>
+                                                                {statusInfo.label}
+                                                            </span>
+                                                            {hand.isFreeSplit ? (
+                                                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
+                                                                    FREE SPLIT
+                                                                </span>
+                                                            ) : hand.isSplit && (
+                                                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                                                    SPLIT
+                                                                </span>
+                                                            )}
+                                                            {hand.isFreeDouble ? (
+                                                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                                                    FREE DOUBLE
+                                                                </span>
+                                                            ) : hand.isDoubleDown && (
+                                                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                                                    DOUBLE
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
 
                                                     {/* Cards */}

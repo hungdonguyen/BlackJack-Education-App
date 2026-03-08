@@ -29,6 +29,8 @@ export interface Hand {
   freeBetAmount?: number;
   isAceSplit?: boolean;
   isSurrendered?: boolean;
+  isSplit?: boolean;
+  isDoubleDown?: boolean;
 }
 
 /** A seat / betting box at the table (1-5) */
@@ -62,8 +64,13 @@ export interface MatchRecord {
     freeActionTokens?: number;
     hands: {
       betAmount: number;
+      freeBetAmount?: number;
       result: HandStatus;
       payout: number;
+      isSplit?: boolean;
+      isFreeSplit?: boolean;
+      isDoubleDown?: boolean;
+      isFreeDouble?: boolean;
       cards: { suit: Suit; rank: Rank }[];
     }[];
   }[];

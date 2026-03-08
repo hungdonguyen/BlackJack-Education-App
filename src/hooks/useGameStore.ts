@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { useGameStoreBase } from '@/store/gameStore';
 import { GameStore } from '@/types/game';
 import { DealerSpeed } from '@/store/settingsSlice';
-import { isTauriEnv, readSaveFile, writeSaveFile } from '@/utils/saveFile';
+import { isTauriEnv, readSaveFile, writeSaveFile, loadHistory, writeHistoryFile } from '@/utils/saveFile';
 
 export function useGameStore<T>(selector: (state: GameStore) => T): T {
   return useGameStoreBase(selector);
@@ -31,15 +31,20 @@ export function useStoreHydration(): boolean {
 
     // ── Tauri mode: read save.json directly, no dependency on Zustand hydration ──
     if (isTauriEnv()) {
-      readSaveFile()
-        .then((content) => {
+      Promise.all([readSaveFile(), loadHistory()])
+        .then(([content, history]) => {
           if (cancelled) return;
+          const patch: Partial<GameStore> = {};
+          
+          if (history && history.length > 0) {
+            patch.matchHistory = history;
+          }
+
           if (content) {
             try {
               const parsed = JSON.parse(content);
               // save.json format: { state: { bankroll, lastDailyClaim, dailyClaimCount }, version, legalAgreed? }
               if (parsed?.state) {
-                const patch: Partial<GameStore> = {};
                 if (typeof parsed.state.bankroll === 'number')
                   patch.bankroll = parsed.state.bankroll;
                 if (typeof parsed.state.lastDailyClaim === 'number')
@@ -55,13 +60,14 @@ export function useStoreHydration(): boolean {
                   patch.showHandAdvisor = parsed.state.showHandAdvisor;
                 if (typeof parsed.state.showCardCounting === 'boolean')
                   patch.showCardCounting = parsed.state.showCardCounting;
-                if (Object.keys(patch).length > 0) {
-                  useGameStoreBase.setState(patch);
-                }
               }
             } catch (err) {
               console.warn('[useStoreHydration] Failed to parse save.json:', err);
             }
+          }
+          
+          if (Object.keys(patch).length > 0) {
+            useGameStoreBase.setState(patch);
           }
         })
         .catch((err) => {
@@ -118,6 +124,7 @@ export function useStoreHydration(): boolean {
       };
 
       const debouncedSave = debounce(saveState, 500);
+      const debouncedHistorySave = debounce(writeHistoryFile, 1500); // 1.5s debounce for history to avoid rapid writes
 
       // Subscribe: write to save.json whenever bankroll/claims change
       const unsubState = useGameStoreBase.subscribe((state, prevState) => {
@@ -131,6 +138,11 @@ export function useStoreHydration(): boolean {
           state.showCardCounting !== prevState.showCardCounting
         ) {
           debouncedSave(state);
+        }
+
+        // Check if history changed
+        if (state.matchHistory !== prevState.matchHistory) {
+          debouncedHistorySave(state.matchHistory);
         }
       });
 

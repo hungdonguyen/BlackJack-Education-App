@@ -187,9 +187,9 @@ export default function HomePage() {
             </div>
 
             {/* Subtitle */}
-            <p className="text-white/40 text-center max-w-md text-sm leading-relaxed">
-              Multi-hand Blackjack with realistic 6-deck shoe.
-              Choose your table and play like a high roller.
+            <p className="text-white/40 text-center max-w-md text-sm leading-relaxed px-4">
+              Professional Multi-hand Blackjack with realistic casino logic.
+              Select your favorite lobby rules and play like a true high roller.
             </p>
 
             {/* Action Buttons */}

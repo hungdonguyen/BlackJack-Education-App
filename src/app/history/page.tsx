@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/hooks/useGameStore';
 import { ArrowLeft, ChevronLeft, ChevronRight, History } from 'lucide-react';
 import { HandStatus, Suit } from '@/types/enums';
+import { calculateMatchNetPnl, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -13,8 +14,10 @@ export default function HistoryPage() {
     const matchHistory = useGameStore(s => s.matchHistory);
     const [page, setPage] = useState(1);
 
-    // Reversed to show latest first
-    const sortedHistory = useMemo(() => [...matchHistory].reverse(), [matchHistory]);
+    // Sort history by timestamp descending to show latest first reliably
+    const sortedHistory = useMemo(() => {
+        return [...matchHistory].sort((a, b) => b.timestamp - a.timestamp);
+    }, [matchHistory]);
     const totalPages = Math.ceil(sortedHistory.length / ITEMS_PER_PAGE) || 1;
 
     // Safety check for current page
@@ -59,15 +62,23 @@ export default function HistoryPage() {
                                             <span className="text-xs font-bold text-white/40 tracking-wider">
                                                 {date.toLocaleDateString()} {date.toLocaleTimeString()}
                                             </span>
-                                            <span className="text-xs font-black uppercase text-amber-400/80 px-2 py-0.5 bg-amber-500/10 rounded border border-amber-500/20 tracking-wider">
-                                                Room: {match.roomId}
+                                            <span
+                                                className="text-xs font-black uppercase px-2 py-0.5 rounded border tracking-wider"
+                                                style={{
+                                                    color: getRoomBadgeConfig(match.roomId).color,
+                                                    backgroundColor: `${getRoomBadgeConfig(match.roomId).color}1A`,
+                                                    borderColor: `${getRoomBadgeConfig(match.roomId).color}33`
+                                                }}
+                                            >
+                                                Room: {getRoomBadgeConfig(match.roomId).name}
                                             </span>
                                             {(() => {
-                                                const netChange = match.bankrollAfter - match.bankrollBefore;
-                                                const isPush = netChange === 0;
+                                                const netChange = calculateMatchNetPnl(match);
+                                                const { isWin, isPush } = getMatchOverallStatus(match, netChange);
+
                                                 return (
-                                                    <span className={`text-xs font-black uppercase px-2 py-0.5 rounded border tracking-wider ${isPush ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' : netChange > 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                                                        {isPush ? 'PUSH' : netChange > 0 ? 'WIN' : 'LOSE'} {!isPush && `${netChange > 0 ? '+' : ''}$${netChange.toLocaleString()}`}
+                                                    <span className={`text-xs font-black uppercase px-2 py-0.5 rounded border tracking-wider ${isPush ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' : isWin ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                                                        {isPush ? 'PUSH' : isWin ? 'WIN' : 'LOSE'} {!isPush && `${isWin ? '+' : ''}$${Math.abs(netChange).toLocaleString()}`}
                                                     </span>
                                                 );
                                             })()}

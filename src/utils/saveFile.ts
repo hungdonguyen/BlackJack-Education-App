@@ -78,20 +78,18 @@ export async function loadHistory(): Promise<MatchRecord[]> {
     }
 }
 
-export async function appendHistory(record: MatchRecord): Promise<void> {
+export async function writeHistoryFile(records: MatchRecord[]): Promise<void> {
     if (!isTauriEnv()) return;
     try {
         const { writeTextFile, BaseDirectory } = await getFs();
         await ensureDir();
-        const existing = await loadHistory();
-        const updated = [...existing, record];
         // Trim oldest entries if over the limit
-        const trimmed = updated.length > MAX_HISTORY
-            ? updated.slice(updated.length - MAX_HISTORY)
-            : updated;
+        const trimmed = records.length > MAX_HISTORY
+            ? records.slice(records.length - MAX_HISTORY)
+            : records;
         await writeTextFile(HISTORY_FILE, JSON.stringify(trimmed), { baseDir: BaseDirectory.AppConfig });
     } catch (err) {
-        console.warn('[SaveFile] appendHistory failed:', err);
+        console.warn('[SaveFile] writeHistoryFile failed:', err);
     }
 }
 

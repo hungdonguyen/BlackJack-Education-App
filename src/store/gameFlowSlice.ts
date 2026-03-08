@@ -452,6 +452,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
             cards: newCards,
             betAmount: hand.betAmount + (isFree ? hand.betAmount : cost),
             status: busted ? HandStatus.BUST : HandStatus.STAND,
+            isDoubleDown: true,
             isFreeDouble: isFree ? true : hand.isFreeDouble,
             freeBetAmount: isFree ? (hand.freeBetAmount || 0) + hand.betAmount : hand.freeBetAmount,
           };
@@ -562,6 +563,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       freeBetAmount: currentHand.freeBetAmount,
       isAceSplit: isSplitAces,
       isFreeSplit: isFree ? true : currentHand.isFreeSplit,
+      isSplit: true,
     };
 
     const hand2: Hand = {
@@ -572,6 +574,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       freeBetAmount: isFree ? splitBet : currentHand.freeBetAmount,
       isAceSplit: isSplitAces,
       isFreeSplit: isFree ? true : currentHand.isFreeSplit,
+      isSplit: true,
     };
 
     // A 21 on a split hand is not considered a Natural Blackjack, 
@@ -672,14 +675,14 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
 
     // Check if all player hands are busted or surrendered — if so, dealer doesn't need to draw
     const allBustedOrSurrendered = state.seats
-      .filter((s) => s.isActive)
-      .every((s) => s.hands.every((h) => h.status === HandStatus.BUST || h.status === HandStatus.SURRENDERED));
+      .filter((s) => s.isActive && s.hands.some((h) => h.betAmount > 0))
+      .every((s) => s.hands.every((h) => h.betAmount === 0 || h.status === HandStatus.BUST || h.status === HandStatus.SURRENDERED));
 
     // Check if all non-bust/surrender player hands are blackjacks — dealer doesn't need to draw
     const allResolvedOrBlackjack = state.seats
-      .filter((s) => s.isActive)
+      .filter((s) => s.isActive && s.hands.some((h) => h.betAmount > 0))
       .every((s) => s.hands.every((h) =>
-        h.status === HandStatus.BUST || h.status === HandStatus.SURRENDERED || h.status === HandStatus.BLACKJACK
+        h.betAmount === 0 || h.status === HandStatus.BUST || h.status === HandStatus.SURRENDERED || h.status === HandStatus.BLACKJACK
       ));
 
     // Initial reveal
@@ -877,21 +880,29 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           freeActionTokens: seat.freeActionTokens,
           hands: seat.hands
             .filter((h) => h.betAmount > 0)
-            .map((hand) => ({
-              betAmount: hand.betAmount,
-              result: hand.status,
-              payout:
-                hand.status === HandStatus.WON
-                  ? hand.betAmount
-                  : hand.status === HandStatus.BLACKJACK
-                  ? hand.betAmount * rules.blackjackPayoutMultiplier
-                  : hand.status === HandStatus.PUSH
-                  ? 0
-                  : hand.status === HandStatus.SURRENDERED
-                  ? -(hand.betAmount / 2)
-                  : -(hand.betAmount - (hand.freeBetAmount || 0)),
-              cards: hand.cards.map((c) => ({ suit: c.suit, rank: c.rank })),
-            })),
+            .map((hand) => {
+              const freeAmt = hand.freeBetAmount || 0;
+              return {
+                betAmount: hand.betAmount - freeAmt, // Record only the real wagered amount
+                freeBetAmount: freeAmt,
+                result: hand.status,
+                payout:
+                  hand.status === HandStatus.WON
+                    ? hand.betAmount
+                    : hand.status === HandStatus.BLACKJACK
+                    ? hand.betAmount * rules.blackjackPayoutMultiplier
+                    : hand.status === HandStatus.PUSH
+                    ? 0
+                    : hand.status === HandStatus.SURRENDERED
+                    ? -(hand.betAmount / 2)
+                    : -(hand.betAmount - freeAmt),
+                isSplit: hand.isSplit,
+                isFreeSplit: hand.isFreeSplit,
+                isDoubleDown: hand.isDoubleDown,
+                isFreeDouble: hand.isFreeDouble,
+                cards: hand.cards.map((c) => ({ suit: c.suit, rank: c.rank })),
+              };
+            }),
         })),
       dealerCards: state.dealerHand.cards.map((c) => ({
         suit: c.suit,
@@ -900,11 +911,16 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       bankrollBefore,
       bankrollAfter,
     };
+    const MAX_STORE_HISTORY = 5000;
+    const newHistory = [...state.matchHistory, matchRecord];
+    if (newHistory.length > MAX_STORE_HISTORY) {
+        newHistory.splice(0, newHistory.length - MAX_STORE_HISTORY);
+    }
 
     set({
       seats: updatedSeats,
       bankroll: bankrollAfter,
-      matchHistory: [...state.matchHistory, matchRecord],
+      matchHistory: newHistory,
     });
   },
 
