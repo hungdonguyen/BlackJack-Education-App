@@ -209,8 +209,13 @@ export default function SettingsModal({ roomId, accentColor, borderColor, onClos
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-3 border-t border-white/5 flex justify-center">
+                <div className="px-6 py-4 border-t border-white/5 flex flex-col items-center gap-2">
                     <span className="text-[9px] text-white/20 uppercase tracking-[0.3em]">Settings auto-save</span>
+                    <div className="text-center text-[8px] text-white/10 leading-tight">
+                        Audio Credits: Music by Kevin MacLeod (incompetech.com) & Audionautix.com<br />
+                        Licensed under Creative Commons: By Attribution 4.0 License<br />
+                        SFX provided by Kenney.nl
+                    </div>
                 </div>
             </motion.div>
         </motion.div>

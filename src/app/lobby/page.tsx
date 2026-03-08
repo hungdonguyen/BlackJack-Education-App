@@ -89,6 +89,9 @@ export default function LobbyPage() {
                 <p className="text-xs text-white/30 font-medium uppercase tracking-[0.1em]">
                     This is a strictly educational project. No real money gambling is involved.
                 </p>
+                <div className="text-[8px] text-white/10 mt-1 leading-tight uppercase tracking-wider">
+                    Audio Credits: Music by Kevin MacLeod & Audionautix.com · SFX by Kenney.nl
+                </div>
             </div>
         </div>
     );

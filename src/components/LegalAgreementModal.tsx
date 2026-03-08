@@ -352,6 +352,11 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
                             <p className="text-center text-[10px] text-white/15">
                                 18+ Simulated Gambling • No Real Money • For Entertainment & Education Only
                             </p>
+                            <div className="text-center text-[9px] text-white/10 mt-1 leading-tight">
+                                Audio Credits: Music by Kevin MacLeod (incompetech.com) & Audionautix.com<br />
+                                Licensed under Creative Commons: By Attribution 4.0 License<br />
+                                SFX provided by Kenney.nl
+                            </div>
                         </div>
                     </motion.div>
                 </motion.div>
