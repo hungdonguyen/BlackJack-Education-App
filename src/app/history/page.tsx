@@ -6,6 +6,7 @@ import { useGameStore } from '@/hooks/useGameStore';
 import { ArrowLeft, ChevronLeft, ChevronRight, History } from 'lucide-react';
 import { HandStatus, Suit } from '@/types/enums';
 import { calculateMatchNetPnl, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
+import { useAudio } from '@/utils/audio';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -13,6 +14,7 @@ export default function HistoryPage() {
     const router = useRouter();
     const matchHistory = useGameStore(s => s.matchHistory);
     const [page, setPage] = useState(1);
+    const { playSound } = useAudio();
 
     // Sort history by timestamp descending to show latest first reliably
     const sortedHistory = useMemo(() => {
@@ -32,8 +34,8 @@ export default function HistoryPage() {
             <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <button
-                        onClick={() => router.back()}
-                        className="flex items-center gap-2 text-white/50 hover:text-white transition-colors"
+                        onClick={() => { playSound('click'); router.back(); }}
+                        className="flex items-center gap-2 text-white/50 hover:text-white transition-colors cursor-pointer"
                     >
                         <ArrowLeft size={20} />
                         <span className="text-sm font-bold uppercase tracking-wider">Back</span>
@@ -170,7 +172,7 @@ export default function HistoryPage() {
                         {totalPages > 1 && (
                             <div className="mt-8 flex items-center justify-between bg-white/5 rounded-xl p-2 border border-white/5">
                                 <button
-                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    onClick={() => { playSound('click'); setPage(p => Math.max(1, p - 1)); }}
                                     disabled={page === 1}
                                     className="p-3 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors shadow-lg cursor-pointer"
                                     aria-label="Previous Page"
@@ -181,7 +183,7 @@ export default function HistoryPage() {
                                     PAGE <span className="text-amber-400 mx-1">{page}</span> OF {totalPages}
                                 </span>
                                 <button
-                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                    onClick={() => { playSound('click'); setPage(p => Math.min(totalPages, p + 1)); }}
                                     disabled={page === totalPages}
                                     className="p-3 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors shadow-lg cursor-pointer"
                                     aria-label="Next Page"

@@ -47,7 +47,7 @@ export interface BettingSlice {
 
 export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> = (set, get) => ({
   bankroll: DEFAULT_BANKROLL,
-  selectedChipValue: CHIP_VALUES[0],
+  selectedChipValue: 1,
   betHistory: [],
   lastDailyClaim: 0,
   dailyClaimCount: 0,

@@ -26,7 +26,10 @@ import HandAdvisor from './HandAdvisor';
 import CardCountingPanel from './CardCountingPanel';
 import MatchDetailModal from './MatchDetailModal';
 import SettingsModal from './SettingsModal';
+import { MusicPlayer } from './MusicPlayer';
 import { calculateMatchNetPnl, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
+import { useAudio } from '@/utils/audio';
+import { useBGM } from '@/utils/bgm';
 
 const TURN_TIMER_SECONDS = 30;
 const INSURANCE_TIMER_SECONDS = 10;
@@ -53,6 +56,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const dailyClaimCount = useGameStore((s) => s.dailyClaimCount);
     const triggerInsufficientFunds = useGameStore((s) => s.triggerInsufficientFunds);
     const insuranceBets = useGameStore((s) => s.insuranceBets);
+    const resetRound = useGameStore((s) => s.resetRound);
     const isHydrated = useStoreHydration();
 
     const [showRules, setShowRules] = useState(false);
@@ -88,9 +92,14 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         setCurrentRoom(roomId);
     }, [roomId, setCurrentRoom]);
 
+    const { playSound } = useAudio();
+
     useEffect(() => {
-        if (shoe.length === 0) initializeShoe();
-    }, [shoe.length, initializeShoe]);
+        if (shoe.length === 0) {
+            initializeShoe();
+            playSound('shuffle', 0.5, { shortShuffle: true });
+        }
+    }, [shoe.length, initializeShoe, playSound]);
 
     // 30-second turn timer — stand() deferred via setTimeout to avoid
     // calling Zustand mutations inside a React state updater (batch context).
@@ -207,6 +216,17 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         }
     }, [isPayout, gamePhase, matchHistory.length]);
 
+    // Play outcome sounds when payout happens
+    useEffect(() => {
+        if (isPayout && winNotification) {
+            if (winNotification.isWin) {
+                playSound('win');
+            } else if (!winNotification.isPush) {
+                playSound('lose');
+            }
+        }
+    }, [isPayout, winNotification, playSound]);
+
     // Claim cooldown timer — only runs when a cooldown is actually active
     useEffect(() => {
         const THIRTY_MIN = 30 * 60 * 1000;
@@ -312,11 +332,11 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                 {/* ─── Gameplay Content ─── */}
                 <div className="absolute inset-0 z-10">
                     {/* Top HUD bar */}
-                    <div className="absolute top-0 left-0 right-0 z-20">
-                        <div className="flex items-start px-4 py-2"
+                    <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
+                        <div className="flex items-center justify-start px-4 h-[70px] pl-24"
                             style={{ background: 'linear-gradient(180deg, rgba(10,6,4,0.95) 0%, rgba(10,6,4,0.7) 70%, transparent 100%)' }}
                         >
-                            <div className="flex flex-col gap-0.5">
+                            <div className="flex flex-col items-start gap-0 pointer-events-auto">
                                 <div className="flex items-center gap-4">
                                     <GamePhaseIndicator phase={gamePhase} />
                                 </div>
@@ -335,15 +355,19 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                         </div>
                     </div>
 
-                    {/* Logo — top-right corner */}
+                    {/* Logo — top-left corner */}
                     <div
-                        className="absolute top-2 right-3 z-20 cursor-pointer hover:scale-105 transition-transform origin-top-right"
-                        style={{ width: '170px', height: '75px' }}
-                        onClick={() => setShowLogoInfo(true)}
+                        className="absolute top-0 left-4 z-20 cursor-pointer hover:scale-105 transition-transform origin-top-left"
+                        style={{ width: '80px', height: '70px' }}
+                        onClick={() => { playSound('click'); setShowLogoInfo(true); }}
                     >
-                        <Image src={logoPath} alt={room.name} fill className="object-contain" sizes="170px" unoptimized />
+                        <Image src={logoPath} alt={room.name} fill className="object-contain object-left" sizes="80px" unoptimized />
                     </div>
 
+                    {/* Music Player — top-right corner */}
+                    <div className="absolute top-0 right-4 z-20">
+                        <MusicPlayer roomId={roomId} />
+                    </div>
                 </div>
             </div>
 
@@ -363,7 +387,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         >
                             <button
-                                onClick={() => setShowLogoInfo(false)}
+                                onClick={() => { playSound('click'); setShowLogoInfo(false); }}
                                 className="absolute top-4 right-4 text-white/50 hover:text-white bg-black/50 hover:bg-black/80 w-8 h-8 rounded-full flex items-center justify-center transition-colors z-10"
                             >
                                 <X size={18} />
@@ -455,26 +479,26 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             </div>
 
             {/* Payout Panel — left side */}
-            <div className="absolute top-[45px] left-[20px] z-15">
+            <div className="absolute top-[85px] left-[15px] z-15">
                 <PayoutPanel roomConfig={room} />
             </div>
 
-            {/* Hand Advisor — next to PayoutPanel */}
+            {/* Hand Advisor — right of PayoutPanel */}
             {showHandAdvisor && (
-                <div className="absolute top-[45px] left-[285px] z-15">
+                <div className="absolute top-[85px] left-[275px] z-15">
                     <HandAdvisor roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} onOpenStrategy={() => setShowStrategy(true)} />
                 </div>
             )}
 
             {/* Card Counting Panel — right side next to history */}
             {showCardCounting && (
-                <div className="absolute top-[88px] z-15" style={{ right: 216 }}>
+                <div className="absolute top-[85px] z-15" style={{ right: 216 }}>
                     <CardCountingPanel roomId={roomId} numDecks={room.gameRules.numberOfDecks} accentColor={room.accentColor} borderColor={room.borderColor} onOpenSettings={() => setShowSettings(true)} onOpenStrategy={() => setShowStrategy(true)} />
                 </div>
             )}
 
-            {/* Match History — right side, always below logo */}
-            <div className="absolute top-[88px] right-[12px] z-15">
+            {/* Match History — right side */}
+            <div className="absolute top-[85px] right-[12px] z-15">
                 <HistoryPanel onMatchClick={(idx) => setSelectedMatchIndex(idx)} />
             </div>
 
@@ -553,6 +577,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                             : '0 0 40px rgba(220, 50, 50, 0.2)'
                                 }}
                             >
+
                                 <p className={`text-center text-sm font-bold uppercase tracking-[0.3em] mb-1 ${winNotification.isPush
                                     ? 'text-slate-300'
                                     : winNotification.isWin ? 'text-yellow-300' : 'text-red-300'
@@ -596,7 +621,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                         </div>
                         <div className="w-px h-8 bg-white/10" />
                         {/* Daily Claim */}
-                        <button onClick={handleClaimDaily} disabled={!!claimCooldown}
+                        <button onClick={() => { playSound('click'); handleClaimDaily(); }} disabled={!!claimCooldown}
                             className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer relative overflow-hidden group
                                     ${claimCooldown
                                     ? 'bg-white/5 border border-white/5 text-white/20 cursor-not-allowed'
@@ -622,19 +647,19 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                     <ChipRack />
 
                     <div className="flex items-center gap-3">
-                        <button onClick={() => setShowStrategy(true)}
+                        <button onClick={() => { playSound('click'); setShowStrategy(true); }}
                             className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
                         ><BookOpen size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Strategy</button>
-                        <button onClick={() => setShowRules(true)}
+                        <button onClick={() => { playSound('click'); setShowRules(true); }}
                             className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
                         ><Info size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Rules</button>
-                        <button onClick={() => setShowSettings(true)}
+                        <button onClick={() => { playSound('click'); setShowSettings(true); }}
                             className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
                         ><Settings size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Settings</button>
-                        <button onClick={() => router.push('/lobby')}
+                        <button onClick={() => { playSound('click'); router.push('/lobby'); }}
                             className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
                         ><LayoutGrid size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Lobby</button>
-                        <button onClick={() => router.push('/')}
+                        <button onClick={() => { playSound('click'); router.push('/'); }}
                             className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
                         ><Home size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Home</button>
                     </div>
@@ -708,6 +733,7 @@ function GamePhaseIndicator({ phase }: { phase: GamePhase }) {
 }
 
 function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void }) {
+    const { playSound } = useAudio();
     const [page, setPage] = useState(1);
     const matchHistory = useGameStore((s) => s.matchHistory);
     const totalLen = matchHistory.length;
@@ -750,7 +776,7 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                     const { labelStr, colorClass } = getMatchOverallStatus(match, diff);
 
                     return (
-                        <div key={match.id} onClick={() => onMatchClick(realIdx)}
+                        <div key={match.id} onClick={() => { playSound('click'); onMatchClick(realIdx); }}
                             className="flex items-center justify-between px-1.5 py-1 rounded bg-white/2 hover:bg-white/5 cursor-pointer transition-colors border border-white/0 hover:border-white/5">
                             <div className="flex items-center gap-1.5">
                                 <span className="text-[7px] font-bold px-1 py-0.5 rounded tracking-wider border"
@@ -779,7 +805,7 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
             {totalPages > 1 && (
                 <div className="flex items-center justify-between px-2 py-1.5 border-t border-white/5 bg-white/5 shrink-0">
                     <button
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        onClick={() => { playSound('click'); setPage(p => Math.max(1, p - 1)); }}
                         disabled={currentPage === 1}
                         className="p-1 text-white/40 hover:text-white disabled:opacity-20 cursor-pointer transition-colors hover:bg-white/10 rounded"
                     >
@@ -789,7 +815,7 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
                         {currentPage} / {totalPages}
                     </span>
                     <button
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        onClick={() => { playSound('click'); setPage(p => Math.min(totalPages, p + 1)); }}
                         disabled={currentPage === totalPages}
                         className="p-1 text-white/40 hover:text-white disabled:opacity-20 cursor-pointer transition-colors hover:bg-white/10 rounded"
                     >
@@ -802,11 +828,12 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
 }
 
 function RulesModal({ room, onClose }: { room: ReturnType<typeof getRoomConfig>; onClose: () => void }) {
+    const { playSound } = useAudio();
     return (
         <motion.div className="absolute inset-0 z-[200] flex items-center justify-center"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         >
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { playSound('click'); onClose(); }} />
             <motion.div
                 className="relative w-[480px] max-h-[80vh] rounded-2xl border border-amber-500/15 flex flex-col overflow-hidden"
                 style={{ background: 'rgba(20, 12, 8, 0.95)', backdropFilter: 'blur(20px)' }}
@@ -815,7 +842,7 @@ function RulesModal({ room, onClose }: { room: ReturnType<typeof getRoomConfig>;
                 <div className="p-6 flex-1 overflow-y-auto pb-10">
                     <div className="flex items-center justify-between mb-5">
                         <h2 className="text-lg font-extrabold text-amber-400 uppercase tracking-[0.15em] flex items-center justify-center"><Info size={20} className="mr-2" /> {room.name} Rules</h2>
-                        <button onClick={onClose}
+                        <button onClick={() => { playSound('click'); onClose(); }}
                             className="w-8 h-8 rounded-full bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 flex items-center justify-center cursor-pointer transition-all"
                         ><X size={16} /></button>
                     </div>

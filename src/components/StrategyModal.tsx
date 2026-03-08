@@ -12,6 +12,7 @@ import { RoomConfig } from '@/utils/rooms';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GameStore } from '@/types/game';
 import { I18_S17, I18_H17, FAB_4, IBERIAN_HILO, IBERIAN_WALKER } from '@/utils/countingDeviations';
+import { useAudio } from '@/utils/audio';
 
 interface StrategyModalProps {
     room: RoomConfig;
@@ -239,6 +240,7 @@ export default function StrategyModal({
     const [tab, setTab] = useState<Tab>('hard');
     const countSystem = useGameStore((s: GameStore) => s.countSystem);
     const [countTab, setCountTab] = useState<'hilo' | 'kw'>(countSystem === 'Katarina Walker' ? 'kw' : 'hilo');
+    const { playSound } = useAudio();
 
     const isIberianHiLo = room.id === 'iberian_21' && countTab === 'hilo';
 
@@ -311,7 +313,7 @@ export default function StrategyModal({
                         </div>
                     </div>
                     <button
-                        onClick={onClose}
+                        onClick={() => { playSound('click'); onClose(); }}
                         className="w-8 h-8 rounded-full flex items-center justify-center text-white/30 hover:text-white/70 transition-all cursor-pointer"
                         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
                     >
@@ -326,7 +328,7 @@ export default function StrategyModal({
                         return (
                             <button
                                 key={t}
-                                onClick={() => setTab(t)}
+                                onClick={() => { playSound('click'); setTab(t); }}
                                 className="relative flex-1 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] transition-all cursor-pointer text-center"
                                 style={{ color: active ? room.accentColor : 'rgba(255,255,255,0.3)' }}
                             >
@@ -354,7 +356,7 @@ export default function StrategyModal({
                                 <div className="flex justify-center mb-2">
                                     <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 relative">
                                         <button
-                                            onClick={() => setCountTab('hilo')}
+                                            onClick={() => { playSound('click'); setCountTab('hilo'); }}
                                             className={`relative px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors z-10 ${countTab === 'hilo' ? 'text-black' : 'text-white/40 hover:text-white/70'}`}
                                         >
                                             Hi-Lo
@@ -363,7 +365,7 @@ export default function StrategyModal({
                                             )}
                                         </button>
                                         <button
-                                            onClick={() => setCountTab('kw')}
+                                            onClick={() => { playSound('click'); setCountTab('kw'); }}
                                             className={`relative px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors z-10 ${countTab === 'kw' ? 'text-black' : 'text-white/40 hover:text-white/70'}`}
                                         >
                                             Katarina Walker

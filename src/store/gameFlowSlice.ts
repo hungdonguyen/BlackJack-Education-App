@@ -450,12 +450,13 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
 
           const newCards = [...hand.cards, newCard];
           const busted = isBust(newCards);
+          const is21 = !busted && calculateHandValue(newCards).total === 21;
 
           return {
             ...hand,
             cards: newCards,
             betAmount: hand.betAmount + (isFree ? hand.betAmount : cost),
-            status: busted ? HandStatus.BUST : (roomCfg.gameRules.allowDoubleDownRescue ? HandStatus.PLAYING : HandStatus.STAND),
+            status: busted ? HandStatus.BUST : (is21 || !roomCfg.gameRules.allowDoubleDownRescue) ? HandStatus.STAND : HandStatus.PLAYING,
             isDoubleDown: true,
             isFreeActionDouble: isFree ? true : hand.isFreeActionDouble,
             freeActionBetAmount: isFree ? (hand.freeActionBetAmount || 0) + hand.betAmount : hand.freeActionBetAmount,

@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, X, ArrowLeft, Shield } from 'lucide-react';
 import { MatchRecord } from '@/types/game';
 import { HandStatus, Rank, Suit } from '@/types/enums';
 import { calculateMatchStats, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
+import { useAudio } from '@/utils/audio';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -100,6 +101,7 @@ export default function MatchDetailModal({
     onClose,
 }: MatchDetailModalProps) {
     const { name: roomLabel } = getRoomBadgeConfig(match.roomId);
+    const { playSound } = useAudio();
 
     // Net P&L for the round (including insurance)
     const {
@@ -143,7 +145,7 @@ export default function MatchDetailModal({
                     </div>
                     <div className="flex items-center gap-3">
                         <span className="text-[11px] text-white/40 tabular-nums">{formatDate(match.timestamp)}</span>
-                        <button onClick={onClose}
+                        <button onClick={() => { playSound('click'); onClose(); }}
                             className="w-7 h-7 rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all cursor-pointer">
                             <X size={14} />
                         </button>
@@ -410,7 +412,7 @@ export default function MatchDetailModal({
                     style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(10,6,4,0.8)' }}>
                     <button
                         disabled={!canPrev}
-                        onClick={() => canPrev && onNavigate(currentIndex - 1)}
+                        onClick={() => { if (canPrev) { playSound('click'); onNavigate(currentIndex - 1); } }}
                         className="flex items-center gap-1.5 text-[11px] font-bold text-white/50 hover:text-white/80 disabled:text-white/20 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     >
                         <ChevronLeft size={15} />
@@ -418,7 +420,7 @@ export default function MatchDetailModal({
                     </button>
 
                     <button
-                        onClick={onClose}
+                        onClick={() => { playSound('click'); onClose(); }}
                         className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer"
                         style={{ background: 'rgba(255,210,90,0.1)', border: '1px solid rgba(255,210,90,0.2)', color: 'rgba(255,210,90,0.8)' }}
                     >
@@ -428,7 +430,7 @@ export default function MatchDetailModal({
 
                     <button
                         disabled={!canNext}
-                        onClick={() => canNext && onNavigate(currentIndex + 1)}
+                        onClick={() => { if (canNext) { playSound('click'); onNavigate(currentIndex + 1); } }}
                         className="flex items-center gap-1.5 text-[11px] font-bold text-white/50 hover:text-white/80 disabled:text-white/20 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     >
                         Next Match

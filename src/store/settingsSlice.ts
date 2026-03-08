@@ -11,6 +11,10 @@ export interface SettingsSlice {
   // State
   dealerSpeed: DealerSpeed;
   soundEnabled: boolean;
+  musicEnabled: boolean;
+  musicVolume: number; // 0.0 to 1.0
+  soundVolume: number; // 0.0 to 1.0
+  musicTrackOverride: string | null; // Path to manually selected track
   showHandAdvisor: boolean;
   showCardCounting: boolean;
   countSystem: 'Hi-Lo' | 'Katarina Walker';
@@ -18,6 +22,10 @@ export interface SettingsSlice {
   // Actions
   setDealerSpeed: (speed: DealerSpeed) => void;
   setSoundEnabled: (enabled: boolean) => void;
+  setMusicEnabled: (enabled: boolean) => void;
+  setMusicVolume: (volume: number) => void;
+  setSoundVolume: (volume: number) => void;
+  setMusicTrackOverride: (trackPath: string | null) => void;
   setShowHandAdvisor: (show: boolean) => void;
   setShowCardCounting: (show: boolean) => void;
   setCountSystem: (sys: 'Hi-Lo' | 'Katarina Walker') => void;
@@ -42,12 +50,20 @@ export const SPEED_DELAYS = {
 export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice> = (set) => ({
   dealerSpeed: 'normal',
   soundEnabled: true,
+  musicEnabled: true,
+  musicVolume: 0.5,
+  soundVolume: 0.7,
+  musicTrackOverride: null,
   showHandAdvisor: true,
   showCardCounting: true,
   countSystem: 'Katarina Walker',
 
   setDealerSpeed: (speed) => set({ dealerSpeed: speed }),
   setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
+  setMusicEnabled: (enabled) => set({ musicEnabled: enabled }),
+  setMusicVolume: (volume) => set({ musicVolume: Math.max(0, Math.min(1, volume)) }),
+  setSoundVolume: (volume) => set({ soundVolume: Math.max(0, Math.min(1, volume)) }),
+  setMusicTrackOverride: (trackPath) => set({ musicTrackOverride: trackPath }),
   setShowHandAdvisor: (show) => set({ showHandAdvisor: show }),
   setShowCardCounting: (show) => set({ showCardCounting: show }),
   setCountSystem: (sys) => set({ countSystem: sys }),

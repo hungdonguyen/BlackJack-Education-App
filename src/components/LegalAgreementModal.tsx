@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
 import { isTauriEnv, writeSaveFile, readSaveFile } from '@/utils/saveFile';
+import { useAudio } from '@/utils/audio';
 
 const AGREEMENT_KEY = 'legal-agreed-v1';
 
@@ -80,7 +81,7 @@ const TERMS_CONTENT = [
     },
     {
         title: '2. Nature of the Application',
-        body: 'This App is strictly for educational and entertainment purposes. No real money is involved at any stage — all currency within the App is virtual and has absolutely no monetary value. The App cannot be used for real-money gambling. Virtual chips cannot be exchanged, transferred, or redeemed for real currency, goods, or services.',
+        body: 'This App is strictly for educational and entertainment purposes. No real money is involved at any stage — all currency within the App is virtual and has absolutely no monetary value. The App cannot be used for real-money gambling. Virtual chips cannot be exchanged, transferred, or redeemed for real currency, goods, or services. The strategies, advice, and card counting features provided by the App are for educational simulations only. The developer does not guarantee any success or financial gain in real-life casino environments. Users are solely responsible for their own decisions if they choose to apply these concepts in real-world settings.',
     },
     {
         title: '3. Age Restriction — 18+',
@@ -92,7 +93,7 @@ const TERMS_CONTENT = [
     },
     {
         title: '5. Intellectual Property',
-        body: 'The App\'s source code, design, and original assets are the intellectual property of the developer. Standard playing card designs and Blackjack game rules are in the public domain.',
+        body: 'The App\'s source code, design, and original assets are the intellectual property of the developer. Standard playing card designs and Blackjack game rules are in the public domain. Any resemblance of in-game features or room names to specific proprietary casino table games or trademarks is purely coincidental and used solely for the purpose of generalized mathematical simulation.',
     },
     {
         title: '6. Disclaimer of Warranties',
@@ -109,6 +110,10 @@ const TERMS_CONTENT = [
     {
         title: '9. Modifications',
         body: 'The developer reserves the right to modify these Terms at any time. Continued use of the App after changes constitutes acceptance of the modified Terms.',
+    },
+    {
+        title: '10. Audio Credits',
+        body: 'Sound effects are sourced from Kenney.nl (CC0 Public Domain). Background music is provided by Kevin MacLeod (incompetech.com) and Audionautix (audionautix.com), licensed under Creative Commons: By Attribution 4.0 License (creativecommons.org/licenses/by/4.0). Tracks used: "Airport Lounge", "Bossa Antigua", "CoolVibes", "Faster Does It", "Funk Game Loop", "Whiskey on the Mississippi" by Kevin MacLeod. "Spanish Summer" by Audionautix.',
     },
 ];
 
@@ -194,6 +199,7 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
     const [privacyRead, setPrivacyRead] = useState(false);
     const [termsRead, setTermsRead] = useState(false);
     const [accepting, setAccepting] = useState(false);
+    const { playSound } = useAudio();
 
     useEffect(() => {
         hasAccepted().then((agreed) => {
@@ -258,7 +264,7 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
                                 return (
                                     <button
                                         key={t}
-                                        onClick={() => setTab(t)}
+                                        onClick={() => { playSound('click'); setTab(t); }}
                                         className="flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2"
                                         style={{
                                             color: isActive ? '#d4a843' : 'rgba(255,255,255,0.3)',
@@ -280,7 +286,7 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
                                 <ScrollableDocument
                                     key="privacy"
                                     sections={PRIVACY_CONTENT}
-                                    label="Privacy Policy — Last updated: 2026-03-04"
+                                    label="Privacy Policy — Last updated: 2026-03-08"
                                     icon={Shield}
                                     accentColor="#d4a843"
                                     onScrolledToBottom={() => setPrivacyRead(true)}
@@ -289,7 +295,7 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
                                 <ScrollableDocument
                                     key="terms"
                                     sections={TERMS_CONTENT}
-                                    label="Terms of Service — Last updated: 2026-03-04"
+                                    label="Terms of Service — Last updated: 2026-03-08"
                                     icon={FileText}
                                     accentColor="#d4a843"
                                     onScrolledToBottom={() => setTermsRead(true)}
@@ -327,7 +333,7 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
 
                             {/* Accept button */}
                             <motion.button
-                                onClick={handleAccept}
+                                onClick={() => { playSound('click'); handleAccept(); }}
                                 disabled={!bothRead || accepting}
                                 className="w-full py-3 rounded-xl font-extrabold text-sm uppercase tracking-[0.15em] transition-all duration-300 cursor-pointer disabled:cursor-not-allowed"
                                 style={{

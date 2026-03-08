@@ -15,6 +15,7 @@ import CardComponent from './CardComponent';
 import ScoreBadge from './ScoreBadge';
 import ChipStack from './ChipStack';
 import { getRoomConfig } from '@/utils/rooms';
+import { useAudio } from '@/utils/audio';
 
 interface SeatProps {
     seatId: number;
@@ -34,6 +35,7 @@ export default function Seat({ seatId, style }: SeatProps) {
     const clearSideBet = useGameStore((s) => s.clearSideBet);
     const sideBets = useGameStore((s) => s.sideBets);
     const roomConfig = getRoomConfig(currentRoom);
+    const { playSound } = useAudio();
 
     if (!seat) return null;
 
@@ -49,9 +51,11 @@ export default function Seat({ seatId, style }: SeatProps) {
     const handleClick = () => {
         if (!isBetting) return;
         if (!seat.isActive) {
+            playSound('click');
             toggleSeat(seatId);
             return;
         }
+        playSound('chip-lay');
         placeBet(seatId, selectedChipValue);
     };
 
@@ -59,8 +63,10 @@ export default function Seat({ seatId, style }: SeatProps) {
         e.preventDefault();
         if (!isBetting || !seat.isActive) return;
         if (totalBet > 0) {
+            playSound('chip-lay');
             clearBet(seatId);
         } else {
+            playSound('click');
             toggleSeat(seatId);
         }
     };
@@ -76,8 +82,10 @@ export default function Seat({ seatId, style }: SeatProps) {
                                 e.stopPropagation();
                                 if (sideBetAmount > 0) {
                                     clearSideBet(seatId);
+                                    playSound('chip-lay');
                                 } else if (mainBet > 0) {
                                     placeSideBet(seatId, selectedChipValue);
+                                    playSound('chip-lay');
                                 }
                                 // no-op if no main bet — store also guards this
                             }}

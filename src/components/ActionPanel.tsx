@@ -11,6 +11,7 @@ import { calculateHandValue, canSplit, canDoubleDown, getHandDisplayValue } from
 import { Shield, Check, X, Undo2, Spade, Home, Sparkles, Flag, Zap } from 'lucide-react';
 import { getRules } from '@/rules';
 import { getRoomConfig } from '@/utils/rooms';
+import { useAudio } from '@/utils/audio';
 
 export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSeat }: { timer?: number; insuranceTimer?: number; currentInsuranceSeat?: number }) {
     const gamePhase = useGameStore((s) => s.gamePhase);
@@ -30,6 +31,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const rebet = useGameStore((s) => s.rebet);
     const acceptInsurance = useGameStore((s) => s.acceptInsurance);
     const declineInsurance = useGameStore((s) => s.declineInsurance);
+    const { playSound } = useAudio();
 
     const isPlayerTurn = gamePhase === GamePhase.PLAYER_TURN;
     const isBetting = gamePhase === GamePhase.BETTING;
@@ -118,28 +120,28 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                         <div className="flex items-center gap-3">
                             {isDblFree ? (
                                 <FreeCircleButton label="FREE ACTION DOUBLE" icon={<Zap className="w-4 h-4" />}
-                                    onClick={doubleDown} disabled={!canDbl} size={50} />
+                                    onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={50} />
                             ) : (
                                 <CircleButton label="DOUBLE DOWN" icon="2x" color="#f39c12" hoverColor="#f1c40f"
-                                    onClick={doubleDown} disabled={!canDbl} size={45} />
+                                    onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={45} />
                             )}
 
                             <CircleButton label="HIT" icon="+" color="#2ecc71" hoverColor="#27ae60"
-                                onClick={hit} disabled={!canHit} size={53} />
+                                onClick={() => { playSound('click'); hit(); }} disabled={!canHit} size={53} />
                             <CircleButton label="STAND" icon="−" color="#e74c3c" hoverColor="#c0392b"
-                                onClick={stand} disabled={!canStand} size={53} />
+                                onClick={() => { playSound('click'); stand(); }} disabled={!canStand} size={53} />
 
                             {isSplFree ? (
                                 <FreeCircleButton label="FREE ACTION SPLIT" icon={<Zap className="w-4 h-4" />}
-                                    onClick={split} disabled={!canSpl} size={50} />
+                                    onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={50} />
                             ) : (
                                 <CircleButton label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
-                                    onClick={split} disabled={!canSpl} size={45} />
+                                    onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={45} />
                             )}
 
                             {roomConfig.gameRules.allowSurrender && (
                                 <CircleButton label="SURRENDER" icon={<Flag className="w-4 h-4" />} color="#9b59b6" hoverColor="#8e44ad"
-                                    onClick={surrender} disabled={!canSur} size={45} />
+                                    onClick={() => { playSound('click'); surrender(); }} disabled={!canSur} size={45} />
                             )}
                         </div>
                     </motion.div>
@@ -186,7 +188,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                             </p>
                             <div className="flex items-center gap-3 justify-center">
                                 <motion.button
-                                    onClick={acceptInsurance}
+                                    onClick={() => { playSound('click'); acceptInsurance(); }}
                                     disabled={!canInsurance}
                                     className={`px-6 py-2.5 rounded-full font-extrabold text-xs uppercase tracking-wider transition-all
                                         ${canInsurance
@@ -199,7 +201,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                                     <Check className="w-3.5 h-3.5 mr-1" /> Accept
                                 </motion.button>
                                 <motion.button
-                                    onClick={declineInsurance}
+                                    onClick={() => { playSound('click'); declineInsurance(); }}
                                     className="px-6 py-2.5 rounded-full font-extrabold text-xs uppercase tracking-wider cursor-pointer
                                         bg-white/5 border border-white/15 text-white/60 hover:bg-white/10 hover:text-white/80 transition-all"
                                     whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -222,11 +224,11 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                     >
                         {hasBets ? (
                             <>
-                                <SmallButton label="UNDO" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={undoBet} disabled={!hasUndo} variant="ghost" />
-                                <SmallButton label="CLEAR" icon={<X className="w-3.5 h-3.5" />} onClick={clearAllBets} disabled={!hasBets} variant="danger" />
-                                <SmallButton label="x2" icon={<span className="text-sm">2x</span>} onClick={rebet} disabled={false} variant="ghost" />
+                                <SmallButton label="UNDO" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); undoBet(); }} disabled={!hasUndo} variant="ghost" />
+                                <SmallButton label="CLEAR" icon={<X className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); clearAllBets(); }} disabled={!hasBets} variant="danger" />
+                                <SmallButton label="x2" icon={<span className="text-sm">2x</span>} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={false} variant="ghost" />
                                 <motion.button
-                                    onClick={startDeal}
+                                    onClick={() => { playSound('card-slide'); startDeal(); }}
                                     disabled={!hasBets}
                                     className="px-8 py-3 rounded-full font-extrabold text-sm uppercase tracking-[0.2em] cursor-pointer
                                         bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30
@@ -240,7 +242,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                             </>
                         ) : (
                             <div className="flex items-center" style={{ minHeight: '48px' }}>
-                                <SmallButton label="REBET" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={rebet} disabled={!hasPreviousBets} variant="ghost" />
+                                <SmallButton label="REBET" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={!hasPreviousBets} variant="ghost" />
                             </div>
                         )}
                     </motion.div>

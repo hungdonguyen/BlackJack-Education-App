@@ -13,6 +13,9 @@ import LegalAgreementModal from '@/components/LegalAgreementModal';
 import StrategyModal from '@/components/StrategyModal';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
 import { ROOMS } from '@/utils/rooms';
+import { useAudio } from '@/utils/audio';
+import { useBGM } from '@/utils/bgm';
+import { MusicPlayer } from '@/components/MusicPlayer';
 
 export default function HomePage() {
   const router = useRouter();
@@ -22,6 +25,8 @@ export default function HomePage() {
 
   const isHydrated = useStoreHydration();
   const bankroll = useGameStore((s) => s.bankroll);
+  const { playSound } = useAudio();
+  const { currentTrackName } = useBGM('lobby');
 
   const formatMoney = (v: number) =>
     v >= 1_000_000
@@ -37,6 +42,11 @@ export default function HomePage() {
         background: 'radial-gradient(ellipse 120% 100% at 50% 30%, #301a10 0%, #1a0e0a 40%, #0d0705 100%)',
       }}
     >
+      {/* Music Player — top right */}
+      <div className="absolute top-6 right-6 z-20 flex items-center pr-2">
+        <MusicPlayer roomId="lobby" />
+      </div>
+
       {/* Legal agreement gate — only shown once */}
       <LegalAgreementModal onAccepted={() => setAccepted(true)} />
 
@@ -78,65 +88,6 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* ─── Top-right: Balance Card ─── */}
-          {isHydrated && (
-            <motion.div
-              className="absolute top-6 right-6 z-20"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-            >
-              <div
-                className="relative px-5 py-3.5 rounded-2xl backdrop-blur-md overflow-hidden"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(212, 168, 67, 0.08) 0%, rgba(30, 20, 10, 0.6) 100%)',
-                  border: '1px solid rgba(212, 168, 67, 0.15)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-                }}
-              >
-                {/* Shimmer effect */}
-                <motion.div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(110deg, transparent 40%, rgba(212, 168, 67, 0.06) 50%, transparent 60%)',
-                  }}
-                  animate={{ x: ['-100%', '200%'] }}
-                  transition={{ duration: 3, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }}
-                />
-
-                <div className="flex items-center gap-3 relative z-10">
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(212, 168, 67, 0.15) 0%, rgba(212, 168, 67, 0.05) 100%)',
-                      border: '1px solid rgba(212, 168, 67, 0.2)',
-                    }}
-                  >
-                    <Wallet size={16} className="text-amber-400" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] uppercase tracking-[0.25em] text-white/30 font-bold flex items-center gap-1">
-                      <TrendingUp size={9} />
-                      Balance
-                    </p>
-                    <motion.p
-                      className="text-lg font-black"
-                      style={{
-                        backgroundImage: 'linear-gradient(135deg, #d4a843 0%, #f0d78c 50%, #d4a843 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                      }}
-                      key={bankroll}
-                      initial={{ scale: 1.1 }}
-                      animate={{ scale: 1 }}
-                    >
-                      {formatMoney(bankroll)}
-                    </motion.p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
 
           {/* Main content */}
           <motion.div
@@ -193,25 +144,71 @@ export default function HomePage() {
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col items-center gap-6">
+              {/* Balance Card — Moved here, above the button */}
+              {isHydrated && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.6 }}
+                >
+                  <div
+                    className="relative px-6 py-3 rounded-2xl backdrop-blur-md overflow-hidden min-w-[220px]"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(212, 168, 67, 0.08) 0%, rgba(30, 20, 10, 0.6) 100%)',
+                      border: '1px solid rgba(212, 168, 67, 0.15)',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
+                    }}
+                  >
+                    <div className="flex items-center justify-center gap-3 relative z-10">
+                      <div
+                        className="w-8 h-8 rounded-xl flex items-center justify-center"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(212, 168, 67, 0.15) 0%, rgba(212, 168, 67, 0.05) 100%)',
+                          border: '1px solid rgba(212, 168, 67, 0.2)',
+                        }}
+                      >
+                        <Wallet size={14} className="text-amber-400" />
+                      </div>
+                      <div className="text-center">
+                        <motion.p
+                          className="text-xl font-black"
+                          style={{
+                            backgroundImage: 'linear-gradient(135deg, #d4a843 0%, #f0d78c 50%, #d4a843 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                          }}
+                          key={bankroll}
+                          initial={{ scale: 1.1 }}
+                          animate={{ scale: 1 }}
+                        >
+                          {formatMoney(bankroll)}
+                        </motion.p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Play Button */}
               <motion.button
-                onClick={() => router.push('/lobby')}
+                onClick={() => { playSound('click'); router.push('/lobby'); }}
                 className="px-12 py-4 rounded-full font-extrabold text-lg uppercase tracking-[0.2em] cursor-pointer
                             bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-black
                             shadow-[0_0_40px_rgba(212,168,67,0.3)] hover:shadow-[0_0_60px_rgba(212,168,67,0.5)]
-                            transition-all duration-500"
+                            transition-all duration-500 flex items-center gap-3"
                 whileHover={{ scale: 1.05, y: -3 }}
                 whileTap={{ scale: 0.95 }}
               >
-                🎰 Enter Lobby
+                <Sparkles size={22} className="fill-current animate-pulse" />
+                Enter Lobby
               </motion.button>
 
               {/* Secondary buttons row */}
               <div className="flex items-center gap-3">
                 {/* Quick Play */}
                 <motion.button
-                  onClick={() => router.push('/game/classic')}
+                  onClick={() => { playSound('click'); router.push('/game/classic'); }}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] cursor-pointer transition-all"
                   style={{
                     background: 'rgba(255,255,255,0.05)',
@@ -227,7 +224,7 @@ export default function HomePage() {
 
                 {/* Strategy Button */}
                 <motion.button
-                  onClick={() => setShowStrategy(true)}
+                  onClick={() => { playSound('click'); setShowStrategy(true); }}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] cursor-pointer transition-all"
                   style={{
                     background: 'linear-gradient(135deg, rgba(212,168,67,0.12) 0%, rgba(212,168,67,0.06) 100%)',
@@ -264,7 +261,7 @@ export default function HomePage() {
                     return (
                       <button
                         key={roomId}
-                        onClick={() => setSelectedRoom(roomId)}
+                        onClick={() => { playSound('click'); setSelectedRoom(roomId); }}
                         className="px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer"
                         style={{
                           background: isActive
@@ -297,14 +294,14 @@ export default function HomePage() {
             </p>
             <div className="flex items-center justify-center gap-4">
               <button
-                onClick={() => router.push('/privacy')}
+                onClick={() => { playSound('click'); router.push('/privacy'); }}
                 className="text-white/20 text-[10px] hover:text-white/50 transition-colors cursor-pointer underline underline-offset-2"
               >
                 Privacy Policy
               </button>
               <span className="text-white/10 text-[10px]">•</span>
               <button
-                onClick={() => router.push('/terms')}
+                onClick={() => { playSound('click'); router.push('/terms'); }}
                 className="text-white/20 text-[10px] hover:text-white/50 transition-colors cursor-pointer underline underline-offset-2"
               >
                 Terms of Service

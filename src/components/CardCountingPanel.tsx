@@ -324,52 +324,54 @@ export default function CardCountingPanel({
                     </div>
 
                     {/* ── Betting Advice ── */}
-                    <div className="px-3.5 pt-2 pb-3.5">
-                        <div className="flex items-center gap-1.5 mb-2.5">
-                            <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${accentColor}40, transparent)` }} />
-                            <span className="text-[9px] font-black uppercase tracking-[0.28em] text-white/30 font-sans">Bet Advice</span>
-                            <div className="h-px flex-1" style={{ background: `linear-gradient(270deg, ${accentColor}40, transparent)` }} />
-                        </div>
-
-                        {/* Advice Badge */}
-                        <div
-                            className="rounded-xl px-3 py-2.5 flex items-center gap-3"
-                            style={{
-                                background: analysis.advice.bgColor,
-                                border: `1px solid ${analysis.advice.color}40`,
-                            }}
-                        >
-                            <div className="font-black uppercase tracking-[0.12em] text-[12px] leading-tight font-sans text-center px-1" style={{ color: analysis.advice.color }}>
-                                {analysis.advice.label}
+                    {gamePhase === GamePhase.BETTING && (
+                        <div className="px-3.5 pt-2 pb-3.5">
+                            <div className="flex items-center gap-1.5 mb-2.5">
+                                <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${accentColor}40, transparent)` }} />
+                                <span className="text-[9px] font-black uppercase tracking-[0.28em] text-white/30 font-sans">Bet Advice</span>
+                                <div className="h-px flex-1" style={{ background: `linear-gradient(270deg, ${accentColor}40, transparent)` }} />
                             </div>
-                            <div className="text-[10.5px] font-bold leading-tight font-sans border-l pl-2" style={{ borderColor: `${analysis.advice.color}30`, color: 'rgba(200,180,150,0.8)' }}>
-                                {analysis.advice.desc}
+
+                            {/* Advice Badge */}
+                            <div
+                                className="rounded-xl px-3 py-2.5 flex items-center gap-3"
+                                style={{
+                                    background: analysis.advice.bgColor,
+                                    border: `1px solid ${analysis.advice.color}40`,
+                                }}
+                            >
+                                <div className="font-black uppercase tracking-[0.12em] text-[12px] leading-tight font-sans text-center px-1" style={{ color: analysis.advice.color }}>
+                                    {analysis.advice.label}
+                                </div>
+                                <div className="text-[10.5px] font-bold leading-tight font-sans border-l pl-2" style={{ borderColor: `${analysis.advice.color}30`, color: 'rgba(200,180,150,0.8)' }}>
+                                    {analysis.advice.desc}
+                                </div>
                             </div>
-                        </div>
 
 
-                        {/* Player edge */}
-                        <div className="flex items-center justify-between mt-4 px-1">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[8px] uppercase tracking-[0.12em] text-white/30 font-bold font-sans">Player Edge</span>
-                                <span className="text-[11px] font-black tabular-nums" style={{ color: analysis.playerEdge > 0 ? '#86efac' : analysis.playerEdge < 0 ? '#fca5a5' : '#e5e5e5' }}>
-                                    {analysis.playerEdge > 0 ? '+' : ''}{analysis.playerEdge.toFixed(1)}%
+                            {/* Player edge */}
+                            <div className="flex items-center justify-between mt-4 px-1">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[8px] uppercase tracking-[0.12em] text-white/30 font-bold font-sans">Player Edge</span>
+                                    <span className="text-[11px] font-black tabular-nums" style={{ color: analysis.playerEdge > 0 ? '#86efac' : analysis.playerEdge < 0 ? '#fca5a5' : '#e5e5e5' }}>
+                                        {analysis.playerEdge > 0 ? '+' : ''}{analysis.playerEdge.toFixed(1)}%
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[8px] uppercase tracking-[0.12em] text-white/30 font-bold font-sans">System</span>
+                                    <span className="text-[11px] font-black uppercase text-emerald-400 whitespace-nowrap">{activeSystem === 'Katarina Walker' ? 'Walker' : 'Hi-Lo'}</span>
+                                </div>
+                            </div>
+
+                            {/* More Details Link */}
+                            <div className="flex items-center justify-center mt-4 pt-3 border-t border-white/5 font-sans" onClick={roomId === 'iberian_21' ? onOpenSettings : onOpenStrategy}>
+                                <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5 cursor-pointer hover:text-white/70 transition-colors">
+                                    <Info size={11} />
+                                    {roomId === 'iberian_21' ? 'Change counting system in Settings' : 'Find out more details in Strategy'}
                                 </span>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[8px] uppercase tracking-[0.12em] text-white/30 font-bold font-sans">System</span>
-                                <span className="text-[11px] font-black uppercase text-emerald-400 whitespace-nowrap">{activeSystem === 'Katarina Walker' ? 'Walker' : 'Hi-Lo'}</span>
-                            </div>
                         </div>
-
-                        {/* More Details Link */}
-                        <div className="flex items-center justify-center mt-4 pt-3 border-t border-white/5 font-sans" onClick={roomId === 'iberian_21' ? onOpenSettings : onOpenStrategy}>
-                            <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5 cursor-pointer hover:text-white/70 transition-colors">
-                                <Info size={11} />
-                                {roomId === 'iberian_21' ? 'Change counting system in Settings' : 'Find out more details in Strategy'}
-                            </span>
-                        </div>
-                    </div>
+                    )}
                 </motion.div>
             )}
         </AnimatePresence>

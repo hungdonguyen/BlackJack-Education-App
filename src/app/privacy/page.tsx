@@ -6,11 +6,11 @@ import { ArrowLeft, Shield } from 'lucide-react';
 
 export default function PrivacyPage() {
     const router = useRouter();
-    const lastUpdated = '2026-03-04';
+    const lastUpdated = '2026-03-08';
 
     return (
         <div
-            className="min-h-screen w-full select-none"
+            className="h-screen w-full overflow-y-auto"
             style={{
                 background: 'radial-gradient(ellipse 120% 100% at 50% 30%, #301a10 0%, #1a0e0a 40%, #0d0705 100%)',
             }}
@@ -136,7 +136,17 @@ export default function PrivacyPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">9. Contact</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">9. Audio Credits</h2>
+                        <p>
+                            Sound effects are sourced from Kenney.nl (CC0 Public Domain). Background
+                            music is provided by Kevin MacLeod (incompetech.com) and Audionautix
+                            (audionautix.com), licensed under Creative Commons: By Attribution 4.0
+                            License (creativecommons.org/licenses/by/4.0).
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">10. Contact</h2>
                         <p>
                             If you have questions about this Privacy Policy, please open an issue on the
                             project&apos;s repository or contact the developer.

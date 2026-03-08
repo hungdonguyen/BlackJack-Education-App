@@ -10,10 +10,13 @@ import { ROOMS, RoomConfig } from '@/utils/rooms';
 import Image from 'next/image';
 import { ArrowLeft, Home } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useAudio } from '@/utils/audio';
+import { MusicPlayer } from '@/components/MusicPlayer';
 
 export default function LobbyPage() {
     const router = useRouter();
     const rooms = Object.values(ROOMS);
+    const { playSound } = useAudio();
 
     return (
         <div className="relative w-screen h-screen overflow-hidden select-none"
@@ -22,19 +25,28 @@ export default function LobbyPage() {
             }}
         >
             {/* Top Bar — absolute so it doesn't affect centering */}
-            <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-4">
+            <div className="absolute top-0 left-0 right-0 z-20 flex items-center h-20 px-6">
+                {/* Left Side: Back/Home */}
                 <motion.button
-                    onClick={() => router.push('/')}
+                    onClick={() => { playSound('click'); router.push('/'); }}
                     className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors cursor-pointer"
                     whileHover={{ x: -3 }}
                 >
                     <span><ArrowLeft size={16} /></span>
                     <span className="text-xs font-bold uppercase tracking-wider">Home</span>
                 </motion.button>
-                <h1 className="text-lg font-extrabold text-amber-400/80 uppercase tracking-[0.3em] flex items-center justify-center">
-                    <Home size={20} className="mr-2 mb-0.5" /> Lobby
-                </h1>
-                <div className="w-16" />
+
+                {/* Center: Lobby Title */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <h1 className="text-lg font-extrabold text-amber-400/80 uppercase tracking-[0.3em] flex items-center">
+                        <Home size={20} className="mr-2 mb-0.5" /> Lobby
+                    </h1>
+                </div>
+
+                {/* Right Side: Music Player */}
+                <div className="ml-auto flex items-center pr-2">
+                    <MusicPlayer roomId="lobby" />
+                </div>
             </div>
 
             {/* Center content — true full-screen vertical centering */}
@@ -67,7 +79,7 @@ export default function LobbyPage() {
                 {/* Room Cards — items-stretch ensures equal height, grid handles responsiveness */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 xl:gap-4 w-full max-w-[1100px]">
                     {rooms.map((room, index) => (
-                        <RoomCard key={room.id} room={room} index={index} onClick={() => router.push(`/game/${room.id}`)} />
+                        <RoomCard key={room.id} room={room} index={index} onClick={() => { playSound('click'); router.push(`/game/${room.id}`); }} />
                     ))}
                 </div>
             </div>

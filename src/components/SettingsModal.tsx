@@ -5,9 +5,10 @@
 // ============================================
 
 import { motion } from 'framer-motion';
-import { X, Gauge, Zap, Volume2, VolumeX, Eye, EyeOff, Settings } from 'lucide-react';
+import { X, Gauge, Zap, Volume2, VolumeX, Eye, EyeOff, Settings, Music } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { DealerSpeed } from '@/store/settingsSlice';
+import { useAudio } from '@/utils/audio';
 
 interface SettingsModalProps {
     roomId: string;
@@ -28,6 +29,13 @@ export default function SettingsModal({ roomId, accentColor, borderColor, onClos
     const setShowHandAdvisor = useGameStore((s) => s.setShowHandAdvisor);
     const setShowCardCounting = useGameStore((s) => s.setShowCardCounting);
     const setCountSystem = useGameStore((s) => s.setCountSystem);
+    const musicEnabled = useGameStore((s) => s.musicEnabled);
+    const musicVolume = useGameStore((s) => s.musicVolume);
+    const soundVolume = useGameStore((s) => s.soundVolume);
+    const setMusicEnabled = useGameStore((s) => s.setMusicEnabled);
+    const setMusicVolume = useGameStore((s) => s.setMusicVolume);
+    const setSoundVolume = useGameStore((s) => s.setSoundVolume);
+    const { playSound } = useAudio();
 
     return (
         <motion.div className="absolute inset-0 z-[200] flex items-center justify-center"
@@ -51,7 +59,7 @@ export default function SettingsModal({ roomId, accentColor, borderColor, onClos
                     >
                         <Settings size={20} /> Settings
                     </h2>
-                    <button onClick={onClose}
+                    <button onClick={() => { playSound('click'); onClose(); }}
                         className="w-8 h-8 rounded-full bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 flex items-center justify-center cursor-pointer transition-all"
                     ><X size={16} /></button>
                 </div>
@@ -70,13 +78,13 @@ export default function SettingsModal({ roomId, accentColor, borderColor, onClos
                                 label="Normal"
                                 active={dealerSpeed === 'normal'}
                                 accentColor={accentColor}
-                                onClick={() => setDealerSpeed('normal')}
+                                onClick={() => { playSound('switch'); setDealerSpeed('normal'); }}
                             />
                             <SpeedButton
                                 label="Fast"
                                 active={dealerSpeed === 'fast'}
                                 accentColor={accentColor}
-                                onClick={() => setDealerSpeed('fast')}
+                                onClick={() => { playSound('switch'); setDealerSpeed('fast'); }}
                             />
                         </div>
                     </SettingRow>
@@ -92,9 +100,56 @@ export default function SettingsModal({ roomId, accentColor, borderColor, onClos
                         <ToggleSwitch
                             enabled={soundEnabled}
                             accentColor={accentColor}
-                            onChange={setSoundEnabled}
+                            onChange={(val) => { playSound('switch'); setSoundEnabled(val); }}
                         />
                     </SettingRow>
+
+                    {soundEnabled && (
+                        <div className="pl-12 flex items-center gap-3">
+                            <span className="text-[10px] text-white/40 w-10">Vol</span>
+                            <input
+                                type="range"
+                                min={0}
+                                max={100}
+                                value={Math.round(soundVolume * 100)}
+                                onChange={(e) => setSoundVolume(Number(e.target.value) / 100)}
+                                className="flex-1 h-1 accent-emerald-400 cursor-pointer"
+                            />
+                            <span className="text-[10px] text-white/40 w-8 text-right">{Math.round(soundVolume * 100)}%</span>
+                        </div>
+                    )}
+
+                    <Divider />
+
+                    {/* Background Music */}
+                    <SettingRow
+                        icon={musicEnabled ? <Music size={18} className="text-amber-400" /> : <Music size={18} className="text-white/30" />}
+                        label="Background Music"
+                        description="Toggle room background music"
+                    >
+                        <ToggleSwitch
+                            enabled={musicEnabled}
+                            accentColor={accentColor}
+                            onChange={(val) => { playSound('switch'); setMusicEnabled(val); }}
+                        />
+                    </SettingRow>
+
+                    {musicEnabled && (
+                        <>
+                            <div className="pl-12 flex items-center gap-3">
+                                <span className="text-[10px] text-white/40 w-10">Vol</span>
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={100}
+                                    value={Math.round(musicVolume * 100)}
+                                    onChange={(e) => setMusicVolume(Number(e.target.value) / 100)}
+                                    className="flex-1 h-1 accent-amber-400 cursor-pointer"
+                                />
+                                <span className="text-[10px] text-white/40 w-8 text-right">{Math.round(musicVolume * 100)}%</span>
+                            </div>
+                        </>
+                    )}
 
                     <Divider />
 
@@ -107,7 +162,7 @@ export default function SettingsModal({ roomId, accentColor, borderColor, onClos
                         <ToggleSwitch
                             enabled={showHandAdvisor}
                             accentColor={accentColor}
-                            onChange={setShowHandAdvisor}
+                            onChange={(val) => { playSound('switch'); setShowHandAdvisor(val); }}
                         />
                     </SettingRow>
 
@@ -122,7 +177,7 @@ export default function SettingsModal({ roomId, accentColor, borderColor, onClos
                         <ToggleSwitch
                             enabled={showCardCounting}
                             accentColor={accentColor}
-                            onChange={setShowCardCounting}
+                            onChange={(val) => { playSound('switch'); setShowCardCounting(val); }}
                         />
                     </SettingRow>
 
@@ -139,13 +194,13 @@ export default function SettingsModal({ roomId, accentColor, borderColor, onClos
                                         label="Hi-Lo"
                                         active={countSystem === 'Hi-Lo'}
                                         accentColor={accentColor}
-                                        onClick={() => setCountSystem('Hi-Lo')}
+                                        onClick={() => { playSound('switch'); setCountSystem('Hi-Lo'); }}
                                     />
                                     <SpeedButton
                                         label="K. Walker"
                                         active={countSystem === 'Katarina Walker'}
                                         accentColor={accentColor}
-                                        onClick={() => setCountSystem('Katarina Walker')}
+                                        onClick={() => { playSound('switch'); setCountSystem('Katarina Walker'); }}
                                     />
                                 </div>
                             </SettingRow>
