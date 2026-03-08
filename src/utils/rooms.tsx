@@ -133,7 +133,7 @@ export const ROOMS: Record<string, RoomConfig> = {
         id: 'free_action',
         name: 'Free Action Blackjack',
         subtitle: 'Golden Rewards & Free Actions',
-        description: 'Free Action Rules — 6 Decks, Dealer hits Soft 17 (H17). Free Double on Hard 9, 10, 11 (no cost). Free Split all pairs except 10-value cards. House 22 Tie Rules. Multi Action Bonus side bet available. Blackjack pays 3 to 2.',
+        description: 'Free Action Rules — 6 Decks, Dealer hits Soft 17 (H17). Free Action Double on Hard 9, 10, 11 (no cost). Free Action Split all pairs except 10-value cards. House 22 Tie Rules. Multi Action Bonus side bet available. Blackjack pays 3 to 2.',
         feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #2a1f0a 0%, #1f170a 25%, #151005 50%, #0a0802 80%, #050401 100%)',
         bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #1a1408 0%, #0f0c05 50%, #080602 100%)',
         borderColor: 'rgba(234, 179, 8, 0.18)',

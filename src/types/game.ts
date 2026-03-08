@@ -24,9 +24,9 @@ export interface Hand {
   cards: Card[];
   betAmount: number;
   status: HandStatus;
-  isFreeDouble?: boolean;
-  isFreeSplit?: boolean;
-  freeBetAmount?: number;
+  isFreeActionDouble?: boolean;
+  isFreeActionSplit?: boolean;
+  freeActionBetAmount?: number;
   isAceSplit?: boolean;
   isSurrendered?: boolean;
   isSplit?: boolean;
@@ -64,13 +64,13 @@ export interface MatchRecord {
     freeActionTokens?: number;
     hands: {
       betAmount: number;
-      freeBetAmount?: number;
+      freeActionBetAmount?: number;
       result: HandStatus;
       payout: number;
       isSplit?: boolean;
-      isFreeSplit?: boolean;
+      isFreeActionSplit?: boolean;
       isDoubleDown?: boolean;
-      isFreeDouble?: boolean;
+      isFreeActionDouble?: boolean;
       cards: { suit: Suit; rank: Rank }[];
     }[];
   }[];

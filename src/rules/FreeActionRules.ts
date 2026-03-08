@@ -11,9 +11,9 @@ import { isBlackjack, calculateHandValue } from '@/utils/hand';
  * - Blackjack pays 3:2
  * 
  * Free Action Rules:
- * - Free Double: Only on hard 9, 10, or 11 (no cost). Other doubles cost real money.
- * - Free Split: All pairs EXCEPT 10-value cards (10, J, Q, K). 10-value splits cost real money.
- * - Free Double after Free Split allowed.
+ * - Free Action Double: Only on hard 9, 10, or 11 (no cost). Other doubles cost real money.
+ * - Free Action Split: All pairs EXCEPT 10-value cards (10, J, Q, K). 10-value splits cost real money.
+ * - Free Action Double after Free Action Split allowed.
  * - Max 4 hands. Split Aces get 1 card then auto-stand.
  * 
  * Push on 22:
@@ -38,7 +38,7 @@ export class FreeActionRules implements IRules {
         // Calculate hand value to determine if free
         const handValue = calculateHandValue(hand.cards);
         
-        // FREE Double: only on HARD 9, 10, or 11
+        // FREE Action Double: only on HARD 9, 10, or 11
         const isHard = !handValue.isSoft;
         const isFreeable = isHard && [9, 10, 11].includes(handValue.total);
 
@@ -62,7 +62,7 @@ export class FreeActionRules implements IRules {
             return { allowed: false, isFree: false, cost: 0 };
         }
 
-        // FREE Split: all pairs EXCEPT 10-value cards (10, J, Q, K)
+        // FREE Action Split: all pairs EXCEPT 10-value cards (10, J, Q, K)
         const cardValue = hand.cards[0].value;
         const is10Value = cardValue === 10;
 

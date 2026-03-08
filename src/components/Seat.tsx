@@ -270,9 +270,9 @@ export default function Seat({ seatId, style }: SeatProps) {
                                 animate={{ opacity: 1, scale: 1, x: 0 }}
                                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                             >
-                                {(hand.isFreeSplit || hand.isFreeDouble) && (
+                                {(hand.isFreeActionSplit || hand.isFreeActionDouble) && (
                                     <span className="text-emerald-400 text-[5px] font-black uppercase mb-0.5 tracking-wider bg-emerald-900/50 px-1 rounded-sm border border-emerald-500/30">
-                                        {hand.isFreeDouble ? 'FA DBL' : 'FA SPL'}
+                                        {hand.isFreeActionDouble ? 'FA DBL' : 'FA SPL'}
                                     </span>
                                 )}
                                 <ChipStack amount={hand.betAmount} />

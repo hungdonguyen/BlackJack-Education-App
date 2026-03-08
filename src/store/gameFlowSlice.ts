@@ -453,8 +453,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
             betAmount: hand.betAmount + (isFree ? hand.betAmount : cost),
             status: busted ? HandStatus.BUST : HandStatus.STAND,
             isDoubleDown: true,
-            isFreeDouble: isFree ? true : hand.isFreeDouble,
-            freeBetAmount: isFree ? (hand.freeBetAmount || 0) + hand.betAmount : hand.freeBetAmount,
+            isFreeActionDouble: isFree ? true : hand.isFreeActionDouble,
+            freeActionBetAmount: isFree ? (hand.freeActionBetAmount || 0) + hand.betAmount : hand.freeActionBetAmount,
           };
         }),
       };
@@ -560,9 +560,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       cards: [card1, newCard1],
       betAmount: splitBet,
       status: initialStatus1,
-      freeBetAmount: currentHand.freeBetAmount,
+      freeActionBetAmount: currentHand.freeActionBetAmount,
       isAceSplit: isSplitAces,
-      isFreeSplit: isFree ? true : currentHand.isFreeSplit,
+      isFreeActionSplit: isFree ? true : currentHand.isFreeActionSplit,
       isSplit: true,
     };
 
@@ -571,9 +571,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       cards: [card2, newCard2],
       betAmount: splitBet,
       status: initialStatus2,
-      freeBetAmount: isFree ? splitBet : currentHand.freeBetAmount,
+      freeActionBetAmount: isFree ? splitBet : currentHand.freeActionBetAmount,
       isAceSplit: isSplitAces,
-      isFreeSplit: isFree ? true : currentHand.isFreeSplit,
+      isFreeActionSplit: isFree ? true : currentHand.isFreeActionSplit,
       isSplit: true,
     };
 
@@ -763,7 +763,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     state.seats.forEach(seat => {
       if (!seat.isActive) return;
       seat.hands.forEach(hand => {
-        totalStaked += (hand.betAmount - (hand.freeBetAmount || 0));
+        totalStaked += (hand.betAmount - (hand.freeActionBetAmount || 0));
       });
       if (state.insuranceBets[seat.id]) {
         totalStaked += state.insuranceBets[seat.id];
@@ -814,7 +814,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           const playerValue = calculateHandValue(hand.cards);
           const playerHasBlackjack = hand.status === HandStatus.BLACKJACK;
 
-          const freeBet = hand.freeBetAmount || 0;
+          const freeBet = hand.freeActionBetAmount || 0;
 
           const evaluation = rules.evaluateHand(hand, playerValue, state.dealerHand.cards, dealerValue);
           
@@ -881,10 +881,10 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           hands: seat.hands
             .filter((h) => h.betAmount > 0)
             .map((hand) => {
-              const freeAmt = hand.freeBetAmount || 0;
+              const freeAmt = hand.freeActionBetAmount || 0;
               return {
                 betAmount: hand.betAmount - freeAmt, // Record only the real wagered amount
-                freeBetAmount: freeAmt,
+                freeActionBetAmount: freeAmt,
                 result: hand.status,
                 payout:
                   hand.status === HandStatus.WON
@@ -897,9 +897,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
                     ? -(hand.betAmount / 2)
                     : -(hand.betAmount - freeAmt),
                 isSplit: hand.isSplit,
-                isFreeSplit: hand.isFreeSplit,
+                isFreeActionSplit: hand.isFreeActionSplit,
                 isDoubleDown: hand.isDoubleDown,
-                isFreeDouble: hand.isFreeDouble,
+                isFreeActionDouble: hand.isFreeActionDouble,
                 cards: hand.cards.map((c) => ({ suit: c.suit, rank: c.rank })),
               };
             }),

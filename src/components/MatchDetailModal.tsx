@@ -224,18 +224,18 @@ export default function MatchDetailModal({
                                                             <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full inline-block ${statusInfo.className}`}>
                                                                 {statusInfo.label}
                                                             </span>
-                                                            {hand.isFreeSplit ? (
+                                                            {hand.isFreeActionSplit ? (
                                                                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
-                                                                    FREE SPLIT
+                                                                    FREE ACTION SPLIT
                                                                 </span>
                                                             ) : hand.isSplit && (
                                                                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
                                                                     SPLIT
                                                                 </span>
                                                             )}
-                                                            {hand.isFreeDouble ? (
+                                                            {hand.isFreeActionDouble ? (
                                                                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                                                    FREE DOUBLE
+                                                                    FREE ACTION DOUBLE
                                                                 </span>
                                                             ) : hand.isDoubleDown && (
                                                                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
