@@ -276,8 +276,8 @@ export default function StrategyModal({
                     border: `1px solid ${room.borderColor}`,
                     borderRadius: 16,
                     boxShadow: `0 0 80px ${room.accentColor}20, 0 24px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)`,
-                    maxHeight: '92vh',
-                    width: 'min(820px, 94vw)',
+                    maxHeight: '994px',
+                    width: '820px',
                 }}
                 initial={{ opacity: 0, scale: 0.92, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}

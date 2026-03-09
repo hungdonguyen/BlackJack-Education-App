@@ -241,7 +241,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                                 </motion.button>
                             </>
                         ) : (
-                            <div className="flex items-center" style={{ minHeight: '48px' }}>
+                            <div className="flex items-center" style={{ minHeight: '48px', marginTop: '10px' }}>
                                 <SmallButton label="REBET" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={!hasPreviousBets} variant="ghost" />
                             </div>
                         )}

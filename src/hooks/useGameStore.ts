@@ -56,6 +56,14 @@ export function useStoreHydration(): boolean {
                   patch.dealerSpeed = parsed.state.dealerSpeed as DealerSpeed;
                 if (typeof parsed.state.soundEnabled === 'boolean')
                   patch.soundEnabled = parsed.state.soundEnabled;
+                if (typeof parsed.state.musicEnabled === 'boolean')
+                  patch.musicEnabled = parsed.state.musicEnabled;
+                if (typeof parsed.state.soundVolume === 'number')
+                  patch.soundVolume = parsed.state.soundVolume;
+                if (typeof parsed.state.musicVolume === 'number')
+                  patch.musicVolume = parsed.state.musicVolume;
+                if (typeof parsed.state.musicTrackOverride === 'string' || parsed.state.musicTrackOverride === null)
+                  patch.musicTrackOverride = parsed.state.musicTrackOverride;
                 if (typeof parsed.state.showHandAdvisor === 'boolean')
                   patch.showHandAdvisor = parsed.state.showHandAdvisor;
                 if (typeof parsed.state.showCardCounting === 'boolean')
@@ -101,6 +109,10 @@ export function useStoreHydration(): boolean {
             dailyClaimCount: state.dailyClaimCount,
             dealerSpeed: state.dealerSpeed,
             soundEnabled: state.soundEnabled,
+            musicEnabled: state.musicEnabled,
+            soundVolume: state.soundVolume,
+            musicVolume: state.musicVolume,
+            musicTrackOverride: state.musicTrackOverride,
             showHandAdvisor: state.showHandAdvisor,
             showCardCounting: state.showCardCounting,
             countSystem: state.countSystem,
@@ -117,6 +129,10 @@ export function useStoreHydration(): boolean {
                 dailyClaimCount: state.dailyClaimCount,
                 dealerSpeed: state.dealerSpeed,
                 soundEnabled: state.soundEnabled,
+                musicEnabled: state.musicEnabled,
+                soundVolume: state.soundVolume,
+                musicVolume: state.musicVolume,
+                musicTrackOverride: state.musicTrackOverride,
                 showHandAdvisor: state.showHandAdvisor,
                 showCardCounting: state.showCardCounting,
                 countSystem: state.countSystem,
@@ -138,6 +154,10 @@ export function useStoreHydration(): boolean {
           state.dailyClaimCount !== prevState.dailyClaimCount ||
           state.dealerSpeed !== prevState.dealerSpeed ||
           state.soundEnabled !== prevState.soundEnabled ||
+          state.musicEnabled !== prevState.musicEnabled ||
+          state.soundVolume !== prevState.soundVolume ||
+          state.musicVolume !== prevState.musicVolume ||
+          state.musicTrackOverride !== prevState.musicTrackOverride ||
           state.showHandAdvisor !== prevState.showHandAdvisor ||
           state.showCardCounting !== prevState.showCardCounting ||
           state.countSystem !== prevState.countSystem

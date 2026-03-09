@@ -145,8 +145,8 @@ export default function Seat({ seatId, style }: SeatProps) {
             )}
             {/* ─── Cards Area (above circle, higher z-index) ─── */}
             {hasCards && (
-                <div className="relative min-w-[49px] flex items-end justify-center mb-4"
-                    style={{ zIndex: 10, minHeight: '97px', paddingTop: '31px' }}
+                <div className="relative min-w-[69px] flex items-end justify-center mb-4"
+                    style={{ zIndex: 10, minHeight: '116px', paddingTop: '38px' }}
                 >
                     {seat.hands.map((hand, handIdx) => {
                         // Is this the currently active hand?
@@ -157,7 +157,7 @@ export default function Seat({ seatId, style }: SeatProps) {
                         return (
                             <div key={hand.id}
                                 className={`relative ${handIdx > 0 ? 'ml-8' : ''}`}
-                                style={{ minWidth: `${50 + (hand.cards.length - 1) * 20}px`, height: '76px' }}
+                                style={{ minWidth: `${69 + (hand.cards.length - 1) * 25}px`, height: '92px' }}
                             >
                                 {/* Hand Score (Above Cards) */}
                                 {hand.cards.length > 0 && (

@@ -50,13 +50,22 @@ export function calculateMatchNetPnl(match: MatchRecord): number {
  */
 export function getRoomBadgeConfig(roomId: string) {
     const room = getRoomConfig(roomId);
-    
-    let shortLabel = 'VIP';
+
+    let shortLabel = 'ROOM';
     if (roomId === 'vegas_strip') shortLabel = 'VS';
     else if (roomId === 'vegas_downtown') shortLabel = 'VD';
     else if (roomId === 'atlantic_city') shortLabel = 'AC';
     else if (roomId === 'free_action') shortLabel = 'FA';
     else if (roomId === 'classic') shortLabel = 'CL';
+    else if (roomId === 'iberian_21') shortLabel = 'I21';
+    else {
+        shortLabel = room.id
+            .split('_')
+            .map((part) => part.replace(/[^a-z0-9]/gi, ''))
+            .filter(Boolean)
+            .map((part) => part.slice(0, 1).toUpperCase())
+            .join('') || 'ROOM';
+    }
 
     return {
         shortLabel,

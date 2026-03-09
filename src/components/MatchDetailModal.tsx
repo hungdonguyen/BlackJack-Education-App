@@ -129,7 +129,7 @@ export default function MatchDetailModal({
 
             {/* Panel */}
             <motion.div
-                className="relative w-130 max-h-[85vh] rounded-2xl flex flex-col overflow-hidden"
+                className="relative w-130 max-h-[918px] rounded-2xl flex flex-col overflow-hidden"
                 style={{ background: 'rgba(15, 9, 6, 0.97)', border: '1px solid rgba(255,210,90,0.15)', backdropFilter: 'blur(20px)' }}
                 initial={{ scale: 0.92, y: 24 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 24 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 24 }}

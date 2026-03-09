@@ -36,6 +36,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.room-text-scale :is(span, p, h1, h2, h3, h4, h5, h6, button, label, strong, small, li, a) {
+  zoom: var(--room-text-scale, 1);
+}
+
 /* ─── Portrait Mode Overlay ─── */
 .portrait-overlay {
   display: none;

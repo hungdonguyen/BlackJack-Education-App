@@ -33,6 +33,9 @@ import { useBGM } from '@/utils/bgm';
 
 const TURN_TIMER_SECONDS = 30;
 const INSURANCE_TIMER_SECONDS = 10;
+const DESIGN_WIDTH = 1920;
+const DESIGN_HEIGHT = 1080;
+const ROOM_UI_SCALE = 1.08;
 
 export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const room = getRoomConfig(roomId);
@@ -58,6 +61,19 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const insuranceBets = useGameStore((s) => s.insuranceBets);
     const resetRound = useGameStore((s) => s.resetRound);
     const isHydrated = useStoreHydration();
+
+    // Viewport scaling — fixed design canvas scaled to fit any screen
+    const [viewScale, setViewScale] = useState(1);
+    useEffect(() => {
+        const update = () => {
+            const sx = window.innerWidth / DESIGN_WIDTH;
+            const sy = window.innerHeight / DESIGN_HEIGHT;
+            setViewScale(Math.min(sx, sy));
+        };
+        update();
+        window.addEventListener('resize', update);
+        return () => window.removeEventListener('resize', update);
+    }, []);
 
     const [showRules, setShowRules] = useState(false);
     const [showStrategy, setShowStrategy] = useState(false);
@@ -265,13 +281,16 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const logoPath = room.logoPath;
 
     const isBonusClaim = (dailyClaimCount + 1) % 3 === 0;
+    const roomBasePercent = 100 / ROOM_UI_SCALE;
 
     if (!isHydrated) {
         return (
-            <div className="w-screen h-screen flex items-center justify-center" style={{ background: '#1a0e0a' }}>
-                <motion.div className="text-amber-400/50 text-lg font-bold tracking-[0.3em] uppercase"
-                    animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 2, repeat: Infinity }}
-                >Loading Table...</motion.div>
+            <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#1a0e0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: DESIGN_WIDTH, height: DESIGN_HEIGHT, transform: `scale(${viewScale})`, transformOrigin: 'center center', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <motion.div className="text-amber-400/50 text-lg font-bold tracking-[0.3em] uppercase"
+                        animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 2, repeat: Infinity }}
+                    >Loading Table...</motion.div>
+                </div>
             </div>
         );
     }
@@ -281,7 +300,27 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             <PortraitOverlay />
             <DevTools />
 
-            <div className="relative w-screen h-screen overflow-hidden select-none"
+            {/* Viewport wrapper — centers the scaled canvas */}
+            <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#1a0e0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Design canvas — fixed 1920×1080, transform-scaled to fit */}
+            <div style={{ width: DESIGN_WIDTH, height: DESIGN_HEIGHT, transform: `scale(${viewScale})`, transformOrigin: 'center center', flexShrink: 0, position: 'relative' }}>
+
+            <div
+                className="room-text-scale"
+                style={{
+                    position: 'absolute',
+                    left: '50%',
+                    top: '50%',
+                    width: `${roomBasePercent}%`,
+                    height: `${roomBasePercent}%`,
+                    transform: `translate(-50%, -50%) scale(${ROOM_UI_SCALE})`,
+                    transformOrigin: 'center center',
+                    fontSize: 'calc(1rem + 7px)',
+                    ['--room-text-scale' as string]: 1.1,
+                }}
+            >
+
+            <div className="relative w-full h-full overflow-hidden select-none"
                 style={{ background: room.bgGradient }}
             >
                 {/* Ambient lighting */}
@@ -503,7 +542,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             </div>
 
             {/* Action Buttons — center */}
-            <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: '33%' }}>
+            <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: 'calc(33% + 25px)' }}>
                 <ActionPanel timer={timer} insuranceTimer={isInsurance ? insuranceTimer : undefined} currentInsuranceSeat={isInsurance ? seats[currentSeatIndex]?.id : undefined} />
             </div>
 
@@ -693,6 +732,10 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                     />
                 )}
             </AnimatePresence>
+
+        </div>{/* end room scale wrapper */}
+        </div>{/* end design canvas */}
+        </div>{/* end viewport wrapper */}
         </>
     );
 }
@@ -835,7 +878,7 @@ function RulesModal({ room, onClose }: { room: ReturnType<typeof getRoomConfig>;
         >
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { playSound('click'); onClose(); }} />
             <motion.div
-                className="relative w-[480px] max-h-[80vh] rounded-2xl border border-amber-500/15 flex flex-col overflow-hidden"
+                className="relative w-[480px] max-h-[864px] rounded-2xl border border-amber-500/15 flex flex-col overflow-hidden"
                 style={{ background: 'rgba(20, 12, 8, 0.95)', backdropFilter: 'blur(20px)' }}
                 initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
             >

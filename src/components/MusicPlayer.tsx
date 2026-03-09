@@ -35,13 +35,11 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ roomId }) => {
         }
     };
 
-    if (!musicEnabled) return null;
-
     const currentTrackIndex = playlist.findIndex(t => t.name === currentTrackName);
 
     return (
         <div
-            className="relative flex items-center justify-end h-[70px] pointer-events-auto pr-2"
+            className={`relative flex items-center justify-end h-[70px] pointer-events-auto pr-2 transition-opacity duration-500 ${!musicEnabled ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}
             onWheel={handleWheel}
         >
             {/* Scroll Interaction Wheel / Vortex */}
@@ -101,8 +99,11 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ roomId }) => {
                 {/* Spinning Disc / Wheel */}
                 <div className="relative flex items-center justify-center">
                     <motion.div
-                        animate={{ rotate: localRotation + (isScrolling ? 0 : 360) }}
-                        transition={isScrolling ? { type: 'spring', stiffness: 200, damping: 20 } : { duration: 4, repeat: Infinity, ease: "linear" }}
+                        animate={{ rotate: isScrolling ? localRotation : [localRotation, localRotation + 360] }}
+                        transition={isScrolling
+                            ? { type: 'spring', stiffness: 200, damping: 20 }
+                            : { duration: 4, repeat: musicEnabled ? Infinity : 0, ease: "linear" }
+                        }
                         className="text-white group-hover:text-amber-400 transition-colors"
                     >
                         <Disc size={32} strokeWidth={1.5} />
@@ -120,7 +121,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ roomId }) => {
                 {/* Track Info */}
                 <div className="flex flex-col min-w-[120px]">
                     <span className="text-[10px] uppercase tracking-[0.2em] text-white/30 font-black leading-none mb-1">
-                        Music Engine
+                        {musicEnabled ? 'Music Engine' : 'Audio Muted'}
                     </span>
                     <div className="flex items-center justify-between gap-3">
                         <span className="text-[13px] font-black text-white tracking-wide truncate">
@@ -128,19 +129,19 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ roomId }) => {
                         </span>
                         <div className="flex items-center gap-0.5">
                             <motion.div
-                                animate={isScrolling ? { scaleY: [1, 2, 1] } : {}}
-                                transition={{ repeat: Infinity, duration: 0.5 }}
-                                className="w-0.5 h-3 bg-amber-400/60 rounded-full"
+                                animate={musicEnabled ? { scaleY: [1, 2.2, 1.2, 1.8, 1] } : { scaleY: 1 }}
+                                transition={{ repeat: Infinity, duration: 0.8, ease: "easeInOut" }}
+                                className="w-0.5 h-3 bg-amber-400/60 rounded-full origin-bottom"
                             />
                             <motion.div
-                                animate={isScrolling ? { scaleY: [1, 1.5, 1] } : {}}
-                                transition={{ repeat: Infinity, duration: 0.3, delay: 0.1 }}
-                                className="w-0.5 h-2 bg-amber-400/40 rounded-full"
+                                animate={musicEnabled ? { scaleY: [1, 1.8, 2.5, 1.4, 1] } : { scaleY: 1 }}
+                                transition={{ repeat: Infinity, duration: 1.1, ease: "easeInOut", delay: 0.2 }}
+                                className="w-0.5 h-2 bg-amber-400/40 rounded-full origin-bottom"
                             />
                             <motion.div
-                                animate={isScrolling ? { scaleY: [1, 2.5, 1] } : {}}
-                                transition={{ repeat: Infinity, duration: 0.4, delay: 0.2 }}
-                                className="w-0.5 h-4 bg-amber-400/80 rounded-full"
+                                animate={musicEnabled ? { scaleY: [1, 2.8, 1.5, 2.2, 1] } : { scaleY: 1 }}
+                                transition={{ repeat: Infinity, duration: 0.9, ease: "easeInOut", delay: 0.1 }}
+                                className="w-0.5 h-4 bg-amber-400/80 rounded-full origin-bottom"
                             />
                         </div>
                     </div>

@@ -171,6 +171,9 @@ export default function HomePage() {
                         <Wallet size={14} className="text-amber-400" />
                       </div>
                       <div className="text-center">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/35 mb-1">
+                          Balance
+                        </p>
                         <motion.p
                           className="text-xl font-black"
                           style={{
@@ -289,10 +292,13 @@ export default function HomePage() {
 
           {/* Bottom decoration */}
           <div className="absolute bottom-6 text-center space-y-2">
-            <p className="text-white/10 text-[10px] uppercase tracking-[0.3em]">
+            <p className="text-white/30 text-[10px] uppercase tracking-[0.3em]">
               18+ Simulated Gambling • Offline • No Real Money • For Entertainment &amp; Education Only
             </p>
-            <div className="flex items-center justify-center gap-4">
+            <div className="text-[8px] text-white/10 leading-tight uppercase tracking-widest">
+              Audio Credits: Music by Kevin MacLeod & Audionautix.com · SFX by Kenney.nl
+            </div>
+            <div className="flex items-center justify-center gap-4 pt-1">
               <button
                 onClick={() => { playSound('click'); router.push('/privacy'); }}
                 className="text-white/20 text-[10px] hover:text-white/50 transition-colors cursor-pointer underline underline-offset-2"
