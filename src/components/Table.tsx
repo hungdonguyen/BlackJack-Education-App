@@ -102,6 +102,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
     const currentSeat = seats[currentSeatIndex];
     const currentHand = currentSeat?.hands[currentSeat.currentHandIndex];
+    const lastOutcomeMatchIdRef = useRef<string | null>(null);
 
     // Set current room in store
     useEffect(() => {
@@ -182,10 +183,12 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         return () => clearTimeout(safetyTimeout);
     }, [gamePhase, dealerPlay]);
 
-    // Win notification on payout
+    // Win notification and outcome sound on payout
     useEffect(() => {
         if (isPayout && matchHistory.length > 0) {
             const lastMatch = matchHistory[matchHistory.length - 1];
+            if (lastOutcomeMatchIdRef.current === lastMatch.id) return;
+            lastOutcomeMatchIdRef.current = lastMatch.id;
 
             // Calculate total bets and total payouts from the match record
             let totalBets = 0;
@@ -218,8 +221,10 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
             if (totalPayouts > 0) {
                 setWinNotification({ amount: totalPayouts, isWin: true });
+                playSound('win');
             } else if (totalPayouts < 0) {
                 setWinNotification({ amount: Math.abs(totalPayouts), isWin: false });
+                playSound('lose');
             } else {
                 // Pure push — clear any stale notification then show PUSH briefly
                 setWinNotification({ amount: 0, isWin: false, isPush: true });
@@ -228,20 +233,10 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             const t = setTimeout(() => setWinNotification(null), 4000);
             return () => clearTimeout(t);
         } else if (gamePhase === GamePhase.BETTING || gamePhase === GamePhase.DEALING) {
+            lastOutcomeMatchIdRef.current = null;
             setWinNotification(null);
         }
-    }, [isPayout, gamePhase, matchHistory.length]);
-
-    // Play outcome sounds when payout happens
-    useEffect(() => {
-        if (isPayout && winNotification) {
-            if (winNotification.isWin) {
-                playSound('win');
-            } else if (!winNotification.isPush) {
-                playSound('lose');
-            }
-        }
-    }, [isPayout, winNotification, playSound]);
+    }, [isPayout, gamePhase, matchHistory, playSound]);
 
     // Claim cooldown timer — only runs when a cooldown is actually active
     useEffect(() => {

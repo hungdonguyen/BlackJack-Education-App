@@ -1,6 +1,11 @@
+import { Card, Seat } from '@/types/game';
 import { Rank } from '@/types/enums';
 
 export type CountingSystem = 'Hi-Lo' | 'Katarina Walker';
+
+export function getCardsPerDeck(omitTens: boolean): number {
+    return omitTens ? 48 : 52;
+}
 
 export function getCardValue(rank: Rank, system: CountingSystem): number {
     if (system === 'Katarina Walker') {
@@ -61,4 +66,69 @@ export function getInitialDeckSum(system: CountingSystem, omitTens: boolean): nu
         // So we return 0 here, making it start at unbalanced sums.
         return 0;
     }
+}
+
+export function calculateRunningCountFromShoe(
+    shoe: Card[],
+    dealerCards: Card[],
+    seats: Seat[],
+    numDecks: number,
+    system: CountingSystem,
+    omitTens: boolean,
+): number {
+    let shoeSum = 0;
+    for (const card of shoe) {
+        shoeSum += getCardValue(card.rank, system);
+    }
+
+    const initialDeckSum = getInitialDeckSum(system, omitTens);
+    const initialShoeSum = numDecks * initialDeckSum;
+    let runningCount = initialShoeSum - shoeSum;
+
+    for (const card of dealerCards) {
+        if (card.isHidden) {
+            runningCount -= getCardValue(card.rank, system);
+        }
+    }
+
+    for (const seat of seats) {
+        for (const hand of seat.hands) {
+            for (const card of hand.cards) {
+                if (card.isHidden) {
+                    runningCount -= getCardValue(card.rank, system);
+                }
+            }
+        }
+    }
+
+    return runningCount;
+}
+
+export function calculateTrueCountFromShoe(
+    shoe: Card[],
+    dealerCards: Card[],
+    seats: Seat[],
+    numDecks: number,
+    system: CountingSystem,
+    omitTens: boolean,
+) {
+    const runningCount = calculateRunningCountFromShoe(
+        shoe,
+        dealerCards,
+        seats,
+        numDecks,
+        system,
+        omitTens,
+    );
+
+    const decksRemaining = Math.max(shoe.length / getCardsPerDeck(omitTens), 0.5);
+    const trueCountRaw = runningCount / decksRemaining;
+    const trueCount = Math.floor(trueCountRaw);
+
+    return {
+        runningCount,
+        decksRemaining,
+        trueCountRaw,
+        trueCount,
+    };
 }

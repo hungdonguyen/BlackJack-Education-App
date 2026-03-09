@@ -556,13 +556,15 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const newCard2 = dealCard(shoe);
 
     const isSplitAces = card1.value === 11;
+    const restrictSplitAces = state.currentRoom !== 'iberian_21';
+    const locksAfterSplit = isSplitAces && restrictSplitAces;
 
     // Check if the split hand immediately results in a 21
-    const is21Hand1 = !isSplitAces && calculateHandValue([card1, newCard1]).total === 21;
-    const is21Hand2 = !isSplitAces && calculateHandValue([card2, newCard2]).total === 21;
+    const is21Hand1 = calculateHandValue([card1, newCard1]).total === 21;
+    const is21Hand2 = calculateHandValue([card2, newCard2]).total === 21;
 
-    const initialStatus1 = (isSplitAces || is21Hand1) ? HandStatus.STAND : HandStatus.PLAYING;
-    const initialStatus2 = (isSplitAces || is21Hand2) ? HandStatus.STAND : HandStatus.PLAYING;
+    const initialStatus1 = (locksAfterSplit || is21Hand1) ? HandStatus.STAND : HandStatus.PLAYING;
+    const initialStatus2 = (locksAfterSplit || is21Hand2) ? HandStatus.STAND : HandStatus.PLAYING;
 
     const hand1: Hand = {
       id: `seat-${seat.id}-hand-${Date.now()}-1`,
@@ -570,7 +572,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       betAmount: splitBet,
       status: initialStatus1,
       freeActionBetAmount: currentHand.freeActionBetAmount,
-      isAceSplit: isSplitAces,
+      isAceSplit: locksAfterSplit,
       isFreeActionSplit: isFree ? true : currentHand.isFreeActionSplit,
       isSplit: true,
     };
@@ -581,7 +583,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       betAmount: splitBet,
       status: initialStatus2,
       freeActionBetAmount: isFree ? splitBet : currentHand.freeActionBetAmount,
-      isAceSplit: isSplitAces,
+      isAceSplit: locksAfterSplit,
       isFreeActionSplit: isFree ? true : currentHand.isFreeActionSplit,
       isSplit: true,
     };

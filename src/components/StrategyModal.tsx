@@ -41,7 +41,7 @@ const HARD_ROWS = ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', 
 const SOFT_ROWS = ['A,2', 'A,3', 'A,4', 'A,5', 'A,6', 'A,7', 'A,8', 'A,9'];
 const PAIR_ROWS = ['2,2', '3,3', '4,4', '5,5', '6,6', '7,7', '8,8', '9,9', '10,10', 'A,A'];
 
-// Classic: 6 decks, H17, DAS
+// Classic: 8 decks, S17
 const HARD_CLASSIC: Action[][] = [
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
@@ -164,7 +164,7 @@ const HARD_AC: Action[][] = [
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],
-    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D'], // 11
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 11
     ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
     ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
     ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
@@ -175,7 +175,7 @@ const HARD_AC: Action[][] = [
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
-const SOFT_AC: Action[][] = SOFT_VEGAS;
+const SOFT_AC: Action[][] = SOFT_CLASSIC;
 const PAIRS_AC: Action[][] = PAIRS_CLASSIC;
 
 // Iberian 21: 6 Decks, H17, No 10s. Strategy is hit-heavy.
@@ -244,14 +244,38 @@ export default function StrategyModal({
 
     const isIberianHiLo = room.id === 'iberian_21' && countTab === 'hilo';
 
-    const strategyType = room.id === 'free_action' ? 'free_action' : room.id === 'iberian_21' ? 'iberian_21' : room.id === 'atlantic_city' ? 'ac' : (room.id === 'vegas_strip' || room.id === 'vegas_downtown') ? 'vegas' : 'classic';
+    const strategyType = room.id;
 
     const rows = tab === 'hard' ? HARD_ROWS : tab === 'soft' ? SOFT_ROWS : PAIR_ROWS;
     const data = tab === 'hard'
-        ? (strategyType === 'free_action' ? HARD_FA : strategyType === 'iberian_21' ? HARD_IBERIAN : strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC)
+        ? (strategyType === 'free_action'
+            ? HARD_FA
+            : strategyType === 'iberian_21'
+                ? HARD_IBERIAN
+                : strategyType === 'atlantic_city'
+                    ? HARD_AC
+                    : strategyType === 'vegas_downtown'
+                        ? HARD_VEGAS
+                        : HARD_CLASSIC)
         : tab === 'soft'
-            ? (strategyType === 'free_action' ? SOFT_FA : strategyType === 'iberian_21' ? SOFT_IBERIAN : strategyType === 'ac' ? SOFT_AC : strategyType === 'vegas' ? SOFT_VEGAS : SOFT_CLASSIC)
-            : (strategyType === 'free_action' ? PAIRS_FA : strategyType === 'iberian_21' ? PAIRS_IBERIAN : strategyType === 'ac' ? PAIRS_AC : strategyType === 'vegas' ? PAIRS_VEGAS : PAIRS_CLASSIC);
+            ? (strategyType === 'free_action'
+                ? SOFT_FA
+                : strategyType === 'iberian_21'
+                    ? SOFT_IBERIAN
+                    : strategyType === 'atlantic_city'
+                        ? SOFT_AC
+                        : strategyType === 'vegas_downtown'
+                            ? SOFT_VEGAS
+                            : SOFT_CLASSIC)
+            : (strategyType === 'free_action'
+                ? PAIRS_FA
+                : strategyType === 'iberian_21'
+                    ? PAIRS_IBERIAN
+                    : strategyType === 'atlantic_city'
+                        ? PAIRS_AC
+                        : strategyType === 'vegas_downtown'
+                            ? PAIRS_VEGAS
+                            : PAIRS_CLASSIC);
 
     const tabConfig: Record<Tab, { label: string; rowTitle: string }> = {
         hard: { label: 'Hard Totals', rowTitle: 'Hand' },

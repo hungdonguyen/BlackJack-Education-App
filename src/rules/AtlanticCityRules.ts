@@ -11,7 +11,8 @@ export class AtlanticCityRules implements IRules {
         const allowed =
             hand.cards.length === 2 &&
             hand.status === HandStatus.PLAYING &&
-            !hand.isAceSplit;
+            !hand.isAceSplit &&
+            !hand.isSplit;
 
         return {
             allowed,

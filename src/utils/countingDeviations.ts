@@ -90,7 +90,7 @@ export const FAB_4: Deviation[] = [
 // ─── Iberian 21 (Spanish 21) Deviations ────────────────────────────────────
 
 export const IBERIAN_HILO: Deviation[] = [
-    { id: 'I21-H1', playerTotal: 0,  isSoft: false, isPair: false, dealerUpcard: 'A',  index: 9,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Take Insurance when TC ≥ +9' },
+    { id: 'I21-H1', playerTotal: 0,  isSoft: false, isPair: false, dealerUpcard: 'A',  index: 7,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Take Insurance when TC ≥ +7' },
     { id: 'I21-H2', playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '4',  index: 2,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 4 (instead of Hit)' },
     { id: 'I21-H3', playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '5',  index: 1,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 5 (instead of Hit)' },
     { id: 'I21-H4', playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '6',  index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 6 (instead of Hit)' },
@@ -160,15 +160,23 @@ export function getDeviation(
 
         // Handle surrender downgrade when room doesn't allow it
         if (dev.deviationAction === 'SU' && !allowSurrender) {
-            // Downgrade: surrender → stand if total >= 16, else hit
-            const downgraded: Deviation = {
-                ...dev,
-                deviationAction: playerTotal >= 16 ? 'S' : 'H',
-                description: dev.description.replace('Surrender', playerTotal >= 16 ? 'Stand on' : 'Hit'),
-            };
-            // Only return if the downgraded action differs from basic strategy
-            if (downgraded.deviationAction === dev.basicAction) continue;
-            return downgraded;
+            const alternateDeviation = allDeviations.find((candidate) => {
+                if (candidate.id === dev.id || candidate.deviationAction === 'SU') return false;
+                if (candidate.playerTotal !== dev.playerTotal) return false;
+                if (candidate.isSoft !== dev.isSoft) return false;
+                if (candidate.isPair !== dev.isPair) return false;
+                if (candidate.dealerUpcard !== dev.dealerUpcard) return false;
+
+                return candidate.direction === 'gte'
+                    ? trueCount >= candidate.index
+                    : trueCount < candidate.index;
+            });
+
+            if (!alternateDeviation || alternateDeviation.deviationAction === alternateDeviation.basicAction) {
+                continue;
+            }
+
+            return alternateDeviation;
         }
 
         return dev;
@@ -181,6 +189,21 @@ export function getDeviation(
  * Check if insurance deviation fires (I18-1).
  * Insurance is +EV when true count >= +3 (same for S17 and H17).
  */
-export function shouldTakeInsurance(trueCount: number): boolean {
-    return trueCount >= 3;
+export function getInsuranceIndex(
+    roomId: string = 'classic',
+    system: CountingSystem = 'Hi-Lo',
+): number {
+    if (roomId === 'iberian_21') {
+        return system === 'Katarina Walker' ? 7 : 7;
+    }
+
+    return 3;
+}
+
+export function shouldTakeInsurance(
+    trueCount: number,
+    roomId: string = 'classic',
+    system: CountingSystem = 'Hi-Lo',
+): boolean {
+    return trueCount >= getInsuranceIndex(roomId, system);
 }

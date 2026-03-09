@@ -8,21 +8,20 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
-import { GamePhase, Rank } from '@/types/enums';
+import { GamePhase } from '@/types/enums';
 import { Info } from 'lucide-react';
-import { Card } from '@/types/game';
-import { getCardValue, getInitialDeckSum, CountingSystem } from '@/utils/cardCounting';
+import { Card, Seat } from '@/types/game';
+import { calculateTrueCountFromShoe, getCardsPerDeck, CountingSystem } from '@/utils/cardCounting';
 
 /** Collect all face-up (visible) cards from the current round */
 function getAllVisibleCards(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    seats: any[],
+    seats: Seat[],
     dealerCards: Card[],
 ): Card[] {
     const visible: Card[] = [];
     // Player cards
     for (const seat of seats) {
-        if (seat.bet <= 0) continue;
+        if (!seat.hands.some((hand: Seat['hands'][number]) => hand.betAmount > 0)) continue;
         for (const hand of seat.hands) {
             for (const card of hand.cards) {
                 if (!card.isHidden) visible.push(card);
@@ -74,58 +73,26 @@ export default function CardCountingPanel({
         gamePhase === GamePhase.BETTING;
 
     const analysis = useMemo(() => {
-        const totalCards = numDecks * 52;
+        const totalCards = numDecks * getCardsPerDeck(omitTens);
         const cardsRemaining = shoe.length;
         const cardsDealt = totalCards - cardsRemaining;
-        const decksRemaining = Math.max(cardsRemaining / 52, 0.5);
-
-        // Compute running count from all visible cards this round
         const visibleCards = getAllVisibleCards(seats, dealerHand.cards);
-        let runningCount = 0;
-
-        // The running count should be based on ALL cards that have left the shoe
-        // Since we know the shoe composition, we can compute:
-        // Count = sum of Hi-Lo values of all dealt cards
-        // dealt cards = original shoe - remaining shoe
-        // But we don't have the original shoe saved — so instead, we compute
-        // from the remaining shoe: RC = -(sum of Hi-Lo of remaining cards)
-        // because a balanced shoe sums to 0.
-        let shoeSum = 0;
-        for (const card of shoe) {
-            shoeSum += getCardValue(card.rank, activeSystem);
-        }
-
-        const initialDeckSum = getInitialDeckSum(activeSystem, omitTens);
-        const initialShoeSum = numDecks * initialDeckSum;
-        runningCount = initialShoeSum - shoeSum;
-
-        // The runningCount above assumes all cards removed from the shoe have been seen.
-        // However, face-down (hidden) cards on the table haven't been seen by the player yet.
-        // We must subtract their value from the running count until they are revealed.
-        for (const card of dealerHand.cards) {
-            if (card.isHidden) {
-                runningCount -= getCardValue(card.rank, activeSystem);
-            }
-        }
-        for (const seat of seats) {
-            for (const hand of seat.hands) {
-                for (const card of hand.cards) {
-                    if (card.isHidden) {
-                        runningCount -= getCardValue(card.rank, activeSystem);
-                    }
-                }
-            }
-        }
-
-        const trueCount = runningCount / decksRemaining;
+        const countAnalysis = calculateTrueCountFromShoe(
+            shoe,
+            dealerHand.cards,
+            seats,
+            numDecks,
+            activeSystem,
+            omitTens,
+        );
 
         // For Hi-Lo in Iberian 21, the raw TC starts at ~-4 due to unbalanced deck.
         // We normalize the bet advice TC by subtracting the expected baseline offset so
         // an unplayed shoe reads as "neutral" rather than "sit out".
         const baselineTc = (activeSystem === 'Hi-Lo' && omitTens)
-            ? (numDecks * 4) / numDecks * -1 // -4 per deck / numDecks = -4 baseline
+            ? -4
             : 0;
-        const adviceTrueCount = trueCount - baselineTc;
+        const adviceTrueCount = countAnalysis.trueCount - baselineTc;
 
         // Betting advice based on normalized true count
         let advice: { label: string; desc: string; color: string; bgColor: string };
@@ -177,9 +144,9 @@ export default function CardCountingPanel({
         const playerEdge = (adviceTrueCount * 0.5) - 0.5;
 
         return {
-            runningCount,
-            trueCount,
-            decksRemaining,
+            runningCount: countAnalysis.runningCount,
+            trueCount: countAnalysis.trueCount,
+            decksRemaining: countAnalysis.decksRemaining,
             cardsDealt,
             cardsRemaining,
             advice,

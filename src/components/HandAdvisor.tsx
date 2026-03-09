@@ -8,17 +8,18 @@
 import { useMemo, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
-import { GamePhase, Rank } from '@/types/enums';
+import { GamePhase } from '@/types/enums';
 import { calculateHandValue } from '@/utils/hand';
 import { Card } from '@/types/game';
 import { Info, TrendingUp } from 'lucide-react';
-import { getDeviation, Deviation } from '@/utils/countingDeviations';
+import { getDeviation, getInsuranceIndex, Deviation, shouldTakeInsurance } from '@/utils/countingDeviations';
+import { getRules } from '@/rules';
 import { getRoomConfig } from '@/utils/rooms';
-import { getCardValue, getInitialDeckSum, CountingSystem } from '@/utils/cardCounting';
+import { calculateTrueCountFromShoe, CountingSystem } from '@/utils/cardCounting';
 
 // ─── Strategy tables (mirrors StrategyModal) ──────────────────────────────────
 
-type Action = 'H' | 'S' | 'D' | 'DS' | 'SP' | 'SU' | 'FD' | 'FSP';
+type Action = 'H' | 'S' | 'D' | 'DS' | 'SP' | 'SU' | 'FD' | 'FSP' | 'INS' | 'NINS';
 
 const DEALER_UPCARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A'] as const;
 const PAIR_ROWS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A'] as const;
@@ -141,6 +142,36 @@ const SOFT_AC: Action[][] = [
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // A,9
 ];
 
+const HARD_IBERIAN: Action[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'SU', 'SU', 'SU'],
+    ['SU', 'SU', 'S', 'S', 'S', 'S', 'S', 'SU', 'SU', 'SU'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+
+const SOFT_IBERIAN: Action[][] = [
+    ['H', 'H', 'H', 'H', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+
 // Pairs
 const PAIRS_TABLE: Action[][] = [
     ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 2,2
@@ -166,6 +197,19 @@ const PAIRS_FA: Action[][] = [
     ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 9,9
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],                   // 10,10 (Regular rules, stand)
     ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // A,A
+];
+
+const PAIRS_IBERIAN: Action[][] = [
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
 ];
 
 // ─── Action metadata ──────────────────────────────────────────────────────────
@@ -278,6 +322,26 @@ const ACTION_META: Record<Action, {
         desc: 'Split hand with free chips',
         reasoning: (_t, _s, _d) => `Non-10 pair — Always take the Free Action Split, double your chances for free!`,
     },
+    INS: {
+        label: 'TAKE INSURANCE',
+        shortLabel: 'INS',
+        color: '#fcd34d',
+        glow: 'rgba(245,158,11,0.35)',
+        border: 'rgba(245,158,11,0.45)',
+        bg: 'rgba(245,158,11,0.14)',
+        desc: 'Side bet at 2:1 against dealer blackjack',
+        reasoning: (_t, _s, _d) => `True count is high enough that Insurance becomes positive expectation.`,
+    },
+    NINS: {
+        label: 'DECLINE INSURANCE',
+        shortLabel: 'NO',
+        color: '#cbd5e1',
+        glow: 'rgba(148,163,184,0.22)',
+        border: 'rgba(148,163,184,0.3)',
+        bg: 'rgba(148,163,184,0.08)',
+        desc: 'Keep your edge and avoid a negative side bet',
+        reasoning: (_t, _s, _d) => `True count is below the insurance index, so buying Insurance is mathematically losing.`,
+    },
 };
 
 // ─── Utility helpers ──────────────────────────────────────────────────────────
@@ -299,46 +363,66 @@ function getPairRowIdx(cards: Card[]): number {
     return PAIR_ROWS.indexOf(r as (typeof PAIR_ROWS)[number]);
 }
 
+function getStrategyTables(strategyType: string) {
+    if (strategyType === 'free_action') {
+        return { hard: HARD_FA, soft: SOFT_FA, pairs: PAIRS_FA };
+    }
+
+    if (strategyType === 'iberian_21') {
+        return { hard: HARD_IBERIAN, soft: SOFT_IBERIAN, pairs: PAIRS_IBERIAN };
+    }
+
+    if (strategyType === 'atlantic_city') {
+        return { hard: HARD_AC, soft: SOFT_AC, pairs: PAIRS_TABLE };
+    }
+
+    if (strategyType === 'vegas_downtown') {
+        return { hard: HARD_VEGAS, soft: SOFT_VEGAS, pairs: PAIRS_TABLE };
+    }
+
+    return { hard: HARD_CLASSIC, soft: SOFT_CLASSIC, pairs: PAIRS_TABLE };
+}
+
 function getStrategyAction(
     cards: Card[],
     total: number,
     isSoft: boolean,
     dealerUpRank: string,
     strategyType: string,
+    canDouble: boolean,
     canSplit: boolean,
     canSurrender: boolean,
 ): Action {
     const dIdx = getDealerIdx(dealerUpRank);
     if (dIdx < 0) return 'H';
 
+    const tables = getStrategyTables(strategyType);
     let action: Action;
 
     const pairIdx = getPairRowIdx(cards);
     if (pairIdx >= 0) {
-        action = strategyType === 'free_action' ? PAIRS_FA[pairIdx][dIdx] : PAIRS_TABLE[pairIdx][dIdx];
+        action = tables.pairs[pairIdx][dIdx];
         if ((action === 'SP' || action === 'FSP') && !canSplit) {
             const clampedTotal = Math.min(Math.max(total, 5), 20);
-            const tbl = strategyType === 'free_action' ? HARD_FA : strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC;
-            action = tbl[clampedTotal - 5]?.[dIdx] ?? 'H';
+            action = tables.hard[clampedTotal - 5]?.[dIdx] ?? 'H';
         }
     } else if (isSoft && total >= 13 && total <= 20) {
-        const tbl = strategyType === 'free_action' ? SOFT_FA : strategyType === 'ac' ? SOFT_AC : strategyType === 'vegas' ? SOFT_VEGAS : SOFT_CLASSIC;
-        action = tbl[total - 13]?.[dIdx] ?? 'H';
+        action = tables.soft[total - 13]?.[dIdx] ?? 'H';
     } else {
         const clampedTotal = Math.min(Math.max(total, 5), 20);
-        const tbl = strategyType === 'free_action' ? HARD_FA : strategyType === 'ac' ? HARD_AC : strategyType === 'vegas' ? HARD_VEGAS : HARD_CLASSIC;
-        action = tbl[clampedTotal - 5]?.[dIdx] ?? (total >= 17 ? 'S' : 'H');
+        action = tables.hard[clampedTotal - 5]?.[dIdx] ?? (total >= 17 ? 'S' : 'H');
     }
 
-    // Downgrade actions that are only allowed on the initial 2 cards or specific contexts
-    if (cards.length > 2) {
-        if (action === 'D' || action === 'FD') action = 'H';
-        else if (action === 'DS') action = 'S';
+    if ((action === 'D' || action === 'FD') && !canDouble) {
+        action = 'H';
     }
 
-    // Explicitly fallback if Surrender is mathematically recommended but contextually impossible
+    if (action === 'DS' && !canDouble) {
+        action = 'S';
+    }
+
     if (action === 'SU' && !canSurrender) {
-        action = total >= 17 ? 'S' : 'H';
+        action = 'H';
     }
 
     return action;
@@ -358,40 +442,6 @@ function computeBustStats(cards: Card[], shoe: Card[]) {
         safeCount,
         total: shoe.length,
     };
-}
-
-// ─── Card Counting helpers (shared logic) ──────────────────
-
-function computeTrueCount(
-    shoe: Card[],
-    dealerCards: Card[],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    seats: any[],
-    numDecks: number,
-    activeSystem: CountingSystem,
-    omitTens: boolean
-): number {
-    let shoeSum = 0;
-    for (const card of shoe) shoeSum += getCardValue(card.rank, activeSystem);
-
-    const initialDeckSum = getInitialDeckSum(activeSystem, omitTens);
-    const initialShoeSum = numDecks * initialDeckSum;
-    let runningCount = initialShoeSum - shoeSum;
-
-    // Subtract hidden (unseen) cards from running count
-    for (const card of dealerCards) {
-        if (card.isHidden) runningCount -= getCardValue(card.rank, activeSystem);
-    }
-    for (const seat of seats) {
-        for (const hand of seat.hands) {
-            for (const card of hand.cards) {
-                if (card.isHidden) runningCount -= getCardValue(card.rank, activeSystem);
-            }
-        }
-    }
-
-    const decksRemaining = Math.max(shoe.length / 52, 0.5);
-    return runningCount / decksRemaining;
 }
 
 // Circular ring SVG
@@ -446,40 +496,76 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
     const omitTens = roomId === 'iberian_21';
 
     const room = getRoomConfig(roomId);
-    const strategyType = roomId === 'free_action' ? 'free_action' : roomId === 'iberian_21' ? 'iberian_21' : roomId === 'atlantic_city' ? 'ac' : (roomId === 'vegas_strip' || roomId === 'vegas_downtown') ? 'vegas' : 'classic';
-    const isVisible = gamePhase === GamePhase.PLAYER_TURN;
+    const rules = getRules(roomId);
+    const strategyType = roomId;
+    const isVisible = gamePhase === GamePhase.PLAYER_TURN || gamePhase === GamePhase.INSURANCE;
 
     // Gather current hand & dealer upcard
     const currentSeat = seats[currentSeatIndex];
-    const currentHand = currentSeat?.hands[currentSeat.currentHandIndex];
+    const currentHand = gamePhase === GamePhase.INSURANCE
+        ? currentSeat?.hands.find((hand) => hand.betAmount > 0)
+        : currentSeat?.hands[currentSeat.currentHandIndex];
     const dealerUpCard = dealerHand.cards.find((c) => !c.isHidden);
 
     const analysis = useMemo(() => {
         if (!currentHand || !dealerUpCard) return null;
         const cards = currentHand.cards;
         const { total, isSoft } = calculateHandValue(cards);
-        if (total >= 21) return null; // Blackjack / already done
+
+        const countAnalysis = showCardCounting
+            ? calculateTrueCountFromShoe(shoe, dealerHand.cards, seats, room.gameRules.numberOfDecks, activeSystem, omitTens)
+            : { trueCount: 0, trueCountRaw: 0, runningCount: 0, decksRemaining: 0 };
+
+        if (gamePhase === GamePhase.INSURANCE) {
+            const insuranceIndex = getInsuranceIndex(roomId, activeSystem);
+            const action: Action = shouldTakeInsurance(countAnalysis.trueCount, roomId, activeSystem) ? 'INS' : 'NINS';
+
+            return {
+                total,
+                isSoft,
+                cards,
+                bust: null,
+                action,
+                meta: ACTION_META[action],
+                dealerNorm: normRank(dealerUpCard.rank),
+                showBustRisk: false,
+                cardCount: cards.length,
+                deviation: null,
+                basicAction: 'NINS' as Action,
+                trueCount: countAnalysis.trueCount,
+                isInsuranceAdvice: true,
+                insuranceIndex,
+            };
+        }
+
+        if (total >= 21) return null;
 
         const showBustRisk = total > 11;
         const bust = showBustRisk ? computeBustStats(cards, shoe) : null;
-        const canSplitHand = currentSeat.hands.length < 4;
+        const canSplitHand = rules.canSplit(currentHand, currentSeat.hands.length).allowed;
+        const canSurrenderNow = rules.canSurrender(currentHand).allowed;
+        const canDoubleNow = rules.canDoubleDown(currentHand).allowed;
 
-        // True late surrender is only valid on the original first 2 cards (not split hands)
-        const canSurrenderNow = cards.length === 2 && currentSeat.hands.length === 1 && room.gameRules.allowSurrender;
-
-        const basicAction = getStrategyAction(cards, total, isSoft, dealerUpCard.rank, strategyType, canSplitHand, canSurrenderNow);
+        const basicAction = getStrategyAction(
+            cards,
+            total,
+            isSoft,
+            dealerUpCard.rank,
+            strategyType,
+            canDoubleNow,
+            canSplitHand,
+            canSurrenderNow,
+        );
         const dealerNorm = normRank(dealerUpCard.rank);
 
         // ── Card counting deviation check ──
         let action: Action = basicAction;
         let deviation: Deviation | null = null;
-        let trueCount = 0;
+        const trueCount = countAnalysis.trueCount;
 
         if (showCardCounting) {
-            trueCount = computeTrueCount(shoe, dealerHand.cards, seats, room.gameRules.numberOfDecks, activeSystem, omitTens);
-
             // Check if current hand is a pair (for split deviations)
-            const isPairHand = cards.length === 2 && cards[0].value === cards[1].value;
+            const isPairHand = canSplitHand;
 
             deviation = getDeviation(
                 total,
@@ -495,14 +581,11 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
 
             if (deviation) {
                 action = deviation.deviationAction as Action;
-                // Downgrade double/split if not on initial 2 cards
-                if (cards.length > 2) {
-                    if (action === 'D') action = 'H';
-                    if (action === 'SP') action = basicAction; // can't split after initial
-                }
-                if (action === 'SU' && !canSurrenderNow) {
-                    action = total >= 17 ? 'S' : 'H';
-                }
+
+                if ((action === 'D' || action === 'FD') && !canDoubleNow) action = 'H';
+                if (action === 'DS' && !canDoubleNow) action = 'S';
+                if ((action === 'SP' || action === 'FSP') && !canSplitHand) action = basicAction;
+                if (action === 'SU' && !canSurrenderNow) action = basicAction;
 
                 // If downgraded action equals basic, no real deviation
                 if (action === basicAction) deviation = null;
@@ -515,8 +598,10 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
             total, isSoft, cards, bust, action, meta, dealerNorm,
             showBustRisk, cardCount: cards.length,
             deviation, basicAction, trueCount,
+            isInsuranceAdvice: false,
+            insuranceIndex: null,
         };
-    }, [currentHand, dealerUpCard, shoe, strategyType, showCardCounting, seats, dealerHand, room]);
+    }, [activeSystem, currentHand, dealerUpCard, dealerHand.cards, gamePhase, omitTens, room, roomId, rules, seats, shoe, showCardCounting, strategyType]);
 
     const bdr = borderColor ?? `${accentColor}30`;
 
@@ -643,7 +728,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
                         <div className="flex items-center gap-1.5 mb-2.5">
                             <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${accentColor}40, transparent)` }} />
                             <span className="text-[9px] font-black uppercase tracking-[0.28em] text-white/30 font-sans">
-                                {analysis.deviation ? 'Count Deviation' : 'Strategy Advice'}
+                                {analysis.isInsuranceAdvice ? 'Insurance Advice' : analysis.deviation ? 'Count Deviation' : 'Strategy Advice'}
                             </span>
                             <div className="h-px flex-1" style={{ background: `linear-gradient(270deg, ${accentColor}40, transparent)` }} />
                         </div>
@@ -661,7 +746,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
                                 animate={{ opacity: 1, y: 0 }}
                             >
                                 <div className="flex items-center gap-1.5">
-                                    <TrendingUp size={12} className="text-amber-400 flex-shrink-0" />
+                                    <TrendingUp size={12} className="text-amber-400 shrink-0" />
                                     <span className="text-[8px] font-black uppercase tracking-[0.15em] text-amber-400">
                                         {analysis.deviation.id.startsWith('I18') ? 'Illustrious 18' : analysis.deviation.id.startsWith('F4') ? 'Fab 4' : 'Deviation'}
                                         {' — Rule #'}{analysis.deviation.id.split('-')[1]}
@@ -678,6 +763,31 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
                                     <span className="line-through opacity-50">{ACTION_META[analysis.basicAction as Action]?.shortLabel ?? analysis.basicAction}</span>
                                     <span>→</span>
                                     <span className="text-amber-300 font-black">{analysis.meta.shortLabel}</span>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {analysis.isInsuranceAdvice && showCardCounting && (
+                            <motion.div
+                                className="rounded-lg px-2.5 py-2 mb-2.5 flex flex-col gap-1.5"
+                                style={{
+                                    background: 'rgba(245,158,11,0.12)',
+                                    border: '1px solid rgba(245,158,11,0.35)',
+                                    boxShadow: '0 0 16px rgba(245,158,11,0.15)',
+                                }}
+                                initial={{ opacity: 0, y: -4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                            >
+                                <div className="flex items-center gap-1.5">
+                                    <TrendingUp size={12} className="text-amber-400 shrink-0" />
+                                    <span className="text-[8px] font-black uppercase tracking-[0.15em] text-amber-400">
+                                        Insurance Index
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1 text-[8px] font-bold text-amber-300/70">
+                                    <span>TC {analysis.trueCount > 0 ? '+' : ''}{analysis.trueCount}</span>
+                                    <span className="text-amber-400/40">•</span>
+                                    <span>Index ≥ {analysis.insuranceIndex !== null && analysis.insuranceIndex > 0 ? '+' : ''}{analysis.insuranceIndex ?? 0}</span>
                                 </div>
                             </motion.div>
                         )}

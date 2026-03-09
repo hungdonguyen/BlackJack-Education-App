@@ -75,7 +75,7 @@ export default function Seat({ seatId, style }: SeatProps) {
         <div className="relative flex flex-col items-center" style={style}>
             {/* ─── Side Bet Toggle (Free Action room only) ─── */}
             {roomConfig.hasSideBet && seat.isActive && isBetting && (
-                <div className="absolute -left-[62px] top-1/2 -translate-y-1/2 flex flex-col items-center" style={{ zIndex: 12 }}>
+                <div className="absolute -left-[92px] top-1/2 -translate-y-1/2 flex flex-col items-center" style={{ zIndex: 12 }}>
                     <div className="relative">
                         <motion.button
                             onClick={(e) => {
