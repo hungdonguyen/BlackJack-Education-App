@@ -5,7 +5,7 @@
 // Shows bust probability & optimal move
 // ============================================
 
-import { useMemo, useId } from 'react';
+import { useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase } from '@/types/enums';
@@ -274,7 +274,7 @@ const ACTION_META: Record<Action, {
         border: 'rgba(6,182,212,0.4)',
         bg: 'rgba(14,116,144,0.2)',
         desc: 'Double if allowed, otherwise Stand',
-        reasoning: (_t, _s, _d) => `Take the Double if you have enough chips; otherwise Standing is still the optimal choice`,
+        reasoning: () => `Take the Double if you have enough chips; otherwise Standing is still the optimal choice`,
     },
     SP: {
         label: 'SPLIT',
@@ -310,7 +310,7 @@ const ACTION_META: Record<Action, {
         border: 'rgba(250,204,21,0.6)',
         bg: 'rgba(161,98,7,0.3)',
         desc: 'Double with free chips',
-        reasoning: (t, _s, _d) => `Hard ${t} — Always take the Free Action Double, it's risk-free profit!`,
+        reasoning: (t) => `Hard ${t} — Always take the Free Action Double, it's risk-free profit!`,
     },
     FSP: {
         label: 'FREE ACTION SPLIT',
@@ -320,7 +320,7 @@ const ACTION_META: Record<Action, {
         border: 'rgba(250,204,21,0.6)',
         bg: 'rgba(161,98,7,0.3)',
         desc: 'Split hand with free chips',
-        reasoning: (_t, _s, _d) => `Non-10 pair — Always take the Free Action Split, double your chances for free!`,
+        reasoning: () => `Non-10 pair — Always take the Free Action Split, double your chances for free!`,
     },
     INS: {
         label: 'TAKE INSURANCE',
@@ -330,7 +330,7 @@ const ACTION_META: Record<Action, {
         border: 'rgba(245,158,11,0.45)',
         bg: 'rgba(245,158,11,0.14)',
         desc: 'Side bet at 2:1 against dealer blackjack',
-        reasoning: (_t, _s, _d) => `True count is high enough that Insurance becomes positive expectation.`,
+        reasoning: () => `True count is high enough that Insurance becomes positive expectation.`,
     },
     NINS: {
         label: 'DECLINE INSURANCE',
@@ -340,7 +340,7 @@ const ACTION_META: Record<Action, {
         border: 'rgba(148,163,184,0.3)',
         bg: 'rgba(148,163,184,0.08)',
         desc: 'Keep your edge and avoid a negative side bet',
-        reasoning: (_t, _s, _d) => `True count is below the insurance index, so buying Insurance is mathematically losing.`,
+        reasoning: () => `True count is below the insurance index, so buying Insurance is mathematically losing.`,
     },
 };
 
@@ -507,7 +507,9 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
         : currentSeat?.hands[currentSeat.currentHandIndex];
     const dealerUpCard = dealerHand.cards.find((c) => !c.isHidden);
 
-    const analysis = useMemo(() => {
+    const currentSeatHandsLength = currentSeat?.hands.length ?? 0;
+
+    const analysis = (() => {
         if (!currentHand || !dealerUpCard) return null;
         const cards = currentHand.cards;
         const { total, isSoft } = calculateHandValue(cards);
@@ -542,7 +544,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
 
         const showBustRisk = total > 11;
         const bust = showBustRisk ? computeBustStats(cards, shoe) : null;
-        const canSplitHand = rules.canSplit(currentHand, currentSeat.hands.length).allowed;
+        const canSplitHand = rules.canSplit(currentHand, currentSeatHandsLength).allowed;
         const canSurrenderNow = rules.canSurrender(currentHand).allowed;
         const canDoubleNow = rules.canDoubleDown(currentHand).allowed;
 
@@ -601,7 +603,7 @@ export default function HandAdvisor({ roomId, accentColor = '#d4a843', borderCol
             isInsuranceAdvice: false,
             insuranceIndex: null,
         };
-    }, [activeSystem, currentHand, dealerUpCard, dealerHand.cards, gamePhase, omitTens, room, roomId, rules, seats, shoe, showCardCounting, strategyType]);
+    })();
 
     const bdr = borderColor ?? `${accentColor}30`;
 

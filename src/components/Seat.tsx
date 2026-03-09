@@ -9,10 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Flame } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, HandStatus } from '@/types/enums';
-import { getChipImagePath } from '@/utils/assets';
 import { getHandDisplayValue } from '@/utils/hand';
 import CardComponent from './CardComponent';
-import ScoreBadge from './ScoreBadge';
 import ChipStack from './ChipStack';
 import { getRoomConfig } from '@/utils/rooms';
 import { useAudio } from '@/utils/audio';
@@ -26,6 +24,7 @@ export default function Seat({ seatId, style }: SeatProps) {
     const seat = useGameStore((s) => s.seats[seatId - 1]);
     const gamePhase = useGameStore((s) => s.gamePhase);
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
+    const insuranceBet = useGameStore((s) => s.insuranceBets[seatId] ?? 0);
     const selectedChipValue = useGameStore((s) => s.selectedChipValue);
     const placeBet = useGameStore((s) => s.placeBet);
     const clearBet = useGameStore((s) => s.clearBet);
@@ -42,7 +41,6 @@ export default function Seat({ seatId, style }: SeatProps) {
     const isBetting = gamePhase === GamePhase.BETTING;
     const isCurrentTurn = gamePhase === GamePhase.PLAYER_TURN && currentSeatIndex === seatId - 1;
     const isInsuranceTurn = gamePhase === GamePhase.INSURANCE && currentSeatIndex === seatId - 1;
-    const insuranceBet = useGameStore((s) => s.insuranceBets[seatId] ?? 0);
     const sideBetAmount = sideBets[seatId] || 0;
     const mainBet = seat.hands.reduce((sum, h) => sum + h.betAmount, 0);
     const totalBet = mainBet + insuranceBet;

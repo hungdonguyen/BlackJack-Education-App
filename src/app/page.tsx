@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Wallet, BookOpen, TrendingUp, Sparkles, Zap } from 'lucide-react';
+import { Wallet, BookOpen, Sparkles, Zap } from 'lucide-react';
 import LegalAgreementModal from '@/components/LegalAgreementModal';
 import StrategyModal from '@/components/StrategyModal';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
@@ -26,7 +26,7 @@ export default function HomePage() {
   const isHydrated = useStoreHydration();
   const bankroll = useGameStore((s) => s.bankroll);
   const { playSound } = useAudio();
-  const { currentTrackName } = useBGM('lobby');
+  useBGM('lobby');
 
   const formatMoney = (v: number) =>
     v >= 1_000_000

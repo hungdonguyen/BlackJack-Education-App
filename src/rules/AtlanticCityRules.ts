@@ -7,12 +7,12 @@ export class AtlanticCityRules implements IRules {
     blackjackPayoutMultiplier = 1.5; // 3:2
 
     canDoubleDown(hand: Hand): ActionValidity {
-        // Double Down allowed on any two cards, EXCEPT if this hand is from splitting Aces.
+        // Double Down allowed on any two cards, including after split (DAS),
+        // except on Ace-split hands that receive only one card.
         const allowed =
             hand.cards.length === 2 &&
             hand.status === HandStatus.PLAYING &&
-            !hand.isAceSplit &&
-            !hand.isSplit;
+            !hand.isAceSplit;
 
         return {
             allowed,
@@ -46,7 +46,8 @@ export class AtlanticCityRules implements IRules {
         const allowed =
             hand.cards.length === 2 &&
             hand.status === HandStatus.PLAYING &&
-            !hand.isAceSplit;
+            !hand.isAceSplit &&
+            !hand.isSplit;
 
         return {
             allowed,

@@ -122,10 +122,11 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     // calling Zustand mutations inside a React state updater (batch context).
     useEffect(() => {
         let interval: NodeJS.Timeout;
+        let resetTimeout: NodeJS.Timeout | undefined;
         let expired = false;
 
         if (isPlayerTurn) {
-            setTimer(TURN_TIMER_SECONDS);
+            resetTimeout = setTimeout(() => setTimer(TURN_TIMER_SECONDS), 0);
             interval = setInterval(() => {
                 setTimer((prev) => {
                     if (prev <= 1) {
@@ -142,18 +143,23 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                 });
             }, 1000);
         } else {
-            setTimer(TURN_TIMER_SECONDS);
+            resetTimeout = setTimeout(() => setTimer(TURN_TIMER_SECONDS), 0);
         }
-        return () => clearInterval(interval);
+
+        return () => {
+            clearInterval(interval);
+            if (resetTimeout) clearTimeout(resetTimeout);
+        };
     }, [isPlayerTurn, stand, currentSeatIndex, currentSeat?.currentHandIndex, actionCounter]);
 
     // 10-second insurance timer — auto-decline if expired
     useEffect(() => {
         let interval: NodeJS.Timeout;
+        let resetTimeout: NodeJS.Timeout | undefined;
         let expired = false;
 
         if (isInsurance) {
-            setInsuranceTimer(INSURANCE_TIMER_SECONDS);
+            resetTimeout = setTimeout(() => setInsuranceTimer(INSURANCE_TIMER_SECONDS), 0);
             interval = setInterval(() => {
                 setInsuranceTimer((prev) => {
                     if (prev <= 1) {
@@ -168,9 +174,13 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                 });
             }, 1000);
         } else {
-            setInsuranceTimer(INSURANCE_TIMER_SECONDS);
+            resetTimeout = setTimeout(() => setInsuranceTimer(INSURANCE_TIMER_SECONDS), 0);
         }
-        return () => clearInterval(interval);
+
+        return () => {
+            clearInterval(interval);
+            if (resetTimeout) clearTimeout(resetTimeout);
+        };
     }, [isInsurance, declineInsurance, currentSeatIndex]);
 
     // Safety: recover from stuck DEALER_TURN (e.g. async error in dealerPlay)

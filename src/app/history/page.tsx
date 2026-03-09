@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/hooks/useGameStore';
 import { ArrowLeft, ChevronLeft, ChevronRight, History } from 'lucide-react';
@@ -21,16 +21,13 @@ export default function HistoryPage() {
         return [...matchHistory].sort((a, b) => b.timestamp - a.timestamp);
     }, [matchHistory]);
     const totalPages = Math.ceil(sortedHistory.length / ITEMS_PER_PAGE) || 1;
+    const currentPage = Math.min(Math.max(page, 1), totalPages);
 
-    // Safety check for current page
-    if (page > totalPages) setPage(totalPages);
-    if (page < 1) setPage(1);
-
-    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const currentMatches = sortedHistory.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#0a0604] to-[#140b08] text-white p-6 md:p-12 font-sans select-none overflow-y-auto">
+        <div className="min-h-screen bg-linear-to-br from-[#0a0604] to-[#140b08] text-white p-6 md:p-12 font-sans select-none overflow-y-auto">
             <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <button
@@ -172,19 +169,19 @@ export default function HistoryPage() {
                         {totalPages > 1 && (
                             <div className="mt-8 flex items-center justify-between bg-white/5 rounded-xl p-2 border border-white/5">
                                 <button
-                                    onClick={() => { playSound('click'); setPage(p => Math.max(1, p - 1)); }}
-                                    disabled={page === 1}
+                                    onClick={() => { playSound('click'); setPage(currentPage - 1); }}
+                                    disabled={currentPage === 1}
                                     className="p-3 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors shadow-lg cursor-pointer"
                                     aria-label="Previous Page"
                                 >
                                     <ChevronLeft size={24} />
                                 </button>
                                 <span className="text-sm font-bold tracking-widest text-white/50">
-                                    PAGE <span className="text-amber-400 mx-1">{page}</span> OF {totalPages}
+                                    PAGE <span className="text-amber-400 mx-1">{currentPage}</span> OF {totalPages}
                                 </span>
                                 <button
-                                    onClick={() => { playSound('click'); setPage(p => Math.min(totalPages, p + 1)); }}
-                                    disabled={page === totalPages}
+                                    onClick={() => { playSound('click'); setPage(currentPage + 1); }}
+                                    disabled={currentPage === totalPages}
                                     className="p-3 rounded-lg hover:bg-white/10 disabled:opacity-30 transition-colors shadow-lg cursor-pointer"
                                     aria-label="Next Page"
                                 >

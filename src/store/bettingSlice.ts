@@ -245,29 +245,43 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
 
-    set((s) => ({
-      seats: s.seats.map((seat) => {
-        if (seat.id !== seatId) return seat;
+      set((s) => {
+        const targetSeat = s.seats.find((seat) => seat.id === seatId);
+        if (!targetSeat) return s;
 
-        // If deactivating, refund any bets
-        if (seat.isActive) {
-          const refund = seat.hands.reduce((sum, hand) => sum + hand.betAmount, 0);
+        if (!targetSeat.isActive) {
           return {
-            ...seat,
-            isActive: false,
-            hands: [createEmptyHand(seatId, 0)],
+            ...s,
+            seats: s.seats.map((seat) =>
+              seat.id === seatId ? { ...seat, isActive: true } : seat
+            ),
           };
         }
 
-        return { ...seat, isActive: true };
-      }),
-      // Refund bet when deactivating
-      bankroll:
-        s.bankroll +
-        (s.seats.find((st) => st.id === seatId)?.isActive
-          ? s.seats.find((st) => st.id === seatId)?.hands.reduce((sum, h) => sum + h.betAmount, 0) ?? 0
-          : 0),
-    }));
+        const mainRefund = targetSeat.hands.reduce((sum, hand) => sum + hand.betAmount, 0);
+        const sideRefund = s.sideBets[seatId] || 0;
+        const nextSideBets = { ...s.sideBets };
+        delete nextSideBets[seatId];
+
+        return {
+          ...s,
+          bankroll: s.bankroll + mainRefund + sideRefund,
+          betHistory: s.betHistory.filter((bet) => bet.seatId !== seatId),
+          sideBets: nextSideBets,
+          seats: s.seats.map((seat) => {
+            if (seat.id !== seatId) return seat;
+
+            return {
+              ...seat,
+              isActive: false,
+              hands: [createEmptyHand(seatId, 0)],
+              currentHandIndex: 0,
+              freeActionTokens: 0,
+              sideBetAmount: 0,
+            };
+          }),
+        };
+      });
   },
 
   addFunds: (amount: number) => {

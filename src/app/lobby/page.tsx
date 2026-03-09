@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { ROOMS, RoomConfig } from '@/utils/rooms';
 import Image from 'next/image';
 import { ArrowLeft, Home } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { useAudio } from '@/utils/audio';
 import { MusicPlayer } from '@/components/MusicPlayer';
 
@@ -98,11 +98,7 @@ export default function LobbyPage() {
 }
 
 function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; onClick: () => void }) {
-    const [isMounted, setIsMounted] = useState(false);
-
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
+    const formattedMaxBet = useMemo(() => room.betRange[1].toLocaleString('en-US'), [room.betRange]);
 
     return (
         <motion.div
@@ -173,7 +169,7 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
                         Min: ${room.betRange[0]}
                     </span>
                     <span className="text-[8px] text-white/25 uppercase tracking-wider">
-                        Max: ${isMounted ? room.betRange[1].toLocaleString() : room.betRange[1]}
+                        Max: ${formattedMaxBet}
                     </span>
                     <span className="text-[8px] uppercase tracking-wider ml-auto font-bold" style={{ color: room.accentColor }}>
                         {room.hasSideBet && room.baseGameRtp && room.sideBetRtp

@@ -177,8 +177,6 @@ function ShoeIndicator() {
 export default function DealerArea() {
     const dealerHand = useGameStore((s) => s.dealerHand);
     const gamePhase = useGameStore((s) => s.gamePhase);
-    const currentRoom = useGameStore((s) => s.currentRoom);
-    const roomCfg = getRoomConfig(currentRoom);
 
     const hasCards = dealerHand.cards.length > 0;
     const showAllValues = gamePhase === GamePhase.DEALER_TURN || gamePhase === GamePhase.PAYOUT;

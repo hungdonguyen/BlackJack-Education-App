@@ -7,7 +7,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, HandStatus } from '@/types/enums';
-import { calculateHandValue, canSplit, canDoubleDown, getHandDisplayValue } from '@/utils/hand';
 import { Shield, Check, X, Undo2, Spade, Home, Sparkles, Flag, Zap } from 'lucide-react';
 import { getRules } from '@/rules';
 import { getRoomConfig } from '@/utils/rooms';
@@ -49,8 +48,8 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const roomConfig = getRoomConfig(currentRoom);
     const minBet = roomConfig.betRange[0];
 
-    let canHit = isPlayerTurn && isPlaying;
-    let canStand = isPlayerTurn && isPlaying;
+    const canHit = isPlayerTurn && isPlaying;
+    const canStand = isPlayerTurn && isPlaying;
 
     let canDbl = false;
     let isDblFree = false;
@@ -192,7 +191,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                                     disabled={!canInsurance}
                                     className={`px-6 py-2.5 rounded-full font-extrabold text-xs uppercase tracking-wider transition-all
                                         ${canInsurance
-                                            ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 cursor-pointer'
+                                            ? 'bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 cursor-pointer'
                                             : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
                                         }`}
                                     whileHover={canInsurance ? { scale: 1.05 } : {}}
@@ -231,7 +230,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                                     onClick={() => { playSound('card-slide'); startDeal(); }}
                                     disabled={!hasBets}
                                     className="px-8 py-3 rounded-full font-extrabold text-sm uppercase tracking-[0.2em] cursor-pointer
-                                        bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30
+                                        bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30
                                         hover:shadow-emerald-500/50 hover:from-emerald-400 hover:to-emerald-500
                                         transition-all duration-300"
                                     whileHover={{ scale: 1.05 }}
@@ -273,7 +272,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                         key="payout"
                         onClick={resetRound}
                         className="px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
-                            bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white
+                            bg-linear-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white
                             shadow-[0_0_30px_rgba(16,185,129,0.4),0_8px_20px_rgba(0,0,0,0.3)]
                             hover:shadow-[0_0_50px_rgba(16,185,129,0.6),0_12px_30px_rgba(0,0,0,0.4)]
                             hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400
@@ -286,7 +285,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                         whileTap={{ scale: 0.93 }}
                     >
                         <motion.span
-                            className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0"
+                            className="absolute inset-0 bg-linear-to-r from-white/0 via-white/30 to-white/0"
                             initial={{ x: '-100%' }}
                             animate={{ x: '200%' }}
                             transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
@@ -356,24 +355,6 @@ function SmallButton({ label, icon, onClick, disabled, variant }: {
     );
 }
 
-// ── SquareFreeButton ──
-function SquareFreeButton({ label, onClick, disabled }: { label: string; onClick: () => void; disabled: boolean }) {
-    return (
-        <motion.button
-            onClick={onClick} disabled={disabled}
-            className={`flex items-center justify-center w-24 h-24 rounded-2xl cursor-pointer border-4 
-                ${disabled ? 'bg-zinc-800/80 border-zinc-700 text-white/30' : 'bg-yellow-400 border-yellow-300 text-black shadow-[0_0_30px_rgba(250,204,21,0.5)]'}`}
-            style={{ opacity: disabled ? 0.5 : 1 }}
-            whileHover={disabled ? {} : { scale: 1.05, y: -4 }}
-            whileTap={disabled ? {} : { scale: 0.95 }}
-        >
-            <span className="font-black text-center leading-tight uppercase tracking-wider text-sm drop-shadow-sm px-2">
-                {label.split(' ').map((word, i) => <span key={i} className="block">{word}</span>)}
-            </span>
-        </motion.button>
-    );
-}
-
 // ── FreeCircleButton — Golden shimmer for FREE actions ──
 interface FreeCircleButtonProps {
     label: string; icon: React.ReactNode;
@@ -413,7 +394,7 @@ function FreeCircleButton({ label, icon, onClick, disabled, size }: FreeCircleBu
                 {/* Shimmer sweep */}
                 {!disabled && (
                     <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                        className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent"
                         initial={{ x: '-100%' }}
                         animate={{ x: '200%' }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}

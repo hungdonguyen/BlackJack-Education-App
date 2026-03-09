@@ -166,9 +166,9 @@ export default function TermsPage() {
                             Sound effects are sourced from Kenney.nl (CC0 Public Domain). Background
                             music is provided by Kevin MacLeod (incompetech.com) and Audionautix
                             (audionautix.com), licensed under Creative Commons: By Attribution 4.0
-                            License (creativecommons.org/licenses/by/4.0). Tracks used: "Airport Lounge",
-                            "Bossa Antigua", "CoolVibes", "Faster Does It", "Funk Game Loop", "Whiskey
-                            on the Mississippi" by Kevin MacLeod. "Spanish Summer" by Audionautix.
+                            License (creativecommons.org/licenses/by/4.0). Tracks used: &quot;Airport Lounge&quot;,
+                            &quot;Bossa Antigua&quot;, &quot;CoolVibes&quot;, &quot;Faster Does It&quot;, &quot;Funk Game Loop&quot;, &quot;Whiskey
+                            on the Mississippi&quot; by Kevin MacLeod. &quot;Spanish Summer&quot; by Audionautix.
                         </p>
                     </section>
 
