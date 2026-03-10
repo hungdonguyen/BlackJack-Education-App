@@ -35,6 +35,7 @@ export function useAudio() {
     
     // Cache audio objects to reuse and avoid re-downloading/re-parsing
     const audioCache = useRef<Record<string, HTMLAudioElement>>({});
+    const activeOutcomeAudio = useRef<HTMLAudioElement | null>(null);
 
     const playSound = useCallback((variant: SoundVariant, volume: number = 0.5, options?: { shortShuffle?: boolean }) => {
         if (!soundEnabled) return;
@@ -54,9 +55,20 @@ export function useAudio() {
                 audioCache.current[file] = audioNode;
             }
 
+            const isOutcomeSound = variant === 'win' || variant === 'lose';
+
+            if (isOutcomeSound && activeOutcomeAudio.current) {
+                activeOutcomeAudio.current.pause();
+                activeOutcomeAudio.current.currentTime = 0;
+                activeOutcomeAudio.current = null;
+            }
+
             // Clone node if we want overlapping sounds (e.g. multiple cards dealt fast)
             // Native Audio has issues playing the same object overlappingly.
             const playNode = audioNode.cloneNode() as HTMLAudioElement;
+            if (isOutcomeSound) {
+                activeOutcomeAudio.current = playNode;
+            }
             playNode.volume = volume * soundVolume;
             playNode.play().then(() => {
                 if (variant === 'shuffle' && options?.shortShuffle) {
@@ -71,6 +83,14 @@ export function useAudio() {
                     console.warn('Audio play failed:', e);
                 }
             });
+
+            if (isOutcomeSound) {
+                playNode.onended = () => {
+                    if (activeOutcomeAudio.current === playNode) {
+                        activeOutcomeAudio.current = null;
+                    }
+                };
+            }
         } catch (e) {
             console.warn('Audio initialization failed:', e);
         }

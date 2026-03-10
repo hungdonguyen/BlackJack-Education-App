@@ -198,19 +198,35 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     // Peek at hole card logic
     const dealerHasBJ = isBlackjack(dealerCards, true);
 
-    // Find first active seat that can play
+    const isIberian = get().currentRoom === 'iberian_21';
+
+    // Find first active seat that can play normal turn
     const firstPlayableIndex = finalSeats.findIndex(
       (s) =>
         s.isActive &&
         s.hands.some((h) => h.betAmount > 0 && h.status === HandStatus.PLAYING)
     );
 
-    if (dealerShowsAce) {
-      // Go to insurance phase first
+    // Find seats eligible for insurance
+    // Standard: Anyone with a bet (incl. BJ for Even Money)
+    // Iberian: Only those who can still lose to a dealer BJ (skips natural 21s)
+    const insurableSeats = finalSeats.filter(
+      (s) =>
+        s.isActive &&
+        s.hands.some((h) => {
+          if (h.betAmount <= 0) return false;
+          if (isIberian) return h.status === HandStatus.PLAYING;
+          return h.status === HandStatus.PLAYING || h.status === HandStatus.BLACKJACK;
+        })
+    );
+
+    if (dealerShowsAce && insurableSeats.length > 0) {
+      // Go to insurance phase for the first eligible seat
+      const firstInsurableIndex = finalSeats.findIndex((s) => insurableSeats.includes(s));
       set({
         seats: finalSeats,
         gamePhase: GamePhase.INSURANCE,
-        currentSeatIndex: firstPlayableIndex === -1 ? 0 : firstPlayableIndex,
+        currentSeatIndex: firstInsurableIndex,
         insuranceBets: {},
       });
     } else if (dealerHasBJ) {
@@ -259,9 +275,17 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const newInsuranceBets = { ...state.insuranceBets, [currentSeat.id]: insuranceAmount };
     const newBankroll = state.bankroll - insuranceAmount;
 
-    // Find next playable seat starting from currentSeatIndex + 1
+    // Find next eligible insurance seat
+    const isIberian = state.currentRoom === 'iberian_21';
     const nextSeatIndex = state.seats.findIndex(
-      (s, idx) => idx > state.currentSeatIndex && s.isActive && s.hands.some((h) => h.betAmount > 0 && h.status === HandStatus.PLAYING)
+      (s, idx) =>
+        idx > state.currentSeatIndex &&
+        s.isActive &&
+        s.hands.some((h) => {
+          if (h.betAmount <= 0) return false;
+          if (isIberian) return h.status === HandStatus.PLAYING;
+          return h.status === HandStatus.PLAYING || h.status === HandStatus.BLACKJACK;
+        })
     );
 
     if (nextSeatIndex !== -1) {
@@ -297,9 +321,17 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const state = get();
     if (state.gamePhase !== GamePhase.INSURANCE) return;
 
-    // Find next playable seat starting from currentSeatIndex + 1
+    // Find next eligible insurance seat
+    const isIberian = state.currentRoom === 'iberian_21';
     const nextSeatIndex = state.seats.findIndex(
-      (s, idx) => idx > state.currentSeatIndex && s.isActive && s.hands.some((h) => h.betAmount > 0 && h.status === HandStatus.PLAYING)
+      (s, idx) =>
+        idx > state.currentSeatIndex &&
+        s.isActive &&
+        s.hands.some((h) => {
+          if (h.betAmount <= 0) return false;
+          if (isIberian) return h.status === HandStatus.PLAYING;
+          return h.status === HandStatus.PLAYING || h.status === HandStatus.BLACKJACK;
+        })
     );
 
     if (nextSeatIndex !== -1) {
@@ -310,6 +342,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     }
 
     // No more seats to ask for insurance.
+    // Standard: playable if status is PLAYING
+    // Iberian: playable if status is PLAYING
     const firstPlayableIndex = state.seats.findIndex(
       (s) => s.isActive && s.hands.some((h) => h.betAmount > 0 && h.status === HandStatus.PLAYING)
     );
@@ -362,10 +396,14 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           // If it was an Ace split, they only get one card and must stand
           const mustStand = hand.isAceSplit || is21;
 
+          // Spanish 21 rule: Player 21 always wins immediately
+          const isIberian = state.currentRoom === 'iberian_21';
+          const isImmediateWin = isIberian && is21;
+
           return {
             ...hand,
             cards: newCards,
-            status: busted ? HandStatus.BUST : mustStand ? HandStatus.STAND : HandStatus.PLAYING,
+            status: busted ? HandStatus.BUST : isImmediateWin ? HandStatus.WON : mustStand ? HandStatus.STAND : HandStatus.PLAYING,
           };
         }),
       };
@@ -377,10 +415,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const updatedHand = updatedSeats[state.currentSeatIndex].hands[
       updatedSeats[state.currentSeatIndex].currentHandIndex
     ];
-    if (
-      updatedHand.status === HandStatus.BUST ||
-      updatedHand.status === HandStatus.STAND
-    ) {
+    if (updatedHand.status !== HandStatus.PLAYING) {
       setTimeout(() => get().advanceToNextHand(), 0);
     }
   },
@@ -451,12 +486,15 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           const newCards = [...hand.cards, newCard];
           const busted = isBust(newCards);
           const is21 = !busted && calculateHandValue(newCards).total === 21;
+          // Spanish 21 rule: Player 21 always wins immediately
+          const isIberian = state.currentRoom === 'iberian_21';
+          const isImmediateWin = isIberian && is21;
 
           return {
             ...hand,
             cards: newCards,
             betAmount: hand.betAmount + (isFree ? hand.betAmount : cost),
-            status: busted ? HandStatus.BUST : (is21 || !roomCfg.gameRules.allowDoubleDownRescue) ? HandStatus.STAND : HandStatus.PLAYING,
+            status: busted ? HandStatus.BUST : isImmediateWin ? HandStatus.WON : (is21 || !roomCfg.gameRules.allowDoubleDownRescue) ? HandStatus.STAND : HandStatus.PLAYING,
             isDoubleDown: true,
             isFreeActionDouble: isFree ? true : hand.isFreeActionDouble,
             freeActionBetAmount: isFree ? (hand.freeActionBetAmount || 0) + hand.betAmount : hand.freeActionBetAmount,
@@ -472,8 +510,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     });
 
     // If locked to STAND, auto-advance
-    const updatedHand = updatedSeats[state.currentSeatIndex].hands[seat.currentHandIndex];
-    if (updatedHand.status === HandStatus.STAND || updatedHand.status === HandStatus.BUST) {
+    const updatedHand = updatedSeats[state.currentSeatIndex].hands[state.seats[state.currentSeatIndex].currentHandIndex];
+    if (updatedHand.status !== HandStatus.PLAYING) {
       setTimeout(() => get().advanceToNextHand(), 0);
     }
   },
@@ -563,8 +601,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const is21Hand1 = calculateHandValue([card1, newCard1]).total === 21;
     const is21Hand2 = calculateHandValue([card2, newCard2]).total === 21;
 
-    const initialStatus1 = (locksAfterSplit || is21Hand1) ? HandStatus.STAND : HandStatus.PLAYING;
-    const initialStatus2 = (locksAfterSplit || is21Hand2) ? HandStatus.STAND : HandStatus.PLAYING;
+    const isIberian = state.currentRoom === 'iberian_21';
+    const initialStatus1 = (isIberian && is21Hand1) ? HandStatus.WON : (locksAfterSplit || is21Hand1) ? HandStatus.STAND : HandStatus.PLAYING;
+    const initialStatus2 = (isIberian && is21Hand2) ? HandStatus.WON : (locksAfterSplit || is21Hand2) ? HandStatus.STAND : HandStatus.PLAYING;
 
     const hand1: Hand = {
       id: `seat-${seat.id}-hand-${Date.now()}-1`,
@@ -813,8 +852,16 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         hands: seat.hands.map((hand) => {
           if (hand.betAmount === 0) return hand;
 
+          const playerValue = calculateHandValue(hand.cards);
+          const playerHasBlackjack = hand.status === HandStatus.BLACKJACK;
+          const freeBet = hand.freeActionBetAmount || 0;
+
           // Already resolved (e.g., Bust, Even Money, or Surrendered)
           if (hand.status === HandStatus.BUST || hand.status === HandStatus.WON || hand.status === HandStatus.SURRENDERED) {
+            if (hand.status === HandStatus.WON) {
+              const evaluation = rules.evaluateHand(hand, playerValue, state.dealerHand.cards, dealerValue);
+              totalPayout += (hand.betAmount - freeBet) + (hand.betAmount * evaluation.payoutMultiplier);
+            }
             return {
               ...hand,
               status: hand.status === HandStatus.BUST ? HandStatus.LOST
@@ -822,11 +869,6 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
                 : HandStatus.WON,
             };
           }
-
-          const playerValue = calculateHandValue(hand.cards);
-          const playerHasBlackjack = hand.status === HandStatus.BLACKJACK;
-
-          const freeBet = hand.freeActionBetAmount || 0;
 
           const evaluation = rules.evaluateHand(hand, playerValue, state.dealerHand.cards, dealerValue);
           
@@ -894,15 +936,17 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
             .filter((h) => h.betAmount > 0)
             .map((hand) => {
               const freeAmt = hand.freeActionBetAmount || 0;
+              const playerValue = calculateHandValue(hand.cards);
+              const evaluation = hand.status === HandStatus.SURRENDERED
+                ? null
+                : rules.evaluateHand(hand, playerValue, state.dealerHand.cards, dealerValue);
               return {
                 betAmount: hand.betAmount - freeAmt, // Record only the real wagered amount
                 freeActionBetAmount: freeAmt,
                 result: hand.status,
                 payout:
-                  hand.status === HandStatus.WON
-                    ? hand.betAmount
-                    : hand.status === HandStatus.BLACKJACK
-                    ? hand.betAmount * rules.blackjackPayoutMultiplier
+                  hand.status === HandStatus.WON || hand.status === HandStatus.BLACKJACK
+                    ? hand.betAmount * (evaluation?.payoutMultiplier ?? 1)
                     : hand.status === HandStatus.PUSH
                     ? 0
                     : hand.status === HandStatus.SURRENDERED

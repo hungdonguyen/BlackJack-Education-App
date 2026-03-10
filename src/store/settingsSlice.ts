@@ -18,6 +18,7 @@ export interface SettingsSlice {
   showHandAdvisor: boolean;
   showCardCounting: boolean;
   countSystem: 'Hi-Lo' | 'Katarina Walker';
+  showSpecialCases: boolean;
 
   // Actions
   setDealerSpeed: (speed: DealerSpeed) => void;
@@ -29,6 +30,7 @@ export interface SettingsSlice {
   setShowHandAdvisor: (show: boolean) => void;
   setShowCardCounting: (show: boolean) => void;
   setCountSystem: (sys: 'Hi-Lo' | 'Katarina Walker') => void;
+  setShowSpecialCases: (show: boolean) => void;
 }
 
 /** Delay maps keyed by dealer speed */
@@ -57,14 +59,16 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   showHandAdvisor: true,
   showCardCounting: true,
   countSystem: 'Katarina Walker',
+  showSpecialCases: true,
 
   setDealerSpeed: (speed) => set({ dealerSpeed: speed }),
   setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
   setMusicEnabled: (enabled) => set({ musicEnabled: enabled }),
   setMusicVolume: (volume) => set({ musicVolume: Math.max(0, Math.min(1, volume)) }),
   setSoundVolume: (volume) => set({ soundVolume: Math.max(0, Math.min(1, volume)) }),
-  setMusicTrackOverride: (trackPath) => set({ musicTrackOverride: trackPath }),
-  setShowHandAdvisor: (show) => set({ showHandAdvisor: show }),
-  setShowCardCounting: (show) => set({ showCardCounting: show }),
-  setCountSystem: (sys) => set({ countSystem: sys }),
+  setMusicTrackOverride: (trackPath: string | null) => set({ musicTrackOverride: trackPath }),
+  setShowHandAdvisor: (show: boolean) => set({ showHandAdvisor: show }),
+  setShowCardCounting: (show: boolean) => set({ showCardCounting: show }),
+  setCountSystem: (sys: 'Hi-Lo' | 'Katarina Walker') => set({ countSystem: sys }),
+  setShowSpecialCases: (show: boolean) => set({ showSpecialCases: show }),
 });

@@ -276,40 +276,13 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             if (lastOutcomeMatchIdRef.current === lastMatch.id) return;
             lastOutcomeMatchIdRef.current = lastMatch.id;
 
-            // Calculate total bets and total payouts from the match record
-            let totalBets = 0;
-            let totalPayouts = 0;
+            const netRoundChange = calculateMatchNetPnl(lastMatch);
 
-            lastMatch.seats.forEach(seat => {
-                seat.hands.forEach(hand => {
-                    totalBets += hand.betAmount;
-
-                    // The payout in matchHistory is the *net* payout (e.g., +100 for win, -100 for loss, 0 for push)
-                    // If they win, they get back their bet + payout. 
-                    // However, we just want to know if the round as a whole had a net positive or negative result.
-                    totalPayouts += hand.payout;
-                });
-
-                if (seat.insuranceCost) {
-                    totalPayouts -= seat.insuranceCost;
-                }
-                if (seat.insurancePayout) {
-                    totalPayouts += seat.insurancePayout;
-                }
-                // Include side bet results in the notification
-                if (seat.sideBetAmount) {
-                    totalPayouts -= seat.sideBetAmount;
-                }
-                if (seat.sideBetPayout) {
-                    totalPayouts += seat.sideBetPayout;
-                }
-            });
-
-            if (totalPayouts > 0) {
-                setWinNotification({ amount: totalPayouts, isWin: true });
+            if (netRoundChange > 0) {
+                setWinNotification({ amount: netRoundChange, isWin: true });
                 playSound('win');
-            } else if (totalPayouts < 0) {
-                setWinNotification({ amount: Math.abs(totalPayouts), isWin: false });
+            } else if (netRoundChange < 0) {
+                setWinNotification({ amount: Math.abs(netRoundChange), isWin: false });
                 playSound('lose');
             } else {
                 // Pure push — clear any stale notification then show PUSH briefly
@@ -686,7 +659,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-red-100 font-bold uppercase tracking-widest text-sm">Insufficient Funds</span>
-                                            <span className="text-red-400/80 text-[10px] uppercase font-semibold">Please claim or deposit more chips</span>
+                                            <span className="text-red-400/80 text-[10px] uppercase font-semibold">Please wait claim daily to continue</span>
                                         </div>
                                     </div>
                                 </motion.div>

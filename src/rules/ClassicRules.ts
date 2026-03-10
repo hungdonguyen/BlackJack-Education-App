@@ -21,13 +21,13 @@ export class ClassicRules implements IRules {
 
     canSplit(hand: Hand, seatHandsLength: number): ActionValidity {
         // Classic Online rule: Split only once (max 2 hands per seat).
-        // Must be same RANK (same face: J-J, 10-10), not just same value.
-        // (J and K both = 10 but cannot be split in Classic Online)
+        // Split is by equal VALUE, including mixed 10-value cards.
+        // (J and K both = 10 and may be split in this online ruleset)
         // Aces cannot be re-split.
         const allowed =
             hand.cards.length === 2 &&
             hand.status === HandStatus.PLAYING &&
-            hand.cards[0].rank === hand.cards[1].rank &&
+            hand.cards[0].value === hand.cards[1].value &&
             seatHandsLength < 2 &&
             !hand.isAceSplit;
 

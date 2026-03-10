@@ -23,6 +23,11 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
     ];
 
     const isFreeAction = roomConfig?.id === 'free_action';
+    const iberianBonusPayouts = [
+        { label: '5-Card 21 / ♠♥♦♣ 6-7-8, 7-7-7', value: '3 : 2' },
+        { label: '6-Card 21 / ♠♠ 6-7-8, 7-7-7', value: '2 : 1' },
+        { label: '7+ Card 21 / ♠♠♠ 6-7-8, 7-7-7', value: '3 : 1' },
+    ];
 
     if (isFreeAction) {
         payouts.push(
@@ -109,16 +114,25 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
                             </span>
                         </div>
                         <div className="p-2.5 space-y-1.5">
-                            {[
-                                { label: '5-Card 21 / ♠♥♦♣ 6-7-8, 7-7-7', value: '3 : 2' },
-                                { label: '6-Card 21 / ♠♠ 6-7-8, 7-7-7', value: '2 : 1' },
-                                { label: '7+ Card 21 / ♠♠♠ 6-7-8, 7-7-7', value: '3 : 1' },
-                            ].map((p) => (
+                            {iberianBonusPayouts.map((p) => (
                                 <div key={p.label} className="flex items-center justify-between px-1">
                                     <span className="text-[10px] font-medium text-red-200/80">{p.label}</span>
                                     <span className="text-[10px] font-bold tabular-nums text-red-400">{p.value}</span>
                                 </div>
                             ))}
+                            <div className="rounded-lg border border-red-500/20 bg-red-500/6 px-2 py-2">
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="text-[10px] font-medium text-red-200/85">Suited 7-7-7 vs dealer 7</span>
+                                </div>
+                                <div className="mt-1.5 flex items-center justify-between gap-3 px-0.5">
+                                    <span className="text-[9px] font-medium text-red-200/60">Bet under $25</span>
+                                    <span className="text-[10px] font-bold tabular-nums text-red-400">$1000</span>
+                                </div>
+                                <div className="mt-1 flex items-center justify-between gap-3 px-0.5">
+                                    <span className="text-[9px] font-medium text-red-200/60">Bet $25 or more</span>
+                                    <span className="text-[10px] font-bold tabular-nums text-red-400">$5000</span>
+                                </div>
+                            </div>
                         </div>
                     </>
                 )}

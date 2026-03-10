@@ -1,5 +1,5 @@
 import { Hand, Card, HandValue } from '@/types/game';
-import { HandStatus, Suit } from '@/types/enums';
+import { HandStatus, Suit, Rank } from '@/types/enums';
 import { IRules, ActionValidity, PayoutResult } from './types';
 import { isBlackjack } from '@/utils/hand';
 
@@ -7,8 +7,7 @@ export class Iberian21Rules implements IRules {
     blackjackPayoutMultiplier = 1.5; // 3:2
 
     canDoubleDown(hand: Hand): ActionValidity {
-        // Double down on ANY number of cards
-        // Can't double down if already doubled
+        // Common Spanish 21 profile: double on any number of cards, but no redouble.
         const allowed = 
             hand.status === HandStatus.PLAYING &&
             !hand.isDoubleDown;
@@ -38,9 +37,12 @@ export class Iberian21Rules implements IRules {
     }
 
     canSurrender(hand: Hand): ActionValidity {
-        // Late Surrender allowed.
-        // Double Down Rescue: allowed even if doubled!
-        const allowed = hand.status === HandStatus.PLAYING;
+        // Spanish 21 uses late surrender on the original 2-card hand.
+        // After doubling, surrender remains available as Double Down Rescue.
+        // Regular multi-card hands that have not doubled cannot surrender.
+        const allowed =
+            hand.status === HandStatus.PLAYING &&
+            (hand.isDoubleDown === true || (hand.cards.length === 2 && !hand.isSplit));
 
         return { allowed, isFree: false, cost: 0 };
     }
@@ -87,13 +89,24 @@ export class Iberian21Rules implements IRules {
                 // 6-7-8 and 7-7-7 configurations
                 if (numCards === 3) {
                     const sortedRanks = [...playerHand.cards].map(c => c.rank).sort();
-                    const is678 = sortedRanks[0] === '6' && sortedRanks[1] === '7' && sortedRanks[2] === '8';
-                    const is777 = sortedRanks[0] === '7' && sortedRanks[1] === '7' && sortedRanks[2] === '7';
+                    const is678 = sortedRanks[0] === Rank.SIX && sortedRanks[1] === Rank.SEVEN && sortedRanks[2] === Rank.EIGHT;
+                    const is777 = sortedRanks[0] === Rank.SEVEN && sortedRanks[1] === Rank.SEVEN && sortedRanks[2] === Rank.SEVEN;
 
                     if (is678 || is777) {
                         const suits = playerHand.cards.map(c => c.suit);
                         const allSameSuit = suits[0] === suits[1] && suits[1] === suits[2];
                         const isSpades = allSameSuit && suits[0] === Suit.SPADES;
+                        const dealerUpcard = dealerCards[0];
+                        const qualifiesForSuperBonus =
+                            is777 &&
+                            allSameSuit &&
+                            dealerUpcard?.rank === Rank.SEVEN &&
+                            !playerHand.isSplit;
+
+                        if (qualifiesForSuperBonus) {
+                            const superBonus = playerHand.betAmount >= 25 ? 5000 : 1000;
+                            payoutMultiplier = Math.max(payoutMultiplier, superBonus / playerHand.betAmount);
+                        }
 
                         if (isSpades) {
                             payoutMultiplier = Math.max(payoutMultiplier, 3); // 3:1

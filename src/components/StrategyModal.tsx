@@ -12,6 +12,7 @@ import { RoomConfig } from '@/utils/rooms';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GameStore } from '@/types/game';
 import { I18_S17, I18_H17, FAB_4, IBERIAN_HILO, IBERIAN_WALKER } from '@/utils/countingDeviations';
+import { COMPOSITION_DEPENDENT_OVERRIDES } from '@/utils/strategyAdvisor';
 import { useAudio } from '@/utils/audio';
 
 interface StrategyModalProps {
@@ -19,8 +20,8 @@ interface StrategyModalProps {
     onClose: () => void;
 }
 
-type Action = 'H' | 'S' | 'D' | 'DS' | 'SP' | 'SU' | 'FD' | 'FSP';
-type Tab = 'hard' | 'soft' | 'pairs' | 'counting' | 'rules';
+type Action = 'H' | 'S' | 'DS' | 'S4' | 'S5' | 'S6' | 'SP' | 'PS' | 'D' | 'D3' | 'D4' | 'D5' | 'D6' | 'R' | 'RH' | 'SU' | 'FD' | 'FSP';
+type Tab = 'hard' | 'soft' | 'pairs' | 'special' | 'counting' | 'rules';
 type HighlightTone = 'accent' | 'good' | 'warn';
 
 interface RuleHighlight {
@@ -50,14 +51,65 @@ interface StrategyTableContent {
     bullets: string[];
 }
 
+type SpecialCaseGroup = 'hard' | 'soft' | 'pairs';
+
+const SPECIAL_CASE_GROUP_LABELS: Record<SpecialCaseGroup, string> = {
+    hard: 'Hard Totals',
+    soft: 'Soft Totals',
+    pairs: 'Pairs',
+};
+
+function formatSpecialCaseRank(rank: string) {
+    if (rank === '*') return 'Any';
+    if (rank === '10') return 'J/Q/K';
+    return rank;
+}
+
+function formatSpecialCaseAction(action: Action) {
+    return ACTION_STYLES[action].desc;
+}
+
+function renderSpecialCaseCards(pattern: string[]) {
+    return pattern.map((rank, index) => ({
+        key: `${rank}-${index}`,
+        label: formatSpecialCaseRank(rank),
+    }));
+}
+
+function getSpecialCaseAccent(isTopOverride?: boolean) {
+    return isTopOverride
+        ? {
+            borderColor: 'rgba(250,204,21,0.35)',
+            background: 'linear-gradient(135deg, rgba(250,204,21,0.12) 0%, rgba(255,255,255,0.03) 100%)',
+            badge: 'Top Override',
+            badgeColor: '#facc15',
+        }
+        : {
+            borderColor: 'rgba(255,255,255,0.06)',
+            background: 'rgba(255,255,255,0.03)',
+            badge: 'Walker Note',
+            badgeColor: 'rgba(255,255,255,0.45)',
+        };
+}
+
 // Refined color palette matching casino aesthetic - gradient backgrounds
 const ACTION_STYLES: Record<Action, { bg: string; text: string; label: string; desc: string }> = {
-    H: { bg: 'linear-gradient(135deg, #1b7a3e 0%, #14532d 100%)', text: '#d1fae5', label: 'H', desc: 'Hit' },
-    S: { bg: 'linear-gradient(135deg, #a8322c 0%, #8b1a1a 100%)', text: '#fde8e8', label: 'S', desc: 'Stand' },
-    D: { bg: 'linear-gradient(135deg, #c9983a 0%, #a67c2e 100%)', text: '#1a1206', label: 'D', desc: 'Double Down' },
+    H: { bg: 'linear-gradient(135deg, #43a047 0%, #2e7d32 100%)', text: '#ffffff', label: 'H', desc: 'Hit' },
+    S: { bg: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)', text: '#ffffff', label: 'S', desc: 'Stand' },
     DS: { bg: 'linear-gradient(135deg, #1a7a7a 0%, #115e5e 100%)', text: '#ccfbf1', label: 'DS', desc: 'Double if allowed, else Stand' },
-    SP: { bg: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', text: '#dbeafe', label: 'SP', desc: 'Split' },
-    SU: { bg: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', text: '#ede9fe', label: 'SU', desc: 'Surrender if allowed, else Hit' },
+    S4: { bg: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)', text: '#ffffff', label: 'S4', desc: 'Stand, but hit if you have 4 or more cards' },
+    S5: { bg: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)', text: '#ffffff', label: 'S5', desc: 'Stand, but hit if you have 5 or more cards' },
+    S6: { bg: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)', text: '#ffffff', label: 'S6', desc: 'Stand, but hit if you have 6 or more cards' },
+    SP: { bg: 'linear-gradient(135deg, #039be5 0%, #0277bd 100%)', text: '#ffffff', label: 'P', desc: 'Split' },
+    PS: { bg: 'linear-gradient(135deg, #039be5 0%, #0277bd 100%)', text: '#ffffff', label: 'PS', desc: 'Split, but HIT if you have suited sevens' },
+    D: { bg: 'linear-gradient(135deg, #fdd835 0%, #fbc02d 100%)', text: '#1a1206', label: 'D', desc: 'Double' },
+    D3: { bg: 'linear-gradient(135deg, #fdd835 0%, #fbc02d 100%)', text: '#1a1206', label: 'D3', desc: 'Double, but hit if you have 3 or more cards' },
+    D4: { bg: 'linear-gradient(135deg, #fdd835 0%, #fbc02d 100%)', text: '#1a1206', label: 'D4', desc: 'Double, but hit if you have 4 or more cards' },
+    D5: { bg: 'linear-gradient(135deg, #fdd835 0%, #fbc02d 100%)', text: '#1a1206', label: 'D5', desc: 'Double, but hit if you have 5 or more cards' },
+    D6: { bg: 'linear-gradient(135deg, #fdd835 0%, #fbc02d 100%)', text: '#1a1206', label: 'D6', desc: 'Double, but hit if you have 6 or more cards' },
+    R: { bg: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', text: '#ffffff', label: 'R', desc: 'Surrender' },
+    RH: { bg: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', text: '#ffffff', label: 'RH', desc: 'Surrender if allowed, otherwise Hit' },
+    SU: { bg: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', text: '#ede9fe', label: 'SU', desc: 'Surrender / rescue when the room allows it' },
     FD: { bg: 'linear-gradient(135deg, #d4a843 0%, #b8922e 100%)', text: '#1a1206', label: 'FD', desc: 'Free Action Double' },
     FSP: { bg: 'linear-gradient(135deg, #e8c547 0%, #ccad3a 100%)', text: '#1a1206', label: 'FSP', desc: 'Free Action Split' },
 };
@@ -68,6 +120,10 @@ const DEALER_UPCARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A'];
 const HARD_ROWS = ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
 const SOFT_ROWS = ['A,2', 'A,3', 'A,4', 'A,5', 'A,6', 'A,7', 'A,8', 'A,9'];
 const PAIR_ROWS = ['2,2', '3,3', '4,4', '5,5', '6,6', '7,7', '8,8', '9,9', '10,10', 'A,A'];
+
+const HARD_ROWS_IBERIAN = ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
+const SOFT_ROWS_IBERIAN = ['A,2', 'A,3', 'A,4', 'A,5', 'A,6', 'A,7', 'A,8', 'A,9'];
+const PAIR_ROWS_IBERIAN = ['2,2', '3,3', '6,6', '7,7', '8,8', '9,9', 'A,A'];
 
 // Classic: 8 decks, S17
 const HARD_CLASSIC: Action[][] = [
@@ -154,7 +210,7 @@ const PAIRS_FA: Action[][] = [
 ];
 
 // Vegas Strip: 4 decks, S17, DAS
-const HARD_VEGAS: Action[][] = [
+const HARD_DOWNTOWN: Action[][] = [
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
@@ -172,7 +228,9 @@ const HARD_VEGAS: Action[][] = [
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
 ];
-const SOFT_VEGAS: Action[][] = [
+const HARD_VEGAS: Action[][] = HARD_CLASSIC;
+
+const SOFT_DOWNTOWN: Action[][] = [
     ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
@@ -182,6 +240,7 @@ const SOFT_VEGAS: Action[][] = [
     ['S', 'S', 'S', 'S', 'DS', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
+const SOFT_VEGAS: Action[][] = SOFT_CLASSIC;
 const PAIRS_VEGAS: Action[][] = PAIRS_CLASSIC;
 
 // Atlantic City: 8 decks, S17, DAS, Late Surrender
@@ -192,7 +251,7 @@ const HARD_AC: Action[][] = [
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],
-    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 11
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H'], // 11
     ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
     ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
     ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
@@ -207,45 +266,43 @@ const SOFT_AC: Action[][] = SOFT_CLASSIC;
 const PAIRS_AC: Action[][] = PAIRS_CLASSIC;
 
 // Iberian 21: 6 Decks, H17, No 10s. Strategy is hit-heavy.
+// Iberian 21: 6 Decks, H17, No 10s. Strategy is hit-heavy.
 const HARD_IBERIAN: Action[][] = [
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 6
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 7
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 8
     ['H', 'H', 'H', 'H', 'D', 'H', 'H', 'H', 'H', 'H'], // 9
-    ['D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H'], // 10
-    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H'], // 11
+    ['D5', 'D5', 'D', 'D', 'D', 'D4', 'D3', 'H', 'H', 'H'], // 10
+    ['D4', 'D5', 'D5', 'D5', 'D5', 'D4', 'D4', 'D4', 'D3', 'D3'], // 11
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 12
-    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 13
-    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
-    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 15
-    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'SU', 'SU', 'SU'], // 16
-    ['SU', 'SU', 'S', 'S', 'S', 'S', 'S', 'SU', 'SU', 'SU'], // 17
+    ['H', 'H', 'H', 'H', 'S4', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['H', 'H', 'S4', 'S5', 'S6', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['S4', 'S5', 'S6', 'S6', 'S', 'H', 'H', 'H', 'H', 'H'], // 15
+    ['S6', 'S6', 'S6', 'S', 'S', 'H', 'H', 'H', 'H', 'RH'], // 16
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S6', 'S6', 'S6', 'RH'], // 17
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
 ];
 const SOFT_IBERIAN: Action[][] = [
-    ['H', 'H', 'H', 'H', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // A,2 (13)
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // A,3 (14)
+    ['H', 'H', 'H', 'H', 'D4', 'H', 'H', 'H', 'H', 'H'], // A,4 (15)
+    ['H', 'H', 'H', 'D3', 'D4', 'H', 'H', 'H', 'H', 'H'], // A,5 (16)
+    ['H', 'H', 'D3', 'D4', 'D5', 'H', 'H', 'H', 'H', 'H'], // A,6 (17)
+    ['S4', 'S4', 'D4', 'D5', 'D6', 'S6', 'S4', 'H', 'H', 'H'], // A,7 (18)
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S6', 'S6'], // A,8 (19)
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // A,9 (20)
 ];
 const PAIRS_IBERIAN: Action[][] = [
-    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
-    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
-    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
-    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H'],
-    ['SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'],
-    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 7s (hit heavy due to 7-7-7 bonus)
-    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
-    ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
-    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H'],  // 2,2
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H'],  // 3,3
+    ['H', 'H', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'],     // 6,6
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'PS', 'H', 'H', 'H', 'H'],  // 7,7
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'R'], // 8,8
+    ['S', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'],  // 9,9
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'], // A,A
 ];
 
 // Ornament divider
@@ -275,7 +332,7 @@ function getRoomRulesContent(room: RoomConfig): RoomRulesContent {
                     {
                         eyebrow: 'Split Limit',
                         title: 'Only one split',
-                        detail: 'You may split only once, for a maximum of 2 hands. Same-rank only: J-J works, but J-K does not.',
+                        detail: 'You may split only once, for a maximum of 2 hands. Equal-value cards are enough here, so mixed 10-value pairs such as J-K may be split.',
                         tone: 'warn',
                     },
                     {
@@ -290,7 +347,7 @@ function getRoomRulesContent(room: RoomConfig): RoomRulesContent {
                     items: [
                         'Double down is allowed on any first two cards, except hands created from split aces.',
                         'Double after split is allowed on regular split hands.',
-                        'Split requires the exact same rank and stops at 2 total hands per seat.',
+                        'Split requires equal value and stops at 2 total hands per seat, so mixed 10-value pairs are legal.',
                         'Split aces receive one card each and cannot be re-split.',
                         'Surrender is not available.',
                     ],
@@ -544,58 +601,60 @@ function getRoomRulesContent(room: RoomConfig): RoomRulesContent {
             };
         case 'iberian_21':
             return {
-                overview: 'Iberian 21 is not just blackjack with a cosmetic twist. Removing all 10s, allowing rescue after doubles, and awarding bonus 21 payouts creates a distinct game where standard blackjack instincts will often be wrong.',
+                overview: 'Iberian 21 here follows the common casino Spanish 21 profile: 6 no-10 decks, dealer H17, late surrender plus rescue, and liberal split rules. This chart matches the specific "Dealer Hits on Soft 17" protocol.',
                 highlights: [
                     {
                         eyebrow: 'Table Identity',
-                        title: 'No 10s in the deck',
-                        detail: 'All six decks remove the rank 10 entirely, which makes drawing to strong totals slower and changes dealer/player math across the chart.',
+                        title: 'Spanish 21 Profile',
+                        detail: 'All rank-10 cards are removed. Player 21 always wins and beats dealer blackjack. These rules significantly favor the player to compensate for the missing 10s.',
+                        tone: 'accent',
                     },
                     {
-                        eyebrow: 'Major Player Rule',
-                        title: 'Your 21 always wins',
-                        detail: 'A player 21 or natural blackjack beats dealer 21 and dealer blackjack. There is no push on your made 21.',
-                        tone: 'good',
+                        eyebrow: 'Soft 17 Rule',
+                        title: 'Dealer Hits Soft 17',
+                        detail: 'This specific strategy is optimized for rooms where the dealer must draw on Soft 17 (H17).',
+                        tone: 'warn',
                     },
                     {
-                        eyebrow: 'Rescue Mechanic',
-                        title: 'Surrender stays live',
-                        detail: 'This room effectively uses surrender as a rescue option, including after doubling, which changes how aggressively you can press edges.',
+                        eyebrow: 'Surrender & Rescue',
+                        title: 'Late Surrender + Rescue',
+                        detail: 'Surrender is available on the first two cards, and "Rescue" is available after doubling down.',
                         tone: 'good',
                     },
                 ],
                 playerOptions: {
                     title: 'Player Options',
                     items: [
-                        'Double down is allowed on any number of cards as long as the hand has not already doubled.',
-                        'Surrender is available on live hands, including as a Double Down Rescue after you have already doubled.',
-                        'Equal-value pairs may be split up to 4 total hands per seat.',
-                        'Split aces may be hit and doubled after the split, unlike most standard rooms.',
+                        'Double on any number of cards; Redoubling is not allowed.',
+                        'Late Surrender on original hand; Double Down Rescue available after doubling.',
+                        'Split up to 4 hands total. Aces can be re-split, hit, and doubled.',
+                        'Bonus 21 payouts for 5+ cards, 6-7-8, and 7-7-7 (undoubled).',
                     ],
                 },
                 payouts: {
                     title: 'Payout & Settlement',
                     items: [
-                        'Natural blackjack pays 3:2 and always wins, even against dealer blackjack.',
-                        'Any player 21 also always wins against dealer 21.',
-                        'Undoubled 5-card 21 pays 3:2, 6-card 21 pays 2:1, and 7-card or longer 21 pays 3:1.',
-                        'Undoubled suited or premium 6-7-8 and 7-7-7 combinations can upgrade the payout further, with the highest rewards on all-spade versions.',
-                        'If the hand was doubled, bonus 21 payouts are reduced back to a normal 1:1 win.',
+                        'Blackjack pays 3:2 and always wins against dealer blackjack.',
+                        'Any Player 21 always wins against dealer 21.',
+                        '5-card 21 (3:2), 6-card 21 (2:1), 7-card 21 (3:1).',
+                        '6-7-8 or 7-7-7 pays 3:2 (mixed), 2:1 (same suit), 3:1 (spades).',
                     ],
                 },
                 dealerFlow: {
                     title: 'Dealer Procedure',
                     items: [
-                        'Dealer hits soft 17 and stands on hard 17 and above.',
-                        'With 10s removed, dealers bust less in some standard patterns but also reach natural blackjacks less often than in normal blackjack.',
+                        'Dealer hits Soft 17 (H17) and stands on Hard 17.',
+                        'Dealer does not have any 10 cards in the deck, increasing bust rates in specific patterns.',
                     ],
                 },
                 strategyNotes: {
-                    title: 'Strategy Focus',
+                    title: 'Strategy Legend',
                     items: [
-                        'Expect a much more hit-heavy and rescue-heavy chart. Totals that are automatic stands in standard blackjack can become dynamic here.',
-                        'Because 21 always wins, building to 21 is disproportionately valuable compared with standard push-prone blackjack.',
-                        'Pair, count, and bonus awareness matter more here than in any other room; Iberian 21 should be learned as its own game, not as a blackjack variant skin.',
+                        'S4/5/6: Stand, except Hit with 4/5/6 or more cards.',
+                        'D3/4/5/6: Double, except Hit with 3/4/5/6 or more cards.',
+                        'RH: Surrender if allowed, otherwise Hit.',
+                        'PS: Split, except Hit with suited sevens.',
+                        '* / \' / ": Compositional Hit overrides for 6-7-8 combinations.',
                     ],
                 },
             };
@@ -640,6 +699,7 @@ function getStrategyTableContent(room: RoomConfig, tab: 'hard' | 'soft' | 'pairs
                     summary: 'Iberian 21 hard totals stay active longer because there are no rank-10 cards in the shoe and player 21 always wins.',
                     bullets: [
                         'Hard 12 and 13 remain live more often than in regular blackjack.',
+                        '6+7, 6+8, and 7+8 are now treated as top Walker bonus-hunting overrides, so the live advisor can keep hitting them against any dealer.',
                         'Rescue-style surrender changes how far you can push marginal totals.',
                         'The chart values building to 21 more heavily than standard blackjack does.',
                     ],
@@ -708,7 +768,7 @@ function getStrategyTableContent(room: RoomConfig, tab: 'hard' | 'soft' | 'pairs
                 title: 'Pairs Guide',
                 summary: 'Classic has the tightest split policy in the app, so every pair decision matters more.',
                 bullets: [
-                    'Pairs must match by exact rank, not just value. J-J works, J-K does not.',
+                    'Pairs only need equal value in this online ruleset, so mixed 10-value pairs like J-K are legal splits.',
                     'You only get one split, for a maximum of 2 hands total.',
                     'A,A and 8,8 are especially important because you do not get extra repair chances later.',
                 ],
@@ -729,6 +789,7 @@ function getStrategyTableContent(room: RoomConfig, tab: 'hard' | 'soft' | 'pairs
                 summary: 'Iberian 21 pair logic is shaped by no-10 decks, flexible ace branches, and bonus-driven 7-based hands.',
                 bullets: [
                     'You can hit and double after splitting aces, unlike most blackjack rooms.',
+                    '7,7 is now elevated as a top Walker bonus-hunting override, so the live advisor can keep the pair together and hit for premium 7-7-7 routes.',
                     'The 7,7 row matters extra because 7-7-7 based 21 outcomes have premium value.',
                     'The face-card row represents J/J, Q/Q, and K/K logic because there are no rank-10 cards here.',
                 ],
@@ -758,10 +819,25 @@ export default function StrategyModal({
     const isIberianHiLo = room.id === 'iberian_21' && countTab === 'hilo';
     const isIberianWalker = room.id === 'iberian_21' && countTab === 'kw';
     const roomRulesContent = getRoomRulesContent(room);
+    const roomCompositionOverrides = COMPOSITION_DEPENDENT_OVERRIDES.filter((override) => override.roomId === room.id);
+    const topCompositionOverrides = roomCompositionOverrides.filter((override) => override.isTopOverride);
+    const specialCaseGroups = (['hard', 'soft', 'pairs'] as SpecialCaseGroup[]).map((group) => ({
+        group,
+        items: roomCompositionOverrides.filter((override) => override.tab === group && !override.isTopOverride),
+    })).filter((entry) => entry.items.length > 0);
+    const visibleTabs = (room.id === 'iberian_21'
+        ? ['rules', 'hard', 'soft', 'pairs', 'special', 'counting']
+        : ['rules', 'hard', 'soft', 'pairs', 'counting']) as Tab[];
 
     const strategyType = room.id;
 
-    const rows = tab === 'hard' ? HARD_ROWS : tab === 'soft' ? SOFT_ROWS : PAIR_ROWS;
+    const rows = tab === 'hard'
+        ? (strategyType === 'iberian_21' ? HARD_ROWS_IBERIAN : HARD_ROWS)
+        : tab === 'soft'
+            ? (strategyType === 'iberian_21' ? SOFT_ROWS_IBERIAN : SOFT_ROWS)
+            : tab === 'pairs'
+                ? (strategyType === 'iberian_21' ? PAIR_ROWS_IBERIAN : PAIR_ROWS)
+                : [];
     const data = tab === 'hard'
         ? (strategyType === 'free_action'
             ? HARD_FA
@@ -769,9 +845,11 @@ export default function StrategyModal({
                 ? HARD_IBERIAN
                 : strategyType === 'atlantic_city'
                     ? HARD_AC
-                    : strategyType === 'vegas_strip' || strategyType === 'vegas_downtown'
+                    : strategyType === 'vegas_strip'
                         ? HARD_VEGAS
-                        : HARD_CLASSIC)
+                        : strategyType === 'vegas_downtown'
+                            ? HARD_DOWNTOWN
+                            : HARD_CLASSIC)
         : tab === 'soft'
             ? (strategyType === 'free_action'
                 ? SOFT_FA
@@ -779,18 +857,22 @@ export default function StrategyModal({
                     ? SOFT_IBERIAN
                     : strategyType === 'atlantic_city'
                         ? SOFT_AC
-                        : strategyType === 'vegas_strip' || strategyType === 'vegas_downtown'
+                        : strategyType === 'vegas_strip'
                             ? SOFT_VEGAS
-                            : SOFT_CLASSIC)
-            : (strategyType === 'free_action'
-                ? PAIRS_FA
-                : strategyType === 'iberian_21'
-                    ? PAIRS_IBERIAN
-                    : strategyType === 'atlantic_city'
-                        ? PAIRS_AC
-                        : strategyType === 'vegas_strip' || strategyType === 'vegas_downtown'
-                            ? PAIRS_VEGAS
-                            : PAIRS_CLASSIC);
+                            : strategyType === 'vegas_downtown'
+                                ? SOFT_DOWNTOWN
+                                : SOFT_CLASSIC)
+            : tab === 'pairs'
+                ? (strategyType === 'free_action'
+                    ? PAIRS_FA
+                    : strategyType === 'iberian_21'
+                        ? PAIRS_IBERIAN
+                        : strategyType === 'atlantic_city'
+                            ? PAIRS_AC
+                            : strategyType === 'vegas_strip' || strategyType === 'vegas_downtown'
+                                ? PAIRS_VEGAS
+                                : PAIRS_CLASSIC)
+                : [];
 
     const strategyTableContent = tab === 'hard' || tab === 'soft' || tab === 'pairs'
         ? getStrategyTableContent(room, tab)
@@ -807,6 +889,7 @@ export default function StrategyModal({
         hard: { label: 'Hard Totals', rowTitle: 'Hand' },
         soft: { label: 'Soft Totals', rowTitle: 'Hand' },
         pairs: { label: 'Pairs', rowTitle: 'Pair' },
+        special: { label: 'Special Case', rowTitle: '' },
         counting: { label: 'Card Counting', rowTitle: '' },
     };
 
@@ -873,7 +956,7 @@ export default function StrategyModal({
 
                 {/* Tabs */}
                 <div className="flex px-6 pt-1" style={{ background: 'rgba(0,0,0,0.15)' }}>
-                    {(['rules', 'hard', 'soft', 'pairs', 'counting'] as Tab[]).map((t) => {
+                    {visibleTabs.map((t) => {
                         const active = tab === t;
                         return (
                             <button
@@ -989,6 +1072,115 @@ export default function StrategyModal({
                                 </div>
                             </div>
                         </div>
+                    ) : tab === 'special' ? (
+                        <div className="space-y-5">
+                            <div className="rounded-2xl border p-4" style={{ background: `linear-gradient(135deg, ${room.accentColor}0f 0%, rgba(255,255,255,0.02) 100%)`, borderColor: `${room.accentColor}26` }}>
+                                <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-1" style={{ color: `${room.accentColor}cc` }}>Walker Special Cases</p>
+                                <p className="text-[12px] leading-relaxed text-white/72">
+                                    Top overrides below can replace the live advice. All other Walker entries stay as reference notes under the main recommendation.
+                                </p>
+                            </div>
+
+                            {topCompositionOverrides.length > 0 && (
+                                <div className="rounded-2xl border p-4" style={{ background: 'rgba(250,204,21,0.05)', borderColor: 'rgba(250,204,21,0.18)' }}>
+                                    <div className="flex items-center justify-between gap-3 mb-3">
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-300/70">Priority Layer</p>
+                                            <p className="text-[15px] font-black text-yellow-200" style={{ fontFamily: "'Georgia', serif" }}>Top Overrides</p>
+                                        </div>
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-yellow-300/60">Walker</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {topCompositionOverrides.map((override) => {
+                                            const pattern = renderSpecialCaseCards(override.handPattern ?? []);
+                                            const accent = getSpecialCaseAccent(true);
+                                            return (
+                                                <div key={override.id} className="rounded-xl border px-3.5 py-3" style={{ background: accent.background, borderColor: accent.borderColor }}>
+                                                    <div className="flex items-center justify-between gap-3 mb-2">
+                                                        <p className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: accent.badgeColor }}>{accent.badge}</p>
+                                                        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-yellow-100/60">{SPECIAL_CASE_GROUP_LABELS[override.tab]}</span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            {pattern.map((card) => (
+                                                                <div key={card.key} className="min-w-11.5 rounded-lg border px-2.5 py-2 text-center" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(238,231,222,0.92) 100%)', borderColor: 'rgba(255,255,255,0.18)' }}>
+                                                                    <span className="block text-[13px] font-black leading-none text-slate-900">{card.label}</span>
+                                                                    <span className="block mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-red-600">card</span>
+                                                                </div>
+                                                            ))}
+                                                            <span className="text-white/30 text-[11px] font-black">vs</span>
+                                                            <div className="min-w-11.5 rounded-lg border px-2.5 py-2 text-center" style={{ background: 'rgba(255,255,255,0.06)', borderColor: `${room.accentColor}30` }}>
+                                                                <span className="block text-[13px] font-black leading-none text-white/88">{formatSpecialCaseRank(override.dealerUpcard)}</span>
+                                                                <span className="block mt-1 text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: `${room.accentColor}cc` }}>dealer</span>
+                                                            </div>
+                                                            <div className="rounded-lg border px-3 py-2" style={{ background: `${room.accentColor}12`, borderColor: `${room.accentColor}30` }}>
+                                                                <span className="block text-[9px] font-black uppercase tracking-[0.15em]" style={{ color: `${room.accentColor}cc` }}>Action</span>
+                                                                <span className="block mt-1 text-[12px] font-black text-white/88">{formatSpecialCaseAction(override.action)}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <p className="mt-2 text-[12px] font-semibold leading-relaxed text-white/86">{override.summary}</p>
+                                                    <p className="mt-1 text-[11px] leading-relaxed text-white/54">Walker note: {override.trigger}.</p>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {specialCaseGroups.map(({ group, items }) => (
+                                <div key={group} className="rounded-2xl border p-4" style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)' }}>
+                                    <div className="flex items-center justify-between gap-3 mb-3">
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Special Case</p>
+                                            <p className="text-[15px] font-black" style={{ color: room.accentColor, fontFamily: "'Georgia', serif" }}>{SPECIAL_CASE_GROUP_LABELS[group]}</p>
+                                        </div>
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Walker</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {items.map((override) => {
+                                            const pattern = renderSpecialCaseCards(override.handPattern ?? []);
+                                            const accent = getSpecialCaseAccent(false);
+                                            return (
+                                                <div key={override.id} className="rounded-xl border px-3.5 py-3" style={{ background: accent.background, borderColor: accent.borderColor }}>
+                                                    <div className="flex items-center justify-between gap-3 mb-2">
+                                                        <p className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: accent.badgeColor }}>{accent.badge}</p>
+                                                        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/28">{override.isSoft ? 'Soft hand' : group === 'pairs' ? 'Pair hand' : 'Hard hand'}</span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            {pattern.map((card) => (
+                                                                <div
+                                                                    key={card.key}
+                                                                    className="min-w-11.5 rounded-lg border px-2.5 py-2 text-center"
+                                                                    style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(238,231,222,0.92) 100%)', borderColor: 'rgba(255,255,255,0.18)' }}
+                                                                >
+                                                                    <span className="block text-[13px] font-black leading-none text-slate-900">{card.label}</span>
+                                                                    <span className="block mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-red-600">card</span>
+                                                                </div>
+                                                            ))}
+                                                            <span className="text-white/30 text-[11px] font-black">vs</span>
+                                                            <div className="min-w-11.5 rounded-lg border px-2.5 py-2 text-center" style={{ background: 'rgba(255,255,255,0.06)', borderColor: `${room.accentColor}30` }}>
+                                                                <span className="block text-[13px] font-black leading-none text-white/88">{formatSpecialCaseRank(override.dealerUpcard)}</span>
+                                                                <span className="block mt-1 text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: `${room.accentColor}cc` }}>dealer</span>
+                                                            </div>
+                                                            <div className="rounded-lg border px-3 py-2" style={{ background: `${room.accentColor}12`, borderColor: `${room.accentColor}30` }}>
+                                                                <span className="block text-[9px] font-black uppercase tracking-[0.15em]" style={{ color: `${room.accentColor}cc` }}>Action</span>
+                                                                <span className="block mt-1 text-[12px] font-black text-white/88">{formatSpecialCaseAction(override.action)}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <p className="mt-2 text-[12px] font-semibold leading-relaxed text-white/82">{override.summary}</p>
+                                                    <p className="mt-1 text-[11px] leading-relaxed text-white/48">Walker note: {override.trigger}.</p>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     ) : tab === 'counting' ? (
                         /* ─── Card Counting Guide ─── */
                         <div className="space-y-5">
@@ -1082,7 +1274,7 @@ export default function StrategyModal({
                                             Step 1: Running Count (RC)
                                         </p>
                                         <p className="text-[12px] leading-relaxed mb-2" style={{ color: 'rgba(240,230,214,0.55)' }}>
-                                            Unlike balanced systems, Katarina Walker for Iberian 21 is an unbalanced system (+8 per deck). Our Hand Advisor mathematically corrects this offset automatically so your display safely starts at 0.
+                                            Unlike balanced systems, Katarina Walker for Iberian 21 is an unbalanced system (+8 per deck). The counting engine offsets that baseline automatically so a fresh shoe still displays from a practical zero point.
                                             For every card you see dealt, add or subtract its Walker value.
                                         </p>
                                     </div>
@@ -1109,7 +1301,7 @@ export default function StrategyModal({
                                             {strategyType === 'iberian_21' ? (
                                                 <>
                                                     Card counting using Hi-Lo in Iberian 21 is an <span style={{ color: 'rgba(240,230,214,0.8)', fontWeight: 700 }}>unbalanced system</span> because all 10s are removed. In a 6-deck Iberian shoe, the running count naturally starts around <span style={{ color: '#fca5a5', fontWeight: 700 }}>−24</span>.
-                                                    <br /><br />The <span style={{ color: 'rgba(240,230,214,0.8)', fontWeight: 700 }}>Bet Advice</span> panel compensates for that baseline automatically. Use Katarina Walker in Settings if you prefer a room-specific balanced alternative that starts near zero.
+                                                    <br /><br />The <span style={{ color: 'rgba(240,230,214,0.8)', fontWeight: 700 }}>Bet Advice</span> panel compensates for that baseline automatically, while strategy deviations still use the real Iberian Hi-Lo thresholds. Use Katarina Walker in Settings if you prefer the room-specific Walker indices instead.
                                                 </>
                                             ) : (
                                                 <>

@@ -25,12 +25,14 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
     const showHandAdvisor = useGameStore((s) => s.showHandAdvisor);
     const showCardCounting = useGameStore((s) => s.showCardCounting);
     const countSystem = useGameStore((s) => s.countSystem);
+    const showSpecialCases = useGameStore((s) => s.showSpecialCases);
 
     const setDealerSpeed = useGameStore((s) => s.setDealerSpeed);
     const setSoundEnabled = useGameStore((s) => s.setSoundEnabled);
     const setShowHandAdvisor = useGameStore((s) => s.setShowHandAdvisor);
     const setShowCardCounting = useGameStore((s) => s.setShowCardCounting);
     const setCountSystem = useGameStore((s) => s.setCountSystem);
+    const setShowSpecialCases = useGameStore((s) => s.setShowSpecialCases);
     const musicEnabled = useGameStore((s) => s.musicEnabled);
     const musicVolume = useGameStore((s) => s.musicVolume);
     const soundVolume = useGameStore((s) => s.soundVolume);
@@ -167,6 +169,23 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
                             onChange={(val) => { playSound('switch'); setShowHandAdvisor(val); }}
                         />
                     </SettingRow>
+
+                    {showHandAdvisor && (
+                        <>
+                            <Divider />
+                            <SettingRow
+                                icon={showSpecialCases ? <Zap size={18} className="text-blue-400" /> : <Zap size={18} className="text-white/30" />}
+                                label="Special Case Suggestions"
+                                description="Toggle composition-dependent strategy overrides"
+                            >
+                                <ToggleSwitch
+                                    enabled={showSpecialCases}
+                                    accentColor={accentColor}
+                                    onChange={(val) => { playSound('switch'); setShowSpecialCases(val); }}
+                                />
+                            </SettingRow>
+                        </>
+                    )}
 
                     <Divider />
 
