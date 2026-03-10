@@ -20,32 +20,41 @@ export default function ChipRack() {
     const isBettingPhase = gamePhase === GamePhase.BETTING;
 
     return (
-        <div className="flex items-end gap-1">
+        <div className="flex items-end gap-1.5">
             {CHIP_VALUES.filter(v => v >= 1).map((value) => {
                 const isSelected = selectedChipValue === value;
                 const canAfford = bankroll >= value;
                 const isDisabled = !isBettingPhase || !canAfford;
+                const handleSelect = () => {
+                    if (!isDisabled) selectChip(value);
+                };
 
                 return (
                     <motion.button
                         key={value}
-                        onClick={() => !isDisabled && selectChip(value)}
+                        layout
+                        initial={false}
+                        onPointerDown={handleSelect}
+                        onClick={(event) => {
+                            if (event.detail === 0) handleSelect();
+                        }}
                         disabled={isDisabled}
                         className={`
                             relative flex flex-col items-center group
-                            transition-all duration-200
                             ${isDisabled ? 'opacity-15 cursor-not-allowed' : 'cursor-pointer'}
                         `}
                         animate={{
-                            y: isSelected && !isDisabled ? -10 : 0,
-                            scale: isSelected && !isDisabled ? 1.2 : 1,
+                            y: isSelected && !isDisabled ? -7 : 0,
+                            scale: isSelected && !isDisabled ? 1.08 : 1,
+                            opacity: isDisabled ? 0.15 : 1,
                         }}
-                        whileHover={isDisabled ? {} : { y: -6, scale: 1.1 }}
-                        whileTap={isDisabled ? {} : { scale: 0.9 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                        whileHover={isDisabled ? {} : { y: isSelected ? -8 : -4, scale: isSelected ? 1.1 : 1.04 }}
+                        whileTap={isDisabled ? {} : { scale: 0.96, y: isSelected ? -5 : -2 }}
+                        transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
                     >
                         {/* Chip Image */}
-                        <div
+                        <motion.div
+                            layout
                             className={`
                                 relative w-[42px] h-[42px] rounded-full overflow-hidden
                                 ${isSelected && !isDisabled
@@ -53,7 +62,20 @@ export default function ChipRack() {
                                     : 'drop-shadow-md'
                                 }
                             `}
+                            animate={{
+                                filter: isSelected && !isDisabled
+                                    ? 'drop-shadow(0 6px 14px rgba(251,191,36,0.45))'
+                                    : 'drop-shadow(0 4px 8px rgba(0,0,0,0.28))',
+                            }}
+                            transition={{ duration: 0.12, ease: 'easeOut' }}
                         >
+                            {isSelected && !isDisabled && (
+                                <motion.div
+                                    layoutId="chip-selected-glow"
+                                    className="absolute inset-[-4px] rounded-full border border-amber-300/70 bg-amber-300/10"
+                                    transition={{ duration: 0.12, ease: 'easeOut' }}
+                                />
+                            )}
                             <Image
                                 src={getChipImagePath(value)}
                                 alt={`${CHIP_LABELS[value]} chip`}
@@ -61,12 +83,12 @@ export default function ChipRack() {
                                 className="object-cover scale-[1.15]"
                                 sizes="42px"
                             />
-                        </div>
+                        </motion.div>
 
                         {/* Label */}
                         <span
                             className={`
-                                text-[8px] font-extrabold mt-0.5 tabular-nums transition-colors duration-200
+                                text-[8px] font-extrabold mt-0.5 tabular-nums transition-colors duration-100
                                 ${isSelected && !isDisabled
                                     ? 'text-amber-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]'
                                     : 'text-white/25 group-hover:text-white/50'

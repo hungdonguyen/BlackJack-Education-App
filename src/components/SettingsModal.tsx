@@ -5,19 +5,21 @@
 // ============================================
 
 import { motion } from 'framer-motion';
-import { X, Gauge, Zap, Volume2, VolumeX, Eye, EyeOff, Settings, Music } from 'lucide-react';
+import { X, Gauge, Zap, Volume2, VolumeX, Eye, EyeOff, Settings, Music, Expand, Minimize2, Power, LogOut } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
-import { DealerSpeed } from '@/store/settingsSlice';
 import { useAudio } from '@/utils/audio';
 
 interface SettingsModalProps {
     roomId: string;
     accentColor: string;
     borderColor: string;
+    isFullscreen: boolean;
     onClose: () => void;
+    onToggleFullscreen: () => void;
+    onSaveAndExit: () => void;
 }
 
-export default function SettingsModal({ roomId, accentColor, borderColor, onClose }: SettingsModalProps) {
+export default function SettingsModal({ roomId, accentColor, borderColor, isFullscreen, onClose, onToggleFullscreen, onSaveAndExit }: SettingsModalProps) {
     const dealerSpeed = useGameStore((s) => s.dealerSpeed);
     const soundEnabled = useGameStore((s) => s.soundEnabled);
     const showHandAdvisor = useGameStore((s) => s.showHandAdvisor);
@@ -210,6 +212,25 @@ export default function SettingsModal({ roomId, accentColor, borderColor, onClos
 
                 {/* Footer */}
                 <div className="px-6 py-4 border-t border-white/5 flex flex-col items-center gap-2">
+                    <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+                        <ActionButton
+                            icon={isFullscreen ? <Minimize2 size={14} /> : <Expand size={14} />}
+                            label={isFullscreen ? 'Window Mode' : 'Fullscreen'}
+                            accentColor={accentColor}
+                            onClick={() => { playSound('click'); onToggleFullscreen(); }}
+                        />
+                        <ActionButton
+                            icon={<Power size={14} />}
+                            label="Quit Game"
+                            accentColor={accentColor}
+                            destructive
+                            onClick={() => { playSound('click'); onSaveAndExit(); }}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-[9px] uppercase tracking-[0.22em] text-white/35">
+                        <LogOut size={12} className="text-white/45" />
+                        Current settings and bankroll are saved automatically.
+                    </div>
                     <span className="text-[9px] text-white/20 uppercase tracking-[0.3em]">Settings auto-save</span>
                     <div className="text-center text-[8px] text-white/10 leading-tight">
                         Audio Credits: Music by Kevin MacLeod (incompetech.com) & Audionautix.com<br />
@@ -288,4 +309,26 @@ function ToggleSwitch({ enabled, accentColor, onChange }: {
 
 function Divider() {
     return <div className="border-t border-white/5" />;
+}
+
+function ActionButton({ icon, label, accentColor, destructive = false, onClick }: {
+    icon: React.ReactNode;
+    label: string;
+    accentColor: string;
+    destructive?: boolean;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            onClick={onClick}
+            className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] transition-all cursor-pointer ${destructive
+                ? 'border-red-400/30 bg-red-500/10 text-red-200 hover:bg-red-500/16'
+                : 'border-white/10 bg-white/5 text-white/75 hover:bg-white/10'
+                }`}
+            style={destructive ? undefined : { boxShadow: `inset 0 0 0 1px ${accentColor}12` }}
+        >
+            <span style={destructive ? undefined : { color: accentColor }}>{icon}</span>
+            {label}
+        </button>
+    );
 }

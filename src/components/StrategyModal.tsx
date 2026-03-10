@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, BookOpen } from 'lucide-react';
+import { X, BookOpen, Info, Plus, Minus, ChevronsUp, ArrowLeftRight, Shield, Flag } from 'lucide-react';
 import { RoomConfig } from '@/utils/rooms';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GameStore } from '@/types/game';
@@ -20,7 +20,35 @@ interface StrategyModalProps {
 }
 
 type Action = 'H' | 'S' | 'D' | 'DS' | 'SP' | 'SU' | 'FD' | 'FSP';
-type Tab = 'hard' | 'soft' | 'pairs' | 'counting';
+type Tab = 'hard' | 'soft' | 'pairs' | 'counting' | 'rules';
+type HighlightTone = 'accent' | 'good' | 'warn';
+
+interface RuleHighlight {
+    eyebrow: string;
+    title: string;
+    detail: string;
+    tone?: HighlightTone;
+}
+
+interface RuleSectionData {
+    title: string;
+    items: string[];
+}
+
+interface RoomRulesContent {
+    overview: string;
+    highlights: RuleHighlight[];
+    playerOptions: RuleSectionData;
+    payouts: RuleSectionData;
+    dealerFlow: RuleSectionData;
+    strategyNotes: RuleSectionData;
+}
+
+interface StrategyTableContent {
+    title: string;
+    summary: string;
+    bullets: string[];
+}
 
 // Refined color palette matching casino aesthetic - gradient backgrounds
 const ACTION_STYLES: Record<Action, { bg: string; text: string; label: string; desc: string }> = {
@@ -233,16 +261,503 @@ function Ornament({ color }: { color: string }) {
     );
 }
 
+function getRoomRulesContent(room: RoomConfig): RoomRulesContent {
+    switch (room.id) {
+        case 'classic':
+            return {
+                overview: 'Traditional 8-deck blackjack with S17 dealer rules and a conservative split structure. This table looks familiar, but the limited re-splitting makes pair discipline more important than in Vegas variants.',
+                highlights: [
+                    {
+                        eyebrow: 'Table Identity',
+                        title: 'Classic shoe game',
+                        detail: '8 decks, dealer stands on all 17s, blackjack pays 3:2, and there is no surrender.',
+                    },
+                    {
+                        eyebrow: 'Split Limit',
+                        title: 'Only one split',
+                        detail: 'You may split only once, for a maximum of 2 hands. Same-rank only: J-J works, but J-K does not.',
+                        tone: 'warn',
+                    },
+                    {
+                        eyebrow: 'Practical Edge',
+                        title: 'Stable but less flexible',
+                        detail: 'Because resplitting is restricted, pair mistakes are punished harder than in rooms that allow 4 hands.',
+                        tone: 'good',
+                    },
+                ],
+                playerOptions: {
+                    title: 'Player Options',
+                    items: [
+                        'Double down is allowed on any first two cards, except hands created from split aces.',
+                        'Double after split is allowed on regular split hands.',
+                        'Split requires the exact same rank and stops at 2 total hands per seat.',
+                        'Split aces receive one card each and cannot be re-split.',
+                        'Surrender is not available.',
+                    ],
+                },
+                payouts: {
+                    title: 'Payout & Settlement',
+                    items: [
+                        'Blackjack pays 3:2 and regular wins pay 1:1.',
+                        'Insurance pays 2:1 when the dealer shows an ace.',
+                        'Push returns the full wager; bust always loses immediately.',
+                    ],
+                },
+                dealerFlow: {
+                    title: 'Dealer Procedure',
+                    items: [
+                        'Dealer stands on hard 17 and soft 17.',
+                        'With 8 decks, card removal matters less than in double-deck rooms, so pure basic strategy discipline matters most.',
+                    ],
+                },
+                strategyNotes: {
+                    title: 'Strategy Focus',
+                    items: [
+                        'Treat this as a baseline chart: no surrender rescue, no special pushes, and no free actions.',
+                        'Because only one split is allowed, pair hands such as 8,8 and A,A carry more weight than in multi-split rooms.',
+                        'Do not overvalue composition-dependent plays; the 8-deck shoe smooths out extremes.',
+                    ],
+                },
+            };
+        case 'vegas_strip':
+            return {
+                overview: 'A 4-deck S17 Vegas game with more flexible splitting than Classic. Fewer decks improve composition sensitivity while keeping the dealer rule player-friendlier than H17 tables.',
+                highlights: [
+                    {
+                        eyebrow: 'Table Identity',
+                        title: '4-deck Vegas Strip',
+                        detail: 'Blackjack pays 3:2, dealer stands on all 17s, and the room keeps a clean no-surrender structure.',
+                    },
+                    {
+                        eyebrow: 'Split Logic',
+                        title: 'Same value is enough',
+                        detail: 'You can split any equal-value pair, including mixed 10-value cards such as J-K, up to 4 hands total.',
+                        tone: 'good',
+                    },
+                    {
+                        eyebrow: 'Ace Restriction',
+                        title: 'No ace re-split',
+                        detail: 'Once aces are split, each ace gets one card and the branch ends. There is no re-split on aces.',
+                        tone: 'warn',
+                    },
+                ],
+                playerOptions: {
+                    title: 'Player Options',
+                    items: [
+                        'Double down is allowed on any first two cards, except ace-split hands.',
+                        'Double after split is available on normal split hands.',
+                        'Split equal-value hands up to 4 total hands per seat.',
+                        'Mixed 10-value pairs may be split here because value match is enough.',
+                        'Surrender is not available.',
+                    ],
+                },
+                payouts: {
+                    title: 'Payout & Settlement',
+                    items: [
+                        'Blackjack pays 3:2 and regular wins pay 1:1.',
+                        'Insurance pays 2:1 when the dealer shows an ace.',
+                        'There are no bonus 21 payouts, free actions, or push-on-22 exceptions.',
+                    ],
+                },
+                dealerFlow: {
+                    title: 'Dealer Procedure',
+                    items: [
+                        'Dealer stands on both hard 17 and soft 17.',
+                        'The 4-deck shoe makes pair and double spots slightly more composition-sensitive than 8-deck rooms.',
+                    ],
+                },
+                strategyNotes: {
+                    title: 'Strategy Focus',
+                    items: [
+                        'This is one of the cleaner rooms for textbook basic strategy because the rule set is strong and predictable.',
+                        'Exploit the broader split rule correctly, but avoid inventing loose mixed-10 splits unless the chart says so.',
+                        'The lower deck count slightly improves precision for doubles and pair decisions compared with Classic.',
+                    ],
+                },
+            };
+        case 'vegas_downtown':
+            return {
+                overview: 'A fast 2-deck game where the smaller pack helps the player, but the dealer compensates by hitting soft 17. The result is a sharper, more volatile basic-strategy environment.',
+                highlights: [
+                    {
+                        eyebrow: 'Table Identity',
+                        title: '2-deck downtown game',
+                        detail: 'The short shoe increases composition value, but H17 gives the dealer more chances to improve weak hands.',
+                    },
+                    {
+                        eyebrow: 'Dealer Pressure',
+                        title: 'Soft 17 must hit',
+                        detail: 'Dealer A,6 is not a stopping hand here. That extra draw slightly raises house edge and changes some double/stand thresholds.',
+                        tone: 'warn',
+                    },
+                    {
+                        eyebrow: 'Split Freedom',
+                        title: '4-hand split tree',
+                        detail: 'Equal-value pairs, including mixed 10-value cards, can be split up to 4 total hands.',
+                        tone: 'good',
+                    },
+                ],
+                playerOptions: {
+                    title: 'Player Options',
+                    items: [
+                        'Double down is allowed on any first two cards, except ace-split hands.',
+                        'Double after split is allowed on regular split hands.',
+                        'Equal-value pairs may be split up to 4 total hands per seat.',
+                        'Split aces cannot be re-split and receive one card each.',
+                        'Surrender is not available.',
+                    ],
+                },
+                payouts: {
+                    title: 'Payout & Settlement',
+                    items: [
+                        'Blackjack pays 3:2 and regular wins pay 1:1.',
+                        'Insurance pays 2:1 when the dealer shows an ace.',
+                        'No rescue surrender, no side-bet interaction, and no alternate 21 payout schedule.',
+                    ],
+                },
+                dealerFlow: {
+                    title: 'Dealer Procedure',
+                    items: [
+                        'Dealer hits soft 17, but stands on hard 17 and above.',
+                        'Because there are only 2 decks, removal of small cards and aces has stronger immediate impact than in shoe games.',
+                    ],
+                },
+                strategyNotes: {
+                    title: 'Strategy Focus',
+                    items: [
+                        'Expect a slightly more aggressive chart than S17 rooms, especially around doubles and marginal stands.',
+                        'Do not copy 8-deck S17 instincts here; H17 punishes passive play in several borderline totals.',
+                        'The small deck count rewards accurate composition-aware counting more than the larger shoes.',
+                    ],
+                },
+            };
+        case 'atlantic_city':
+            return {
+                overview: 'A strong 8-deck S17 ruleset built around late surrender and flexible value-based splitting. This room gives the player more damage control than the standard shoe tables.',
+                highlights: [
+                    {
+                        eyebrow: 'Table Identity',
+                        title: 'Atlantic City core rules',
+                        detail: '8 decks, blackjack pays 3:2, dealer stands on all 17s, and late surrender is enabled.',
+                    },
+                    {
+                        eyebrow: 'Best Defensive Rule',
+                        title: 'Late surrender matters',
+                        detail: 'You can save half a bet on the right initial hands after the dealer checks for blackjack, which materially improves close EV spots.',
+                        tone: 'good',
+                    },
+                    {
+                        eyebrow: 'Split Structure',
+                        title: 'Value-based splits to 4 hands',
+                        detail: 'Mixed 10-value cards can be split, but aces still cannot be re-split.',
+                    },
+                ],
+                playerOptions: {
+                    title: 'Player Options',
+                    items: [
+                        'Double down is allowed on any first two cards, including after split, except ace-split hands.',
+                        'Late surrender is available only on the original 2-card hand before splitting and after the dealer has confirmed no blackjack.',
+                        'Equal-value pairs may be split up to 4 total hands per seat.',
+                        'Mixed 10-value pairs can be split; split aces cannot be re-split.',
+                    ],
+                },
+                payouts: {
+                    title: 'Payout & Settlement',
+                    items: [
+                        'Blackjack pays 3:2 and regular wins pay 1:1.',
+                        'Insurance pays 2:1 when the dealer shows an ace.',
+                        'Surrender returns half the original stake and ends the hand immediately.',
+                    ],
+                },
+                dealerFlow: {
+                    title: 'Dealer Procedure',
+                    items: [
+                        'Dealer stands on hard 17 and soft 17.',
+                        'The room uses a shoe game, so the main rule edge comes from surrender access rather than from composition alone.',
+                    ],
+                },
+                strategyNotes: {
+                    title: 'Strategy Focus',
+                    items: [
+                        'Use surrender correctly on the worst negative-EV starters; that is the defining difference of this room.',
+                        'Hands like hard 15 and hard 16 versus strong dealer upcards are materially improved by surrender availability.',
+                        'Because the dealer stands on soft 17, your default chart is slightly calmer than Vegas Downtown or Free Action.',
+                    ],
+                },
+            };
+        case 'free_action':
+            return {
+                overview: 'This variant rewrites normal blackjack incentives. Free doubles, free splits, and the dealer-22 push rule radically change how aggressively you should pursue extra hands and extra cards.',
+                highlights: [
+                    {
+                        eyebrow: 'Table Identity',
+                        title: 'Free Action variant',
+                        detail: '6 decks, dealer hits soft 17, no surrender, with special no-cost doubles and splits on many hands.',
+                    },
+                    {
+                        eyebrow: 'Core Twist',
+                        title: 'Dealer 22 pushes',
+                        detail: 'If the dealer busts with exactly 22, all surviving non-blackjack hands push instead of winning.',
+                        tone: 'warn',
+                    },
+                    {
+                        eyebrow: 'Player Compensation',
+                        title: 'Free aggression',
+                        detail: 'Hard 9, 10, 11 can double for free, and most pairs can split for free. That is why the chart becomes much more aggressive.',
+                        tone: 'good',
+                    },
+                ],
+                playerOptions: {
+                    title: 'Player Options',
+                    items: [
+                        'Double down is always allowed on live 2-card hands except ace-split hands.',
+                        'Hard 9, 10, and 11 double for free; other doubles still cost the normal extra bet.',
+                        'Equal-value pairs may be split up to 4 total hands per seat.',
+                        'All non-10-value pairs split for free; 10-value pairs still require a real matching wager.',
+                        'Split aces receive one card each and cannot be re-split.',
+                    ],
+                },
+                payouts: {
+                    title: 'Payout & Settlement',
+                    items: [
+                        'Blackjack still pays 3:2 and is protected from the dealer-22 push rule.',
+                        'Regular wins pay 1:1; insurance pays 2:1.',
+                        'Dealer 22 pushes all surviving non-blackjack hands. Dealer 23 or more busts normally.',
+                        'The Multi Action Bonus side bet has much lower RTP than the base game and should be treated as entertainment only.',
+                    ],
+                },
+                dealerFlow: {
+                    title: 'Dealer Procedure',
+                    items: [
+                        'Dealer hits soft 17, increasing volatility in marginal totals.',
+                        'Because dealer 22 does not lose, weak stiff hands gain less from simply waiting for a bust than in standard blackjack.',
+                    ],
+                },
+                strategyNotes: {
+                    title: 'Strategy Focus',
+                    items: [
+                        'Use the chart, not standard blackjack instinct. Free doubles and free splits make many seemingly wild actions mathematically right.',
+                        'Push-on-22 reduces the value of passive standing on weak totals, so the strategy leans harder into building strong hands.',
+                        'Do not chase the side bet as a serious value play; the edge is in the main game adjustments.',
+                    ],
+                },
+            };
+        case 'iberian_21':
+            return {
+                overview: 'Iberian 21 is not just blackjack with a cosmetic twist. Removing all 10s, allowing rescue after doubles, and awarding bonus 21 payouts creates a distinct game where standard blackjack instincts will often be wrong.',
+                highlights: [
+                    {
+                        eyebrow: 'Table Identity',
+                        title: 'No 10s in the deck',
+                        detail: 'All six decks remove the rank 10 entirely, which makes drawing to strong totals slower and changes dealer/player math across the chart.',
+                    },
+                    {
+                        eyebrow: 'Major Player Rule',
+                        title: 'Your 21 always wins',
+                        detail: 'A player 21 or natural blackjack beats dealer 21 and dealer blackjack. There is no push on your made 21.',
+                        tone: 'good',
+                    },
+                    {
+                        eyebrow: 'Rescue Mechanic',
+                        title: 'Surrender stays live',
+                        detail: 'This room effectively uses surrender as a rescue option, including after doubling, which changes how aggressively you can press edges.',
+                        tone: 'good',
+                    },
+                ],
+                playerOptions: {
+                    title: 'Player Options',
+                    items: [
+                        'Double down is allowed on any number of cards as long as the hand has not already doubled.',
+                        'Surrender is available on live hands, including as a Double Down Rescue after you have already doubled.',
+                        'Equal-value pairs may be split up to 4 total hands per seat.',
+                        'Split aces may be hit and doubled after the split, unlike most standard rooms.',
+                    ],
+                },
+                payouts: {
+                    title: 'Payout & Settlement',
+                    items: [
+                        'Natural blackjack pays 3:2 and always wins, even against dealer blackjack.',
+                        'Any player 21 also always wins against dealer 21.',
+                        'Undoubled 5-card 21 pays 3:2, 6-card 21 pays 2:1, and 7-card or longer 21 pays 3:1.',
+                        'Undoubled suited or premium 6-7-8 and 7-7-7 combinations can upgrade the payout further, with the highest rewards on all-spade versions.',
+                        'If the hand was doubled, bonus 21 payouts are reduced back to a normal 1:1 win.',
+                    ],
+                },
+                dealerFlow: {
+                    title: 'Dealer Procedure',
+                    items: [
+                        'Dealer hits soft 17 and stands on hard 17 and above.',
+                        'With 10s removed, dealers bust less in some standard patterns but also reach natural blackjacks less often than in normal blackjack.',
+                    ],
+                },
+                strategyNotes: {
+                    title: 'Strategy Focus',
+                    items: [
+                        'Expect a much more hit-heavy and rescue-heavy chart. Totals that are automatic stands in standard blackjack can become dynamic here.',
+                        'Because 21 always wins, building to 21 is disproportionately valuable compared with standard push-prone blackjack.',
+                        'Pair, count, and bonus awareness matter more here than in any other room; Iberian 21 should be learned as its own game, not as a blackjack variant skin.',
+                    ],
+                },
+            };
+        default:
+            return {
+                overview: room.description,
+                highlights: [],
+                playerOptions: { title: 'Player Options', items: [] },
+                payouts: { title: 'Payout & Settlement', items: [] },
+                dealerFlow: { title: 'Dealer Procedure', items: [] },
+                strategyNotes: { title: 'Strategy Focus', items: [] },
+            };
+    }
+}
+
+function getStrategyTableContent(room: RoomConfig, tab: 'hard' | 'soft' | 'pairs'): StrategyTableContent {
+    if (tab === 'hard') {
+        switch (room.id) {
+            case 'free_action':
+                return {
+                    title: 'Hard Totals Guide',
+                    summary: 'This room pushes hard hands much more aggressively because hard 9, 10, and 11 can double for free.',
+                    bullets: [
+                        'FD means take the free double; the normal extra-bet risk is removed.',
+                        'Dealer 22 pushes reduce the value of simply waiting on weak stiff hands.',
+                        'Do not import standard blackjack instincts here. The hard-hand chart is intentionally more forceful.',
+                    ],
+                };
+            case 'atlantic_city':
+                return {
+                    title: 'Hard Totals Guide',
+                    summary: 'Atlantic City looks standard at first glance, but late surrender changes the worst hard-hand spots materially.',
+                    bullets: [
+                        'SU cells are defensive value plays, not panic buttons.',
+                        'Hard 15 and 16 versus strong dealer cards are the main surrender-sensitive totals.',
+                        'Because the dealer stands on soft 17, the table is calmer than H17 variants.',
+                    ],
+                };
+            case 'iberian_21':
+                return {
+                    title: 'Hard Totals Guide',
+                    summary: 'Iberian 21 hard totals stay active longer because there are no rank-10 cards in the shoe and player 21 always wins.',
+                    bullets: [
+                        'Hard 12 and 13 remain live more often than in regular blackjack.',
+                        'Rescue-style surrender changes how far you can push marginal totals.',
+                        'The chart values building to 21 more heavily than standard blackjack does.',
+                    ],
+                };
+            case 'vegas_downtown':
+                return {
+                    title: 'Hard Totals Guide',
+                    summary: 'This 2-deck H17 room pressures hard hands more than S17 tables, especially near the double and stiff thresholds.',
+                    bullets: [
+                        'Do not copy 8-deck S17 instincts into this room.',
+                        'The small deck means each exposed low card changes EV faster than in shoe games.',
+                        'When the table says stand on a stiff hand, it is usually because the dealer upcard is weak enough to justify it.',
+                    ],
+                };
+            default:
+                return {
+                    title: 'Hard Totals Guide',
+                    summary: 'Hard totals are your highest-risk hands because any hit can bust immediately.',
+                    bullets: [
+                        'Against dealer 2 through 6, many stiff hands shift from hit to stand because the dealer is more likely to break.',
+                        '9, 10, and 11 are the core double-down totals when the upcard cooperates.',
+                        'Use the chart consistently instead of reacting to streaks or short-term emotion.',
+                    ],
+                };
+        }
+    }
+
+    if (tab === 'soft') {
+        switch (room.id) {
+            case 'iberian_21':
+                return {
+                    title: 'Soft Totals Guide',
+                    summary: 'Soft hands keep their flexibility in Iberian 21, and that flexibility combines with strong 21 incentives.',
+                    bullets: [
+                        'Soft doubles are powerful because you retain upside without the same bust risk as hard hands.',
+                        'Some soft hands stay active longer here because the deck composition is fundamentally different.',
+                        'When the chart falls back to stand, it usually means the dealer pressure now outweighs the bonus upside.',
+                    ],
+                };
+            case 'free_action':
+                return {
+                    title: 'Soft Totals Guide',
+                    summary: 'Soft totals are still your safest attack hands, but dealer-22 push means survival alone is not enough.',
+                    bullets: [
+                        'DS means double if the move is legal, otherwise stand.',
+                        'Soft 18 is the biggest pivot hand and changes sharply by upcard.',
+                        'These rows reward disciplined aggression, not passive ace protection.',
+                    ],
+                };
+            default:
+                return {
+                    title: 'Soft Totals Guide',
+                    summary: 'Soft totals are flexible because the ace can collapse from 11 to 1 when needed.',
+                    bullets: [
+                        'That flexibility is why many soft hands double against weak dealer cards.',
+                        'Soft 18 is the key decision row and flips between stand, hit, and double.',
+                        'If a cell says DS, treat it as a conditional value play, not a default stand.',
+                    ],
+                };
+        }
+    }
+
+    switch (room.id) {
+        case 'classic':
+            return {
+                title: 'Pairs Guide',
+                summary: 'Classic has the tightest split policy in the app, so every pair decision matters more.',
+                bullets: [
+                    'Pairs must match by exact rank, not just value. J-J works, J-K does not.',
+                    'You only get one split, for a maximum of 2 hands total.',
+                    'A,A and 8,8 are especially important because you do not get extra repair chances later.',
+                ],
+            };
+        case 'free_action':
+            return {
+                title: 'Pairs Guide',
+                summary: 'Free Action pair play is radically different because most splits cost nothing.',
+                bullets: [
+                    'FSP means the split is free and should be taken when the chart says so.',
+                    '10-value pairs are the exception; they still cost real money to split.',
+                    'The side bet may reward extra free actions, but that does not make it a strong long-run bet.',
+                ],
+            };
+        case 'iberian_21':
+            return {
+                title: 'Pairs Guide',
+                summary: 'Iberian 21 pair logic is shaped by no-10 decks, flexible ace branches, and bonus-driven 7-based hands.',
+                bullets: [
+                    'You can hit and double after splitting aces, unlike most blackjack rooms.',
+                    'The 7,7 row matters extra because 7-7-7 based 21 outcomes have premium value.',
+                    'The face-card row represents J/J, Q/Q, and K/K logic because there are no rank-10 cards here.',
+                ],
+            };
+        default:
+            return {
+                title: 'Pairs Guide',
+                summary: 'Pair strategy is about converting one medium hand into two stronger starts when the dealer is vulnerable.',
+                bullets: [
+                    'Always respect the room rule: some tables split by exact rank, others by equal value.',
+                    '5,5 usually behaves like a hard 10, so the chart often prefers doubling over splitting.',
+                    '10,10 stands almost everywhere unless a count-driven deviation specifically overrides it.',
+                ],
+            };
+    }
+}
+
 export default function StrategyModal({
     room,
     onClose,
 }: StrategyModalProps) {
-    const [tab, setTab] = useState<Tab>('hard');
+    const [tab, setTab] = useState<Tab>('rules');
     const countSystem = useGameStore((s: GameStore) => s.countSystem);
     const [countTab, setCountTab] = useState<'hilo' | 'kw'>(countSystem === 'Katarina Walker' ? 'kw' : 'hilo');
     const { playSound } = useAudio();
 
     const isIberianHiLo = room.id === 'iberian_21' && countTab === 'hilo';
+    const isIberianWalker = room.id === 'iberian_21' && countTab === 'kw';
+    const roomRulesContent = getRoomRulesContent(room);
 
     const strategyType = room.id;
 
@@ -254,7 +769,7 @@ export default function StrategyModal({
                 ? HARD_IBERIAN
                 : strategyType === 'atlantic_city'
                     ? HARD_AC
-                    : strategyType === 'vegas_downtown'
+                    : strategyType === 'vegas_strip' || strategyType === 'vegas_downtown'
                         ? HARD_VEGAS
                         : HARD_CLASSIC)
         : tab === 'soft'
@@ -264,7 +779,7 @@ export default function StrategyModal({
                     ? SOFT_IBERIAN
                     : strategyType === 'atlantic_city'
                         ? SOFT_AC
-                        : strategyType === 'vegas_downtown'
+                        : strategyType === 'vegas_strip' || strategyType === 'vegas_downtown'
                             ? SOFT_VEGAS
                             : SOFT_CLASSIC)
             : (strategyType === 'free_action'
@@ -273,11 +788,22 @@ export default function StrategyModal({
                     ? PAIRS_IBERIAN
                     : strategyType === 'atlantic_city'
                         ? PAIRS_AC
-                        : strategyType === 'vegas_downtown'
+                        : strategyType === 'vegas_strip' || strategyType === 'vegas_downtown'
                             ? PAIRS_VEGAS
                             : PAIRS_CLASSIC);
 
+    const strategyTableContent = tab === 'hard' || tab === 'soft' || tab === 'pairs'
+        ? getStrategyTableContent(room, tab)
+        : null;
+    const standardHiLoDeviations = room.gameRules.allowSurrender
+        ? [...(room.gameRules.dealerHitsSoft17 ? I18_H17 : I18_S17), ...FAB_4]
+        : [...(room.gameRules.dealerHitsSoft17 ? I18_H17 : I18_S17)];
+    const visibleDeviations = strategyType === 'iberian_21'
+        ? (countTab === 'kw' ? IBERIAN_WALKER : IBERIAN_HILO)
+        : standardHiLoDeviations;
+
     const tabConfig: Record<Tab, { label: string; rowTitle: string }> = {
+        rules: { label: 'Rules', rowTitle: '' },
         hard: { label: 'Hard Totals', rowTitle: 'Hand' },
         soft: { label: 'Soft Totals', rowTitle: 'Hand' },
         pairs: { label: 'Pairs', rowTitle: 'Pair' },
@@ -286,7 +812,7 @@ export default function StrategyModal({
 
     return (
         <motion.div
-            className="absolute inset-0 z-[200] flex items-center justify-center"
+            className="absolute inset-0 z-200 flex items-center justify-center p-3 sm:p-4"
             style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(6px)' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -300,8 +826,8 @@ export default function StrategyModal({
                     border: `1px solid ${room.borderColor}`,
                     borderRadius: 16,
                     boxShadow: `0 0 80px ${room.accentColor}20, 0 24px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)`,
-                    maxHeight: '994px',
-                    width: '820px',
+                    maxHeight: 'min(92vh, 994px)',
+                    width: 'min(820px, calc(100vw - 1.5rem))',
                 }}
                 initial={{ opacity: 0, scale: 0.92, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -332,7 +858,7 @@ export default function StrategyModal({
                                 Basic Strategy
                             </h2>
                             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] mt-0.5" style={{ color: `${room.accentColor}cc` }}>
-                                {room.name} {'\u2014'} {room.gameRules.numberOfDecks} Decks {'\u00b7'} {room.gameRules.dealerHitsSoft17 ? 'H17' : 'S17'} {'\u00b7'} Double After Split {'\u00b7'} {room.gameRules.allowSurrender ? 'Allow Surrender' : 'No Surrender'}
+                                {room.name} {'\u2014'} {room.gameRules.numberOfDecks} Decks {'\u00b7'} Double After Split {'\u00b7'} {room.gameRules.allowSurrender ? 'Allow Surrender' : 'No Surrender'}
                             </p>
                         </div>
                     </div>
@@ -347,7 +873,7 @@ export default function StrategyModal({
 
                 {/* Tabs */}
                 <div className="flex px-6 pt-1" style={{ background: 'rgba(0,0,0,0.15)' }}>
-                    {(['hard', 'soft', 'pairs', 'counting'] as Tab[]).map((t) => {
+                    {(['rules', 'hard', 'soft', 'pairs', 'counting'] as Tab[]).map((t) => {
                         const active = tab === t;
                         return (
                             <button
@@ -360,7 +886,7 @@ export default function StrategyModal({
                                 {active && (
                                     <motion.div
                                         layoutId="strategy-tab-indicator"
-                                        className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full"
+                                        className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
                                         style={{ background: room.accentColor }}
                                         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                     />
@@ -373,7 +899,97 @@ export default function StrategyModal({
                 {/* Chart Body */}
                 <div className="overflow-y-auto flex-1 px-6 pt-5 pb-6">
 
-                    {tab === 'counting' ? (
+                    {tab === 'rules' ? (
+                        <div className="space-y-5 text-sm text-white/60">
+                            <div
+                                className="rounded-2xl border p-4"
+                                style={{
+                                    background: `linear-gradient(135deg, ${room.accentColor}10 0%, rgba(255,255,255,0.02) 100%)`,
+                                    borderColor: `${room.accentColor}2f`,
+                                    boxShadow: `0 10px 24px ${room.accentColor}10`
+                                }}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div
+                                        className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                                        style={{ background: `${room.accentColor}20` }}
+                                    >
+                                        <Info size={17} style={{ color: room.accentColor }} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <span className="block text-[10px] uppercase font-black tracking-[0.24em] opacity-65">Table Brief</span>
+                                        <p className="text-[13px] leading-relaxed text-white/85">{roomRulesContent.overview}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                                {roomRulesContent.highlights.map((highlight) => (
+                                    <RuleHighlightCard
+                                        key={`${highlight.eyebrow}-${highlight.title}`}
+                                        accentColor={room.accentColor}
+                                        highlight={highlight}
+                                    />
+                                ))}
+                            </div>
+
+                            <RuleSection title="Core Actions">
+                                <div className="grid grid-cols-1 gap-2 mt-1">
+                                    <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                        <strong className="text-white/80 block mb-0.5 text-xs"><Plus size={12} className="inline text-emerald-400 mr-1" />Hit</strong>
+                                        <p className="text-[10px] text-white/40 leading-snug">Take another card to improve your total. Use it whenever the EV of drawing is better than standing, even if the hand already feels uncomfortable.</p>
+                                    </div>
+                                    <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                        <strong className="text-white/80 block mb-0.5 text-xs"><Minus size={12} className="inline text-amber-400 mr-1" />Stand</strong>
+                                        <p className="text-[10px] text-white/40 leading-snug">Lock your current total and pass action to the dealer. In special rooms like Free Action or Iberian 21, passive stands become less automatic than in standard blackjack.</p>
+                                    </div>
+                                    <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                        <strong className="text-white/80 block mb-0.5 text-xs"><ChevronsUp size={12} className="inline text-blue-400 mr-1" />Double Down</strong>
+                                        <p className="text-[10px] text-white/40 leading-snug">Increase commitment when one more card has higher value than continuing normally. The exact timing changes sharply in Free Action and Iberian 21.</p>
+                                    </div>
+                                    <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                        <strong className="text-white/80 block mb-0.5 text-xs"><ArrowLeftRight size={12} className="inline text-purple-400 mr-1" />Split</strong>
+                                        <p className="text-[10px] text-white/40 leading-snug">Turn one starting hand into two when the room rule and EV justify it. Split permissions vary meaningfully by room, especially around mixed 10-value cards and ace branches.</p>
+                                    </div>
+                                    <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                        <strong className="text-white/80 block mb-0.5 text-xs"><Shield size={12} className="inline text-yellow-400 mr-1" />Insurance</strong>
+                                        <p className="text-[10px] text-white/40 leading-snug">A side wager offered when the dealer shows an ace. It is usually correct only in high-count situations, not as a default protection play.</p>
+                                    </div>
+                                    {(room.gameRules.allowSurrender || room.id === 'iberian_21') && (
+                                        <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                            <strong className="text-white/80 block mb-0.5 text-xs"><Flag size={12} className="inline text-orange-400 mr-1" />Surrender / Rescue</strong>
+                                            <p className="text-[10px] text-white/40 leading-snug">
+                                                {room.id === 'iberian_21'
+                                                    ? 'This room uses surrender as a live rescue mechanic, including after a double. It is a tactical escape valve, not just a pre-decision concession.'
+                                                    : 'Give up the hand and lose half the stake when the starting position is too weak to continue profitably.'}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </RuleSection>
+
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <RuleBulletSection title={roomRulesContent.playerOptions.title} items={roomRulesContent.playerOptions.items} accentColor={room.accentColor} />
+                                <RuleBulletSection title={roomRulesContent.payouts.title} items={roomRulesContent.payouts.items} accentColor={room.accentColor} />
+                                <RuleBulletSection title={roomRulesContent.dealerFlow.title} items={roomRulesContent.dealerFlow.items} accentColor={room.accentColor} />
+                                <RuleBulletSection title={roomRulesContent.strategyNotes.title} items={roomRulesContent.strategyNotes.items} accentColor={room.accentColor} />
+                            </div>
+
+                            <div className="rounded-xl border px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                                <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-white/40">
+                                    <span className="font-black">Quick Reference</span>
+                                    <span>•</span>
+                                    <span>{room.gameRules.numberOfDecks} decks</span>
+                                    <span>•</span>
+                                    <span>{room.gameRules.dealerHitsSoft17 ? 'Dealer hits soft 17' : 'Dealer stands on soft 17'}</span>
+                                    <span>•</span>
+                                    <span>{room.gameRules.allowSurrender || room.id === 'iberian_21' ? 'Surrender available' : 'No surrender'}</span>
+                                    <span>•</span>
+                                    <span>RTP {room.rtp}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ) : tab === 'counting' ? (
                         /* ─── Card Counting Guide ─── */
                         <div className="space-y-5">
                             {strategyType === 'iberian_21' && (
@@ -487,12 +1103,20 @@ export default function StrategyModal({
                                     {/* Introduction */}
                                     <div>
                                         <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
-                                            Hi-Lo System — Iberian 21 Version
+                                            {strategyType === 'iberian_21' ? 'Hi-Lo System — Iberian 21 Version' : 'Hi-Lo System — Standard Blackjack'}
                                         </p>
                                         <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.55)' }}>
-                                            Card counting using Hi-Lo in Iberian 21 is an <span style={{ color: 'rgba(240,230,214,0.8)', fontWeight: 700 }}>unbalanced system</span> — because all 10s are removed, the deck naturally starts at a Running Count of <span style={{ color: '#fca5a5', fontWeight: 700 }}>−24</span> (for 6 decks). This is intentional: it visually shows you how skewed the 48-card deck is compared to a normal shoe.
-                                            <br /><br />The <span style={{ color: 'rgba(240,230,214,0.8)', fontWeight: 700 }}>Bet Advice</span> panel automatically compensates for this baseline, so bet sizing guidance is always meaningful regardless of the starting offset.
-                                            Use Katarina Walker in Settings for a balanced alternative that starts at 0.
+                                            {strategyType === 'iberian_21' ? (
+                                                <>
+                                                    Card counting using Hi-Lo in Iberian 21 is an <span style={{ color: 'rgba(240,230,214,0.8)', fontWeight: 700 }}>unbalanced system</span> because all 10s are removed. In a 6-deck Iberian shoe, the running count naturally starts around <span style={{ color: '#fca5a5', fontWeight: 700 }}>−24</span>.
+                                                    <br /><br />The <span style={{ color: 'rgba(240,230,214,0.8)', fontWeight: 700 }}>Bet Advice</span> panel compensates for that baseline automatically. Use Katarina Walker in Settings if you prefer a room-specific balanced alternative that starts near zero.
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Standard blackjack uses the <span style={{ color: 'rgba(240,230,214,0.8)', fontWeight: 700 }}>balanced Hi-Lo system</span>: 2 through 6 are +1, 7 through 9 are 0, and 10 through Ace are −1.
+                                                    <br /><br />Lower-deck games like Vegas Downtown react faster to card removal, while larger shoe games demand more patience and cleaner deck estimation before you raise bets.
+                                                </>
+                                            )}
                                         </p>
                                     </div>
 
@@ -583,6 +1207,16 @@ export default function StrategyModal({
                                 <p className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
                                     Step 3: Betting Strategy
                                 </p>
+                                <div className="rounded-lg px-4 py-3 mb-3" style={{ background: `linear-gradient(135deg, ${room.accentColor}08 0%, transparent 100%)`, border: `1px solid ${room.accentColor}18` }}>
+                                    <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(240,230,214,0.58)' }}>
+                                        <span className="font-bold" style={{ color: room.accentColor }}>Room note:</span>{' '}
+                                        {strategyType === 'iberian_21'
+                                            ? (isIberianWalker
+                                                ? 'Walker gives Iberian 21 a cleaner zero-based meter, but bet ramps should still stay disciplined because bonus volatility can hide short-term variance.'
+                                                : 'Hi-Lo in Iberian 21 starts deeply negative by design, so judge improvement from the baseline instead of chasing raw positive counts too early.')
+                                            : `Insurance becomes interesting at TC ≥ +3. ${room.gameRules.allowSurrender ? 'This room also keeps the Fab 4 surrender deviations active.' : 'Because this room has no surrender, only playing deviations from the Illustrious 18 matter.'}`}
+                                    </p>
+                                </div>
                                 <div className="space-y-2">
                                     {[
                                         { tc: isIberianHiLo ? 'TC ≤ −7' : 'TC ≤ −3', label: 'Sit Out', color: '#f87171', bg: 'rgba(239,68,68,0.12)', desc: 'Very unfavorable. Bet minimum or skip the hand.' },
@@ -593,8 +1227,8 @@ export default function StrategyModal({
                                         { tc: isIberianHiLo ? 'TC ≥ +1' : 'TC ≥ +5', label: 'Max Bet', color: '#fcd34d', bg: 'rgba(234,179,8,0.12)', desc: 'Extremely favorable. Bet 5-8× minimum!' },
                                     ].map((row) => (
                                         <div key={row.tc} className="flex items-center gap-3 rounded-lg px-3 py-2" style={{ background: row.bg, border: `1px solid ${row.color}25` }}>
-                                            <span className="text-[10px] font-black tracking-wider shrink-0 w-[90px]" style={{ color: row.color }}>{row.tc}</span>
-                                            <span className="text-[10px] font-black uppercase tracking-wider shrink-0 w-[60px]" style={{ color: row.color }}>{row.label}</span>
+                                            <span className="text-[10px] font-black tracking-wider shrink-0 w-22.5" style={{ color: row.color }}>{row.tc}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-wider shrink-0 w-15" style={{ color: row.color }}>{row.label}</span>
                                             <span className="text-[10px]" style={{ color: 'rgba(240,230,214,0.5)' }}>{row.desc}</span>
                                         </div>
                                     ))}
@@ -608,12 +1242,16 @@ export default function StrategyModal({
                                 <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
                                     {strategyType === 'iberian_21'
                                         ? (countTab === 'kw' ? 'Iberian 21: Walker Indices' : 'Iberian 21: Hi-Lo Deviations')
-                                        : 'Advanced: Key Deviations (Illustrious 18 + Fab 4)'}
+                                        : room.gameRules.allowSurrender
+                                            ? 'Advanced: Key Deviations (Illustrious 18 + Fab 4)'
+                                            : 'Advanced: Key Deviations (Illustrious 18)'}
                                 </p>
                                 <p className="text-[12px] leading-relaxed mb-3" style={{ color: 'rgba(240,230,214,0.45)' }}>
                                     {strategyType === 'iberian_21'
                                         ? `These indices are specifically for Iberian 21 using the ${countTab === 'kw' ? 'Katarina Walker' : 'Hi-Lo'} system. Deviate from basic strategy when the True Count (TC) reaches these thresholds:`
-                                        : "At certain True Counts, you should deviate from basic strategy. These are the most important deviations, and the Hand Advisor will automatically adapt to them if enabled:"}
+                                        : room.gameRules.allowSurrender
+                                            ? 'At specific True Counts, the Hand Advisor can move beyond basic strategy using the Illustrious 18 plus the Fab 4 surrender set.'
+                                            : 'At specific True Counts, the Hand Advisor can move beyond basic strategy using the core Illustrious 18 play deviations. Surrender indices are hidden because this room does not allow surrender.'}
                                 </p>
 
                                 <div className="w-full overflow-x-auto">
@@ -626,10 +1264,7 @@ export default function StrategyModal({
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {(strategyType === 'iberian_21'
-                                                ? (countTab === 'kw' ? IBERIAN_WALKER : IBERIAN_HILO)
-                                                : [...(room.gameRules.dealerHitsSoft17 ? I18_H17 : I18_S17), ...FAB_4]
-                                            ).map((dev, i) => (
+                                            {visibleDeviations.map((dev, i) => (
                                                 <tr key={i}>
                                                     <td className="text-[10px] font-bold text-center py-1.5 rounded whitespace-nowrap px-2" style={{ color: 'rgba(245,158,11,0.8)', background: 'rgba(245,158,11,0.08)' }}>
                                                         {dev.id}
@@ -667,6 +1302,20 @@ export default function StrategyModal({
                     ) : (
                         /* ─── Strategy Charts ─── */
                         <>
+
+                            {strategyTableContent && (
+                                <div className="mb-4 rounded-2xl border p-4" style={{ background: `linear-gradient(135deg, ${room.accentColor}0f 0%, rgba(255,255,255,0.02) 100%)`, borderColor: `${room.accentColor}26` }}>
+                                    <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-1" style={{ color: `${room.accentColor}cc` }}>{strategyTableContent.title}</p>
+                                    <p className="text-[12px] leading-relaxed text-white/70">{strategyTableContent.summary}</p>
+                                    <div className="grid grid-cols-1 gap-2 mt-3 md:grid-cols-3">
+                                        {strategyTableContent.bullets.map((bullet) => (
+                                            <div key={bullet} className="rounded-xl border px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                                                <p className="text-[11px] leading-relaxed text-white/58">{bullet}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Proper HTML table for perfect alignment */}
                             <div className="w-full overflow-x-auto">
@@ -739,7 +1388,7 @@ export default function StrategyModal({
                                                         fontFamily: "'Georgia', serif",
                                                     }}
                                                 >
-                                                    {row === '10,10' && strategyType === 'iberian_21' ? 'J,Q,K' : row}
+                                                    {row === '10,10' && strategyType === 'iberian_21' ? 'J/Q/K' : row}
                                                 </td>
                                                 {/* Action cells */}
                                                 {data[rowIdx].map((action, colIdx) => {
@@ -881,5 +1530,61 @@ export default function StrategyModal({
                 </div>
             </motion.div>
         </motion.div>
+    );
+}
+
+function RuleSection({ title, content, children }: { title: string; content?: string; children?: React.ReactNode }) {
+    return (
+        <div>
+            <h3 className="text-xs font-bold text-white/80 uppercase tracking-[0.15em] mb-1.5">{title}</h3>
+            {content && <p className="text-xs text-white/50 leading-relaxed">{content}</p>}
+            {children}
+        </div>
+    );
+}
+
+function RuleHighlightCard({ accentColor, highlight }: { accentColor: string; highlight: RuleHighlight }) {
+    const toneStyles: Record<HighlightTone, { bg: string; border: string; title: string }> = {
+        accent: {
+            bg: `${accentColor}10`,
+            border: `${accentColor}28`,
+            title: accentColor,
+        },
+        good: {
+            bg: 'rgba(34,197,94,0.08)',
+            border: 'rgba(34,197,94,0.2)',
+            title: '#86efac',
+        },
+        warn: {
+            bg: 'rgba(245,158,11,0.08)',
+            border: 'rgba(245,158,11,0.22)',
+            title: '#fcd34d',
+        },
+    };
+
+    const tone = toneStyles[highlight.tone ?? 'accent'];
+
+    return (
+        <div className="rounded-xl border p-3" style={{ background: tone.bg, borderColor: tone.border }}>
+            <p className="text-[9px] font-black uppercase tracking-[0.24em] text-white/35 mb-1">{highlight.eyebrow}</p>
+            <p className="text-[13px] font-black leading-snug mb-1.5" style={{ color: tone.title }}>{highlight.title}</p>
+            <p className="text-[11px] leading-relaxed text-white/60">{highlight.detail}</p>
+        </div>
+    );
+}
+
+function RuleBulletSection({ title, items, accentColor }: { title: string; items: string[]; accentColor: string }) {
+    return (
+        <div className="rounded-xl border p-3" style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.06)' }}>
+            <h4 className="text-[11px] font-black uppercase tracking-[0.18em] mb-2" style={{ color: `${accentColor}cc` }}>{title}</h4>
+            <ul className="space-y-2">
+                {items.map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-[11px] leading-relaxed text-white/58">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: accentColor }} />
+                        <span>{item}</span>
+                    </li>
+                ))}
+            </ul>
+        </div>
     );
 }

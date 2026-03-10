@@ -33,9 +33,9 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
     }
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex w-full flex-col gap-2">
             <motion.div
-                className="w-[250px] rounded-xl overflow-hidden"
+                className="w-full rounded-xl overflow-hidden"
                 style={{
                     background: 'rgba(10, 6, 4, 0.8)',
                     backdropFilter: 'blur(10px)',

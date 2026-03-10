@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { ROOMS, RoomConfig } from '@/utils/rooms';
 import Image from 'next/image';
 import { ArrowLeft, Home } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useAudio } from '@/utils/audio';
 import { MusicPlayer } from '@/components/MusicPlayer';
 
@@ -17,6 +17,17 @@ export default function LobbyPage() {
     const router = useRouter();
     const rooms = Object.values(ROOMS);
     const { playSound } = useAudio();
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            router.push('/');
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [router]);
 
     return (
         <div className="relative w-screen h-screen overflow-hidden select-none"
@@ -107,9 +118,9 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
                 border: `1px solid ${room.borderColor}`,
                 boxShadow: `0 0 40px ${room.borderColor}`,
             }}
-            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            initial={false}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: index * 0.15, type: 'spring', stiffness: 200 }}
+            transition={{ delay: index * 0.05, duration: 0.28, ease: 'easeOut' }}
             whileHover={{ scale: 1.03, y: -8, boxShadow: `0 0 60px ${room.accentColor}44` }}
             whileTap={{ scale: 0.98 }}
             onClick={onClick}
@@ -130,7 +141,7 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
                             src={room.logoPath}
                             alt={room.name}
                             fill
-                            className="object-contain drop-shadow-2xl"
+                            className="object-contain drop-shadow-xl"
                             sizes="(max-width: 768px) 100vw, 400px"
                             unoptimized
                         />

@@ -9,24 +9,34 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Wallet, BookOpen, Sparkles, Zap } from 'lucide-react';
+import appIcon from '../../src-tauri/icons/icon.png';
 import LegalAgreementModal from '@/components/LegalAgreementModal';
 import StrategyModal from '@/components/StrategyModal';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
 import { ROOMS } from '@/utils/rooms';
 import { useAudio } from '@/utils/audio';
-import { useBGM } from '@/utils/bgm';
 import { MusicPlayer } from '@/components/MusicPlayer';
+
+const STRATEGY_ROOM_IDS = [
+  'classic',
+  'vegas_strip',
+  'vegas_downtown',
+  'free_action',
+  'atlantic_city',
+  'iberian_21',
+] as const;
+
+type StrategyRoomId = (typeof STRATEGY_ROOM_IDS)[number];
 
 export default function HomePage() {
   const router = useRouter();
   const [accepted, setAccepted] = useState(false);
   const [showStrategy, setShowStrategy] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<'classic' | 'vegas_strip' | 'vegas_downtown' | 'free_action' | 'atlantic_city'>('classic');
+  const [selectedRoom, setSelectedRoom] = useState<StrategyRoomId>('classic');
 
   const isHydrated = useStoreHydration();
   const bankroll = useGameStore((s) => s.bankroll);
   const { playSound } = useAudio();
-  useBGM('lobby');
 
   const formatMoney = (v: number) =>
     v >= 1_000_000
@@ -79,9 +89,10 @@ export default function HomePage() {
                   color: suit === '♥' || suit === '♦' ? 'rgba(220, 50, 50, 0.04)' : 'rgba(255, 255, 255, 0.03)',
                   left: `${15 + i * 22}%`,
                   top: `${20 + (i % 2) * 40}%`,
+                  willChange: 'transform',
                 }}
                 animate={{ y: [0, -20, 0], rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 6 + i, repeat: Infinity, ease: 'easeInOut' }}
+                transition={{ duration: 9 + i, repeat: Infinity, ease: 'easeInOut' }}
               >
                 {suit}
               </motion.span>
@@ -100,7 +111,7 @@ export default function HomePage() {
             <div className="text-center">
               <motion.div
                 className="mb-5 mx-auto relative"
-                style={{ width: 120, height: 120 }}
+                style={{ width: 168, height: 168 }}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -111,16 +122,20 @@ export default function HomePage() {
                   style={{
                     background: 'radial-gradient(circle, rgba(212,168,67,0.18) 0%, transparent 70%)',
                     filter: 'blur(12px)',
+                    willChange: 'opacity',
                   }}
                   animate={{ opacity: [0.6, 1, 0.6] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 <Image
-                  src="/images/logo/app/logo.png"
-                  alt="Blackjack Logo"
-                  fill
-                  sizes="120px"
-                  className="object-contain drop-shadow-[0_0_20px_rgba(212,168,67,0.4)]"
+                  src={appIcon}
+                  alt="Blackjack Icon"
+                  width={512}
+                  height={512}
+                  sizes="168px"
+                  quality={100}
+                  unoptimized
+                  className="h-full w-full object-contain drop-shadow-[0_0_16px_rgba(212,168,67,0.32)]"
                   priority
                 />
               </motion.div>
@@ -253,12 +268,12 @@ export default function HomePage() {
               <div className="fixed inset-0 z-[200]">
                 {/* Room selector floating above modal */}
                 <motion.div
-                  className="absolute top-8 left-8 z-[210] flex flex-col items-start gap-3"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  className="absolute top-4 left-1/2 z-[210] flex max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/35 px-3 py-3 backdrop-blur-md md:top-8 md:left-8 md:max-w-[240px] md:translate-x-0 md:flex-col md:items-start md:justify-start md:gap-3"
+                  initial={{ opacity: 0, y: -16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -16 }}
                 >
-                  {(['classic', 'vegas_strip', 'vegas_downtown', 'free_action', 'atlantic_city'] as const).map((roomId) => {
+                  {STRATEGY_ROOM_IDS.map((roomId) => {
                     const room = ROOMS[roomId];
                     const isActive = selectedRoom === roomId;
                     return (

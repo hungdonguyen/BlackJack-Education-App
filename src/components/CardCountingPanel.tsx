@@ -317,14 +317,14 @@ export default function CardCountingPanel({
 
 
                             {/* Player edge */}
-                            <div className="flex items-center justify-between mt-4 px-1">
-                                <div className="flex items-center gap-1.5">
+                            <div className="mt-4 flex flex-col items-center gap-1.5 px-1 text-center">
+                                <div className="flex items-center justify-center gap-1.5">
                                     <span className="text-[8px] uppercase tracking-[0.12em] text-white/30 font-bold font-sans">Player Edge</span>
                                     <span className="text-[11px] font-black tabular-nums" style={{ color: analysis.playerEdge > 0 ? '#86efac' : analysis.playerEdge < 0 ? '#fca5a5' : '#e5e5e5' }}>
                                         {analysis.playerEdge > 0 ? '+' : ''}{analysis.playerEdge.toFixed(1)}%
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center justify-center gap-1.5">
                                     <span className="text-[8px] uppercase tracking-[0.12em] text-white/30 font-bold font-sans">System</span>
                                     <span className="text-[11px] font-black uppercase text-emerald-400 whitespace-nowrap">{activeSystem === 'Katarina Walker' ? 'Walker' : 'Hi-Lo'}</span>
                                 </div>

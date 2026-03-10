@@ -33,6 +33,7 @@ import { useBGM } from '@/utils/bgm';
 
 const TURN_TIMER_SECONDS = 30;
 const INSURANCE_TIMER_SECONDS = 10;
+const CLAIM_COOLDOWN_MS = 30 * 60 * 1000;
 const DESIGN_WIDTH = 1920;
 const DESIGN_HEIGHT = 1080;
 const ROOM_UI_SCALE = 1.08;
@@ -75,15 +76,25 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         return () => window.removeEventListener('resize', update);
     }, []);
 
-    const [showRules, setShowRules] = useState(false);
     const [showStrategy, setShowStrategy] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showLogoInfo, setShowLogoInfo] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const [timer, setTimer] = useState(TURN_TIMER_SECONDS);
     const [insuranceTimer, setInsuranceTimer] = useState(INSURANCE_TIMER_SECONDS);
     const [winNotification, setWinNotification] = useState<{ amount: number; isWin: boolean; isPush?: boolean } | null>(null);
     const [claimCooldown, setClaimCooldown] = useState('');
+    const [claimCooldownMs, setClaimCooldownMs] = useState(0);
+    const [claimCelebration, setClaimCelebration] = useState<{ amount: number; isBonus: boolean } | null>(null);
+    const [claimNudgeTick, setClaimNudgeTick] = useState(0);
     const [selectedMatchIndex, setSelectedMatchIndex] = useState<number | null>(null);
+
+    useEffect(() => {
+        const syncFullscreenState = () => setIsFullscreen(Boolean(document.fullscreenElement));
+        syncFullscreenState();
+        document.addEventListener('fullscreenchange', syncFullscreenState);
+        return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
+    }, []);
 
     const showHandAdvisor = useGameStore((s) => s.showHandAdvisor);
     const showCardCounting = useGameStore((s) => s.showCardCounting);
@@ -111,12 +122,77 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
     const { playSound } = useAudio();
 
+    const closeTransientLayers = () => {
+        setSelectedMatchIndex(null);
+        setShowSettings(false);
+        setShowStrategy(false);
+        setShowLogoInfo(false);
+    };
+
+    const returnToLobby = () => {
+        closeTransientLayers();
+        resetRound();
+        router.push('/lobby');
+    };
+
+    const returnHome = () => {
+        closeTransientLayers();
+        resetRound();
+        router.push('/');
+    };
+
+    const toggleFullscreen = async () => {
+        try {
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+                return;
+            }
+
+            await document.documentElement.requestFullscreen();
+        } catch (error) {
+            console.warn('[Table] Fullscreen toggle failed:', error);
+        }
+    };
+
     useEffect(() => {
         if (shoe.length === 0) {
             initializeShoe();
             playSound('shuffle', 0.5, { shortShuffle: true });
         }
     }, [shoe.length, initializeShoe, playSound]);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+
+            event.preventDefault();
+
+            if (selectedMatchIndex !== null) {
+                setSelectedMatchIndex(null);
+                return;
+            }
+
+            if (showSettings) {
+                setShowSettings(false);
+                return;
+            }
+
+            if (showStrategy) {
+                setShowStrategy(false);
+                return;
+            }
+
+            if (showLogoInfo) {
+                setShowLogoInfo(false);
+                return;
+            }
+
+            returnToLobby();
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [resetRound, returnToLobby, router, selectedMatchIndex, showLogoInfo, showSettings, showStrategy]);
 
     // 30-second turn timer — stand() deferred via setTimeout to avoid
     // calling Zustand mutations inside a React state updater (batch context).
@@ -250,18 +326,18 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
     // Claim cooldown timer — only runs when a cooldown is actually active
     useEffect(() => {
-        const THIRTY_MIN = 30 * 60 * 1000;
-
         const tick = () => {
             const elapsed = Date.now() - lastDailyClaim;
-            if (elapsed >= THIRTY_MIN) {
+            if (elapsed >= CLAIM_COOLDOWN_MS) {
                 setClaimCooldown('');
+                setClaimCooldownMs(0);
                 return true; // cooldown expired — stop the interval
             }
-            const remaining = THIRTY_MIN - elapsed;
+            const remaining = CLAIM_COOLDOWN_MS - elapsed;
             const m = Math.floor(remaining / 60000);
             const s = Math.floor((remaining % 60000) / 1000);
             setClaimCooldown(`${m}m ${s}s`);
+            setClaimCooldownMs(remaining);
             return false;
         };
 
@@ -275,17 +351,28 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     }, [lastDailyClaim]);
 
     const handleClaimDaily = () => {
+        const nextClaimIsBonus = (dailyClaimCount + 1) % 3 === 0;
+        const claimAmount = nextClaimIsBonus ? 1000 : 500;
         const success = claimDaily();
         if (!success) {
-            triggerInsufficientFunds(); // Reuse visual warning here temporarily if claim fails validation unexpectedly
+            setClaimNudgeTick((value) => value + 1);
             return;
         }
+
+        setClaimCelebration({ amount: claimAmount, isBonus: nextClaimIsBonus });
+        playSound(nextClaimIsBonus ? 'win' : 'chip-lay');
+        setTimeout(() => setClaimCelebration(null), nextClaimIsBonus ? 3200 : 2400);
     };
 
     // Logo path from room config
     const logoPath = room.logoPath;
 
-    const isBonusClaim = (dailyClaimCount + 1) % 3 === 0;
+    const claimStep = (dailyClaimCount % 3) + 1;
+    const isBonusClaim = claimStep === 3;
+    const claimReady = claimCooldownMs === 0;
+    const claimProgressRatio = claimReady ? 1 : Math.max(0, 1 - claimCooldownMs / CLAIM_COOLDOWN_MS);
+    const nextClaimAmount = isBonusClaim ? 1000 : 500;
+    const bonusProgress = dailyClaimCount % 3;
     const roomBasePercent = 100 / ROOM_UI_SCALE;
 
     if (!isHydrated) {
@@ -307,440 +394,460 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
             {/* Viewport wrapper — centers the scaled canvas */}
             <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#1a0e0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {/* Design canvas — fixed 1920×1080, transform-scaled to fit */}
-            <div style={{ width: DESIGN_WIDTH, height: DESIGN_HEIGHT, transform: `scale(${viewScale})`, transformOrigin: 'center center', flexShrink: 0, position: 'relative' }}>
+                {/* Design canvas — fixed 1920×1080, transform-scaled to fit */}
+                <div style={{ width: DESIGN_WIDTH, height: DESIGN_HEIGHT, transform: `scale(${viewScale})`, transformOrigin: 'center center', flexShrink: 0, position: 'relative' }}>
 
-            <div
-                className="room-text-scale"
-                style={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: '50%',
-                    width: `${roomBasePercent}%`,
-                    height: `${roomBasePercent}%`,
-                    transform: `translate(-50%, -50%) scale(${ROOM_UI_SCALE})`,
-                    transformOrigin: 'center center',
-                    fontSize: 'calc(1rem + 7px)',
-                    ['--room-text-scale' as string]: 1.1,
-                }}
-            >
-
-            <div className="relative w-full h-full overflow-hidden select-none"
-                style={{ background: room.bgGradient }}
-            >
-                {/* Ambient lighting */}
-                <div className="absolute inset-0 pointer-events-none"
-                    style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 30%, rgba(180, 100, 40, 0.05) 0%, transparent 70%)' }}
-                />
-
-                {/* ─── Felt Table Surface ─── */}
-                <div className="absolute left-1/2 -translate-x-1/2"
-                    style={{ bottom: '60px', width: '110%', maxWidth: '1560px', height: '58%' }}
-                >
-                    <div className="relative w-full h-full overflow-hidden"
-                        style={{
-                            borderRadius: '50% 50% 4px 4px / 70% 70% 4px 4px',
-                            background: room.feltGradient,
-                            boxShadow: 'inset 0 0 80px 30px rgba(0,0,0,0.5), inset 0 -10px 40px rgba(0,0,0,0.3)',
-                            border: `3px solid ${room.borderColor}`,
-                        }}
-                    >
-                        <div className="absolute inset-0 opacity-[0.03]" style={{
-                            backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'4\' height=\'4\' viewBox=\'0 0 4 4\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 3h1v1H1V3zm2-2h1v1H3V1z\' fill=\'%23ffffff\' fill-opacity=\'0.4\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")',
-                        }} />
-
-                        {/* Table text — white */}
-                        <div className="absolute top-[28%] left-1/2 -translate-x-1/2 text-center pointer-events-none">
-                            <p className="text-white/40 text-2xl font-black tracking-[0.3em] uppercase font-serif pb-2 border-b border-white/10 mb-2">
-                                {room.rules.blackjackPays}
-                            </p>
-                            <p className="text-white/30 text-xs font-black tracking-[0.4em] uppercase font-serif mb-1.5">
-                                {room.rules.dealerStands}
-                            </p>
-                            <p className="text-white/20 text-[10px] font-black tracking-[0.5em] uppercase font-serif">
-                                {room.rules.insurancePays}
-                            </p>
-                            <p className="text-white/20 text-[10px] font-extrabold tracking-[0.2em] uppercase font-sans mt-4">
-                                THIS IS A STRICTLY EDUCATIONAL PROJECT. NO REAL MONEY GAMBLING IS INVOLVED.
-                            </p>
-                        </div>
-                    </div>
-                    <div className="absolute -inset-[2px] pointer-events-none"
-                        style={{
-                            borderRadius: '50% 50% 6px 6px / 70% 70% 6px 6px',
-                            border: `2px solid ${room.borderColor}`,
-                        }}
-                    />
-                </div>
-
-                {/* ─── Gameplay Content ─── */}
-                <div className="absolute inset-0 z-10">
-                    {/* Top HUD bar */}
-                    <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
-                        <div className="flex items-center justify-start px-4 h-[70px] pl-24"
-                            style={{ background: 'linear-gradient(180deg, rgba(10,6,4,0.95) 0%, rgba(10,6,4,0.7) 70%, transparent 100%)' }}
-                        >
-                            <div className="flex flex-col items-start gap-0 pointer-events-auto">
-                                <div className="flex items-center gap-4">
-                                    <GamePhaseIndicator phase={gamePhase} />
-                                </div>
-                                <div className="flex items-center gap-3 pl-0.5 mt-0.5">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: room.accentColor }}>
-                                        {room.name}
-                                    </span>
-                                    <span className="text-white/20 text-[9px]">|</span>
-                                    <span className="text-[9px] text-white/35 uppercase tracking-wider">
-                                        ${room.betRange[0].toLocaleString()} – ${room.betRange[1].toLocaleString()}
-                                    </span>
-                                    <span className="text-white/20 text-[9px]">|</span>
-                                    <span className="text-[9px] text-white/35 uppercase tracking-wider">5 Seats</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Logo — top-left corner */}
                     <div
-                        className="absolute top-0 left-4 z-20 cursor-pointer hover:scale-105 transition-transform origin-top-left"
-                        style={{ width: '80px', height: '70px' }}
-                        onClick={() => { playSound('click'); setShowLogoInfo(true); }}
+                        className="room-text-scale"
+                        style={{
+                            position: 'absolute',
+                            left: '50%',
+                            top: '50%',
+                            width: `${roomBasePercent}%`,
+                            height: `${roomBasePercent}%`,
+                            transform: `translate(-50%, -50%) scale(${ROOM_UI_SCALE})`,
+                            transformOrigin: 'center center',
+                            fontSize: 'calc(1rem + 7px)',
+                            ['--room-text-scale' as string]: 1.1,
+                        }}
                     >
-                        <Image src={logoPath} alt={room.name} fill className="object-contain object-left" sizes="80px" unoptimized />
-                    </div>
 
-                    {/* Music Player — top-right corner */}
-                    <div className="absolute top-0 right-4 z-20">
-                        <MusicPlayer roomId={roomId} />
-                    </div>
-                </div>
-            </div>
-
-            {/* Logo Info Popup — outside z-10 layer so it renders above all game UI */}
-            <AnimatePresence>
-                {showLogoInfo && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                        <motion.div
-                            className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
-                            style={{
-                                background: 'rgba(15, 10, 8, 0.98)',
-                                border: `1px solid ${room.borderColor}`,
-                                boxShadow: `0 0 60px ${room.accentColor}44`,
-                            }}
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        <div className="relative w-full h-full overflow-hidden select-none"
+                            style={{ background: room.bgGradient }}
                         >
-                            <button
-                                onClick={() => { playSound('click'); setShowLogoInfo(false); }}
-                                className="absolute top-4 right-4 text-white/50 hover:text-white bg-black/50 hover:bg-black/80 w-8 h-8 rounded-full flex items-center justify-center transition-colors z-10"
-                            >
-                                <X size={18} />
-                            </button>
+                            {/* Ambient lighting */}
+                            <div className="absolute inset-0 pointer-events-none"
+                                style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 30%, rgba(180, 100, 40, 0.05) 0%, transparent 70%)' }}
+                            />
 
-                            {/* Preview Header */}
-                            <div className="h-[120px] relative flex items-center justify-center"
-                                style={{ background: room.feltGradient }}
+                            {/* ─── Felt Table Surface ─── */}
+                            <div className="absolute left-1/2 -translate-x-1/2"
+                                style={{ bottom: '60px', width: '110%', maxWidth: '1560px', height: '58%' }}
                             >
-                                <div className="absolute inset-0 border-b border-white/10" />
-                                <div className="relative w-3/4 h-3/4">
-                                    <Image
-                                        src={logoPath}
-                                        alt={room.name}
-                                        fill
-                                        className="object-contain drop-shadow-2xl"
-                                    />
-                                </div>
-                            </div>
+                                <div className="relative w-full h-full overflow-hidden"
+                                    style={{
+                                        borderRadius: '50% 50% 4px 4px / 70% 70% 4px 4px',
+                                        background: room.feltGradient,
+                                        boxShadow: 'inset 0 0 80px 30px rgba(0,0,0,0.5), inset 0 -10px 40px rgba(0,0,0,0.3)',
+                                        border: `3px solid ${room.borderColor}`,
+                                    }}
+                                >
+                                    <div className="absolute inset-0 opacity-[0.03]" style={{
+                                        backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'4\' height=\'4\' viewBox=\'0 0 4 4\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 3h1v1H1V3zm2-2h1v1H3V1z\' fill=\'%23ffffff\' fill-opacity=\'0.4\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")',
+                                    }} />
 
-                            {/* Info Body */}
-                            <div className="p-6">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div>
-                                        <h3 className="text-xl font-black text-white/90 tracking-wide">{room.name}</h3>
-                                        <p className="text-xs font-bold uppercase tracking-[0.2em]"
-                                            style={{ color: room.accentColor }}
-                                        >
-                                            {room.subtitle}
+                                    {/* Table text — white */}
+                                    <div className="absolute top-[28%] left-1/2 -translate-x-1/2 text-center pointer-events-none">
+                                        <p className="text-white/40 text-2xl font-black tracking-[0.3em] uppercase font-serif pb-2 border-b border-white/10 mb-2">
+                                            {room.rules.blackjackPays}
+                                        </p>
+                                        <p className="text-white/30 text-xs font-black tracking-[0.4em] uppercase font-serif mb-1.5">
+                                            {room.rules.dealerStands}
+                                        </p>
+                                        <p className="text-white/20 text-[10px] font-black tracking-[0.5em] uppercase font-serif">
+                                            {room.rules.insurancePays}
+                                        </p>
+                                        <p className="text-white/20 text-[10px] font-extrabold tracking-[0.2em] uppercase font-sans mt-4">
+                                            THIS IS A STRICTLY EDUCATIONAL PROJECT. NO REAL MONEY GAMBLING IS INVOLVED.
                                         </p>
                                     </div>
-                                    <span className="text-3xl drop-shadow-md">{room.icon}</span>
+                                </div>
+                                <div className="absolute -inset-[2px] pointer-events-none"
+                                    style={{
+                                        borderRadius: '50% 50% 6px 6px / 70% 70% 6px 6px',
+                                        border: `2px solid ${room.borderColor}`,
+                                    }}
+                                />
+                            </div>
+
+                            {/* ─── Gameplay Content ─── */}
+                            <div className="absolute inset-0 z-10">
+                                {/* Top HUD bar */}
+                                <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
+                                    <div className="flex items-center justify-start px-4 h-[70px] pl-24"
+                                        style={{ background: 'linear-gradient(180deg, rgba(10,6,4,0.95) 0%, rgba(10,6,4,0.7) 70%, transparent 100%)' }}
+                                    >
+                                        <div className="flex flex-col items-start gap-0 pointer-events-auto">
+                                            <div className="flex items-center gap-4">
+                                                <GamePhaseIndicator phase={gamePhase} />
+                                            </div>
+                                            <div className="flex items-center gap-3 pl-0.5 mt-0.5">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: room.accentColor }}>
+                                                    {room.name}
+                                                </span>
+                                                <span className="text-white/20 text-[9px]">|</span>
+                                                <span className="text-[9px] text-white/35 uppercase tracking-wider">
+                                                    ${room.betRange[0].toLocaleString()} – ${room.betRange[1].toLocaleString()}
+                                                </span>
+                                                <span className="text-white/20 text-[9px]">|</span>
+                                                <span className="text-[9px] text-white/35 uppercase tracking-wider">5 Seats</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <p className="text-white/60 text-sm leading-relaxed mb-6">
-                                    {room.description}
-                                </p>
+                                {/* Logo — top-left corner */}
+                                <div
+                                    className="absolute top-0 left-4 z-20 cursor-pointer hover:scale-105 transition-transform origin-top-left"
+                                    style={{ width: '80px', height: '70px' }}
+                                    onClick={() => { playSound('click'); setShowLogoInfo(true); }}
+                                >
+                                    <Image src={logoPath} alt={room.name} fill className="object-contain object-left" sizes="80px" unoptimized />
+                                </div>
 
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
-                                        <span className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center gap-2">
-                                            <Coins size={14} /> Bet Limits
-                                        </span>
-                                        <span className="text-sm font-black text-white/90">
-                                            ${room.betRange[0]} - ${room.betRange[1].toLocaleString()}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
-                                        <span className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center gap-2">
-                                            <Info size={14} /> Rules
-                                        </span>
-                                        <div className="text-right">
-                                            <p className="text-xs font-bold text-white/70">{room.rules.blackjackPays}</p>
-                                            <p className="text-xs font-bold text-white/70">{room.rules.dealerStands}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
-                                        <span className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center gap-2">
-                                            <Sparkles size={14} /> RTP
-                                        </span>
-                                        <div className="text-right">
-                                            {room.hasSideBet && room.baseGameRtp && room.sideBetRtp ? (
-                                                <>
-                                                    <p className="text-[11px] font-bold text-white/50">
-                                                        Base Game: <span className="font-black" style={{ color: room.accentColor }}>{room.baseGameRtp}</span>
-                                                    </p>
-                                                    <p className="text-[11px] font-bold text-white/50">
-                                                        Side Bet: <span className="font-black text-red-400">{room.sideBetRtp}</span>
-                                                    </p>
-                                                </>
-                                            ) : (
-                                                <p className="text-sm font-black" style={{ color: room.accentColor }}>{room.rtp}</p>
-                                            )}
-                                            <p className="text-[10px] text-white/30">Theoretical Return to Player</p>
-                                        </div>
-                                    </div>
+                                {/* Music Player — top-right corner */}
+                                <div className="absolute top-0 right-4 z-20">
+                                    <MusicPlayer roomId={roomId} />
                                 </div>
                             </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                        </div>
 
-            {/* Dealer Area — top center */}
-            <div className="absolute top-[45px] left-1/2 -translate-x-1/2 z-15">
-                <DealerArea />
-            </div>
+                        {/* Logo Info Popup — outside z-10 layer so it renders above all game UI */}
+                        <AnimatePresence>
+                            {showLogoInfo && (
+                                <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                                    <motion.div
+                                        className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
+                                        style={{
+                                            background: 'rgba(15, 10, 8, 0.98)',
+                                            border: `1px solid ${room.borderColor}`,
+                                            boxShadow: `0 0 60px ${room.accentColor}44`,
+                                        }}
+                                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                    >
+                                        <button
+                                            onClick={() => { playSound('click'); setShowLogoInfo(false); }}
+                                            className="absolute top-4 right-4 text-white/50 hover:text-white bg-black/50 hover:bg-black/80 w-8 h-8 rounded-full flex items-center justify-center transition-colors z-10"
+                                        >
+                                            <X size={18} />
+                                        </button>
 
-            {/* Payout Panel — left side */}
-            <div className="absolute top-[85px] left-[15px] z-15">
-                <PayoutPanel roomConfig={room} />
-            </div>
+                                        {/* Preview Header */}
+                                        <div className="h-[120px] relative flex items-center justify-center"
+                                            style={{ background: room.feltGradient }}
+                                        >
+                                            <div className="absolute inset-0 border-b border-white/10" />
+                                            <div className="relative w-3/4 h-3/4">
+                                                <Image
+                                                    src={logoPath}
+                                                    alt={room.name}
+                                                    fill
+                                                    className="object-contain drop-shadow-2xl"
+                                                />
+                                            </div>
+                                        </div>
 
-            {/* Hand Advisor — right of PayoutPanel */}
-            {showHandAdvisor && (
-                <div className="absolute top-[85px] left-[275px] z-15">
-                    <HandAdvisor roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} onOpenStrategy={() => setShowStrategy(true)} />
-                </div>
-            )}
+                                        {/* Info Body */}
+                                        <div className="p-6">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div>
+                                                    <h3 className="text-xl font-black text-white/90 tracking-wide">{room.name}</h3>
+                                                    <p className="text-xs font-bold uppercase tracking-[0.2em]"
+                                                        style={{ color: room.accentColor }}
+                                                    >
+                                                        {room.subtitle}
+                                                    </p>
+                                                </div>
+                                                <span className="text-3xl drop-shadow-md">{room.icon}</span>
+                                            </div>
 
-            {/* Card Counting Panel — right side next to history */}
-            {showCardCounting && (
-                <div className="absolute top-[85px] z-15" style={{ right: 216 }}>
-                    <CardCountingPanel roomId={roomId} numDecks={room.gameRules.numberOfDecks} accentColor={room.accentColor} borderColor={room.borderColor} onOpenSettings={() => setShowSettings(true)} onOpenStrategy={() => setShowStrategy(true)} />
-                </div>
-            )}
+                                            <p className="text-white/60 text-sm leading-relaxed mb-6">
+                                                {room.description}
+                                            </p>
 
-            {/* Match History — right side */}
-            <div className="absolute top-[85px] right-[12px] z-15">
-                <HistoryPanel onMatchClick={(idx) => setSelectedMatchIndex(idx)} />
-            </div>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+                                                    <span className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center gap-2">
+                                                        <Coins size={14} /> Bet Limits
+                                                    </span>
+                                                    <span className="text-sm font-black text-white/90">
+                                                        ${room.betRange[0]} - ${room.betRange[1].toLocaleString()}
+                                                    </span>
+                                                </div>
 
-            {/* Action Buttons — center */}
-            <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: 'calc(33% + 25px)' }}>
-                <ActionPanel timer={timer} insuranceTimer={isInsurance ? insuranceTimer : undefined} currentInsuranceSeat={isInsurance ? seats[currentSeatIndex]?.id : undefined} />
-            </div>
+                                                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+                                                    <span className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center gap-2">
+                                                        <Info size={14} /> Rules
+                                                    </span>
+                                                    <div className="text-right">
+                                                        <p className="text-xs font-bold text-white/70">{room.rules.blackjackPays}</p>
+                                                        <p className="text-xs font-bold text-white/70">{room.rules.dealerStands}</p>
+                                                    </div>
+                                                </div>
 
-            {/* 5 Seats — inverted arc (middle lowest) */}
-            <div className="absolute left-0 right-0 z-15" style={{ bottom: '65px' }}>
-                <div className="relative w-full max-w-[1500px] mx-auto" style={{ height: '240px' }}>
-                    {[1, 2, 3, 4, 5].map((seatId) => {
-                        const cfg = SEAT_ARC[seatId];
-                        return (
-                            <Seat key={seatId} seatId={seatId}
-                                style={{
-                                    position: 'absolute',
-                                    left: cfg.x, bottom: cfg.y,
-                                    transform: `translateX(-50%) scale(${cfg.scale})`,
-                                    transformOrigin: 'bottom center',
-                                    zIndex: cfg.z,
-                                }}
+                                                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+                                                    <span className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center gap-2">
+                                                        <Sparkles size={14} /> RTP
+                                                    </span>
+                                                    <div className="text-right">
+                                                        {room.hasSideBet && room.baseGameRtp && room.sideBetRtp ? (
+                                                            <>
+                                                                <p className="text-[11px] font-bold text-white/50">
+                                                                    Base Game: <span className="font-black" style={{ color: room.accentColor }}>{room.baseGameRtp}</span>
+                                                                </p>
+                                                                <p className="text-[11px] font-bold text-white/50">
+                                                                    Side Bet: <span className="font-black text-red-400">{room.sideBetRtp}</span>
+                                                                </p>
+                                                            </>
+                                                        ) : (
+                                                            <p className="text-sm font-black" style={{ color: room.accentColor }}>{room.rtp}</p>
+                                                        )}
+                                                        <p className="text-[10px] text-white/30">Theoretical Return to Player</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                </div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Dealer Area — top center */}
+                        <div className="absolute top-[45px] left-1/2 -translate-x-1/2 z-15">
+                            <DealerArea />
+                        </div>
+
+                        {/* Payout stack — left side */}
+                        <div className="absolute top-[85px] left-[15px] z-15 flex w-[250px] flex-col gap-2">
+                            <PayoutPanel roomConfig={room} />
+                            <DailyClaimPanel
+                                claimReady={claimReady}
+                                isBonusClaim={isBonusClaim}
+                                claimStep={claimStep}
+                                claimCooldown={claimCooldown}
+                                nextClaimAmount={nextClaimAmount}
+                                bonusProgress={bonusProgress}
+                                claimProgressRatio={claimProgressRatio}
+                                claimNudgeTick={claimNudgeTick}
+                                onClaim={handleClaimDaily}
                             />
-                        );
-                    })}
-                </div>
-            </div>
+                        </div>
 
-
-            {/* ─── Insufficient Funds Warning ─── */}
-            <AnimatePresence>
-                {insufficientFundsWarning && (
-                    <motion.div
-                        className="absolute top-[15%] left-1/2 -translate-x-1/2 z-[100]"
-                        initial={{ opacity: 0, scale: 0.8, y: -20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, y: -10 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                    >
-                        <div className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-900/90 to-rose-900/90 border border-red-500/50 flex items-center gap-3 backdrop-blur-md shadow-[0_0_40px_rgba(220,38,38,0.3)]">
-                            <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
-                                <span className="text-red-400 font-extrabold text-lg">!</span>
+                        {/* Hand Advisor — right of PayoutPanel */}
+                        {showHandAdvisor && (
+                            <div className="absolute top-[85px] left-[275px] z-15">
+                                <HandAdvisor roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} onOpenStrategy={() => setShowStrategy(true)} />
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-red-100 font-bold uppercase tracking-widest text-sm">Insufficient Funds</span>
-                                <span className="text-red-400/80 text-[10px] uppercase font-semibold">Please claim or deposit more chips</span>
+                        )}
+
+                        {/* Card Counting Panel — right side next to history */}
+                        {showCardCounting && (
+                            <div className="absolute top-[85px] z-15" style={{ right: 216 }}>
+                                <CardCountingPanel roomId={roomId} numDecks={room.gameRules.numberOfDecks} accentColor={room.accentColor} borderColor={room.borderColor} onOpenSettings={() => setShowSettings(true)} onOpenStrategy={() => setShowStrategy(true)} />
+                            </div>
+                        )}
+
+                        {/* Match History — right side */}
+                        <div className="absolute top-[85px] right-[12px] z-15">
+                            <HistoryPanel onMatchClick={(idx) => setSelectedMatchIndex(idx)} />
+                        </div>
+
+                        {/* Action Buttons — center */}
+                        <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: 'calc(33% + 25px)' }}>
+                            <ActionPanel timer={timer} insuranceTimer={isInsurance ? insuranceTimer : undefined} currentInsuranceSeat={isInsurance ? seats[currentSeatIndex]?.id : undefined} />
+                        </div>
+
+                        {/* 5 Seats — inverted arc (middle lowest) */}
+                        <div className="absolute left-0 right-0 z-15" style={{ bottom: '65px' }}>
+                            <div className="relative w-full max-w-[1500px] mx-auto" style={{ height: '240px' }}>
+                                {[1, 2, 3, 4, 5].map((seatId) => {
+                                    const cfg = SEAT_ARC[seatId];
+                                    return (
+                                        <Seat key={seatId} seatId={seatId}
+                                            style={{
+                                                position: 'absolute',
+                                                left: cfg.x, bottom: cfg.y,
+                                                transform: `translateX(-50%) scale(${cfg.scale})`,
+                                                transformOrigin: 'bottom center',
+                                                zIndex: cfg.z,
+                                            }}
+                                        />
+                                    );
+                                })}
                             </div>
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
-            {/* ─── Win Notification Overlay ─── */}
-            <AnimatePresence>
-                {
-                    winNotification && (
-                        <motion.div
-                            className="absolute left-1/2 -translate-x-1/2 z-50 pointer-events-none"
-                            style={{ top: '25%' }}
-                            initial={{ opacity: 0, scale: 0.5, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.5, y: -20 }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                        >
-                            <div className={`px-8 py-4 rounded-xl backdrop-blur-md border ${winNotification.isPush
-                                ? 'bg-gradient-to-r from-slate-500/15 to-gray-500/15 border-slate-400/30'
-                                : winNotification.isWin
-                                    ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-yellow-400/40'
-                                    : 'bg-gradient-to-r from-red-500/20 to-red-700/20 border-red-400/30'
-                                }`}
-                                style={{
-                                    boxShadow: winNotification.isPush
-                                        ? '0 0 40px rgba(148, 163, 184, 0.2)'
-                                        : winNotification.isWin
-                                            ? '0 0 60px rgba(250, 204, 21, 0.3), 0 0 120px rgba(250, 204, 21, 0.1)'
-                                            : '0 0 40px rgba(220, 50, 50, 0.2)'
-                                }}
-                            >
 
-                                <p className={`text-center text-sm font-bold uppercase tracking-[0.3em] mb-1 ${winNotification.isPush
-                                    ? 'text-slate-300'
-                                    : winNotification.isWin ? 'text-yellow-300' : 'text-red-300'
-                                    }`}>
-                                    {winNotification.isPush ? 'TIE' : winNotification.isWin ? 'YOU WIN' : 'YOU LOSE'}
-                                </p>
-                                {!winNotification.isPush && (
-                                    <p className={`text-center text-3xl font-black tabular-nums
+                        {/* ─── Insufficient Funds Warning ─── */}
+                        <AnimatePresence>
+                            {insufficientFundsWarning && (
+                                <motion.div
+                                    className="absolute top-[15%] left-1/2 -translate-x-1/2 z-[100]"
+                                    initial={{ opacity: 0, scale: 0.8, y: -20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                                >
+                                    <div className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-900/90 to-rose-900/90 border border-red-500/50 flex items-center gap-3 backdrop-blur-md shadow-[0_0_40px_rgba(220,38,38,0.3)]">
+                                        <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
+                                            <span className="text-red-400 font-extrabold text-lg">!</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-red-100 font-bold uppercase tracking-widest text-sm">Insufficient Funds</span>
+                                            <span className="text-red-400/80 text-[10px] uppercase font-semibold">Please claim or deposit more chips</span>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* ─── Win Notification Overlay ─── */}
+                        <AnimatePresence>
+                            {
+                                winNotification && (
+                                    <motion.div
+                                        className="absolute left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+                                        style={{ top: '25%' }}
+                                        initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.5, y: -20 }}
+                                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                                    >
+                                        <div className={`px-8 py-4 rounded-xl backdrop-blur-md border ${winNotification.isPush
+                                            ? 'bg-gradient-to-r from-slate-500/15 to-gray-500/15 border-slate-400/30'
+                                            : winNotification.isWin
+                                                ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-yellow-400/40'
+                                                : 'bg-gradient-to-r from-red-500/20 to-red-700/20 border-red-400/30'
+                                            }`}
+                                            style={{
+                                                boxShadow: winNotification.isPush
+                                                    ? '0 0 40px rgba(148, 163, 184, 0.2)'
+                                                    : winNotification.isWin
+                                                        ? '0 0 60px rgba(250, 204, 21, 0.3), 0 0 120px rgba(250, 204, 21, 0.1)'
+                                                        : '0 0 40px rgba(220, 50, 50, 0.2)'
+                                            }}
+                                        >
+
+                                            <p className={`text-center text-sm font-bold uppercase tracking-[0.3em] mb-1 ${winNotification.isPush
+                                                ? 'text-slate-300'
+                                                : winNotification.isWin ? 'text-yellow-300' : 'text-red-300'
+                                                }`}>
+                                                {winNotification.isPush ? 'TIE' : winNotification.isWin ? 'YOU WIN' : 'YOU LOSE'}
+                                            </p>
+                                            {!winNotification.isPush && (
+                                                <p className={`text-center text-3xl font-black tabular-nums
                                             ${winNotification.isWin ? 'text-yellow-400' : 'text-red-400'}`}>
-                                        {winNotification.isWin ? '+' : '-'}${winNotification.amount.toLocaleString()}
-                                    </p>
+                                                    {winNotification.isWin ? '+' : '-'}${winNotification.amount.toLocaleString()}
+                                                </p>
+                                            )}
+                                            {winNotification.isPush && (
+                                                <p className="text-center text-xl font-bold text-slate-400/80">
+                                                    Bet returned
+                                                </p>
+                                            )}
+                                        </div>
+                                    </motion.div>
                                 )}
-                                {winNotification.isPush && (
-                                    <p className="text-center text-xl font-bold text-slate-400/80">
-                                        Bet returned
-                                    </p>
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
-            </AnimatePresence>
+                        </AnimatePresence>
 
-            {/* ─── Bottom HUD Bar ─── */}
-            <div className="absolute bottom-0 left-0 right-0 z-50">
-                <div className="flex items-center justify-between px-6 py-3"
-                    style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(10,6,4,0.8) 20%, rgba(10,6,4,0.95) 100%)' }}
-                >
-                    <div className="flex items-center gap-5">
-                        <div className="flex flex-col">
-                            <span className="text-[9px] text-white/30 uppercase tracking-[0.2em]">Balance</span>
-                            <span className="text-lg font-black tabular-nums leading-tight" style={{ color: room.accentColor }}>
-                                ${bankroll.toLocaleString()}
-                            </span>
+                        <AnimatePresence>
+                            {claimCelebration && (
+                                <motion.div
+                                    className="absolute left-1/2 bottom-28 z-[60] pointer-events-none"
+                                    initial={{ opacity: 0, y: 24, scale: 0.92, x: '-50%' }}
+                                    animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+                                    exit={{ opacity: 0, y: -12, scale: 0.95, x: '-50%' }}
+                                    transition={{ duration: 0.24, ease: 'easeOut' }}
+                                >
+                                    <div
+                                        className={`px-6 py-3 rounded-2xl border backdrop-blur-md shadow-2xl ${claimCelebration.isBonus
+                                            ? 'bg-amber-500/14 border-amber-300/45 text-amber-100'
+                                            : 'bg-emerald-500/14 border-emerald-300/35 text-emerald-100'
+                                            }`}
+                                    >
+                                        <p className="text-center text-[10px] uppercase tracking-[0.35em] font-black opacity-80">
+                                            {claimCelebration.isBonus ? 'BONUS CLAIMED' : 'DAILY CLAIMED'}
+                                        </p>
+                                        <p className={`text-center text-2xl font-black tabular-nums mt-1 ${claimCelebration.isBonus ? 'text-yellow-300' : 'text-emerald-300'}`}>
+                                            +${claimCelebration.amount.toLocaleString()}
+                                        </p>
+                                        <p className="text-center text-[11px] font-bold opacity-75 mt-1">
+                                            {claimCelebration.isBonus ? 'Third claim bonus delivered to your stack.' : 'Come back after the cooldown for the next table bonus.'}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* ─── Bottom HUD Bar ─── */}
+                        <div className="absolute bottom-0 left-0 right-0 z-50">
+                            <div className="flex items-center justify-between px-6 py-3"
+                                style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(10,6,4,0.8) 20%, rgba(10,6,4,0.95) 100%)' }}
+                            >
+                                <div className="flex items-center gap-5">
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] text-white/30 uppercase tracking-[0.2em]">Balance</span>
+                                        <span className="text-lg font-black tabular-nums leading-tight" style={{ color: room.accentColor }}>
+                                            ${bankroll.toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <div className="w-px h-8 bg-white/10" />
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] text-white/30 uppercase tracking-[0.2em]">Total Bet</span>
+                                        <span className="text-lg font-black text-white/80 tabular-nums leading-tight">
+                                            ${totalBet.toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <div className="w-px h-8 bg-white/10" />
+                                </div>
+
+                                <ChipRack />
+
+                                <div className="flex items-center gap-3">
+                                    <button onClick={() => { playSound('click'); setShowStrategy(true); }}
+                                        className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
+                                    ><BookOpen size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Rule & Strategy</button>
+                                    <button onClick={() => { playSound('click'); setShowSettings(true); }}
+                                        className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
+                                    ><Settings size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Settings</button>
+                                    <button onClick={() => { playSound('click'); returnToLobby(); }}
+                                        className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
+                                    ><LayoutGrid size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Lobby</button>
+                                    <button onClick={() => { playSound('click'); returnHome(); }}
+                                        className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
+                                    ><Home size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Home</button>
+                                </div>
+                            </div>
                         </div>
-                        <div className="w-px h-8 bg-white/10" />
-                        <div className="flex flex-col">
-                            <span className="text-[9px] text-white/30 uppercase tracking-[0.2em]">Total Bet</span>
-                            <span className="text-lg font-black text-white/80 tabular-nums leading-tight">
-                                ${totalBet.toLocaleString()}
-                            </span>
-                        </div>
-                        <div className="w-px h-8 bg-white/10" />
-                        {/* Daily Claim */}
-                        <button onClick={() => { playSound('click'); handleClaimDaily(); }} disabled={!!claimCooldown}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer relative overflow-hidden group
-                                    ${claimCooldown
-                                    ? 'bg-white/5 border border-white/5 text-white/20 cursor-not-allowed'
-                                    : isBonusClaim
-                                        ? 'bg-gradient-to-r from-amber-500/20 to-yellow-600/20 border border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/30 animate-pulse'
-                                        : 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 animate-pulse'
-                                }`}
-                        >
-                            {!claimCooldown && isBonusClaim && (
-                                <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-                                    animate={{ left: ['-100%', '200%'] }}
-                                    transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+
+                        {/* Strategy Modal */}
+                        <AnimatePresence>
+                            {showStrategy && <StrategyModal room={room} onClose={() => setShowStrategy(false)} />}
+                        </AnimatePresence>
+
+                        {/* Settings Modal */}
+                        <AnimatePresence>
+                            {showSettings && (
+                                <SettingsModal
+                                    roomId={roomId}
+                                    accentColor={room.accentColor}
+                                    borderColor={room.borderColor}
+                                    isFullscreen={isFullscreen}
+                                    onClose={() => setShowSettings(false)}
+                                    onToggleFullscreen={toggleFullscreen}
+                                    onSaveAndExit={returnToLobby}
                                 />
                             )}
-                            {claimCooldown ? (
-                                <><Gift size={15} className="mr-1.5 inline" /> {claimCooldown}</>
-                            ) : (
-                                <><Gift size={15} className={`mr-1.5 inline ${isBonusClaim ? 'text-yellow-300' : ''}`} /> Claim ${isBonusClaim ? '1,000' : '500'}{isBonusClaim && ' 🎯'}</>
+                        </AnimatePresence>
+
+                        {/* Match Detail Modal */}
+                        <AnimatePresence>
+                            {selectedMatchIndex !== null && matchHistory[selectedMatchIndex] && (
+                                <MatchDetailModal
+                                    match={matchHistory[selectedMatchIndex]}
+                                    allMatches={matchHistory}
+                                    currentIndex={selectedMatchIndex}
+                                    onNavigate={(idx) => setSelectedMatchIndex(idx)}
+                                    onClose={() => setSelectedMatchIndex(null)}
+                                />
                             )}
-                        </button>
-                    </div>
+                        </AnimatePresence>
 
-                    <ChipRack />
-
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => { playSound('click'); setShowStrategy(true); }}
-                            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
-                        ><BookOpen size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Strategy</button>
-                        <button onClick={() => { playSound('click'); setShowRules(true); }}
-                            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
-                        ><Info size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Rules</button>
-                        <button onClick={() => { playSound('click'); setShowSettings(true); }}
-                            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
-                        ><Settings size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Settings</button>
-                        <button onClick={() => { playSound('click'); router.push('/lobby'); }}
-                            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
-                        ><LayoutGrid size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Lobby</button>
-                        <button onClick={() => { playSound('click'); router.push('/'); }}
-                            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
-                        ><Home size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Home</button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Rules Modal */}
-            <AnimatePresence>
-                {showRules && <RulesModal room={room} onClose={() => setShowRules(false)} />}
-            </AnimatePresence>
-
-            {/* Strategy Modal */}
-            <AnimatePresence>
-                {showStrategy && <StrategyModal room={room} onClose={() => setShowStrategy(false)} />}
-            </AnimatePresence>
-
-            {/* Settings Modal */}
-            <AnimatePresence>
-                {showSettings && <SettingsModal roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} onClose={() => setShowSettings(false)} />}
-            </AnimatePresence>
-
-            {/* Match Detail Modal */}
-            <AnimatePresence>
-                {selectedMatchIndex !== null && matchHistory[selectedMatchIndex] && (
-                    <MatchDetailModal
-                        match={matchHistory[selectedMatchIndex]}
-                        allMatches={matchHistory}
-                        currentIndex={selectedMatchIndex}
-                        onNavigate={(idx) => setSelectedMatchIndex(idx)}
-                        onClose={() => setSelectedMatchIndex(null)}
-                    />
-                )}
-            </AnimatePresence>
-
-        </div>{/* end room scale wrapper */}
-        </div>{/* end design canvas */}
-        </div>{/* end viewport wrapper */}
+                    </div>{/* end room scale wrapper */}
+                </div>{/* end design canvas */}
+            </div>{/* end viewport wrapper */}
         </>
     );
 }
@@ -875,103 +982,168 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
     );
 }
 
-function RulesModal({ room, onClose }: { room: ReturnType<typeof getRoomConfig>; onClose: () => void }) {
-    const { playSound } = useAudio();
-    return (
-        <motion.div className="absolute inset-0 z-[200] flex items-center justify-center"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        >
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { playSound('click'); onClose(); }} />
+function DailyClaimPanel({
+    claimReady,
+    isBonusClaim,
+    claimStep,
+    claimCooldown,
+    nextClaimAmount,
+    bonusProgress,
+    claimProgressRatio,
+    claimNudgeTick,
+    onClaim,
+}: {
+    claimReady: boolean;
+    isBonusClaim: boolean;
+    claimStep: number;
+    claimCooldown: string;
+    nextClaimAmount: number;
+    bonusProgress: number;
+    claimProgressRatio: number;
+    claimNudgeTick: number;
+    onClaim: () => void;
+}) {
+    if (!claimReady) {
+        return (
             <motion.div
-                className="relative w-[480px] max-h-[864px] rounded-2xl border border-amber-500/15 flex flex-col overflow-hidden"
-                style={{ background: 'rgba(20, 12, 8, 0.95)', backdropFilter: 'blur(20px)' }}
-                initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
+                key={`claim-cooldown-${claimNudgeTick}`}
+                className="relative z-20 w-full overflow-hidden rounded-2xl border border-white/10 bg-black/38 px-3.5 py-3"
+                animate={claimNudgeTick > 0 ? { x: [0, -4, 4, -3, 0] } : { x: 0 }}
+                transition={{ duration: 0.35 }}
             >
-                <div className="p-6 flex-1 overflow-y-auto pb-10">
-                    <div className="flex items-center justify-between mb-5">
-                        <h2 className="text-lg font-extrabold text-amber-400 uppercase tracking-[0.15em] flex items-center justify-center"><Info size={20} className="mr-2" /> {room.name} Rules</h2>
-                        <button onClick={() => { playSound('click'); onClose(); }}
-                            className="w-8 h-8 rounded-full bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 flex items-center justify-center cursor-pointer transition-all"
-                        ><X size={16} /></button>
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/35">
+                            <Timer size={15} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.24em] text-white/70 leading-tight">
+                            Daily Claim
+                        </span>
                     </div>
-                    <div className="space-y-4 text-sm text-white/60">
-                        <RuleSection title="Objective" content="Beat the dealer's hand without going over 21. Face cards are worth 10. Aces are worth 1 or 11, whichever makes a better hand." />
-
-                        <RuleSection title="Actions & Glossary">
-                            <div className="grid grid-cols-1 gap-2 mt-1">
-                                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                    <strong className="text-white/80 block mb-0.5 text-xs"><Plus size={12} className="inline text-emerald-400 mr-1" />Hit</strong>
-                                    <p className="text-[10px] text-white/40 leading-snug">Take another card from the dealer to improve your hand total. You can hit as many times as you want until you reach 21 or Bust.</p>
-                                </div>
-                                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                    <strong className="text-white/80 block mb-0.5 text-xs"><Minus size={12} className="inline text-amber-400 mr-1" />Stand</strong>
-                                    <p className="text-[10px] text-white/40 leading-snug">Keep your current hand and end your turn. The dealer will then play their hand.</p>
-                                </div>
-                                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                    <strong className="text-white/80 block mb-0.5 text-xs"><ChevronsUp size={12} className="inline text-blue-400 mr-1" />Double Down</strong>
-                                    <p className="text-[10px] text-white/40 leading-snug">Double your initial bet in exchange for receiving exactly ONE more card, after which you automatically stand.</p>
-                                </div>
-                                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                    <strong className="text-white/80 block mb-0.5 text-xs"><ArrowLeftRight size={12} className="inline text-purple-400 mr-1" />Split</strong>
-                                    <p className="text-[10px] text-white/40 leading-snug">
-                                        {room.id === 'vegas_strip' || room.id === 'vegas_downtown'
-                                            ? 'If your first two cards have the same point value (e.g. 8–8 or J–K), double your bet to split them into two separate hands. Aces may only be split once and receive one card each. Double after split is allowed. Maximum 4 hands per seat.'
-                                            : 'If your first two cards are the same rank (e.g. 8–8, J–J, K–K), double your bet to split them into two separate hands. Aces may be re-split. Maximum 4 hands per seat.'}
-                                    </p>
-                                </div>
-                                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                    <strong className="text-white/80 block mb-0.5 text-xs"><Shield size={12} className="inline text-yellow-400 mr-1" />Insurance</strong>
-                                    <p className="text-[10px] text-white/40 leading-snug">Offered when the dealer's face-up card is an Ace. Costs half your main bet. Pays 2:1 if the dealer's hidden card makes a Blackjack.</p>
-                                </div>
-                                {room.gameRules.allowSurrender && (
-                                    <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                        <strong className="text-white/80 block mb-0.5 text-xs"><Flag size={12} className="inline text-orange-400 mr-1" />Surrender</strong>
-                                        <p className="text-[10px] text-white/40 leading-snug">Forfeit your hand and lose half your initial bet. Available on your first two cards before any other actions are taken.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </RuleSection>
-
-                        <RuleSection title="Payouts">
-                            <ul className="space-y-1 mt-1 list-disc list-inside text-white/50 text-xs bg-white/5 rounded-lg border border-white/5 p-3">
-                                <li><strong className="text-white/70">{room.rules.blackjackPays}</strong></li>
-                                <li><strong className="text-white/70">{room.rules.insurancePays}</strong></li>
-                                <li>Regular hand win pays <strong className="text-white/70">1 to 1</strong> (evens)</li>
-                                <li><strong>Push (Tie):</strong> You and the dealer have the same total. Your bet is returned to you.</li>
-                                <li><strong>Bust:</strong> A hand total exceeds 21. Automatic loss, regardless of the dealer's hand.</li>
-                            </ul>
-                        </RuleSection>
-
-                        <RuleSection title="Dealer Rules">
-                            <p className="text-xs text-white/50 leading-relaxed font-bold mb-1">Plays with {room.gameRules.numberOfDecks} Decks</p>
-                            <p className="text-xs text-white/50 leading-relaxed">{room.rules.dealerStands}</p>
-
-                            <p className="text-xs text-white/40 leading-relaxed mt-1">
-                                {room.gameRules.dealerHitsSoft17
-                                    ? <span>The dealer must draw cards until reaching 17 or higher. On a <strong className="text-white/60">Soft 17</strong> (Ace + 6), the dealer <strong className="text-white/60">must hit</strong> again.</span>
-                                    : <span>The dealer stands on <strong className="text-white/60">all 17s</strong>, including Soft 17 (Ace + 6).</span>
-                                }
-                            </p>
-                        </RuleSection>
-                    </div>
-                </div>
-                {/* Educational Disclaimer */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent text-center z-50 pointer-events-none">
-                    <p className="text-[9px] text-white/30 font-medium uppercase tracking-[0.1em] drop-shadow-md">
-                        This is a strictly educational project. No real money gambling is involved.
-                    </p>
+                    <span className="text-base font-black tabular-nums text-white/78">
+                        {claimCooldown}
+                    </span>
                 </div>
             </motion.div>
-        </motion.div>
+        );
+    }
+
+    return (
+        <motion.button
+            key={claimNudgeTick}
+            onClick={onClaim}
+            aria-disabled={!claimReady}
+            className={`relative z-20 w-full overflow-hidden rounded-2xl border px-3.5 py-3 text-left transition-all ${isBonusClaim
+                ? 'cursor-pointer border-yellow-400/50 bg-linear-to-r from-amber-500/18 via-yellow-500/12 to-amber-300/18 shadow-[0_0_22px_rgba(250,204,21,0.16)]'
+                : 'cursor-pointer border-emerald-400/32 bg-linear-to-r from-emerald-500/16 via-emerald-400/10 to-cyan-400/12 shadow-[0_0_16px_rgba(16,185,129,0.12)]'
+                }`}
+            whileHover={{ scale: 1.015, y: -2 }}
+            whileTap={{ scale: 0.985 }}
+            animate={{
+                boxShadow: isBonusClaim
+                    ? ['0 0 16px rgba(250,204,21,0.08)', '0 0 24px rgba(250,204,21,0.18)', '0 0 16px rgba(250,204,21,0.08)']
+                    : ['0 0 10px rgba(16,185,129,0.06)', '0 0 18px rgba(16,185,129,0.14)', '0 0 10px rgba(16,185,129,0.06)']
+            }}
+            transition={{ duration: isBonusClaim ? 1.8 : 2.2, repeat: Infinity, ease: 'easeInOut' }}
+        >
+            <motion.div
+                className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent"
+                animate={{ x: ['-120%', '220%'] }}
+                transition={{ duration: isBonusClaim ? 1.4 : 2.2, repeat: Infinity, ease: 'linear' }}
+            />
+
+            <div className="absolute inset-x-0 top-0 h-8 border-b border-white/6 bg-black/18" />
+
+            <div className="relative z-10 flex items-start gap-3">
+                <div className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${claimReady
+                    ? isBonusClaim
+                        ? 'border-yellow-300/55 bg-yellow-300/10 text-yellow-300'
+                        : 'border-emerald-300/35 bg-emerald-300/10 text-emerald-300'
+                    : 'border-white/10 bg-white/5 text-white/25'
+                    }`}>
+                    {claimReady ? <Gift size={17} /> : <Timer size={16} />}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.24em] text-white/70">
+                            Daily Claim
+                        </span>
+                        <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${isBonusClaim
+                            ? 'text-yellow-300'
+                            : claimReady
+                                ? 'text-emerald-300'
+                                : 'text-white/40'
+                            }`}>
+                            {isBonusClaim ? 'Bonus' : `Step ${claimStep}/3`}
+                        </span>
+                    </div>
+
+                    <div className="mt-1 flex items-end justify-between gap-2">
+                        <div>
+                            <div className={`text-lg font-black leading-none tabular-nums ${claimReady
+                                ? isBonusClaim ? 'text-yellow-300' : 'text-emerald-300'
+                                : 'text-white/78'
+                                }`}>
+                                {claimReady ? `+$${nextClaimAmount.toLocaleString()}` : claimCooldown}
+                            </div>
+                            <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">
+                                {claimReady ? 'Tap To Collect' : 'Unlock In'}
+                            </div>
+                        </div>
+
+                        <div className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${claimReady
+                            ? isBonusClaim
+                                ? 'border-yellow-300/40 bg-yellow-300/12 text-yellow-200'
+                                : 'border-emerald-300/25 bg-emerald-300/10 text-emerald-200'
+                            : 'border-white/10 bg-white/5 text-white/45'
+                            }`}>
+                            {claimReady ? 'Ready' : 'Locked'}
+                        </div>
+                    </div>
+
+                    <div className="mt-2 text-[10px] font-semibold text-white/48 leading-snug">
+                        {claimReady
+                            ? isBonusClaim
+                                ? 'Milestone payout is ready below the payout table.'
+                                : 'Claim now to keep your streak moving toward the bonus.'
+                            : 'Come back when the timer fills to collect more chips.'}
+                    </div>
+
+                    <div className="mt-2.5 flex items-center gap-1.5">
+                        {[1, 2, 3].map((step) => {
+                            const active = step <= bonusProgress;
+                            const next = claimReady && step === claimStep;
+                            return (
+                                <div
+                                    key={step}
+                                    className={`h-2.5 w-2.5 rounded-full border ${active
+                                        ? 'border-yellow-300 bg-yellow-300 shadow-[0_0_8px_rgba(253,224,71,0.7)]'
+                                        : next
+                                            ? 'border-emerald-300 bg-emerald-300/65 shadow-[0_0_8px_rgba(52,211,153,0.3)]'
+                                            : 'border-white/18 bg-white/5'
+                                        }`}
+                                />
+                            );
+                        })}
+                        <div className="ml-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/35">
+                            {`${claimStep}/3 Ready`}
+                        </div>
+                    </div>
+
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
+                        <motion.div
+                            className={`h-full rounded-full ${claimReady
+                                ? isBonusClaim ? 'bg-linear-to-r from-amber-300 via-yellow-300 to-amber-400' : 'bg-linear-to-r from-emerald-300 via-emerald-400 to-cyan-300'
+                                : 'bg-linear-to-r from-white/30 via-white/60 to-white/30'
+                                }`}
+                            animate={{ width: `${Math.max(claimProgressRatio * 100, claimReady ? 100 : 6)}%` }}
+                            transition={{ duration: claimReady ? 0.18 : 0.8, ease: 'easeOut' }}
+                        />
+                    </div>
+                </div>
+            </div>
+        </motion.button>
     );
 }
 
-function RuleSection({ title, content, children }: { title: string; content?: string; children?: React.ReactNode }) {
-    return (
-        <div>
-            <h3 className="text-xs font-bold text-white/80 uppercase tracking-[0.15em] mb-1.5">{title}</h3>
-            {content && <p className="text-xs text-white/50 leading-relaxed">{content}</p>}
-            {children}
-        </div>
-    );
-}

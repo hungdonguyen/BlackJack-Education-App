@@ -34,6 +34,20 @@ body {
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+img,
+button,
+a,
+svg {
+  -webkit-user-drag: none;
 }
 
 .room-text-scale :is(span, p, h1, h2, h3, h4, h5, h6, button, label, strong, small, li, a) {
@@ -72,8 +86,8 @@ body {
 
 /* ─── Selection ─── */
 ::selection {
-  background: rgba(212, 168, 67, 0.3);
-  color: white;
+  background: transparent;
+  color: inherit;
 }
 
 /* ─── Focus ─── */
