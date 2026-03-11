@@ -64,10 +64,7 @@ function getCurrentHand(state: GameStore): Hand | null {
   return seat.hands[seat.currentHandIndex] ?? null;
 }
 
-/** Find the first active seat index */
-function findFirstActiveSeatIndex(state: GameStore): number {
-  return state.seats.findIndex((s) => s.isActive && s.hands.some((h) => h.betAmount > 0));
-}
+
 
 export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice> = (set, get) => ({
   shoe: [],
@@ -172,7 +169,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     for (const seat of dealingSeats) {
       await dealToSeat(seat.id);
     }
-    await dealToDealer(true); // Hole card (hidden)
+    if (!currentRoomCfg.gameRules.enhc) {
+      await dealToDealer(true); // Hole card (hidden)
+    }
 
     // Wait a brief moment after all cards are dealt before checking for Blackjacks
     const postDealDelay = SPEED_DELAYS[get().dealerSpeed].postDeal;
@@ -196,7 +195,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const dealerFaceUp = dealerCards[0];
     const dealerShowsAce = dealerFaceUp.rank === Rank.ACE;
     // Peek at hole card logic
-    const dealerHasBJ = isBlackjack(dealerCards, true);
+    const dealerHasBJ = currentRoomCfg.gameRules.enhc ? false : isBlackjack(dealerCards, true);
 
     const isIberian = get().currentRoom === 'iberian_21';
 
@@ -714,7 +713,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     _dealerPlayLock = true;
 
     try {
-    let shoe = [...state.shoe];
+    const shoe = [...state.shoe];
     let dealerCards = [...state.dealerHand.cards];
 
     // Reveal hidden card
@@ -738,8 +737,11 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     // Initial reveal
     set({ dealerHand: { cards: [...dealerCards] } });
 
-    if (!allBustedOrSurrendered && !allResolvedOrBlackjack) {
-      const roomCfg = getRoomConfig(state.currentRoom);
+    const roomCfg = getRoomConfig(state.currentRoom);
+    const hasInsuranceBets = Object.values(state.insuranceBets).some((bet) => bet > 0);
+    const dealerNeedsToDrawForInsurance = roomCfg.gameRules.enhc && dealerCards.length === 1 && dealerCards[0].rank === Rank.ACE && hasInsuranceBets;
+
+    if (!allBustedOrSurrendered && !allResolvedOrBlackjack || dealerNeedsToDrawForInsurance) {
       const hitsSoft17 = roomCfg.gameRules.dealerHitsSoft17;
 
       // Dealer hits until 17 or higher
@@ -808,7 +810,6 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     if (state.gamePhase !== GamePhase.PAYOUT) return;
 
     const dealerValue = calculateHandValue(state.dealerHand.cards);
-    const dealerBust = dealerValue.total > 21;
 
     let totalStaked = 0;
     state.seats.forEach(seat => {
@@ -853,7 +854,6 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           if (hand.betAmount === 0) return hand;
 
           const playerValue = calculateHandValue(hand.cards);
-          const playerHasBlackjack = hand.status === HandStatus.BLACKJACK;
           const freeBet = hand.freeActionBetAmount || 0;
 
           // Already resolved (e.g., Bust, Even Money, or Surrendered)
@@ -885,7 +885,6 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       };
     });
 
-    const bankrollAfterHands = state.bankroll + totalPayout;
 
     // ═══ MULTI ACTION BONUS SIDE BET ═══
     const SIDE_BET_PAYOUTS: Record<number, number> = {

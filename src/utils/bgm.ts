@@ -11,6 +11,7 @@ export const PLAYLIST = [
     { name: 'Whiskey on MS', path: '/sounds/bgm/Whiskey on the Mississippi.mp3', vol: 1.0 },
     { name: 'Bossa Antigua', path: '/sounds/bgm/Bossa Antigua.mp3', vol: 1.0 },
     { name: 'Spanish Summer', path: '/sounds/bgm/Spanish Summer- Audionautix.mp3', vol: 1.0 },
+    { name: 'Backed Clean', path: '/sounds/bgm/Backed Clean.mp3', vol: 1.3 },
 ];
 
 // BGM mapping: roomId → file path
@@ -22,6 +23,7 @@ const BGM_MAP: Record<string, string> = {
     free_action: '/sounds/bgm/Whiskey on the Mississippi.mp3',
     atlantic_city: '/sounds/bgm/Bossa Antigua.mp3',
     iberian_21: '/sounds/bgm/Spanish Summer- Audionautix.mp3',
+    european: '/sounds/bgm/Backed Clean.mp3',
 };
 
 const FADE_DURATION = 1500; // ms
@@ -128,7 +130,8 @@ export function useBGM(roomId: string) {
             try {
                 await audio.play();
                 fadeIn(audio, targetVol, FADE_DURATION);
-            } catch (e: any) {
+            } catch (err) {
+                const e = err as Error;
                 if (e.name !== 'NotAllowedError') {
                     console.warn('BGM play failed:', e);
                 }

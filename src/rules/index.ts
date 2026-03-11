@@ -5,6 +5,7 @@ import { VegasDowntownRules } from './VegasDowntownRules';
 import { AtlanticCityRules } from './AtlanticCityRules';
 import { FreeActionRules } from './FreeActionRules';
 import { Iberian21Rules } from './Iberian21Rules';
+import { EuropeanRules } from './EuropeanRules';
 
 export function getRules(roomId: string): IRules {
     switch (roomId) {
@@ -18,6 +19,8 @@ export function getRules(roomId: string): IRules {
             return new FreeActionRules();
         case 'iberian_21':
             return new Iberian21Rules();
+        case 'european':
+            return new EuropeanRules();
         case 'classic':
         default:
             return new ClassicRules();
@@ -31,3 +34,4 @@ export * from './VegasDowntownRules';
 export * from './AtlanticCityRules';
 export * from './FreeActionRules';
 export * from './Iberian21Rules';
+export * from './EuropeanRules';

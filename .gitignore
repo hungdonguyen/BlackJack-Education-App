@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+.venv/
+downloadconfig.txt
 
 # debug
 npm-debug.log*
@@ -42,6 +44,7 @@ next-env.d.ts
 
 # Tauri / Rust
 src-tauri/target/
+src-tauri/bundle/
 src-tauri/WixTools/
 *.exe
 *.msi

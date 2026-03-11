@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 // ============================================
 // StrategyModal - Basic Strategy Chart
@@ -264,6 +264,49 @@ const HARD_AC: Action[][] = [
 ];
 const SOFT_AC: Action[][] = SOFT_CLASSIC;
 const PAIRS_AC: Action[][] = PAIRS_CLASSIC;
+
+// European: 6 decks, S17, ENHC, D9-11 only, No Surrender
+const HARD_EUROPEAN: Action[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // 9
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 10
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 11
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+const SOFT_EUROPEAN: Action[][] = [
+    // Double is only allowed on hard 9-11
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'H', 'H', 'H'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+const PAIRS_EUROPEAN: Action[][] = [
+    ['H', 'H', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 2,2
+    ['H', 'H', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 3,3
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],     // 4,4
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],     // 5,5
+    ['H', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'], // 6,6
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 7,7
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H'], // 8,8
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'], // 9,9
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],     // 10,10
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H'], // A,A
+];
 
 // Iberian 21: 6 Decks, H17, No 10s. Strategy is hit-heavy.
 // Iberian 21: 6 Decks, H17, No 10s. Strategy is hit-heavy.
@@ -658,6 +701,61 @@ function getRoomRulesContent(room: RoomConfig): RoomRulesContent {
                     ],
                 },
             };
+        case 'european':
+            return {
+                overview: 'European Blackjack uses the European No Hole Card (ENHC) rule. The dealer only receives one card until players finish their hands, significantly altering the optimal strategy for doubles and splits.',
+                highlights: [
+                    {
+                        eyebrow: 'Table Identity',
+                        title: 'Standard European Rules',
+                        detail: '6 decks. Dealer takes no hole card (ENHC) and stands on soft 17 (S17).',
+                    },
+                    {
+                        eyebrow: 'ENHC Rule',
+                        title: 'Dealer takes no hole card',
+                        detail: 'If you double or split and the dealer draws to a Blackjack, you lose all bets. Thus, you should be very careful doubling or splitting against dealer 10 or Ace.',
+                        tone: 'warn',
+                    },
+                    {
+                        eyebrow: 'Restricted Actions',
+                        title: 'Double on Hard 9-11 only',
+                        detail: 'You may only double down if your first two cards total a hard 9, 10, or 11. No soft doubles allowed.',
+                        tone: 'accent',
+                    },
+                ],
+                playerOptions: {
+                    title: 'Player Options',
+                    items: [
+                        'Double down is only allowed on hard 9, 10, and 11.',
+                        'Double after split is NOT allowed.',
+                        'Split once only for equal-value cards (e.g., King-Jack is not allowed).',
+                        'Split aces receive one card each and cannot be re-split.',
+                        'Surrender is not available.',
+                    ],
+                },
+                payouts: {
+                    title: 'Payout & Settlement',
+                    items: [
+                        'Blackjack pays 3:2 and regular wins pay 1:1.',
+                        'Insurance pays 2:1 when the dealer shows an ace.',
+                        'Push returns the full wager; bust always loses immediately.',
+                    ],
+                },
+                dealerFlow: {
+                    title: 'Dealer Procedure',
+                    items: [
+                        'Dealer stands on hard 17 and soft 17.',
+                        'Dealer does not draw a second card (or peek for Blackjack) until all players have completed their hands.',
+                    ],
+                },
+                strategyNotes: {
+                    title: 'Strategy Focus',
+                    items: [
+                        'Hit 11 against Dealer 10 and Ace. Doubling is too risky because of the ENHC rule.',
+                        'Hit A,A against an Ace upcard since a split risks double loss.',
+                    ],
+                },
+            };
         default:
             return {
                 overview: room.description,
@@ -714,6 +812,16 @@ function getStrategyTableContent(room: RoomConfig, tab: 'hard' | 'soft' | 'pairs
                         'When the table says stand on a stiff hand, it is usually because the dealer upcard is weak enough to justify it.',
                     ],
                 };
+            case 'european':
+                return {
+                    title: 'Hard Totals Guide',
+                    summary: 'European Blackjack removes the dealer peek, making stiff hands riskier against high cards.',
+                    bullets: [
+                        'Doubling is heavily restricted. Only Hard 9, 10, and 11 can double.',
+                        'Because of ENHC, never double 11 against a 10 or Ace.',
+                        'Treat stiff hands carefully — hit until you reach a safe threshold.',
+                    ],
+                };
             default:
                 return {
                     title: 'Hard Totals Guide',
@@ -725,9 +833,7 @@ function getStrategyTableContent(room: RoomConfig, tab: 'hard' | 'soft' | 'pairs
                     ],
                 };
         }
-    }
-
-    if (tab === 'soft') {
+    }    if (tab === 'soft') {
         switch (room.id) {
             case 'iberian_21':
                 return {
@@ -763,6 +869,16 @@ function getStrategyTableContent(room: RoomConfig, tab: 'hard' | 'soft' | 'pairs
     }
 
     switch (room.id) {
+            case 'european':
+                return {
+                    title: 'Pairs Guide',
+                    summary: 'European Strategy restricts splitting due to the ENHC rule and no double-after-split.',
+                    bullets: [
+                        'Equal value is the rule, but you only get to split once.',
+                        'Because you can lose both bets against a dealer Blackjack, hit A,A against a dealer Ace.',
+                        'Since there is no double after split, pairs like 2,2 and 3,3 are hit more often.',
+                    ],
+                };
         case 'classic':
             return {
                 title: 'Pairs Guide',
@@ -849,7 +965,9 @@ export default function StrategyModal({
                         ? HARD_VEGAS
                         : strategyType === 'vegas_downtown'
                             ? HARD_DOWNTOWN
-                            : HARD_CLASSIC)
+                            : strategyType === 'european'
+                                ? HARD_EUROPEAN
+                                : HARD_CLASSIC)
         : tab === 'soft'
             ? (strategyType === 'free_action'
                 ? SOFT_FA
@@ -861,7 +979,9 @@ export default function StrategyModal({
                             ? SOFT_VEGAS
                             : strategyType === 'vegas_downtown'
                                 ? SOFT_DOWNTOWN
-                                : SOFT_CLASSIC)
+                                : strategyType === 'european'
+                                    ? SOFT_EUROPEAN
+                                    : SOFT_CLASSIC)
             : tab === 'pairs'
                 ? (strategyType === 'free_action'
                     ? PAIRS_FA
@@ -871,7 +991,9 @@ export default function StrategyModal({
                             ? PAIRS_AC
                             : strategyType === 'vegas_strip' || strategyType === 'vegas_downtown'
                                 ? PAIRS_VEGAS
-                                : PAIRS_CLASSIC)
+                                : strategyType === 'european'
+                                    ? PAIRS_EUROPEAN
+                                    : PAIRS_CLASSIC)
                 : [];
 
     const strategyTableContent = tab === 'hard' || tab === 'soft' || tab === 'pairs'
@@ -1613,39 +1735,52 @@ export default function StrategyModal({
                             <Ornament color={room.accentColor} />
 
                             {/* Legend */}
-                            <div className="mt-5 px-0.5">
-                                <p
-                                    className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold"
-                                    style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}
-                                >
-                                    Legend
-                                </p>
-                                <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                                    {(Object.entries(ACTION_STYLES) as [Action, typeof ACTION_STYLES[Action]][]).map(([, st]) => (
-                                        <div key={st.label} className="flex items-center gap-3">
-                                            <div
-                                                className="shrink-0 rounded text-center text-[13px] font-extrabold"
-                                                style={{
-                                                    background: st.bg,
-                                                    color: st.text,
-                                                    textShadow: '0 1px 2px rgba(0,0,0,0.35)',
-                                                    boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
-                                                    minWidth: 44,
-                                                    padding: '6px 8px',
-                                                }}
-                                            >
-                                                {st.label}
-                                            </div>
-                                            <span
-                                                className="text-[12px] font-medium leading-snug"
-                                                style={{ color: 'rgba(240,230,214,0.65)' }}
-                                            >
-                                                {st.desc}
-                                            </span>
+                            {/* Legend */}
+                            {(() => {
+                                const usedActions = new Set<Action>();
+                                const allData = [
+                                    ...(strategyType === 'free_action' ? HARD_FA : strategyType === 'iberian_21' ? HARD_IBERIAN : strategyType === 'atlantic_city' ? HARD_AC : strategyType === 'vegas_strip' ? HARD_VEGAS : strategyType === 'vegas_downtown' ? HARD_DOWNTOWN : strategyType === 'european' ? HARD_EUROPEAN : HARD_CLASSIC),
+                                    ...(strategyType === 'free_action' ? SOFT_FA : strategyType === 'iberian_21' ? SOFT_IBERIAN : strategyType === 'atlantic_city' ? SOFT_AC : strategyType === 'vegas_strip' ? SOFT_VEGAS : strategyType === 'vegas_downtown' ? SOFT_DOWNTOWN : strategyType === 'european' ? SOFT_EUROPEAN : SOFT_CLASSIC),
+                                    ...(strategyType === 'free_action' ? PAIRS_FA : strategyType === 'iberian_21' ? PAIRS_IBERIAN : strategyType === 'atlantic_city' ? PAIRS_AC : strategyType === 'vegas_strip' || strategyType === 'vegas_downtown' ? PAIRS_VEGAS : strategyType === 'european' ? PAIRS_EUROPEAN : PAIRS_CLASSIC),
+                                ];
+                                allData.forEach(r => r.forEach(a => usedActions.add(a as Action)));
+                                const legendEntries = (Object.entries(ACTION_STYLES) as [Action, typeof ACTION_STYLES[Action]][]).filter(([key]) => usedActions.has(key));
+                                return (
+                                    <div className="mt-5 px-0.5">
+                                        <p
+                                            className="text-[11px] uppercase tracking-[0.2em] mb-3 font-bold"
+                                            style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}
+                                        >
+                                            Legend
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                                            {legendEntries.map(([, st]) => (
+                                                <div key={st.label} className="flex items-center gap-3">
+                                                    <div
+                                                        className="shrink-0 rounded text-center text-[13px] font-extrabold"
+                                                        style={{
+                                                            background: st.bg,
+                                                            color: st.text,
+                                                            textShadow: '0 1px 2px rgba(0,0,0,0.35)',
+                                                            boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                                                            minWidth: 44,
+                                                            padding: '6px 8px',
+                                                        }}
+                                                    >
+                                                        {st.label}
+                                                    </div>
+                                                    <span
+                                                        className="text-[12px] font-medium leading-snug"
+                                                        style={{ color: 'rgba(240,230,214,0.65)' }}
+                                                    >
+                                                        {st.desc}
+                                                    </span>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Footnote */}
                             <div

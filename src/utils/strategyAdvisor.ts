@@ -83,8 +83,8 @@ const HARD_FA: StrategyAction[][] = [
     ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'],
     ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'],
     ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'],
-    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
-    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 12+: More aggressive in Free Action due to Push 22
+    ['H', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13 vs 2: Hit
     ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
     ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
     ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
@@ -110,22 +110,22 @@ const SOFT_DOWNTOWN: StrategyAction[][] = [
     ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['DS', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // Soft 17: Double vs 2 (H17 rule)
+    ['D', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'], // Soft 18: DS vs 2
     ['S', 'S', 'S', 'S', 'DS', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
 
-const SOFT_FA: StrategyAction[][] = [
-    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+const SOFT_FA: StrategyAction[][] = ([
+    ['H', 'H', 'X', 'X', 'X', 'H', 'H', 'H', 'H', 'H'], // Soft 13 (X = formerly D, but is negative EV)
+    ['H', 'H', 'X', 'X', 'X', 'H', 'H', 'H', 'H', 'H'], // Soft 14
+    ['H', 'H', 'X', 'X', 'X', 'H', 'H', 'H', 'H', 'H'], // Soft 15
+    ['H', 'X', 'X', 'X', 'X', 'H', 'H', 'H', 'H', 'H'], // Soft 16 (D changed to H as it is not free)
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // Soft 17: D is suggested if allowed
     ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
-];
+] as string[][]).map(row => row.map(action => action === 'X' ? 'H' : action)) as StrategyAction[][];
 
 const HARD_VEGAS = HARD_CLASSIC;
 const SOFT_VEGAS = SOFT_CLASSIC;
@@ -230,6 +230,52 @@ const PAIRS_IBERIAN: StrategyAction[][] = [
     ['S', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'], // 9,9
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],       // J,J (no 10s)
     ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'], // A,A
+];
+
+const HARD_EUROPEAN: StrategyAction[][] = [
+    // 2    3    4    5    6    7    8    9   10    A
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 6
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 7
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 8
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // 9
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 10
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 11
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 15
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 16
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 17
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
+];
+
+const SOFT_EUROPEAN: StrategyAction[][] = [
+    // 2    3    4    5    6    7    8    9   10    A
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // A,2 (13)
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // A,3 (14)
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // A,4 (15)
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // A,5 (16)
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // A,6 (17)
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'H', 'H', 'H'], // A,7 (18)
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // A,8 (19)
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // A,9 (20)
+];
+
+const PAIRS_EUROPEAN: StrategyAction[][] = [
+    // 2    3    4    5    6    7    8    9   10    A
+    ['H', 'H', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 2,2
+    ['H', 'H', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 3,3
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 4,4
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 5,5 (Hard 10)
+    ['H', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'], // 6,6
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 7,7
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H'], // 8,8
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'], // 9,9
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 10,10
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H'], // A,A
 ];
 
 export const ACTION_META: Record<AdviceAction, ActionMeta> = {
@@ -1056,7 +1102,7 @@ function getDealerIdx(rank: string): number {
     return DEALER_UPCARDS.indexOf(normRank(rank) as (typeof DEALER_UPCARDS)[number]);
 }
 
-function getPairRowIdx(cards: Card[], strategyType: string): number {
+function getPairRowIdx(cards: Card[]): number {
     if (cards.length !== 2) return -1;
 
     const isPair = cards[0].value === cards[1].value;
@@ -1086,6 +1132,10 @@ function getStrategyTables(strategyType: string) {
 
     if (strategyType === 'vegas_downtown') {
         return { hard: HARD_DOWNTOWN, soft: SOFT_DOWNTOWN, pairs: PAIRS_TABLE };
+    }
+
+    if (strategyType === 'european') {
+        return { hard: HARD_EUROPEAN, soft: SOFT_EUROPEAN, pairs: PAIRS_EUROPEAN };
     }
 
     return { hard: HARD_CLASSIC, soft: SOFT_CLASSIC, pairs: PAIRS_TABLE };
@@ -1152,12 +1202,18 @@ export function getStrategyAction(
     const tables = getStrategyTables(strategyType);
     let action: StrategyAction;
 
-    const pairIndex = getPairRowIdx(cards, strategyType);
+    const pairIndex = getPairRowIdx(cards);
     if (pairIndex >= 0) {
         action = tables.pairs[pairIndex][dealerIndex];
         if ((action === 'SP' || action === 'FSP') && !canSplit) {
-            const clampedTotal = Math.min(Math.max(total, 5), 20);
-            action = tables.hard[clampedTotal - 5]?.[dealerIndex] ?? 'H';
+            const isAces = cards.length === 2 && cards[0].rank === cards[1].rank && cards[0].rank.includes('A');
+            if (isAces) {
+                // Soft 12 (A,A) should always hit if it cannot be split
+                action = 'H';
+            } else {
+                const clampedTotal = Math.min(Math.max(total, 5), 20);
+                action = tables.hard[clampedTotal - 5]?.[dealerIndex] ?? 'H';
+            }
         }
     } else if (isSoft && total >= 13 && total <= 20) {
         action = tables.soft[total - 13]?.[dealerIndex] ?? 'H';
@@ -1177,7 +1233,8 @@ export function getStrategyAction(
 
         if (action === 'S4' || action === 'S5' || action === 'S6') {
             const threshold = action === 'S4' ? 4 : action === 'S5' ? 5 : 6;
-            action = cards.length >= threshold ? 'S' : 'H';
+            // Iberian 21: Stand if little cards, Hit if many cards (hunt bonus)
+            action = cards.length >= threshold ? 'H' : 'S';
         }
 
         if (action === 'D3' || action === 'D4' || action === 'D5' || action === 'D6') {

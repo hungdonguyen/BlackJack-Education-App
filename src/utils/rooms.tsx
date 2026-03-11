@@ -30,6 +30,8 @@ export interface RoomConfig {
         omitTens?: boolean;
         /** If true, allows surrender after double down */
         allowDoubleDownRescue?: boolean;
+        /** European No Hole Card rule */
+        enhc?: boolean;
     };
     /** Blackjack payout multiplier (e.g. 1.5 for 3:2) */
     blackjackMultiplier: number;
@@ -213,6 +215,32 @@ export const ROOMS: Record<string, RoomConfig> = {
         icon: <Spade className="w-5 h-5 drop-shadow-md text-red-500 fill-red-600" />,
         accentColor: '#ef4444',
         logoPath: '/images/logo/rooms/iberian21.png',
+    },
+    european: {
+        id: 'european',
+        name: 'European Blackjack',
+        subtitle: 'Standard European Rules',
+        description: 'European Rules — 6 decks. Blackjack pays 3 to 2. Dealer takes no hole card (ENHC) and stands on soft 17 and hard 17. Double down allowed on hard 9-11 only. Split once for equal-value cards. No double after split. No surrender.',
+        feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #1a3b1a 0%, #102a10 25%, #051a05 50%, #010a01 80%, #000500 100%)',
+        bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #0f1f0f 0%, #081208 50%, #020502 100%)',
+        borderColor: 'rgba(34, 197, 94, 0.15)',
+        rules: {
+            blackjackPays: 'Blackjack Pays 3 to 2',
+            insurancePays: 'Insurance Pays 2 to 1',
+            dealerStands: 'Dealer stands on soft 17 and hard 17',
+        },
+        gameRules: {
+            numberOfDecks: 6,
+            dealerHitsSoft17: false, // Stands on Soft 17
+            allowSurrender: false,
+            enhc: true, // European No Hole Card
+        },
+        blackjackMultiplier: 1.5,
+        betRange: [1, 1_000_000],
+        rtp: '99.38%',
+        icon: <Ticket className="w-5 h-5 drop-shadow-md text-green-400" />,
+        accentColor: '#22c55e',
+        logoPath: '/images/logo/rooms/european.png',
     },
 };
 
