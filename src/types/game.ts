@@ -138,6 +138,7 @@ export interface GameState {
   // Daily claim
   lastDailyClaim: number;
   dailyClaimCount: number;
+  totalBetSinceLastClaim: number;
 
   // UI Warnings
   insufficientFundsWarning: boolean;
@@ -201,20 +202,16 @@ export interface GameActions {
   // Advance turn: move to the next hand/seat
   advanceToNextHand: () => void;
 
-  // Dev tools
-  forceBlackjack: () => void;
-  forceBust: () => void;
-  forceSplitScenario: () => void;
-  forceAceSplitScenario: () => void;
-  forcePush: () => void;
-  forceDealerBust: () => void;
-  forceInsurance: () => void;
-  forceDoubleSetup: () => void;
   setBankroll: (amount: number) => void;
 
   // History
   setMatchHistory: (records: MatchRecord[]) => void;
+
+  // Helpers
+  canAfford: (amount: number) => boolean;
 }
 
+import { DevToolsSlice } from '@/store/devToolsSlice';
+
 /** Combined store type */
-export type GameStore = GameState & GameActions & SettingsSlice;
+export type GameStore = GameState & GameActions & SettingsSlice & DevToolsSlice;

@@ -55,6 +55,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const setMatchHistory = useGameStore((s) => s.setMatchHistory);
     const lastDailyClaim = useGameStore((s) => s.lastDailyClaim);
     const claimDaily = useGameStore((s) => s.claimDaily);
+    const totalBetSinceLastClaim = useGameStore((s) => s.totalBetSinceLastClaim);
     const setCurrentRoom = useGameStore((s) => s.setCurrentRoom);
     const insufficientFundsWarning = useGameStore((s) => s.insufficientFundsWarning);
     const dailyClaimCount = useGameStore((s) => s.dailyClaimCount);
@@ -344,7 +345,9 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const isBonusClaim = claimStep === 3;
     const claimReady = claimCooldownMs === 0;
     const claimProgressRatio = claimReady ? 1 : Math.max(0, 1 - claimCooldownMs / CLAIM_COOLDOWN_MS);
-    const nextClaimAmount = isBonusClaim ? 1000 : 500;
+    const baseClaim = isBonusClaim ? 1000 : 500;
+    const activityBonus = Math.floor((totalBetSinceLastClaim || 0) * 0.1);
+    const nextClaimAmount = baseClaim + activityBonus;
     const bonusProgress = dailyClaimCount % 3;
     const roomBasePercent = 100 / ROOM_UI_SCALE;
 

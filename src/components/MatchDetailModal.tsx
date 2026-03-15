@@ -249,6 +249,16 @@ export default function MatchDetailModal({
                                                                     SWITCHED
                                                                 </span>
                                                             )}
+                                                            {hand.isBurned && (
+                                                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-orange-600/20 text-orange-400 border border-orange-500/30">
+                                                                    BURNED
+                                                                </span>
+                                                            )}
+                                                            {hand.isBurned && (hand.burnWagerPayout ?? 0) > 0 && (
+                                                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-yellow-300 border border-amber-500/30">
+                                                                    BURN BONUS (+${hand.burnWagerPayout})
+                                                                </span>
+                                                            )}
                                                             {match.roomId === 'iberian_21' && hand.result === HandStatus.WON && pnl > hand.betAmount && !hand.isDoubleDown && (
                                                                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
                                                                     21 BONUS ({(pnl / hand.betAmount).toFixed(1)}x)
@@ -271,6 +281,14 @@ export default function MatchDetailModal({
                                                                     {hand.zappedCards.map((c, ci) => (
                                                                         <MiniCard key={ci} suit={c.suit as Suit} rank={c.rank as Rank} />
                                                                     ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {hand.isBurned && hand.burnedCard && (
+                                                            <div className="flex items-center gap-2 mt-0.5 opacity-60">
+                                                                <span className="text-[7px] font-black text-orange-500/80 uppercase tracking-wider border border-orange-500/20 px-1 rounded-sm bg-orange-500/5">Burned:</span>
+                                                                <div className="flex gap-1 flex-wrap scale-[0.85] origin-left">
+                                                                    <MiniCard suit={hand.burnedCard.suit as Suit} rank={hand.burnedCard.rank as Rank} />
                                                                 </div>
                                                             </div>
                                                         )}

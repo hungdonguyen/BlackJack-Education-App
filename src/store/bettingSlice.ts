@@ -56,6 +56,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   previousSideBets: {},
   insufficientFundsWarning: false,
   sideBets: {},
+  totalBetSinceLastClaim: 0,
 
   selectChip: (value: number) => {
     set({ selectedChipValue: value });
@@ -301,12 +302,15 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     if (now - state.lastDailyClaim < THIRTY_MIN) return false;
 
     const isBonusClaim = (state.dailyClaimCount + 1) % 3 === 0;
-    const claimAmount = isBonusClaim ? 1000 : 500;
+    const baseClaim = isBonusClaim ? 1000 : 500;
+    const activityBonus = Math.floor((state.totalBetSinceLastClaim || 0) * 0.1);
+    const claimAmount = baseClaim + activityBonus;
 
     set((s) => ({
       bankroll: s.bankroll + claimAmount,
       lastDailyClaim: now,
       dailyClaimCount: s.dailyClaimCount + 1,
+      totalBetSinceLastClaim: 0,
     }));
     return true;
   },

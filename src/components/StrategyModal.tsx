@@ -12,7 +12,7 @@ import { RoomConfig } from '@/utils/rooms';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GameStore } from '@/types/game';
 import { I18_S17, I18_H17, FAB_4, IBERIAN_HILO, IBERIAN_WALKER, I18_EUROPEAN, I18_UK, PUSH_22_DEVIATIONS, FIRECARD_DEVIATIONS } from '@/utils/countingDeviations';
-import { COMPOSITION_DEPENDENT_OVERRIDES } from '@/utils/strategyAdvisor';
+import { COMPOSITION_DEPENDENT_OVERRIDES, StrategyAction, CompositionDependentOverride } from '@/utils/strategyAdvisor';
 import { useAudio } from '@/utils/audio';
 
 interface StrategyModalProps {
@@ -20,7 +20,7 @@ interface StrategyModalProps {
     onClose: () => void;
 }
 
-type Action = 'H' | 'S' | 'DS' | 'S4' | 'S5' | 'S6' | 'SP' | 'PS' | 'D' | 'D3' | 'D4' | 'D5' | 'D6' | 'R' | 'RH' | 'RS' | 'SU' | 'FD' | 'FSP' | 'Z' | 'B' | 'SW';
+type Action = StrategyAction | 'SW';
 type Tab = 'hard' | 'soft' | 'pairs' | 'special' | 'counting' | 'rules' | 'free_hand' | 'switch_advice';
 type HighlightTone = 'accent' | 'good' | 'warn';
 
@@ -1468,11 +1468,11 @@ export default function StrategyModal({
     const isIberianHiLo = room.id === 'iberian_21' && countTab === 'hilo';
     const isIberianWalker = room.id === 'iberian_21' && countTab === 'kw';
     const roomRulesContent = getRoomRulesContent(room);
-    const roomCompositionOverrides = COMPOSITION_DEPENDENT_OVERRIDES.filter((override) => override.roomId === room.id);
-    const topCompositionOverrides = roomCompositionOverrides.filter((override) => override.isTopOverride);
-    const specialCaseGroups = (['hard', 'soft', 'pairs'] as SpecialCaseGroup[]).map((group) => ({
+    const roomCompositionOverrides = COMPOSITION_DEPENDENT_OVERRIDES.filter((override: CompositionDependentOverride) => override.roomId === room.id);
+    const topCompositionOverrides = roomCompositionOverrides.filter((override: CompositionDependentOverride) => override.isTopOverride);
+    const specialCaseGroups = (['hard', 'soft', 'pairs'] as SpecialCaseGroup[]).map((group: SpecialCaseGroup) => ({
         group,
-        items: roomCompositionOverrides.filter((override) => override.tab === group && !override.isTopOverride),
+        items: roomCompositionOverrides.filter((override: CompositionDependentOverride) => override.tab === group && !override.isTopOverride),
     })).filter((entry) => entry.items.length > 0);
     const visibleTabs = (room.id === 'iberian_21'
         ? ['rules', 'hard', 'soft', 'pairs', 'special', 'counting']
@@ -1940,9 +1940,9 @@ export default function StrategyModal({
                                     </div>
 
                                     <div className="grid grid-cols-1 gap-4">
-                                        {topCompositionOverrides.map((override, idx) => {
+                                        {topCompositionOverrides.map((override: CompositionDependentOverride, idx: number) => {
                                             const pattern = renderSpecialCaseCards(override.handPattern ?? []);
-                                            const actionStyle = ACTION_STYLES[override.action];
+                                            const actionStyle = ACTION_STYLES[override.action as Action];
                                             return (
                                                 <motion.div
                                                     key={override.id}
@@ -1960,7 +1960,7 @@ export default function StrategyModal({
                                                         <div className="space-y-3">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="text-[9px] font-black uppercase tracking-widest text-yellow-500/60 bg-yellow-500/10 px-2 py-0.5 rounded">High Impact</span>
-                                                                <span className="text-[9px] font-bold text-white/30">{SPECIAL_CASE_GROUP_LABELS[override.tab]}</span>
+                                                                <span className="text-[9px] font-bold text-white/30">{SPECIAL_CASE_GROUP_LABELS[override.tab as SpecialCaseGroup]}</span>
                                                             </div>
 
                                                             <div className="flex items-center gap-3">
@@ -2022,9 +2022,9 @@ export default function StrategyModal({
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     {specialCaseGroups.flatMap(({ group, items }) =>
-                                        items.map((override, entryIdx) => {
+                                        items.map((override: CompositionDependentOverride, entryIdx: number) => {
                                             const pattern = renderSpecialCaseCards(override.handPattern ?? []);
-                                            const actionStyle = ACTION_STYLES[override.action];
+                                            const actionStyle = ACTION_STYLES[override.action as Action];
                                             return (
                                                 <motion.div
                                                     key={override.id}

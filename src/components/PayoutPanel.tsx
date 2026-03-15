@@ -28,6 +28,12 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
         { label: '6-Card 21 / ♠♠ 6-7-8, 7-7-7', value: '2 : 1' },
         { label: '7+ Card 21 / ♠♠♠ 6-7-8, 7-7-7', value: '3 : 1' },
     ];
+    
+    const isFireCard = roomConfig?.id === 'firecard_21';
+    const fireCardBonusPayouts = [
+        { label: 'Burned Spades Ace', value: '7 : 1' },
+        { label: 'Burned Other Ace', value: '2 : 1' },
+    ];
 
     if (isFreeAction) {
         payouts.push(
@@ -133,6 +139,23 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
                                     <span className="text-[10px] font-bold tabular-nums text-red-400">$5000</span>
                                 </div>
                             </div>
+                        </div>
+                    </>
+                )}
+                {isFireCard && (
+                    <>
+                        <div className="px-3 py-2 border-t border-orange-500/20 bg-orange-500/10">
+                            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] flex items-center text-orange-500">
+                                <CreditCard size={12} className="mr-1.5" /> Burn Bonus Payouts
+                            </span>
+                        </div>
+                        <div className="p-2.5 space-y-1.5">
+                            {fireCardBonusPayouts.map((p) => (
+                                <div key={p.label} className="flex items-center justify-between px-1">
+                                    <span className="text-[10px] font-medium text-orange-200/80">{p.label}</span>
+                                    <span className="text-[10px] font-bold tabular-nums text-orange-400">{p.value}</span>
+                                </div>
+                            ))}
                         </div>
                     </>
                 )}
