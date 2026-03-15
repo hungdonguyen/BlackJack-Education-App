@@ -850,7 +850,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
 
       return {
         ...seat,
-        hands: seat.hands.map((hand) => {
+        hands: seat.hands.map((hand, handIdx) => {
           if (hand.betAmount === 0) return hand;
 
           const playerValue = calculateHandValue(hand.cards);
@@ -859,7 +859,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           // Already resolved (e.g., Bust, Even Money, or Surrendered)
           if (hand.status === HandStatus.BUST || hand.status === HandStatus.WON || hand.status === HandStatus.SURRENDERED) {
             if (hand.status === HandStatus.WON) {
-              const evaluation = rules.evaluateHand(hand, playerValue, state.dealerHand.cards, dealerValue);
+              const evaluation = rules.evaluateHand(hand, playerValue, state.dealerHand.cards, dealerValue, handIdx, seat.hands.length);
               totalPayout += (hand.betAmount - freeBet) + (hand.betAmount * evaluation.payoutMultiplier);
             }
             return {
@@ -870,7 +870,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
             };
           }
 
-          const evaluation = rules.evaluateHand(hand, playerValue, state.dealerHand.cards, dealerValue);
+          const evaluation = rules.evaluateHand(hand, playerValue, state.dealerHand.cards, dealerValue, handIdx, seat.hands.length);
           
           if (evaluation.status === HandStatus.WON || evaluation.status === HandStatus.BLACKJACK) {
             // Won amount (profit) + return of real principal (betAmount - freeBet)
@@ -933,12 +933,12 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           freeActionTokens: seat.freeActionTokens,
           hands: seat.hands
             .filter((h) => h.betAmount > 0)
-            .map((hand) => {
+            .map((hand, handIdx) => {
               const freeAmt = hand.freeActionBetAmount || 0;
               const playerValue = calculateHandValue(hand.cards);
               const evaluation = hand.status === HandStatus.SURRENDERED
                 ? null
-                : rules.evaluateHand(hand, playerValue, state.dealerHand.cards, dealerValue);
+                : rules.evaluateHand(hand, playerValue, state.dealerHand.cards, dealerValue, handIdx, seat.hands.length);
               return {
                 betAmount: hand.betAmount - freeAmt, // Record only the real wagered amount
                 freeActionBetAmount: freeAmt,

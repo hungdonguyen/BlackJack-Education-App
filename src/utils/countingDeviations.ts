@@ -87,6 +87,23 @@ export const FAB_4: Deviation[] = [
     { id: 'F4-4', playerTotal: 15, isSoft: false, isPair: false, dealerUpcard: 'A',  index: 1,  deviationAction: 'SU', basicAction: 'H', direction: 'gte', description: 'Surrender 15 vs A (instead of Hit)' },
 ];
 
+export const I18_UK: Deviation[] = [...I18_S17, ...FAB_4];
+
+export const I18_EUROPEAN: Deviation[] = [
+    // Standard stand/hit deviations from I18 S17 (excluding doubles against 10/A)
+    ...I18_S17.filter(d => !['I18-6', 'I18-9', 'I18-11'].includes(d.id)),
+    // High-count conservative doubles for Strict ENHC
+    { id: 'E18-6',  playerTotal: 10, isSoft: false, isPair: false, dealerUpcard: '10', index: 4,  deviationAction: 'D', basicAction: 'H', direction: 'gte', description: 'Double 10 vs 10 only if TC ≥ +4' },
+    { id: 'E18-9',  playerTotal: 11, isSoft: false, isPair: false, dealerUpcard: 'A',  index: 10, deviationAction: 'D', basicAction: 'H', direction: 'gte', description: 'Double 11 vs A only if TC ≥ +10' },
+    { id: 'E18-11', playerTotal: 10, isSoft: false, isPair: false, dealerUpcard: 'A',  index: 10, deviationAction: 'D', basicAction: 'H', direction: 'gte', description: 'Double 10 vs A only if TC ≥ +10' },
+    // Strict ENHC specialized doubles
+    { id: 'E18-19', playerTotal: 11, isSoft: false, isPair: false, dealerUpcard: '10', index: 1,  deviationAction: 'D', basicAction: 'H', direction: 'gte', description: 'Double 11 vs 10 only if TC ≥ +1' },
+    // Strict ENHC Pair Splits (High count required to risk total loss)
+    { id: 'E18-20', playerTotal: 16, isSoft: false, isPair: true,  dealerUpcard: '10', index: 6,  deviationAction: 'SP', basicAction: 'H', direction: 'gte', description: 'Split 8,8 vs 10 only if TC ≥ +6' },
+    { id: 'E18-21', playerTotal: 16, isSoft: false, isPair: true,  dealerUpcard: 'A',  index: 8,  deviationAction: 'SP', basicAction: 'H', direction: 'gte', description: 'Split 8,8 vs A only if TC ≥ +8' },
+    { id: 'E18-22', playerTotal: 2,  isSoft: false, isPair: true,  dealerUpcard: 'A',  index: 1,  deviationAction: 'SP', basicAction: 'H', direction: 'gte', description: 'Split A,A vs A only if TC ≥ +1' },
+];
+
 // ─── Iberian 21 (Spanish 21) Deviations ────────────────────────────────────
 
 export const IBERIAN_HILO: Deviation[] = [
@@ -105,6 +122,23 @@ export const IBERIAN_WALKER: Deviation[] = [
     { id: 'I21-W4', playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '6',  index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 6 (instead of Hit)' },
     { id: 'I21-W5', playerTotal: 13, isSoft: false, isPair: false, dealerUpcard: '2',  index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 13 vs 2 (instead of Hit)' },
     { id: 'I21-W6', playerTotal: 13, isSoft: false, isPair: false, dealerUpcard: '3',  index: -1, deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 13 vs 3 (instead of Hit)' },
+];
+
+// ─── Push 22 (Free Bet Blackjack) Deviations ───────────────────────────────
+// Specialized for the "Push 22" rule where dealer 22 pushes all non-busted hands.
+
+export const PUSH_22_DEVIATIONS: Deviation[] = [
+    { id: 'P22-1',  playerTotal: 0,  isSoft: false, isPair: false, dealerUpcard: 'A',  index: 7,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Take Insurance when TC ≥ +7' },
+    { id: 'P22-2',  playerTotal: 16, isSoft: false, isPair: false, dealerUpcard: '10', index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 16 vs 10 (instead of Hit)' },
+    { id: 'P22-3',  playerTotal: 15, isSoft: false, isPair: false, dealerUpcard: '10', index: 4,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 15 vs 10 (instead of Hit)' },
+    { id: 'P22-4',  playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '4',  index: 2,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 4 (instead of Hit)' },
+    { id: 'P22-5',  playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '5',  index: 1,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 5 (instead of Hit)' },
+    { id: 'P22-6',  playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '6',  index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 6 (instead of Hit)' },
+    { id: 'P22-7',  playerTotal: 13, isSoft: false, isPair: false, dealerUpcard: '2',  index: 1,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 13 vs 2 (instead of Hit)' },
+    { id: 'P22-8',  playerTotal: 13, isSoft: false, isPair: false, dealerUpcard: '3',  index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 13 vs 3 (instead of Hit)' },
+    { id: 'P22-9',  playerTotal: 10, isSoft: false, isPair: false, dealerUpcard: '10', index: 4,  deviationAction: 'D', basicAction: 'H', direction: 'gte', description: 'Double 10 vs 10 (instead of Hit)' },
+    { id: 'P22-10', playerTotal: 10, isSoft: false, isPair: false, dealerUpcard: 'A',  index: 4,  deviationAction: 'D', basicAction: 'H', direction: 'gte', description: 'Double 10 vs A (instead of Hit)' },
+    { id: 'P22-11', playerTotal: 11, isSoft: false, isPair: false, dealerUpcard: 'A',  index: 1,  deviationAction: 'D', basicAction: 'H', direction: 'gte', description: 'Double 11 vs A (instead of Hit)' },
 ];
 
 // ─── Lookup Function ───────────────────────────────────────────────────────
@@ -136,6 +170,12 @@ export function getDeviation(
 
     if (roomId === 'iberian_21') {
         allDeviations = system === 'Katarina Walker' ? IBERIAN_WALKER : IBERIAN_HILO;
+    } else if (roomId === 'free_action') {
+        allDeviations = PUSH_22_DEVIATIONS;
+    } else if (roomId === 'uk') {
+        allDeviations = I18_UK;
+    } else if (roomId === 'european') {
+        allDeviations = I18_EUROPEAN;
     } else {
         const i18Table = dealerHitsS17 ? I18_H17 : I18_S17;
         allDeviations = [...i18Table, ...FAB_4];
@@ -195,6 +235,10 @@ export function getInsuranceIndex(
 ): number {
     if (roomId === 'iberian_21') {
         return system === 'Katarina Walker' ? 7 : 7;
+    }
+
+    if (roomId === 'free_action') {
+        return 7;
     }
 
     return 3;

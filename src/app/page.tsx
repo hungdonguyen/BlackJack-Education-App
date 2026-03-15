@@ -10,10 +10,10 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Wallet, BookOpen, Sparkles, Zap } from 'lucide-react';
 import appIcon from '../../src-tauri/icons/icon.png';
+import { ROOMS } from '@/utils/rooms';
 import LegalAgreementModal from '@/components/LegalAgreementModal';
 import StrategyModal from '@/components/StrategyModal';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
-import { ROOMS } from '@/utils/rooms';
 import { useAudio } from '@/utils/audio';
 import { MusicPlayer } from '@/components/MusicPlayer';
 
@@ -24,6 +24,8 @@ const STRATEGY_ROOM_IDS = [
   'free_action',
   'atlantic_city',
   'iberian_21',
+  'european',
+  'uk',
 ] as const;
 
 type StrategyRoomId = (typeof STRATEGY_ROOM_IDS)[number];
@@ -79,23 +81,22 @@ export default function HomePage() {
             }}
           />
 
-          {/* Decorative card suits floating */}
+          {/* Decorative room logos floating */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {['♠', '♥', '♦', '♣'].map((suit, i) => (
-              <motion.span
-                key={suit}
-                className="absolute text-6xl"
+            {Object.values(ROOMS).map((room, i) => (
+              <motion.div
+                key={room.id}
+                className="absolute w-32 h-32 opacity-[0.06] blur-[2px]"
                 style={{
-                  color: suit === '♥' || suit === '♦' ? 'rgba(220, 50, 50, 0.04)' : 'rgba(255, 255, 255, 0.03)',
-                  left: `${15 + i * 22}%`,
-                  top: `${20 + (i % 2) * 40}%`,
+                  left: `${(i % 4) * 22 + 8}%`,
+                  top: `${Math.floor(i / 4) * 45 + 15}%`,
                   willChange: 'transform',
                 }}
-                animate={{ y: [0, -20, 0], rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 9 + i, repeat: Infinity, ease: 'easeInOut' }}
+                animate={{ y: [0, -30, 0], rotate: [0, 8, -8, 0], scale: [1, 1.05, 1] }}
+                transition={{ duration: 12 + (i % 3) * 3, repeat: Infinity, ease: 'easeInOut' }}
               >
-                {suit}
-              </motion.span>
+                <Image src={room.logoPath} fill alt={room.name} unoptimized className="object-contain" />
+              </motion.div>
             ))}
           </div>
 

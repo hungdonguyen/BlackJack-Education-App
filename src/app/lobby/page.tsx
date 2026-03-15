@@ -1,28 +1,40 @@
 'use client';
 
-// ============================================
-// Lobby Page — Room Selection
-// ============================================
-
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ROOMS, RoomConfig } from '@/utils/rooms';
 import Image from 'next/image';
-import { ArrowLeft, Home } from 'lucide-react';
+import { ArrowLeft, Home, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { useAudio } from '@/utils/audio';
 import { MusicPlayer } from '@/components/MusicPlayer';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Keyboard } from 'swiper/modules';
+
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 export default function LobbyPage() {
     const router = useRouter();
     const rooms = Object.values(ROOMS);
     const { playSound } = useAudio();
 
+    const ITEMS_PER_PAGE = 6;
+
+    const chunkedRooms = useMemo(() => {
+        const chunks = [];
+        for (let i = 0; i < rooms.length; i += ITEMS_PER_PAGE) {
+            chunks.push(rooms.slice(i, i + ITEMS_PER_PAGE));
+        }
+        return chunks;
+    }, [rooms]);
+
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== 'Escape') return;
-            event.preventDefault();
-            router.push('/');
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                router.push('/');
+            }
         };
 
         window.addEventListener('keydown', handleKeyDown);
@@ -30,11 +42,17 @@ export default function LobbyPage() {
     }, [router]);
 
     return (
-        <div className="relative w-screen h-screen overflow-hidden select-none"
+        <div className="relative w-screen h-screen overflow-hidden select-none flex flex-col items-center"
             style={{
                 background: 'radial-gradient(ellipse 120% 100% at 50% 30%, #301a10 0%, #1a0e0a 40%, #0d0705 100%)',
             }}
         >
+            <style>{`
+                .swiper-button-disabled {
+                    opacity: 0; pointer-events: none;
+                }
+            `}</style>
+            
             {/* Top Bar — absolute so it doesn't affect centering */}
             <div className="absolute top-0 left-0 right-0 z-20 flex items-center h-20 px-6">
                 {/* Left Side: Back/Home */}
@@ -60,11 +78,11 @@ export default function LobbyPage() {
                 </div>
             </div>
 
-            {/* Center content — true full-screen vertical centering */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 z-10 px-8">
+            {/* Center content — flex 1 allows vertical centering and pushes footer down */}
+            <div className="flex-1 flex flex-col items-center justify-center w-full z-10 px-4 md:px-8 mt-12 mb-16">
                 {/* Heading */}
                 <motion.div
-                    className="text-center mt-6"
+                    className="text-center mb-6 shrink-0"
                     initial={{ opacity: 0, y: -16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1, duration: 0.6 }}
@@ -87,11 +105,43 @@ export default function LobbyPage() {
                     </div>
                 </motion.div>
 
-                {/* Room Cards — items-stretch ensures equal height, grid handles responsiveness */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 xl:gap-4 w-full max-w-[1100px]">
-                    {rooms.map((room, index) => (
-                        <RoomCard key={room.id} room={room} index={index} onClick={() => { playSound('click'); router.push(`/game/${room.id}`); }} />
-                    ))}
+                {/* Main Content Area (Swiper Carousel) */}
+                <div className="w-full max-w-[1300px] relative px-10 md:px-16 flex-1 max-h-[640px]">
+                    <Swiper
+                        modules={[Navigation, Keyboard]}
+                        spaceBetween={40}
+                        slidesPerView={1}
+                        keyboard={{ enabled: true }}
+                        speed={600}
+                        navigation={{
+                            prevEl: '.lobby-prev',
+                            nextEl: '.lobby-next',
+                        }}
+                        className="w-full h-full"
+                        onSlideChange={() => playSound('click')}
+                    >
+                        {chunkedRooms.map((chunk, pageIndex) => (
+                            <SwiperSlide key={pageIndex}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 xl:gap-5 w-full max-w-[1100px] mx-auto py-2">
+                                    {chunk.map((room, index) => (
+                                        <RoomCard key={room.id} room={room} index={index} onClick={() => { playSound('click'); router.push(`/game/${room.id}`); }} />
+                                    ))}
+                                </div>
+                            </SwiperSlide>
+                        ))}
+                    </Swiper>
+
+                    {/* Custom Nav Buttons */}
+                    {chunkedRooms.length > 1 && (
+                        <>
+                            <div className="lobby-prev absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-amber-400/20 text-amber-500/80 cursor-pointer shadow-[0_0_20px_rgba(212,168,67,0.1)] hover:bg-amber-400/10 hover:text-amber-400 hover:scale-110 hover:border-amber-400/60 transition-all duration-300">
+                                <ChevronLeft size={28} />
+                            </div>
+                            <div className="lobby-next absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-amber-400/20 text-amber-500/80 cursor-pointer shadow-[0_0_20px_rgba(212,168,67,0.1)] hover:bg-amber-400/10 hover:text-amber-400 hover:scale-110 hover:border-amber-400/60 transition-all duration-300">
+                                <ChevronRight size={28} />
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 

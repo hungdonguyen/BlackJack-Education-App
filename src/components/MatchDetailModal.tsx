@@ -129,7 +129,7 @@ export default function MatchDetailModal({
 
             {/* Panel */}
             <motion.div
-                className="relative w-130 max-h-[918px] rounded-2xl flex flex-col overflow-hidden"
+                className="relative w-[680px] max-h-[918px] rounded-2xl flex flex-col overflow-hidden"
                 style={{ background: 'rgba(15, 9, 6, 0.97)', border: '1px solid rgba(255,210,90,0.15)', backdropFilter: 'blur(20px)' }}
                 initial={{ scale: 0.92, y: 24 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 24 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 24 }}
@@ -176,7 +176,7 @@ export default function MatchDetailModal({
                     <div className="px-5 py-3">
                         {/* Table header */}
                         <div className="grid text-[9px] font-bold uppercase tracking-[0.15em] text-white/30 mb-2 px-1"
-                            style={{ gridTemplateColumns: '80px 1fr 56px 64px 72px' }}>
+                            style={{ gridTemplateColumns: '80px 1fr 56px 90px 100px' }}>
                             <span>Seat</span>
                             <span>Cards</span>
                             <span className="text-center">Score</span>
@@ -215,7 +215,7 @@ export default function MatchDetailModal({
                                                 <div key={`${seat.seatId}-${hIdx}`}
                                                     className="grid items-center gap-x-1 px-2 py-2"
                                                     style={{
-                                                        gridTemplateColumns: '80px 1fr 56px 64px 72px',
+                                                        gridTemplateColumns: '80px 1fr 56px 90px 100px',
                                                         background: 'rgba(255,255,255,0.025)',
                                                         borderBottom: (!isLastHand || hasExtras) ? '1px solid rgba(255,255,255,0.04)' : undefined,
                                                     }}>
@@ -285,7 +285,7 @@ export default function MatchDetailModal({
                                         {seat.insuranceCost && seat.insuranceCost > 0 && (
                                             <div className="grid items-center gap-x-1 px-2 py-1.5"
                                                 style={{
-                                                    gridTemplateColumns: '80px 1fr 56px 64px 72px',
+                                                    gridTemplateColumns: '80px 1fr 56px 90px 100px',
                                                     background: 'rgba(250,204,21,0.03)',
                                                     borderBottom: '1px solid rgba(255,255,255,0.04)',
                                                 }}>
@@ -323,7 +323,7 @@ export default function MatchDetailModal({
                                         {seat.sideBetAmount && seat.sideBetAmount > 0 && (
                                             <div className="grid items-center gap-x-1 px-2 py-1.5"
                                                 style={{
-                                                    gridTemplateColumns: '80px 1fr 56px 64px 72px',
+                                                    gridTemplateColumns: '80px 1fr 56px 90px 100px',
                                                     background: 'rgba(234,179,8,0.03)',
                                                     borderBottom: '1px solid rgba(255,255,255,0.04)',
                                                 }}>
@@ -360,7 +360,7 @@ export default function MatchDetailModal({
                                         {hasExtras && (
                                             <div className="grid items-center gap-x-1 px-2 py-1.5"
                                                 style={{
-                                                    gridTemplateColumns: '80px 1fr 56px 64px 72px',
+                                                    gridTemplateColumns: '80px 1fr 56px 90px 100px',
                                                     background: 'rgba(255,255,255,0.04)',
                                                 }}>
                                                 <span className="text-[9px] font-extrabold uppercase tracking-[0.1em] text-white/50">Seat {seat.seatId} Total</span>
@@ -387,7 +387,7 @@ export default function MatchDetailModal({
                         <div className="mt-3 rounded-lg px-3 py-2.5 flex items-center justify-between"
                             style={{ background: 'rgba(255,210,90,0.05)', border: '1px solid rgba(255,210,90,0.12)' }}>
                             <span className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-amber-400/80">Total</span>
-                            <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-8">
                                 <div className="text-right">
                                     <p className="text-[9px] text-white/30 uppercase tracking-wider">Wagered</p>
                                     <p className="text-[13px] font-bold text-white/70 tabular-nums">{totalBet.toLocaleString()}</p>

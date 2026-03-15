@@ -56,7 +56,7 @@ export interface RoomConfig {
 }
 
 import React from 'react';
-import { Spade, Ticket, Anchor, Zap } from 'lucide-react';
+import { Spade, Ticket, Anchor, Zap, Crown } from 'lucide-react';
 
 export const ROOMS: Record<string, RoomConfig> = {
     classic: {
@@ -213,8 +213,34 @@ export const ROOMS: Record<string, RoomConfig> = {
         betRange: [1, 1_000_000],
         rtp: '99.24%',
         icon: <Spade className="w-5 h-5 drop-shadow-md text-red-500 fill-red-600" />,
-        accentColor: '#ef4444',
+        accentColor: '#be123c',
         logoPath: '/images/logo/rooms/iberian21.png',
+    },
+    uk: {
+        id: 'uk',
+        name: 'United Kingdom',
+        subtitle: 'UK Casino Standards',
+        description: 'UK Rules — 6 decks. European No Hole Card (ENHC) applies, but Original Bets Only (OBO) protects your doubles and splits against late dealer Blackjacks. Dealer stands on all 17s. Double down on ANY two cards. Double after split allowed. Split any equal value to 4 hands. No surrender.',
+        feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #1e1b4b 0%, #151433 25%, #0f1026 50%, #070817 80%, #02020a 100%)',
+        bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #161A26 0%, #0C0F16 50%, #05060A 100%)',
+        borderColor: 'rgba(99, 102, 241, 0.25)', // Indigo-silver border accent
+        rules: {
+            blackjackPays: 'Blackjack Pays 3 to 2',
+            insurancePays: 'Insurance Pays 2 to 1',
+            dealerStands: 'Dealer stands on soft 17 and hard 17',
+        },
+        gameRules: {
+            numberOfDecks: 6,
+            dealerHitsSoft17: false, // Stands on Soft 17
+            allowSurrender: false,
+            enhc: true, // ENHC applies, but our UKRules engine handles the OBO refund logic
+        },
+        blackjackMultiplier: 1.5,
+        betRange: [1, 1_000_000],
+        rtp: '99.55%', // Higher RTP than standard European due to DAS, OBO, and double any 2 cards
+        icon: <Crown className="w-5 h-5 drop-shadow-md text-indigo-400" />,
+        accentColor: '#6366f1',
+        logoPath: '/images/logo/rooms/uk_logo.png',
     },
     european: {
         id: 'european',

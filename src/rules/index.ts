@@ -6,6 +6,7 @@ import { AtlanticCityRules } from './AtlanticCityRules';
 import { FreeActionRules } from './FreeActionRules';
 import { Iberian21Rules } from './Iberian21Rules';
 import { EuropeanRules } from './EuropeanRules';
+import { UKRules } from './UKRules';
 
 export function getRules(roomId: string): IRules {
     switch (roomId) {
@@ -21,6 +22,8 @@ export function getRules(roomId: string): IRules {
             return new Iberian21Rules();
         case 'european':
             return new EuropeanRules();
+        case 'uk':
+            return new UKRules();
         case 'classic':
         default:
             return new ClassicRules();
@@ -35,3 +38,4 @@ export * from './AtlanticCityRules';
 export * from './FreeActionRules';
 export * from './Iberian21Rules';
 export * from './EuropeanRules';
+export * from './UKRules';

@@ -82,7 +82,9 @@ export class FreeActionRules implements IRules {
         playerHand: Hand,
         playerValue: HandValue,
         dealerCards: Card[],
-        dealerValue: HandValue
+        dealerValue: HandValue,
+        _handIndex?: number,
+        _numSeatHands?: number
     ): PayoutResult {
         const playerHasBlackjack = playerHand.status === HandStatus.BLACKJACK;
         const dealerHasBlackjack = isBlackjack(dealerCards);

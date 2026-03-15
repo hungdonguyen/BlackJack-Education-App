@@ -51,8 +51,11 @@ export class Iberian21Rules implements IRules {
         playerHand: Hand,
         playerValue: HandValue,
         dealerCards: Card[],
-        dealerValue: HandValue
+        dealerValue: HandValue,
+        _handIndex?: number,
+        _numSeatHands?: number
     ): PayoutResult {
+        // Iberian 21 Special Rules:
         const playerBust = playerValue.total > 21;
         const dealerBust = dealerValue.total > 21;
 

@@ -1,7 +1,7 @@
 import { Card } from '@/types/game';
 import { calculateHandValue } from '@/utils/hand';
 
-export type StrategyAction = 'H' | 'S' | 'DS' | 'S4' | 'S5' | 'S6' | 'SP' | 'PS' | 'D' | 'D3' | 'D4' | 'D5' | 'D6' | 'R' | 'RH' | 'SU' | 'FD' | 'FSP';
+export type StrategyAction = 'H' | 'S' | 'DS' | 'S4' | 'S5' | 'S6' | 'SP' | 'PS' | 'D' | 'D3' | 'D4' | 'D5' | 'D6' | 'R' | 'RH' | 'RS' | 'SU' | 'FD' | 'FSP';
 export type AdviceAction = StrategyAction | 'INS' | 'NINS';
 
 export interface CompositionDependentOverride {
@@ -61,7 +61,7 @@ const HARD_DOWNTOWN: StrategyAction[][] = [
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],
     ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D'],
     ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
@@ -76,20 +76,20 @@ const HARD_DOWNTOWN: StrategyAction[][] = [
 ];
 
 const HARD_FA: StrategyAction[][] = [
-    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
-    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'],
-    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'],
-    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'],
-    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 12+: More aggressive in Free Action due to Push 22
-    ['H', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13 vs 2: Hit
-    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
-    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
-    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 6
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 7
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 8
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 9
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 10
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 11
+    ['H', 'H', 'H', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['H', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14 (Stand vs 2-6)
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'RH', 'RH'], // 15 (R vs 10,A)
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'RH', 'RH', 'RH'], // 16 (R vs 9,10,A)
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'RS'], // 17 (RS vs A)
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18-20
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
@@ -107,26 +107,56 @@ const SOFT_CLASSIC: StrategyAction[][] = [
 
 const SOFT_DOWNTOWN: StrategyAction[][] = [
     ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
     ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
-    ['D', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // Soft 17: Double vs 2 (H17 rule)
-    ['D', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'], // Soft 18: DS vs 2
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // Soft 17: Hit vs 2 (Corrected per image)
+    ['DS', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'], // Soft 18: DS vs 2 (Corrected per image)
     ['S', 'S', 'S', 'S', 'DS', 'S', 'S', 'S', 'S', 'S'],
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
 ];
 
-const SOFT_FA: StrategyAction[][] = ([
-    ['H', 'H', 'X', 'X', 'X', 'H', 'H', 'H', 'H', 'H'], // Soft 13 (X = formerly D, but is negative EV)
-    ['H', 'H', 'X', 'X', 'X', 'H', 'H', 'H', 'H', 'H'], // Soft 14
-    ['H', 'H', 'X', 'X', 'X', 'H', 'H', 'H', 'H', 'H'], // Soft 15
-    ['H', 'X', 'X', 'X', 'X', 'H', 'H', 'H', 'H', 'H'], // Soft 16 (D changed to H as it is not free)
-    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // Soft 17: D is suggested if allowed
-    ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
-] as string[][]).map(row => row.map(action => action === 'X' ? 'H' : action)) as StrategyAction[][];
+const SOFT_FA: StrategyAction[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 15
+    ['H', 'H', 'H', 'H', 'D', 'H', 'H', 'H', 'H', 'H'], // 16 (D vs dealer 6)
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // 17 (D vs dealer 5,6)
+    ['S', 'S', 'D', 'D', 'D', 'S', 'S', 'H', 'H', 'H'], // 18 (S vs 2-3, D vs 4-6, S vs 7-8, H vs 9-A)
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
+];
 
+// Free Hand tables (hands resulting from a free split — more aggressive, no surrender)
+const HARD_FA_FREE: StrategyAction[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5-8
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 9
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 10
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 11
+    ['H', 'H', 'H', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['H', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['H', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 15
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 16
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'S', 'H'], // 17
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18-20
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+
+const SOFT_FA_FREE: StrategyAction[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 15
+    ['H', 'H', 'H', 'H', 'D', 'H', 'H', 'H', 'H', 'H'], // 16 (D vs dealer 6)
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // 17 (D vs dealer 5, 6)
+    ['H', 'H', 'D', 'D', 'D', 'S', 'H', 'H', 'H', 'H'], // 18 (D vs 4-6, S vs 7)
+    ['S', 'S', 'S', 'D', 'D', 'S', 'S', 'S', 'S', 'S'], // 19 (D vs 5-6)
+    ['S', 'S', 'S', 'S', 'D', 'S', 'S', 'S', 'S', 'S'], // 20 (D vs 6)
+];
 const HARD_VEGAS = HARD_CLASSIC;
 const SOFT_VEGAS = SOFT_CLASSIC;
 
@@ -206,16 +236,16 @@ const PAIRS_TABLE: StrategyAction[][] = [
 ];
 
 const PAIRS_FA: StrategyAction[][] = [
-    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
-    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
-    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
-    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'],
-    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
-    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
-    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
-    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
-    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'],
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 2,2
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 3,3
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 4,4
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 5,5  Free Double only 
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 6,6
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 7,7
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 8,8
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // 9,9
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 10,10 Never split 10s
+    ['FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP', 'FSP'], // A,A
 ];
 
 const PAIRS_IBERIAN: StrategyAction[][] = [
@@ -226,7 +256,7 @@ const PAIRS_IBERIAN: StrategyAction[][] = [
     ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H'],       // 5,5 (treat as hard 10)
     ['H', 'H', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'],    // 6,6
     ['SP', 'SP', 'SP', 'SP', 'SP', 'PS', 'H', 'H', 'H', 'H'], // 7,7
-    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'R'], // 8,8
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'R', 'R'], // 8,8
     ['S', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'], // 9,9
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],       // J,J (no 10s)
     ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'], // A,A
@@ -276,6 +306,49 @@ const PAIRS_EUROPEAN: StrategyAction[][] = [
     ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'], // 9,9
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 10,10
     ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H'], // A,A
+];
+
+const HARD_UK: StrategyAction[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H'],
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+
+const SOFT_UK: StrategyAction[][] = [
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
+    ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
+
+const PAIRS_UK: StrategyAction[][] = [
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'],
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
 ];
 
 export const ACTION_META: Record<AdviceAction, ActionMeta> = {
@@ -352,6 +425,16 @@ export const ACTION_META: Record<AdviceAction, ActionMeta> = {
         bg: 'rgba(109,40,217,0.2)',
         desc: 'Forfeit hand, recover 50% of bet',
         reasoning: (total, _isSoft, dealerUp) => `Total ${total} vs Dealer (${dealerUp}) — Win rate < 25%, Surrendering is optimal to minimise losses`,
+    },
+    RS: {
+        label: 'SURRENDER / STAND',
+        shortLabel: 'RS',
+        color: '#d8b4fe',
+        glow: 'rgba(139,92,246,0.35)',
+        border: 'rgba(139,92,246,0.4)',
+        bg: 'rgba(109,40,217,0.2)',
+        desc: 'Surrender if possible, otherwise Stand',
+        reasoning: (total, _isSoft, dealerUp) => `Total ${total} vs Dealer (${dealerUp}) — Surrender saves money here, but Stand if Surrender is not available`,
     },
     FD: {
         label: 'FREE ACTION DOUBLE',
@@ -1026,7 +1109,6 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
         playerTotal: 14,
         isSoft: false,
         dealerUpcard: '*',
-        isTopOverride: true,
         handPattern: ['7', '7'],
         action: 'H',
         title: '7,7 vs any dealer',
@@ -1113,7 +1195,7 @@ function getPairRowIdx(cards: Card[]): number {
     return PAIR_ROWS.indexOf(rank as (typeof PAIR_ROWS)[number]);
 }
 
-function getStrategyTables(strategyType: string) {
+export function getStrategyTables(strategyType: string) {
     if (strategyType === 'free_action') {
         return { hard: HARD_FA, soft: SOFT_FA, pairs: PAIRS_FA };
     }
@@ -1136,6 +1218,10 @@ function getStrategyTables(strategyType: string) {
 
     if (strategyType === 'european') {
         return { hard: HARD_EUROPEAN, soft: SOFT_EUROPEAN, pairs: PAIRS_EUROPEAN };
+    }
+
+    if (strategyType === 'uk') {
+        return { hard: HARD_UK, soft: SOFT_UK, pairs: PAIRS_UK };
     }
 
     return { hard: HARD_CLASSIC, soft: SOFT_CLASSIC, pairs: PAIRS_TABLE };
