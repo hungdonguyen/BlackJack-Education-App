@@ -20,6 +20,8 @@ interface CardComponentProps {
     animate?: boolean;
     /** Size variant */
     size?: 'sm' | 'md' | 'lg';
+    /** Whether the card was just switched */
+    isSwitched?: boolean;
 }
 
 const SIZE_MAP = {
@@ -38,6 +40,7 @@ export default function CardComponent({
     totalCards = 1,
     animate = true,
     size = 'md',
+    isSwitched = false,
 }: CardComponentProps) {
     const dimensions = SIZE_MAP[size];
     const imagePath = card.isHidden ? getCardBackPath() : getCardImagePath(card);
@@ -62,19 +65,24 @@ export default function CardComponent({
                 left: `${index * fanOffset}px`,
                 zIndex: index + 1,
             }}
-            initial={animate ? { y: -250, opacity: 0, rotateY: 180, rotate: 0 } : false}
+            initial={
+                isSwitched
+                    ? { x: index === 0 ? 100 : -100, y: -20, opacity: 0, scale: 1.1, rotateZ: index === 0 ? 15 : -15 }
+                    : animate ? { y: -250, opacity: 0, rotateY: 180, rotate: 0 } : false
+            }
             animate={{
+                x: 0,
                 y: 0,
                 opacity: 1,
                 rotateY: 0,
-                rotate: totalCards > 1 ? rotation : 0,
+                scale: 1,
+                rotateZ: totalCards > 1 ? rotation : 0,
             }}
-            transition={{
-                type: 'spring',
-                stiffness: 220,
-                damping: 22,
-                delay: index * 0.18,
-            }}
+            transition={
+                isSwitched
+                    ? { type: 'spring', stiffness: 200, damping: 20, mass: 0.8, delay: 0.1 }
+                    : { type: 'spring', stiffness: 220, damping: 22, delay: index * 0.18 }
+            }
         >
             <div
                 className="relative rounded-lg overflow-hidden drop-shadow-xl"

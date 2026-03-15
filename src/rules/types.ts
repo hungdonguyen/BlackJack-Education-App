@@ -22,6 +22,15 @@ export interface IRules {
     /** Check if a hand can surrender (Late Surrender). */
     canSurrender(hand: Hand): ActionValidity;
 
+    /** Zap Out 21: Swap hard 15-18 for 2 new cards */
+    canZap?(hand: Hand): ActionValidity;
+
+    /** Exchange 21: Swap 2nd cards between two hands */
+    canSwitch?(seat: Seat): ActionValidity;
+
+    /** Fire Card 21: Burn 2nd card for a new card */
+    canBurn?(hand: Hand): ActionValidity;
+
     /**
      * Evaluate the player's outcome against the dealer's outcome.
      * Returns the resulting HandStatus (WON, LOST, PUSH, BLACKJACK) and the payout multiplier.

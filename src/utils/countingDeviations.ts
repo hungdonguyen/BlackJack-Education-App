@@ -12,7 +12,7 @@
 
 import { CountingSystem } from './cardCounting';
 
-export type DeviationAction = 'H' | 'S' | 'D' | 'SP' | 'SU';
+export type DeviationAction = 'H' | 'S' | 'D' | 'SP' | 'SU' | 'Z' | 'B' | 'SW';
 
 export interface Deviation {
     /** Illustrious 18 rank (1-18) or Fab 4 rank (F1-F4) */
@@ -129,8 +129,8 @@ export const IBERIAN_WALKER: Deviation[] = [
 
 export const PUSH_22_DEVIATIONS: Deviation[] = [
     { id: 'P22-1',  playerTotal: 0,  isSoft: false, isPair: false, dealerUpcard: 'A',  index: 7,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Take Insurance when TC ≥ +7' },
-    { id: 'P22-2',  playerTotal: 16, isSoft: false, isPair: false, dealerUpcard: '10', index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 16 vs 10 (instead of Hit)' },
-    { id: 'P22-3',  playerTotal: 15, isSoft: false, isPair: false, dealerUpcard: '10', index: 4,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 15 vs 10 (instead of Hit)' },
+    { id: 'P22-2',  playerTotal: 16, isSoft: false, isPair: false, dealerUpcard: '10', index: 4,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 16 vs 10 only if TC ≥ +4' },
+    { id: 'P22-3',  playerTotal: 15, isSoft: false, isPair: false, dealerUpcard: '10', index: 6,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 15 vs 10 only if TC ≥ +6' },
     { id: 'P22-4',  playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '4',  index: 2,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 4 (instead of Hit)' },
     { id: 'P22-5',  playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '5',  index: 1,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 5 (instead of Hit)' },
     { id: 'P22-6',  playerTotal: 12, isSoft: false, isPair: false, dealerUpcard: '6',  index: 0,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 12 vs 6 (instead of Hit)' },
@@ -139,6 +139,28 @@ export const PUSH_22_DEVIATIONS: Deviation[] = [
     { id: 'P22-9',  playerTotal: 10, isSoft: false, isPair: false, dealerUpcard: '10', index: 4,  deviationAction: 'D', basicAction: 'H', direction: 'gte', description: 'Double 10 vs 10 (instead of Hit)' },
     { id: 'P22-10', playerTotal: 10, isSoft: false, isPair: false, dealerUpcard: 'A',  index: 4,  deviationAction: 'D', basicAction: 'H', direction: 'gte', description: 'Double 10 vs A (instead of Hit)' },
     { id: 'P22-11', playerTotal: 11, isSoft: false, isPair: false, dealerUpcard: 'A',  index: 1,  deviationAction: 'D', basicAction: 'H', direction: 'gte', description: 'Double 11 vs A (instead of Hit)' },
+];
+
+// ─── Custom Variant Deviations (Zap Out, Exchange, Fire Card) ──────────────
+
+// Zap Out 21: Dealer pushes on 22 (like free bet), but player zaps hard 15-18.
+// So deviation plays for 15, 16 vs 10 are completely excluded.
+export const ZAPOUT_DEVIATIONS: Deviation[] = PUSH_22_DEVIATIONS.filter(
+    d => d.playerTotal !== 15 && d.playerTotal !== 16 && d.playerTotal !== 14
+);
+
+// Exchange 21: Dealer pushes on 22.
+export const EXCHANGE_DEVIATIONS: Deviation[] = PUSH_22_DEVIATIONS;
+
+// Fire Card 21: Dealer hits S17.
+// Burn mechanics: High counts make standing safer, but 'Burn' is often better than 'Hit' as basic strategy.
+export const FIRECARD_DEVIATIONS: Deviation[] = [
+    // Inherit non-conflicting I18 H17 deviations
+    ...I18_H17.filter(d => !['I18-2', 'I18-3', 'I18-13'].includes(d.id)),
+    // Inject specialized 'Burn' deviations
+    { id: 'B21-1', playerTotal: 16, isSoft: false, isPair: false, dealerUpcard: '10', index: 0, deviationAction: 'B', basicAction: 'H', direction: 'gte', description: 'Burn on 16 vs 10 (instead of Hit) when TC ≥ 0' },
+    { id: 'B21-2', playerTotal: 15, isSoft: false, isPair: false, dealerUpcard: '10', index: 3, deviationAction: 'B', basicAction: 'H', direction: 'gte', description: 'Burn on 15 vs 10 (instead of Hit) when TC ≥ +3' },
+    { id: 'B21-3', playerTotal: 14, isSoft: false, isPair: false, dealerUpcard: '10', index: 4, deviationAction: 'B', basicAction: 'H', direction: 'gte', description: 'Burn on 14 vs 10 (instead of Hit) when TC ≥ +4' },
 ];
 
 // ─── Lookup Function ───────────────────────────────────────────────────────
@@ -172,6 +194,13 @@ export function getDeviation(
         allDeviations = system === 'Katarina Walker' ? IBERIAN_WALKER : IBERIAN_HILO;
     } else if (roomId === 'free_action') {
         allDeviations = PUSH_22_DEVIATIONS;
+    } else if (roomId === 'zapout_21') {
+        allDeviations = ZAPOUT_DEVIATIONS;
+    } else if (roomId === 'exchange_21') {
+        allDeviations = EXCHANGE_DEVIATIONS;
+    } else if (roomId === 'firecard_21') {
+        // Fab 4 Surrender doesn't apply to Fire Card (surrender disabled), but just in case, we only use FireCard deviations
+        allDeviations = FIRECARD_DEVIATIONS;
     } else if (roomId === 'uk') {
         allDeviations = I18_UK;
     } else if (roomId === 'european') {
@@ -237,7 +266,7 @@ export function getInsuranceIndex(
         return system === 'Katarina Walker' ? 7 : 7;
     }
 
-    if (roomId === 'free_action') {
+    if (roomId === 'free_action' || roomId === 'zapout_21' || roomId === 'exchange_21') {
         return 7;
     }
 

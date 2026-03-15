@@ -5,7 +5,7 @@
 // ============================================
 
 import { motion } from 'framer-motion';
-import { X, Gauge, Zap, Volume2, VolumeX, Eye, EyeOff, Settings, Music, Expand, Minimize2, Power, LogOut } from 'lucide-react';
+import { X, Gauge, Zap, Volume2, VolumeX, Eye, EyeOff, Settings, Music, Expand, Minimize2, Power, LogOut, ArrowLeftRight } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
 
@@ -26,6 +26,7 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
     const showCardCounting = useGameStore((s) => s.showCardCounting);
     const countSystem = useGameStore((s) => s.countSystem);
     const showSpecialCases = useGameStore((s) => s.showSpecialCases);
+    const showSwitchAdvice = useGameStore((s) => s.showSwitchAdvice);
 
     const setDealerSpeed = useGameStore((s) => s.setDealerSpeed);
     const setSoundEnabled = useGameStore((s) => s.setSoundEnabled);
@@ -33,6 +34,7 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
     const setShowCardCounting = useGameStore((s) => s.setShowCardCounting);
     const setCountSystem = useGameStore((s) => s.setCountSystem);
     const setShowSpecialCases = useGameStore((s) => s.setShowSpecialCases);
+    const setShowSwitchAdvice = useGameStore((s) => s.setShowSwitchAdvice);
     const musicEnabled = useGameStore((s) => s.musicEnabled);
     const musicVolume = useGameStore((s) => s.musicVolume);
     const soundVolume = useGameStore((s) => s.soundVolume);
@@ -184,6 +186,28 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
                                     onChange={(val) => { playSound('switch'); setShowSpecialCases(val); }}
                                 />
                             </SettingRow>
+
+                            {roomId === 'exchange_21' && (
+                                <>
+                                    <Divider />
+                                    <SettingRow
+                                        icon={showSwitchAdvice ? <ArrowLeftRight size={18} className="text-cyan-400" /> : <ArrowLeftRight size={18} className="text-white/30" />}
+                                        label={
+                                            <div className="flex items-center gap-2">
+                                                <span>Exchange Switch Advice</span>
+                                                <span className="text-[8px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-500 font-bold uppercase tracking-tight">Developing</span>
+                                            </div>
+                                        }
+                                        description="EV-based switching recommendations"
+                                    >
+                                        <ToggleSwitch
+                                            enabled={showSwitchAdvice}
+                                            accentColor={accentColor}
+                                            onChange={(val) => { playSound('switch'); setShowSwitchAdvice(val); }}
+                                        />
+                                    </SettingRow>
+                                </>
+                            )}
                         </>
                     )}
 
@@ -191,9 +215,9 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
 
                     {/* Card Counting */}
                     <SettingRow
-                        icon={showCardCounting ? <Eye size={18} className="text-purple-400" /> : <EyeOff size={18} className="text-white/30" />}
-                        label="Card Counting"
-                        description="Show running & true count panel"
+                        icon={showCardCounting ? <Eye size={18} className="text-cyan-400" /> : <EyeOff size={18} className="text-white/30" />}
+                        label="Card Counting Advisor"
+                        description="View live deck count and strategy deviations"
                     >
                         <ToggleSwitch
                             enabled={showCardCounting}
@@ -266,7 +290,7 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
 
 function SettingRow({ icon, label, description, children }: {
     icon: React.ReactNode;
-    label: string;
+    label: React.ReactNode;
     description: string;
     children: React.ReactNode;
 }) {

@@ -1,7 +1,7 @@
 import { Card } from '@/types/game';
 import { calculateHandValue } from '@/utils/hand';
 
-export type StrategyAction = 'H' | 'S' | 'DS' | 'S4' | 'S5' | 'S6' | 'SP' | 'PS' | 'D' | 'D3' | 'D4' | 'D5' | 'D6' | 'R' | 'RH' | 'RS' | 'SU' | 'FD' | 'FSP';
+export type StrategyAction = 'H' | 'S' | 'DS' | 'S4' | 'S5' | 'S6' | 'SP' | 'PS' | 'D' | 'D3' | 'D4' | 'D5' | 'D6' | 'R' | 'RH' | 'RS' | 'SU' | 'FD' | 'FSP' | 'Z' | 'B';
 export type AdviceAction = StrategyAction | 'INS' | 'NINS';
 
 export interface CompositionDependentOverride {
@@ -351,6 +351,96 @@ const PAIRS_UK: StrategyAction[][] = [
     ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'],
 ];
 
+const HARD_ZAPOUT: StrategyAction[][] = [
+    // 2    3    4    5    6    7    8    9   10    A
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 6
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 7
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 8
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // 9
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 10
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H'], // 11
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z'], // 15
+    ['Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z'], // 16
+    ['Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z'], // 17
+    ['S', 'S', 'S', 'S', 'S', 'S', 'Z', 'Z', 'Z', 'Z'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
+];
+
+const SOFT_ZAPOUT = SOFT_CLASSIC;
+const PAIRS_ZAPOUT = PAIRS_TABLE;
+
+const HARD_EXCHANGE: StrategyAction[][] = [
+    // 2    3    4    5    6    7    8    9   10    A
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 6
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 7
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 8
+    ['H', 'H', 'H', 'H', 'D', 'H', 'H', 'H', 'H', 'H'], // 9 
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H'], // 10
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 11
+    ['H', 'H', 'H', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['H', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 15
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 16
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 17
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
+];
+const SOFT_EXCHANGE = SOFT_CLASSIC;
+const PAIRS_EXCHANGE = PAIRS_TABLE;
+
+const HARD_FIRECARD: StrategyAction[][] = [
+    // 2    3    4    5    6    7    8    9   10    A
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 6
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 7
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 8
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // 9
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 10
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H'], // 11
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['S', 'S', 'S', 'S', 'S', 'H', 'B', 'B', 'B', 'B'], // 15 — Burn vs dealer 7-A
+    ['S', 'S', 'S', 'S', 'S', 'H', 'B', 'B', 'B', 'B'], // 16 — Burn vs dealer 7-A
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 17
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
+];
+
+const SOFT_FIRECARD: StrategyAction[][] = [
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A2
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A3
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A4
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A5
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A6
+    ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'], // A7
+    ['S', 'S', 'S', 'S', 'DS', 'S', 'S', 'S', 'S', 'S'], // A8
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // A9
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // A10
+];
+
+const PAIRS_FIRECARD: StrategyAction[][] = [
+    ['H', 'H', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 22
+    ['H', 'H', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 33
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],    // 44
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],    // 55
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'], // 66
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 77
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'], // 88
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'],   // 99
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],    // TT
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'], // AA
+];
+
 export const ACTION_META: Record<AdviceAction, ActionMeta> = {
     H: {
         label: 'HIT',
@@ -455,6 +545,16 @@ export const ACTION_META: Record<AdviceAction, ActionMeta> = {
         bg: 'rgba(161,98,7,0.3)',
         desc: 'Split hand with free chips',
         reasoning: () => 'Non-10 pair — Always take the Free Action Split, double your chances for free!',
+    },
+    Z: {
+        label: 'ZAP OUT',
+        shortLabel: 'Z',
+        color: '#3b82f6',
+        glow: 'rgba(59,130,246,0.35)',
+        border: 'rgba(59,130,246,0.4)',
+        bg: 'rgba(29,78,216,0.2)',
+        desc: 'Discard current hand and draw two new cards',
+        reasoning: (total) => `Hard ${total} — Worst hands in the game. Zap them away to improve your chances!`,
     },
     S4: {
         label: 'STAND (HIT IF 4+ CARDS)',
@@ -575,6 +675,16 @@ export const ACTION_META: Record<AdviceAction, ActionMeta> = {
         bg: 'rgba(148,163,184,0.08)',
         desc: 'Keep your edge and avoid a negative side bet',
         reasoning: () => 'True count is below the insurance index, so buying Insurance is mathematically losing.',
+    },
+    B: {
+        label: 'BURN CARD',
+        shortLabel: 'B',
+        color: '#f97316',
+        glow: 'rgba(249,115,22,0.35)',
+        border: 'rgba(249,115,22,0.4)',
+        bg: 'rgba(194,65,12,0.2)',
+        desc: 'Burn 2nd card for a new one',
+        reasoning: (total) => `Hard ${total} — This gives you the best chance to improve this weak hand in Fire Card Blackjack!`,
     },
 };
 
@@ -1224,6 +1334,18 @@ export function getStrategyTables(strategyType: string) {
         return { hard: HARD_UK, soft: SOFT_UK, pairs: PAIRS_UK };
     }
 
+    if (strategyType === 'zapout_21') {
+        return { hard: HARD_ZAPOUT, soft: SOFT_ZAPOUT, pairs: PAIRS_ZAPOUT };
+    }
+
+    if (strategyType === 'exchange_21') {
+        return { hard: HARD_EXCHANGE, soft: SOFT_EXCHANGE, pairs: PAIRS_EXCHANGE };
+    }
+
+    if (strategyType === 'firecard_21') {
+        return { hard: HARD_FIRECARD, soft: SOFT_FIRECARD, pairs: PAIRS_FIRECARD };
+    }
+
     return { hard: HARD_CLASSIC, soft: SOFT_CLASSIC, pairs: PAIRS_TABLE };
 }
 
@@ -1280,7 +1402,7 @@ export function getStrategyAction(
     canDouble: boolean,
     canSplit: boolean,
     canSurrender: boolean,
-    resolveOptions: { resolveConditions?: boolean } = { resolveConditions: true }
+    resolveOptions: { resolveConditions?: boolean, canZap?: boolean, canBurn?: boolean } = { resolveConditions: true, canZap: false, canBurn: false }
 ): StrategyAction {
     const dealerIndex = getDealerIdx(dealerUpRank);
     if (dealerIndex < 0) return 'H';
@@ -1313,6 +1435,17 @@ export function getStrategyAction(
     }
 
     if (resolveOptions.resolveConditions) {
+        if (action === 'Z' && !resolveOptions.canZap) {
+            if (total === 15 || total === 16) {
+                // Stand vs 2-6, Hit vs 7-A
+                action = dealerIndex <= 4 ? 'S' : 'H';
+            } else if (total === 17 || total === 18) {
+                action = 'S';
+            } else {
+                action = 'H';
+            }
+        }
+
         if (action === 'DS') {
             action = canDouble ? 'D' : 'S';
         }
@@ -1351,9 +1484,192 @@ export function getStrategyAction(
         if (action === 'SU' && !canSurrender) {
             action = 'H';
         }
+
+        // 'B' = Burn Card. If burn is not available (e.g. after a split), fall back to hard-table logic.
+        if (action === 'B' && !resolveOptions.canBurn) {
+            const clampedTotal = Math.min(Math.max(total, 5), 20);
+            const tables = getStrategyTables(strategyType);
+            action = (tables.hard[clampedTotal - 5]?.[getDealerIdx(dealerUpRank)] ?? (total >= 17 ? 'S' : 'H')) as StrategyAction;
+            // If the fallback hard-table action is also 'B', default to H
+            if (action === 'B') action = 'H';
+        }
     }
 
     return action;
+}
+
+// Very basic Expected Value estimator used ONLY for Exchange 21 Switch advice.
+// Real EV spreadsheets are massive matrices, so this uses rough approximations based purely on the player's best assumed action vs dealer upcard.
+export function getHandEV(cards: Card[], dealerUpcard: string, isExchange: boolean = false): number {
+    const value = calculateHandValue(cards);
+    if (value.total > 21) return -1.0; // Bust
+    if (value.total === 21 && cards.length === 2 && !isExchange) return 1.5; // Natural BJ (rough, ignores 1:1 on exchange, but handled by logic below)
+    if (value.total === 21 && cards.length === 2 && isExchange) return 1.0; // Switched BJ
+    
+    // getStrategyAction signature: cards, total, isSoft, dealerUpRank, strategyType, canDouble, canSplit, canSurrender, resolveOptions
+    const action = getStrategyAction(
+        cards, 
+        value.total, 
+        value.isSoft, 
+        dealerUpcard, 
+        'exchange_21', 
+        true, // canDouble (assume true for pure strength EV)
+        cards.length === 2 && cards[0].rank === cards[1].rank, // canSplit
+        true  // canSurrender
+    );
+    const dUp = ['10', 'J', 'Q', 'K'].includes(dealerUpcard) ? 10 : dealerUpcard === 'A' ? 11 : parseInt(dealerUpcard);
+    const pTotal = value.total;
+
+    // Extremely simplified EV grid just to compare hand strength.
+    let ev = 0;
+
+    if (action === 'S') {
+        if (pTotal >= 19) ev = 0.5;
+        else if (pTotal === 18) {
+            ev = dUp >= 9 ? -0.2 : 0.2;
+        }
+        else if (pTotal === 17) {
+            ev = dUp >= 8 ? -0.4 : -0.1;
+        }
+        else { // 12-16 standing
+            if (dUp >= 7) ev = -0.6; // Terrible stands
+            else ev = -0.2; // Standing vs bust card
+        }
+    } else if (action === 'H') {
+        if (pTotal <= 11) ev = 0.2 + (11 - pTotal) * 0.05; // 11 is good, 5 is okayish
+        else if (pTotal >= 12) ev = -0.4; // Hitting stiffs is bad EV in general
+    } else if (action === 'D' || action === 'DS') {
+        if (pTotal === 11) ev = dUp === 11 ? 0.1 : 0.6;
+        else if (pTotal === 10) ev = dUp >= 10 ? -0.1 : 0.5;
+        else if (pTotal === 9) ev = dUp >= 7 ? -0.2 : 0.3;
+        else ev = 0.1; // Soft doubles
+    } else if (action === 'SP' && cards.length === 2 && cards[0].rank === cards[1].rank) {
+        const rankStr = cards[0].rank as string;
+        if (rankStr === 'A' || rankStr === '8') ev = 0.4;
+        else if (['10', 'J', 'Q', 'K'].includes(rankStr as string)) ev = 0.5; // Actually 20, shouldn't split but if logic said so
+        else ev = -0.1; // Small pairs
+    } else if (action === 'SU' || action === 'RS') {
+        ev = -0.5;
+    }
+
+    return ev;
+}
+
+export interface ExchangeAdvice {
+    shouldSwitch: boolean;
+    reasoning: string;
+    originalEV: number;
+    switchedEV: number;
+}
+
+export function getExchange21Advice(hand1: Card[], hand2: Card[], dealerUpcard: string): ExchangeAdvice | null {
+    if (hand1.length !== 2 || hand2.length !== 2) return null;
+
+    // Hand 1 cards: top card is [1] (second card dealt), bottom is [0]
+    // Hand 2 cards: top card is [1], bottom is [0]
+    const h1c1 = hand1[0];
+    const h1c2 = hand1[1];
+    const h2c1 = hand2[0];
+    const h2c2 = hand2[1];
+
+    // Original hands
+    const origH1 = [h1c1, h1c2];
+    const origH2 = [h2c1, h2c2];
+
+    // Switched hands (swap the SECOND cards dealt)
+    const switchH1 = [h1c1, h2c2];
+    const switchH2 = [h2c1, h1c2];
+
+    const evOrig1 = getHandEV(origH1, dealerUpcard, false);
+    const evOrig2 = getHandEV(origH2, dealerUpcard, false);
+    const totalOrigEV = evOrig1 + evOrig2;
+
+    const evSwtch1 = getHandEV(switchH1, dealerUpcard, true);
+    const evSwtch2 = getHandEV(switchH2, dealerUpcard, true);
+    const totalSwtchEV = evSwtch1 + evSwtch2;
+
+    // Check if the result of switching is functionally identical to the original hands
+    // We compare sorted [total|isSoft] strings to detect redundant swaps.
+    const h1Val = calculateHandValue(origH1);
+    const h2Val = calculateHandValue(origH2);
+    const s1Val = calculateHandValue(switchH1);
+    const s2Val = calculateHandValue(switchH2);
+
+    const oSummary = [`${h1Val.total}${h1Val.isSoft}`, `${h2Val.total}${h2Val.isSoft}`].sort().join('|');
+    const sSummary = [`${s1Val.total}${s1Val.isSoft}`, `${s2Val.total}${s2Val.isSoft}`].sort().join('|');
+    const isRedundant = oSummary === sSummary;
+
+    // We only advise a switch if it's not redundant AND provides a noticeable benefit (> 0.05 EV)
+    let shouldSwitch = !isRedundant && (totalSwtchEV > (totalOrigEV + 0.05));
+    let reasoning = 'Keep your current hands.';
+
+    if (isRedundant) {
+        return {
+            shouldSwitch: false,
+            reasoning: 'Switching results in the same hand combination.',
+            originalEV: totalOrigEV,
+            switchedEV: totalSwtchEV
+        };
+    }
+
+    // Hardcoded obvious swaps (heuristic overrides for better UX advice)
+    const oV1 = calculateHandValue(origH1).total;
+    const oV2 = calculateHandValue(origH2).total;
+    const sV1 = calculateHandValue(switchH1).total;
+    const sV2 = calculateHandValue(switchH2).total;
+
+    // Rule 1: Make a 21
+    if ((sV1 === 21 || sV2 === 21) && !(oV1 === 21 || oV2 === 21)) {
+        shouldSwitch = true;
+        reasoning = 'Switch to make a 21.';
+    }
+    // Rule 2: Break up a stiffness to make a 20 or an 11
+    else if ((sV1 === 20 || sV2 === 20 || sV1 === 11 || sV2 === 11) && 
+            ((oV1 >= 12 && oV1 <= 16) || (oV2 >= 12 && oV2 <= 16))) {
+        shouldSwitch = true;
+        reasoning = 'Switch to build a strong hand and break up stiffs.';
+    }
+    // Rule 3: Make strong pairs for splitting
+    // Helper: check if a hand forms a pair of a given rank
+    else if ((() => {
+        const switchedPairRank = (switchH1[0].rank === switchH1[1].rank) ? switchH1[0].rank 
+            : (switchH2[0].rank === switchH2[1].rank) ? switchH2[0].rank : null;
+        const origHasSamePair = (origH1[0].rank === origH1[1].rank && origH1[0].rank === switchedPairRank) ||
+                                 (origH2[0].rank === origH2[1].rank && origH2[0].rank === switchedPairRank);
+        if (!switchedPairRank || origHasSamePair) return false;
+        
+        const d = dealerUpcard;
+        // Always split A-A and 8-8 → recommend against any dealer
+        if (['A', '8'].includes(switchedPairRank)) return true;
+        // 9-9: split vs 2-9 except 7
+        if (switchedPairRank === '9' && ['2','3','4','5','6','8','9'].includes(d)) return true;
+        // 7-7: split vs 2-7
+        if (switchedPairRank === '7' && ['2','3','4','5','6','7'].includes(d)) return true;
+        // 6-6: split vs 2-6
+        if (switchedPairRank === '6' && ['2','3','4','5','6'].includes(d)) return true;
+        // 2-2, 3-3: split vs 2-7
+        if (['2','3'].includes(switchedPairRank) && ['2','3','4','5','6','7'].includes(d)) return true;
+        return false;
+    })()) {
+         shouldSwitch = true;
+         reasoning = 'Switch to create a splittable pair.';
+    } 
+    // Rule 4: Create a double-down opportunity (10 or 11) from a weak stiff
+    else if ((sV1 === 11 || sV2 === 11 || sV1 === 10 || sV2 === 10) && 
+             (oV1 >= 12 && oV1 <= 16 && oV2 >= 12 && oV2 <= 16)) {
+        shouldSwitch = true;
+        reasoning = 'Switch to create a high-value double-down opportunity.';
+    }    // Fallback EV comparison
+    else if (shouldSwitch) {
+        reasoning = `Switching gives you mathematically better hands (+${(totalSwtchEV - totalOrigEV).toFixed(2)} EV).`;
+    }
+
+    return {
+        shouldSwitch,
+        reasoning,
+        originalEV: totalOrigEV,
+        switchedEV: totalSwtchEV
+    };
 }
 
 export function computeBustStats(cards: Card[], shoe: Card[]) {

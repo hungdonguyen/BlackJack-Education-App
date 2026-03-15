@@ -193,11 +193,12 @@ export default function Seat({ seatId, style }: SeatProps) {
 
                                 {hand.cards.map((card, cardIdx) => (
                                     <CardComponent
-                                        key={`${hand.id}-${cardIdx}`}
+                                        key={`${hand.id}-${cardIdx}-${hand.isSwitched ? 'switched' : 'normal'}`}
                                         card={card}
                                         index={cardIdx}
                                         totalCards={hand.cards.length}
                                         size="sm"
+                                        isSwitched={hand.isSwitched && cardIdx === 1} // Only animate the swapped card
                                     />
                                 ))}
 

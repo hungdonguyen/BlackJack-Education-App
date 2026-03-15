@@ -244,6 +244,11 @@ export default function MatchDetailModal({
                                                                     DOUBLE
                                                                 </span>
                                                             )}
+                                                            {hand.isSwitched && (
+                                                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                                                                    SWITCHED
+                                                                </span>
+                                                            )}
                                                             {match.roomId === 'iberian_21' && hand.result === HandStatus.WON && pnl > hand.betAmount && !hand.isDoubleDown && (
                                                                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
                                                                     21 BONUS ({(pnl / hand.betAmount).toFixed(1)}x)
@@ -253,10 +258,22 @@ export default function MatchDetailModal({
                                                     </div>
 
                                                     {/* Cards */}
-                                                    <div className="flex gap-1 flex-wrap">
-                                                        {hand.cards.map((c, ci) => (
-                                                            <MiniCard key={ci} suit={c.suit as Suit} rank={c.rank as Rank} />
-                                                        ))}
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <div className="flex gap-1 flex-wrap">
+                                                            {hand.cards.map((c, ci) => (
+                                                                <MiniCard key={ci} suit={c.suit as Suit} rank={c.rank as Rank} />
+                                                            ))}
+                                                        </div>
+                                                        {hand.zappedCards && hand.zappedCards.length > 0 && (
+                                                            <div className="flex items-center gap-2 mt-0.5 opacity-60">
+                                                                <span className="text-[7px] font-black text-amber-500/80 uppercase tracking-wider border border-amber-500/20 px-1 rounded-sm bg-amber-500/5">Zap out:</span>
+                                                                <div className="flex gap-1 flex-wrap scale-[0.85] origin-left">
+                                                                    {hand.zappedCards.map((c, ci) => (
+                                                                        <MiniCard key={ci} suit={c.suit as Suit} rank={c.rank as Rank} />
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     {/* Score */}

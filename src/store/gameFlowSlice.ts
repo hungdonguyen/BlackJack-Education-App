@@ -4,7 +4,7 @@
 
 import { StateCreator } from 'zustand';
 import { GameStore, Hand, Card, MatchRecord } from '@/types/game';
-import { GamePhase, HandStatus, Rank } from '@/types/enums';
+import { GamePhase, HandStatus, Rank, Suit } from '@/types/enums';
 import { createShoe, shuffleShoe, dealCard, shouldReshuffle } from '@/utils/deck';
 import { calculateHandValue, isBust, isBlackjack } from '@/utils/hand';
 import { getRules } from '@/rules';
@@ -42,6 +42,9 @@ export interface GameFlowSlice {
   dealerPlay: () => Promise<void>;
   calculatePayouts: () => void;
   resetRound: () => void;
+  zap: () => void;
+  switchCards: () => void;
+  burn: () => void;
 
   // Dev tools
   forceBlackjack: () => void;
@@ -134,9 +137,24 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     );
 
     let newSeats = [...state.seats];
+    if (currentRoomCfg.id === 'exchange_21') {
+      newSeats = newSeats.map(seat => {
+        if (!seat.isActive || seat.hands.length === 0 || seat.hands[0].betAmount === 0) return seat;
+        if (seat.hands.length === 1) {
+            const h = seat.hands[0];
+            const baseBet = h.betAmount / 2;
+            const h1 = { ...h, betAmount: baseBet };
+            const h2 = { ...h, id: `${h.id}-2`, betAmount: baseBet };
+            return { ...seat, hands: [h1, h2] };
+        }
+        return seat;
+      });
+      set({ seats: newSeats });
+    }
+
     const dealerCards: Card[] = [];
 
-    const dealToSeat = async (seatId: number) => {
+    const dealToHand = async (seatId: number, handId: string) => {
       const delays = SPEED_DELAYS[get().dealerSpeed];
       await new Promise((resolve) => setTimeout(resolve, delays.dealCard));
       const seatIndex = newSeats.findIndex((s) => s.id === seatId);
@@ -144,10 +162,12 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       newSeats = [...newSeats]; // copy array
       newSeats[seatIndex] = {
         ...newSeats[seatIndex],
-        hands: newSeats[seatIndex].hands.map((hand) => ({
-          ...hand,
-          cards: [...hand.cards, card],
-        })),
+        hands: newSeats[seatIndex].hands.map((hand) => {
+          if (hand.id === handId) {
+            return { ...hand, cards: [...hand.cards, card] };
+          }
+          return hand;
+        }),
       };
       set({ seats: newSeats, shoe: [...shoe] });
     };
@@ -161,13 +181,23 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
 
     // --- First round of cards ---
     for (const seat of dealingSeats) {
-      await dealToSeat(seat.id);
+      const currentSeat = newSeats.find(s => s.id === seat.id);
+      if (currentSeat) {
+        for (const hand of currentSeat.hands) {
+          await dealToHand(seat.id, hand.id);
+        }
+      }
     }
     await dealToDealer(false); // Face-up card
 
     // --- Second round of cards ---
     for (const seat of dealingSeats) {
-      await dealToSeat(seat.id);
+      const currentSeat = newSeats.find(s => s.id === seat.id);
+      if (currentSeat) {
+        for (const hand of currentSeat.hands) {
+          await dealToHand(seat.id, hand.id);
+        }
+      }
     }
     if (!currentRoomCfg.gameRules.enhc) {
       await dealToDealer(true); // Hole card (hidden)
@@ -206,6 +236,27 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         s.hands.some((h) => h.betAmount > 0 && h.status === HandStatus.PLAYING)
     );
 
+    // For all seats, pre-set currentHandIndex to the first PLAYING hand if any
+    const processedSeats = finalSeats.map(seat => {
+      if (!seat.isActive) return seat;
+
+      // Exchange 21 refinement: If switching is allowed, always start at hand 0
+      // even if hand 0 is a Natural Blackjack. This allows the player to switch.
+      const isExchange21 = get().currentRoom === 'exchange_21';
+      if (isExchange21 && seat.hands.length === 2 && !seat.hasSwitched) {
+        const rules = getRules('exchange_21');
+        if (rules.canSwitch && rules.canSwitch(seat).allowed) {
+          return { ...seat, currentHandIndex: 0 };
+        }
+      }
+
+      const firstPlayableHandIndex = seat.hands.findIndex(h => h.betAmount > 0 && h.status === HandStatus.PLAYING);
+      if (firstPlayableHandIndex !== -1) {
+        return { ...seat, currentHandIndex: firstPlayableHandIndex };
+      }
+      return seat;
+    });
+
     // Find seats eligible for insurance
     // Standard: Anyone with a bet (incl. BJ for Even Money)
     // Iberian: Only those who can still lose to a dealer BJ (skips natural 21s)
@@ -223,7 +274,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       // Go to insurance phase for the first eligible seat
       const firstInsurableIndex = finalSeats.findIndex((s) => insurableSeats.includes(s));
       set({
-        seats: finalSeats,
+        seats: processedSeats,
         gamePhase: GamePhase.INSURANCE,
         currentSeatIndex: firstInsurableIndex,
         insuranceBets: {},
@@ -231,7 +282,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     } else if (dealerHasBJ) {
       // Dealer shows 10, peeks, and it's a Blackjack. Skip player turn!
       set({
-        seats: finalSeats,
+        seats: processedSeats,
         gamePhase: GamePhase.DEALER_TURN,
         currentSeatIndex: firstPlayableIndex === -1 ? 0 : firstPlayableIndex,
         insuranceBets: {},
@@ -242,7 +293,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         firstPlayableIndex === -1 ? GamePhase.DEALER_TURN : GamePhase.PLAYER_TURN;
 
       set({
-        seats: finalSeats,
+        seats: processedSeats,
         gamePhase: nextPhase,
         currentSeatIndex: firstPlayableIndex === -1 ? 0 : firstPlayableIndex,
         insuranceBets: {},
@@ -365,7 +416,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
 
     const currentHand = getCurrentHand(state);
-    if (!currentHand || currentHand.status !== HandStatus.PLAYING) return;
+    if (!currentHand || currentHand.status !== HandStatus.PLAYING || currentHand.isDoubleDown) return;
 
     // Increment action counter to reset turn timer
     set({ actionCounter: state.actionCounter + 1 });
@@ -419,12 +470,23 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     }
   },
 
-  stand: () => {
+   stand: () => {
     const state = get();
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
 
-    const currentHand = getCurrentHand(state);
-    if (!currentHand || currentHand.status !== HandStatus.PLAYING) return;
+    const currentSeat = state.seats[state.currentSeatIndex];
+    if (!currentSeat) return;
+    const currentHand = currentSeat.hands[currentSeat.currentHandIndex];
+    if (!currentHand) return;
+
+    const isBJ = currentHand.status === HandStatus.BLACKJACK;
+    const rules = getRules(state.currentRoom);
+    const canSwitch = rules.canSwitch && rules.canSwitch(currentSeat).allowed;
+
+    // Usually only PLAYING hands can stand. 
+    // In Exchange 21, we allow "Standing" on a Natural Blackjack if switching is still an option,
+    // which effectively acts as a "Decline Switch" for that hand and moves to the next.
+    if (currentHand.status !== HandStatus.PLAYING && !(isBJ && canSwitch)) return;
 
     const updatedSeats = state.seats.map((seat, seatIdx) => {
       if (seatIdx !== state.currentSeatIndex) return seat;
@@ -550,6 +612,201 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     });
 
     get().advanceToNextHand();
+  },
+
+  zap: () => {
+    const state = get();
+    // Increment action counter to reset turn timer
+    set({ actionCounter: state.actionCounter + 1 });
+    if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+
+    const seat = state.seats[state.currentSeatIndex];
+    if (!seat) return;
+
+    const currentHand = seat.hands[seat.currentHandIndex];
+    if (!currentHand || currentHand.status !== HandStatus.PLAYING) return;
+
+    const rules = getRules(state.currentRoom);
+    if (!rules.canZap) return;
+
+    const { allowed } = rules.canZap(currentHand);
+    if (!allowed) return;
+
+    let shoe = [...state.shoe];
+
+    if (shoe.length < 2) {
+      const roomCfg = getRoomConfig(state.currentRoom);
+      const numDecks = roomCfg.gameRules.numberOfDecks;
+      const omitTens = roomCfg.gameRules.omitTens;
+      const newShoe = shuffleShoe(createShoe(numDecks, omitTens));
+      shoe = [...shoe, ...newShoe]; // prepend remaining cards if any
+    }
+
+    const newCard1 = dealCard(shoe);
+    const newCard2 = dealCard(shoe);
+
+    const newCards = [newCard1, newCard2];
+    const busted = isBust(newCards);
+    const is21 = !busted && calculateHandValue(newCards).total === 21;
+
+    const updatedSeats = state.seats.map((s, seatIdx) => {
+      if (seatIdx !== state.currentSeatIndex) return s;
+
+      const newHands = [...s.hands];
+      newHands[seat.currentHandIndex] = {
+        ...currentHand,
+        id: `${currentHand.id}-zap`,
+        cards: newCards,
+        zappedCards: currentHand.cards,
+        isZapped: true,
+        status: busted ? HandStatus.BUST : (is21 ? HandStatus.STAND : HandStatus.PLAYING),
+      };
+
+      return {
+        ...s,
+        hands: newHands,
+      };
+    });
+
+    set({ shoe, seats: updatedSeats, actionCounter: state.actionCounter + 1 });
+
+    const updatedHand = updatedSeats[state.currentSeatIndex].hands[seat.currentHandIndex];
+    if (updatedHand.status !== HandStatus.PLAYING) {
+       setTimeout(() => get().advanceToNextHand(), 0);
+    }
+  },
+
+  burn: () => {
+    const state = get();
+    set({ actionCounter: state.actionCounter + 1 });
+    if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+
+    const seat = state.seats[state.currentSeatIndex];
+    if (!seat) return;
+
+    const currentHand = seat.hands[seat.currentHandIndex];
+    if (!currentHand || currentHand.status !== HandStatus.PLAYING) return;
+
+    const rules = getRules(state.currentRoom);
+    if (!rules.canBurn) return;
+
+    const { allowed, cost } = rules.canBurn(currentHand);
+    if (!allowed || state.bankroll < cost) return;
+
+    let shoe = [...state.shoe];
+    if (shoe.length < 2) {
+      const roomCfg = getRoomConfig(state.currentRoom);
+      const newShoe = shuffleShoe(createShoe(roomCfg.gameRules.numberOfDecks, roomCfg.gameRules.omitTens));
+      shoe = [...shoe, ...newShoe];
+    }
+
+    const discardedCard = currentHand.cards[1];
+    const burnCard = dealCard(shoe);
+    const newCards = [currentHand.cards[0], burnCard]; // Replaces the 2nd card
+
+    let bankrollDelta = -cost; // Deduct the burn wager
+    let burnBonusPayout = 0;
+
+    // Burn wager payout logic
+    if (burnCard.rank === Rank.ACE) {
+      if (burnCard.suit === Suit.SPADES) {
+        burnBonusPayout = cost * 8; // 7:1 payout plus original wager return
+      } else {
+        burnBonusPayout = cost * 3; // 2:1 payout plus original wager return
+      }
+    }
+    
+    bankrollDelta += burnBonusPayout;
+
+    const busted = isBust(newCards);
+    const is21 = !busted && calculateHandValue(newCards).total === 21;
+
+    const updatedSeats = state.seats.map((s, seatIdx) => {
+      if (seatIdx !== state.currentSeatIndex) return s;
+      const newHands = [...s.hands];
+      newHands[seat.currentHandIndex] = {
+        ...currentHand,
+        cards: newCards,
+        isBurned: true,
+        burnedCard: discardedCard,
+        burnWagerAmount: cost,
+        burnWagerPayout: burnBonusPayout,
+        status: busted ? HandStatus.BUST : (is21 ? HandStatus.STAND : HandStatus.PLAYING),
+      };
+      return { ...s, hands: newHands };
+    });
+
+    set({ bankroll: state.bankroll + bankrollDelta, shoe, seats: updatedSeats });
+
+    const updatedHand = updatedSeats[state.currentSeatIndex].hands[seat.currentHandIndex];
+    if (updatedHand.status !== HandStatus.PLAYING) {
+       setTimeout(() => get().advanceToNextHand(), 0);
+    }
+  },
+
+  switchCards: () => {
+    const state = get();
+    set({ actionCounter: state.actionCounter + 1 });
+    if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+
+    const seat = state.seats.find((s) => s.isActive && s.id === state.seats[state.currentSeatIndex].id);
+    if (!seat) return;
+
+    const rules = getRules(state.currentRoom);
+    if (!rules.canSwitch) return;
+
+    const { allowed } = rules.canSwitch(seat);
+    if (!allowed) return;
+
+    // Swap the 2nd cards
+    const h0 = seat.hands[0];
+    const h1 = seat.hands[1];
+
+    const newH0Cards = [h0.cards[0], h1.cards[1]];
+    const newH1Cards = [h1.cards[0], h0.cards[1]];
+
+    const newH0Value = calculateHandValue(newH0Cards);
+    const newH1Value = calculateHandValue(newH1Cards);
+
+    const isH021 = newH0Value.total === 21;
+    const isH121 = newH1Value.total === 21;
+
+    let nextHands = [
+      {
+        ...h0,
+        cards: newH0Cards,
+        isSwitched: true,
+        // In Casino Switch, natural blackjacks from a switch count as 21, not blackjack
+        status: isH021 ? HandStatus.STAND : HandStatus.PLAYING,
+      },
+      {
+        ...h1,
+        cards: newH1Cards,
+        isSwitched: true,
+        status: isH121 ? HandStatus.STAND : HandStatus.PLAYING,
+      }
+    ];
+
+    const firstActiveIdx = nextHands.findIndex(h => h.status === HandStatus.PLAYING);
+    const newIdx = firstActiveIdx !== -1 ? firstActiveIdx : 0;
+
+    const updatedSeats = state.seats.map((s) => {
+      if (s.id !== seat.id) return s;
+      return {
+        ...s,
+        hasSwitched: true,
+        hands: nextHands,
+        currentHandIndex: newIdx,
+      };
+    });
+
+    set({ seats: updatedSeats });
+
+    // If the current hand is not playable (e.g., 21 from switch), advance
+    const updatedHand = nextHands[newIdx];
+    if (updatedHand && updatedHand.status !== HandStatus.PLAYING) {
+       setTimeout(() => get().advanceToNextHand(), 0);
+    }
   },
 
   split: () => {
@@ -955,7 +1212,13 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
                 isFreeActionSplit: hand.isFreeActionSplit,
                 isDoubleDown: hand.isDoubleDown,
                 isFreeActionDouble: hand.isFreeActionDouble,
+                isSwitched: hand.isSwitched,
                 cards: hand.cards.map((c) => ({ suit: c.suit, rank: c.rank })),
+                zappedCards: hand.zappedCards?.map((c) => ({ suit: c.suit, rank: c.rank })),
+                isBurned: hand.isBurned,
+                burnedCard: hand.burnedCard ? { suit: hand.burnedCard.suit, rank: hand.burnedCard.rank } : undefined,
+                burnWagerAmount: hand.burnWagerAmount,
+                burnWagerPayout: hand.burnWagerPayout,
               };
             }),
         })),
@@ -1006,6 +1269,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         currentHandIndex: 0,
         freeActionTokens: 0,
         sideBetAmount: 0,
+        hasSwitched: false,
       })),
     });
   },

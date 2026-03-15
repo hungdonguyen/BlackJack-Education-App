@@ -31,6 +31,16 @@ export interface Hand {
   isSurrendered?: boolean;
   isSplit?: boolean;
   isDoubleDown?: boolean;
+  isZapped?: boolean;
+  isSwitched?: boolean;
+  isBurned?: boolean;
+  /** The card that was discarded during the burn action */
+  burnedCard?: Card;
+  /** The cost of the burn action */
+  burnWagerAmount?: number;
+  /** The payout from the burn action bonus (Aces) */
+  burnWagerPayout?: number;
+  zappedCards?: Card[];
 }
 
 /** A seat / betting box at the table (1-5) */
@@ -43,6 +53,7 @@ export interface Seat {
   sideBetAmount?: number;
   /** Free Action tokens collected this round */
   freeActionTokens?: number;
+  hasSwitched?: boolean;
 }
 
 /** The dealer's hand */
@@ -72,6 +83,16 @@ export interface MatchRecord {
       isDoubleDown?: boolean;
       isFreeActionDouble?: boolean;
       cards: { suit: Suit; rank: Rank }[];
+      zappedCards?: { suit: Suit; rank: Rank }[];
+      isSwitched?: boolean;
+      /** Whether the player used the Burn action on this hand (Fire Card 21) */
+      isBurned?: boolean;
+      /** The original 2nd card that was discarded in the burn */
+      burnedCard?: { suit: Suit; rank: Rank };
+      /** The burn wager paid (half of the initial bet) */
+      burnWagerAmount?: number;
+      /** Net payout from the burn wager (positive = won bonus, 0 = lost) */
+      burnWagerPayout?: number;
     }[];
   }[];
   dealerCards: { suit: Suit; rank: Rank }[];
@@ -157,6 +178,9 @@ export interface GameActions {
   surrender: () => void;
   acceptInsurance: () => void;
   declineInsurance: () => void;
+  zap: () => void;
+  switchCards: () => void;
+  burn: () => void;
 
   // Dealer
   dealerPlay: () => void;

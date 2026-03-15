@@ -64,21 +64,23 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   placeBet: (seatId: number, amount: number) => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
-    if (amount > state.bankroll) {
+    const multiplier = state.currentRoom === 'exchange_21' ? 2 : 1;
+    const totalAmount = amount * multiplier;
+    if (totalAmount > state.bankroll) {
       get().triggerInsufficientFunds();
       return;
     }
 
     set((s) => ({
-      bankroll: s.bankroll - amount,
-      betHistory: [...s.betHistory, { seatId, amount }],
+      bankroll: s.bankroll - totalAmount,
+      betHistory: [...s.betHistory, { seatId, amount: totalAmount }],
       seats: s.seats.map((seat) => {
         if (seat.id !== seatId) return seat;
         if (!seat.isActive) return seat;
 
         const updatedHands = seat.hands.map((hand) => ({
           ...hand,
-          betAmount: hand.betAmount + amount,
+          betAmount: hand.betAmount + totalAmount,
         }));
 
         return { ...seat, hands: updatedHands };

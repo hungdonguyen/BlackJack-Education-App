@@ -7,10 +7,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, HandStatus } from '@/types/enums';
-import { Shield, Check, X, Undo2, Spade, Home, Sparkles, Flag, Zap } from 'lucide-react';
+import { Shield, Check, X, Undo2, Spade, Home, Sparkles, Flag, Zap, ArrowLeftRight, Flame } from 'lucide-react';
 import { getRules } from '@/rules';
 import { getRoomConfig } from '@/utils/rooms';
 import { useAudio } from '@/utils/audio';
+import { getExchange21Advice, ExchangeAdvice } from '@/utils/strategyAdvisor';
 
 export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSeat }: { timer?: number; insuranceTimer?: number; currentInsuranceSeat?: number }) {
     const gamePhase = useGameStore((s) => s.gamePhase);
@@ -23,6 +24,9 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const doubleDown = useGameStore((s) => s.doubleDown);
     const split = useGameStore((s) => s.split);
     const surrender = useGameStore((s) => s.surrender);
+    const zap = useGameStore((s) => s.zap);
+    const switchCards = useGameStore((s) => s.switchCards);
+    const burn = useGameStore((s) => s.burn);
     const startDeal = useGameStore((s) => s.startDeal);
     const resetRound = useGameStore((s) => s.resetRound);
     const undoBet = useGameStore((s) => s.undoBet);
@@ -42,14 +46,24 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const currentSeat = seats[currentSeatIndex];
     const currentHand = currentSeat?.hands[currentSeat.currentHandIndex];
     const isPlaying = currentHand?.status === HandStatus.PLAYING;
+    const isBJ = currentHand?.status === HandStatus.BLACKJACK;
 
     const currentRoom = useGameStore((s) => s.currentRoom);
+    const showSwitchAdvice = useGameStore((s) => s.showSwitchAdvice);
     const rules = getRules(currentRoom);
     const roomConfig = getRoomConfig(currentRoom);
     const minBet = roomConfig.betRange[0];
 
-    const canHit = isPlayerTurn && isPlaying;
-    const canStand = isPlayerTurn && isPlaying;
+    const canHit = isPlayerTurn && isPlaying && !currentHand?.isDoubleDown;
+    
+    // Switch Advisor check (calculated early to influence canStand)
+    let canSwitchHand = false;
+    if (isPlayerTurn && currentSeat && rules.canSwitch) {
+        const result = rules.canSwitch(currentSeat);
+        canSwitchHand = result.allowed;
+    }
+
+    const canStand = isPlayerTurn && (isPlaying || (isBJ && canSwitchHand));
 
     let canDbl = false;
     let isDblFree = false;
@@ -71,6 +85,34 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     if (isPlayerTurn && isPlaying && currentHand) {
         const result = rules.canSurrender(currentHand);
         canSur = result.allowed;
+    }
+
+    let canZapHand = false;
+    if (isPlayerTurn && isPlaying && currentHand && rules.canZap) {
+        const result = rules.canZap(currentHand);
+        canZapHand = result.allowed;
+    }
+
+    let exchangeAdvice: ExchangeAdvice | null = null;
+    const dealerHandCards = useGameStore((s) => s.dealerHand.cards);
+    if (canSwitchHand && currentSeat && showSwitchAdvice) {
+        
+        // Calculate Switch Advisor if it's the first move of an Exchange 21 game
+        if (currentRoom === 'exchange_21' && currentSeat.hands.length === 2) {
+            exchangeAdvice = getExchange21Advice(
+                currentSeat.hands[0].cards, 
+                currentSeat.hands[1].cards, 
+                dealerHandCards[0]?.rank || '2'
+            );
+        }
+    }
+
+    let canBurnHand = false;
+    let burnCost = 0;
+    if (isPlayerTurn && isPlaying && currentHand && rules.canBurn) {
+        const result = rules.canBurn(currentHand);
+        canBurnHand = result.allowed && bankroll >= result.cost;
+        burnCost = result.cost;
     }
 
     // The game can start if at least one active seat places a minimum bet.
@@ -115,6 +157,24 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                                 <span className={`text-lg font-black tabular-nums ${timer <= 5 ? 'text-red-500 animate-pulse' : ''}`}>{timer}</span>
                             </motion.div>
                         )}
+                        
+                        {/* Switch Advisor Tip */}
+                        {showSwitchAdvice && exchangeAdvice && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className={`px-4 py-2 rounded-xl border text-xs font-bold shadow-lg backdrop-blur-md mb-1 max-w-sm text-center
+                                    ${exchangeAdvice.shouldSwitch 
+                                        ? 'bg-emerald-500/20 text-emerald-200 border-emerald-500/50 shadow-emerald-500/20' 
+                                        : 'bg-zinc-800/80 text-zinc-300 border-zinc-600'}`}
+                            >
+                                <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    <span className="uppercase tracking-wider">{exchangeAdvice.shouldSwitch ? 'Switch Advised' : 'Stand Pat'}</span>
+                                </div>
+                                <span className="opacity-80 ">{exchangeAdvice.reasoning}</span>
+                            </motion.div>
+                        )}
 
                         <div className="flex items-center gap-3">
                             {isDblFree ? (
@@ -141,6 +201,26 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                             {roomConfig.gameRules.allowSurrender && (
                                 <CircleButton label="SURRENDER" icon={<Flag className="w-4 h-4" />} color="#9b59b6" hoverColor="#8e44ad"
                                     onClick={() => { playSound('click'); surrender(); }} disabled={!canSur} size={45} />
+                            )}
+
+                            {rules.canZap && (
+                                <CircleButton label="ZAP OUT" icon={<Zap className="w-5 h-5 text-white animate-pulse" />} color="#3b82f6" hoverColor="#2563eb"
+                                    onClick={() => { playSound('card-slide'); zap(); }} disabled={!canZapHand} size={45} />
+                            )}
+
+                            {rules.canSwitch && (
+                                showSwitchAdvice && exchangeAdvice?.shouldSwitch ? (
+                                    <FreeCircleButton label="ADVISED" icon={<ArrowLeftRight className="w-5 h-5 text-black" />} 
+                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={50} />
+                                ) : (
+                                    <CircleButton label="SWITCH" icon={<ArrowLeftRight className="w-5 h-5 text-white" />} color="#64748b" hoverColor="#475569"
+                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={45} />
+                                )
+                            )}
+
+                            {rules.canBurn && (
+                                <CircleButton label={`BURN ($${burnCost})`} icon={<Flame className="w-5 h-5 text-white" />} color="#f97316" hoverColor="#ea580c"
+                                    onClick={() => { playSound('card-slide'); burn(); }} disabled={!canBurnHand} size={45} />
                             )}
                         </div>
                     </motion.div>

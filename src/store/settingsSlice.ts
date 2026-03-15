@@ -19,6 +19,7 @@ export interface SettingsSlice {
   showCardCounting: boolean;
   countSystem: 'Hi-Lo' | 'Katarina Walker';
   showSpecialCases: boolean;
+  showSwitchAdvice: boolean;
 
   // Actions
   setDealerSpeed: (speed: DealerSpeed) => void;
@@ -31,6 +32,7 @@ export interface SettingsSlice {
   setShowCardCounting: (show: boolean) => void;
   setCountSystem: (sys: 'Hi-Lo' | 'Katarina Walker') => void;
   setShowSpecialCases: (show: boolean) => void;
+  setShowSwitchAdvice: (show: boolean) => void;
 }
 
 /** Delay maps keyed by dealer speed */
@@ -60,6 +62,7 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   showCardCounting: true,
   countSystem: 'Katarina Walker',
   showSpecialCases: true,
+  showSwitchAdvice: true,
 
   setDealerSpeed: (speed) => set({ dealerSpeed: speed }),
   setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
@@ -71,4 +74,5 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   setShowCardCounting: (show: boolean) => set({ showCardCounting: show }),
   setCountSystem: (sys: 'Hi-Lo' | 'Katarina Walker') => set({ countSystem: sys }),
   setShowSpecialCases: (show: boolean) => set({ showSpecialCases: show }),
+  setShowSwitchAdvice: (show: boolean) => set({ showSwitchAdvice: show }),
 });

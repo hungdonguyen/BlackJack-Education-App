@@ -11,7 +11,7 @@ import { X, BookOpen, Info, Plus, Minus, ChevronsUp, ArrowLeftRight, Shield, Fla
 import { RoomConfig } from '@/utils/rooms';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GameStore } from '@/types/game';
-import { I18_S17, I18_H17, FAB_4, IBERIAN_HILO, IBERIAN_WALKER, I18_EUROPEAN, I18_UK, PUSH_22_DEVIATIONS } from '@/utils/countingDeviations';
+import { I18_S17, I18_H17, FAB_4, IBERIAN_HILO, IBERIAN_WALKER, I18_EUROPEAN, I18_UK, PUSH_22_DEVIATIONS, FIRECARD_DEVIATIONS } from '@/utils/countingDeviations';
 import { COMPOSITION_DEPENDENT_OVERRIDES } from '@/utils/strategyAdvisor';
 import { useAudio } from '@/utils/audio';
 
@@ -20,8 +20,8 @@ interface StrategyModalProps {
     onClose: () => void;
 }
 
-type Action = 'H' | 'S' | 'DS' | 'S4' | 'S5' | 'S6' | 'SP' | 'PS' | 'D' | 'D3' | 'D4' | 'D5' | 'D6' | 'R' | 'RH' | 'RS' | 'SU' | 'FD' | 'FSP';
-type Tab = 'hard' | 'soft' | 'pairs' | 'special' | 'counting' | 'rules' | 'free_hand';
+type Action = 'H' | 'S' | 'DS' | 'S4' | 'S5' | 'S6' | 'SP' | 'PS' | 'D' | 'D3' | 'D4' | 'D5' | 'D6' | 'R' | 'RH' | 'RS' | 'SU' | 'FD' | 'FSP' | 'Z' | 'B' | 'SW';
+type Tab = 'hard' | 'soft' | 'pairs' | 'special' | 'counting' | 'rules' | 'free_hand' | 'switch_advice';
 type HighlightTone = 'accent' | 'good' | 'warn';
 
 interface RuleHighlight {
@@ -113,6 +113,9 @@ const ACTION_STYLES: Record<Action, { bg: string; text: string; label: string; d
     RS: { bg: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', text: '#ede9fe', label: 'RS', desc: 'Surrender if possible, otherwise Stand' },
     FD: { bg: 'linear-gradient(135deg, #d4a843 0%, #b8922e 100%)', text: '#1a1206', label: 'FD', desc: 'Free Action Double' },
     FSP: { bg: 'linear-gradient(135deg, #e8c547 0%, #ccad3a 100%)', text: '#1a1206', label: 'FSP', desc: 'Free Action Split' },
+    Z: { bg: 'linear-gradient(135deg, #d946ef 0%, #c122d3 100%)', text: '#ffffff', label: 'Z', desc: 'Zap Out' },
+    B: { bg: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', text: '#ffffff', label: 'B', desc: 'Burn Card' },
+    SW: { bg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', text: '#ffffff', label: 'SW', desc: 'Swap / Exchange card' },
 };
 
 const DEALER_UPCARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A'];
@@ -144,6 +147,85 @@ const HARD_CLASSIC: Action[][] = [
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
     ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
+];
+const HARD_ZAPOUT: Action[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 6
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 7
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 8
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // 9
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 10
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H'], // 11
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z'], // 15
+    ['Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z'], // 16
+    ['Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z', 'Z'], // 17
+    ['S', 'S', 'S', 'S', 'S', 'S', 'Z', 'Z', 'Z', 'Z'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
+];
+const HARD_EXCHANGE: Action[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 6
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 7
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 8
+    ['H', 'H', 'H', 'H', 'D', 'H', 'H', 'H', 'H', 'H'], // 9 
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H', 'H'], // 10
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 11
+    ['H', 'H', 'H', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['H', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 15
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 16
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 17
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
+];
+
+const HARD_FIRECARD: Action[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 6
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 7
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 8
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // 9
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'], // 10
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H'], // 11
+    ['H', 'H', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['S', 'S', 'S', 'S', 'S', 'H', 'B', 'B', 'B', 'B'], // 15
+    ['S', 'S', 'S', 'S', 'S', 'H', 'B', 'B', 'B', 'B'], // 16
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 17
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 19
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 20
+];
+
+const SOFT_FIRECARD: Action[][] = [
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A2
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A3
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A4
+    ['H', 'H', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A5
+    ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // A6
+    ['S', 'DS', 'DS', 'DS', 'DS', 'S', 'S', 'H', 'H', 'H'], // A7
+    ['S', 'S', 'S', 'S', 'DS', 'S', 'S', 'S', 'S', 'S'], // A8
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // A9
+];
+
+const PAIRS_FIRECARD: Action[][] = [
+    ['H', 'H', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 22
+    ['H', 'H', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 33
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],    // 44
+    ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'H', 'H'],    // 55
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H', 'H'], // 66
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'H', 'H', 'H', 'H'], // 77
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'], // 88
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'S', 'SP', 'SP', 'S', 'S'],   // 99
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],    // TT
+    ['SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP', 'SP'], // AA
 ];
 const SOFT_CLASSIC: Action[][] = [
     ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
@@ -440,6 +522,182 @@ function Ornament({ color }: { color: string }) {
 
 function getRoomRulesContent(room: RoomConfig): RoomRulesContent {
     switch (room.id) {
+        case 'exchange_21':
+            return {
+                overview: 'Exchange 21 requires you to play two hands simultaneously and allows you to switch the second card dealt to each hand. To offset this massive advantage, natural blackjacks pay 1:1, and a dealer total of 22 pushes all non-busted player hands.',
+                highlights: [
+                    {
+                        eyebrow: 'Switch Rule',
+                        title: 'Exchange the 2nd Cards',
+                        detail: 'You play two hands with equal bets. Before making any other moves, you can switch the second card of each hand to create better totals.',
+                        tone: 'accent',
+                    },
+                    {
+                        eyebrow: 'Dealer Rule',
+                        title: 'Dealer 22 Overload = Push',
+                        detail: 'Because players can optimize their hands by switching, the dealer pushes any active player hands on a 22 bust. Natural blackjacks still win.',
+                        tone: 'warn',
+                    },
+                    {
+                        eyebrow: 'Blackjack Payouts',
+                        title: 'Blackjacks Pay 1:1',
+                        detail: 'Natural blackjacks pay even money (1:1). Note that a blackjack created by switching cards does not count as a natural blackjack; it just counts as a regular 21.',
+                        tone: 'warn',
+                    },
+                ],
+                playerOptions: {
+                    title: 'Player Actions',
+                    items: [
+                        'Switch — Allowed only as the first action after the initial deal.',
+                        'Double Down — Allowed on any first two cards (after deciding whether to switch).',
+                        'Double After Split (DAS) — Permitted.',
+                        'Split — Equal-value cards, maximum 2 hands per betting spot.',
+                    ],
+                },
+                payouts: {
+                    title: 'Payouts & Settlement',
+                    items: [
+                        'Natural Blackjack pays 1:1.',
+                        'Dealer total of 22 results in a Push (except against natural blackjack).',
+                        'All other wins pay even money (1:1).',
+                        'Insurance pays 2:1 when the dealer shows an Ace.',
+                    ],
+                },
+                dealerFlow: {
+                    title: 'Dealer Protocol',
+                    items: [
+                        'Dealer hits soft 17 (H17).',
+                        'Dealer peeks for blackjack when showing an Ace or a 10-value card.',
+                        'If the dealer busts with exactly 22, all remaining player hands push.',
+                    ],
+                },
+                strategyNotes: {
+                    title: 'Switching Strategy & Tips',
+                    items: [
+                        'Expected Value (EV): The Action panel will naturally light up the SWITCH button if the calculated win-rate of the swapped hands is mathematically higher than your current hands.',
+                        'Make a Strong Hand: Prioritize building one excellent hand (like 20, 21, or 11 to double) over keeping two mediocre hands (like 14 and 15).',
+                        'Pairing Rule: Always switch to create powerful split hands (like a pair of Aces or 8s), especially against weak dealer upcards (3 through 6).',
+                        'Break Stiffs: If you have two "stiff" hands (12-16) against a Dealer 10, switch them! If you can salvage at least one hand into a 10 or 20, it saves half your bet.',
+                    ],
+                },
+            };
+        case 'zapout_21':
+            return {
+                overview: 'Zap Out 21 allows you to discard hard 15, 16, 17, or 18 and draw a fresh new hand (once per hand). In exchange for this powerful advantage, any dealer total of 22 results in a push for all active non-blackjack player hands.',
+                highlights: [
+                    {
+                        eyebrow: 'Zap Out Rule',
+                        title: 'Discard Hard 15-18',
+                        detail: 'If your first two cards form a hard total between 15 and 18, you can completely discard them and receive two new cards. This powerful move is allowed once per hand.',
+                        tone: 'accent',
+                    },
+                    {
+                        eyebrow: 'Dealer Rule',
+                        title: 'Dealer 22 Overload = Push',
+                        detail: 'Because players can Zap Out away their bad hands, the dealer pushes any active player hands on a 22 bust. Natural player blackjacks still win.',
+                        tone: 'warn',
+                    },
+                    {
+                        eyebrow: 'Decks & Dealer',
+                        title: '6-Deck Shoe · Dealer Hits Soft 17',
+                        detail: 'Natural Blackjack pays 3:2, Zapped Blackjack pays 1:1. The dealer will hit soft 17 (H17). You may double on any two cards.',
+                        tone: 'good',
+                    },
+                ],
+                playerOptions: {
+                    title: 'Player Actions',
+                    items: [
+                        'Zap Out — Allowed once per hand on any initial two cards totaling hard 15, 16, 17, or 18.',
+                        'Double Down — Allowed on any first two cards.',
+                        'Double After Split (DAS) — Permitted.',
+                        'Split — Equal-value cards, maximum 4 total hands.',
+                        'Split Aces — One card each, no re-split, no further hitting.',
+                    ],
+                },
+                payouts: {
+                    title: 'Payouts & Settlement',
+                    items: [
+                        'Natural Blackjack pays 3:2.',
+                        'Zapped Blackjack pays 1:1 (Even money).',
+                        'Dealer total of 22 results in a Push, except against a natural player blackjack which wins 3:2.',
+                        'All other wins pay even money (1:1).',
+                        'Insurance pays 2:1 when the dealer shows an Ace.',
+                    ],
+                },
+                dealerFlow: {
+                    title: 'Dealer Protocol',
+                    items: [
+                        'Dealer hits soft 17 (H17).',
+                        'Dealer peeks for blackjack when showing an Ace or a 10-value card.',
+                        'If the dealer busts with a total of exactly 22, all remaining player hands push (tie) instead of winning.',
+                    ],
+                },
+                strategyNotes: {
+                    title: 'Strategy Notes',
+                    items: [
+                        'Always Zap Out any eligible hand (Hard 15, 16, 17) against any dealer upcard. For Hard 18, Zap Out only against Dealer 8, 9, 10, or Ace.',
+                        'Because dealer 22 pushes, you should hit a bit more aggressively on some stiff hands than normal.',
+                    ],
+                },
+            };
+        case 'firecard_21':
+            return {
+                overview: 'Fire Card Blackjack lets you replace your second card by paying a burn wager equal to half your initial bet. If the new card is an Ace, you earn a bonus—7:1 for the Ace of Spades and 2:1 for any other Ace. Blackjacks pay even money to offset the power of this mechanic.',
+                highlights: [
+                    {
+                        eyebrow: 'Burn Rule',
+                        title: 'Replace Your 2nd Card',
+                        detail: 'After receiving your first two cards, you may pay a Burn Wager (half of your initial bet) to discard your second card and draw a fresh one. This is perfect for escaping bad second cards.',
+                        tone: 'accent',
+                    },
+                    {
+                        eyebrow: 'Burn Bonus',
+                        title: 'Ace Payouts on the Burn',
+                        detail: 'If your burn card is an Ace of Spades, your Burn Wager pays 7:1. Any other Ace pays 2:1. All other burn cards result in the burn wager being lost.',
+                        tone: 'good',
+                    },
+                    {
+                        eyebrow: 'Blackjack Payouts',
+                        title: 'Blackjacks Pay 1:1',
+                        detail: 'Natural blackjacks pay even money (1:1). A hand after burning does not count as a natural—the key win is the Ace Bonus from the burn wager.',
+                        tone: 'warn',
+                    },
+                ],
+                playerOptions: {
+                    title: 'Player Actions',
+                    items: [
+                        'Burn — Pay half your initial bet to discard the 2nd card and draw a new one. Only once per hand.',
+                        'Double Down — Allowed on any first two cards.',
+                        'Double After Split (DAS) — Permitted.',
+                        'Split — Equal-value cards, maximum 4 total hands.',
+                    ],
+                },
+                payouts: {
+                    title: 'Payouts & Settlement',
+                    items: [
+                        'Natural Blackjack pays 1:1.',
+                        'Burn card Ace of Spades: Burn Wager pays 7:1.',
+                        'Burn card any other Ace: Burn Wager pays 2:1.',
+                        'All other wins pay even money (1:1).',
+                        'Insurance pays 2:1 when the dealer shows an Ace.',
+                    ],
+                },
+                dealerFlow: {
+                    title: 'Dealer Protocol',
+                    items: [
+                        'Dealer hits soft 17 (H17).',
+                        'Dealer peeks for blackjack when showing an Ace or a 10-value card.',
+                    ],
+                },
+                strategyNotes: {
+                    title: 'Strategy Notes',
+                    items: [
+                        'Always burn a hard 15 or 16 against a dealer 7–A (strong upcard). The risk of busting on a hit is high and the dealer is well-positioned.',
+                        'Never burn when you have a strong hand (17+), as you risk losing a winning position.',
+                        'The Burn action is best used with a weak second card against a strong dealer upcard to maximize expected value.',
+                    ],
+                },
+            };
         case 'classic':
             return {
                 overview: 'The standard 8-deck shoe game found in most online casinos worldwide. Dealer stands on all 17s (S17), peek is used on Ace and 10, and the conservative one-split limit makes pair discipline crucial. This is the baseline ruleset that all other variants build on.',
@@ -845,6 +1103,64 @@ function getRoomRulesContent(room: RoomConfig): RoomRulesContent {
                     ],
                 },
             };
+        case 'firecard_21':
+            return {
+                overview: 'Fire Card 21 introduces a unique "Burn" mechanic allowing you to replace your second card for a small fee. This room features extreme high-reward bonus payouts for burning into Aces. Note that Natural Blackjacks pay 1:1 instead of 3:2 to balance the powerful Burn mechanic.',
+                highlights: [
+                    {
+                        eyebrow: 'Unique Mechanic',
+                        title: 'The Burn Rule',
+                        detail: 'On your initial two cards, you can "Burn" your second card for half your bet. You receive a fresh card, and if it\'s an Ace (or Ace of Spades), you win an immediate bonus of up to 7:1!',
+                        tone: 'good',
+                    },
+                    {
+                        eyebrow: 'Rule Adjustment',
+                        title: '1:1 Natural Blackjack',
+                        detail: 'To offset the Burn feature, a Natural Blackjack pays even money (1:1) instead of the standard 3:2 or 2:1.',
+                        tone: 'warn',
+                    },
+                    {
+                        eyebrow: 'Player Independence',
+                        title: 'Double After Split (DAS)',
+                        detail: 'Unlike some strict variants, you are fully allowed to Double Down on your hands after splitting a pair.',
+                        tone: 'accent',
+                    },
+                ],
+                playerOptions: {
+                    title: 'Player Actions',
+                    items: [
+                        'Burn — Replace your second card for a cost of 0.5x your bet. Only available on the initial 2-card hand.',
+                        'Double Down — Allowed on any two cards.',
+                        'Double After Split (DAS) — Fully permitted.',
+                        'Split — Equal-value cards up to 4 hands. Aces get exactly one card and auto-stand.',
+                        'Surrender — Not available in this room.',
+                    ],
+                },
+                payouts: {
+                    title: 'Payouts & Settlement',
+                    items: [
+                        'Natural Blackjack pays 1:1.',
+                        'Burn Bonus: Draw an Ace of Spades → 7:1 payout. Draw any other Ace → 2:1 payout. (Bonus payouts include return of burn wager).',
+                        'A 21 created via Burn is treated as a regular 21 and pays 1:1.',
+                        'All other wins pay even money (1:1).',
+                    ],
+                },
+                dealerFlow: {
+                    title: 'Dealer Protocol',
+                    items: [
+                        'Dealer hits soft 17 (H17).',
+                        'Dealer peeks for blackjack on Ace and 10-value upcards.',
+                    ],
+                },
+                strategyNotes: {
+                    title: 'Strategy Notes',
+                    items: [
+                        'The 1:1 Blackjack payout makes certain aggressive split/double decisions less attractive against dealer 10 or Ace compared to 3:2 games.',
+                        'Use the Burn action primarily on weak hard totals (e.g. 15, 16) or to hunt for the Ace bonus when the dealer shows a strong card.',
+                        'Remember to use Double After Split aggressively where appropriate, as in standard games.',
+                    ],
+                },
+            };
         case 'european':
             return {
                 overview: 'Standard European Blackjack with the most restrictive player options of any room. European No Hole Card (ENHC) means the dealer takes no second card until all players finish — and there is NO OBO protection. If the dealer draws to a blackjack, you lose ALL bets including doubles and splits. This fundamentally changes optimal strategy.',
@@ -919,6 +1235,25 @@ function getRoomRulesContent(room: RoomConfig): RoomRulesContent {
 function getStrategyTableContent(room: RoomConfig, tab: 'hard' | 'soft' | 'pairs'): StrategyTableContent {
     if (tab === 'hard') {
         switch (room.id) {
+            case 'exchange_21':
+                return {
+                    title: 'Hard Totals Guide (Post-Switch)',
+                    summary: 'This strategy is used after you have decided whether or not to switch your cards.',
+                    bullets: [
+                        'Due to the dealer 22 push rule, you should double down less often than in standard blackjack. For example, never double against a dealer 10 or Ace.',
+                        'You should also be slightly more aggressive when hitting stiff hands, since a dealer bust on 22 will only push, not win for you.',
+                    ],
+                };
+            case 'zapout_21':
+                return {
+                    title: 'Hard Totals Guide',
+                    summary: 'You can escape the worst totals (15-18) in the game using the Zap Out rule. Zapping gives you a fresh chance.',
+                    bullets: [
+                        'Always Zap hard 15, 16, and 17 against any upcard.',
+                        'Zap hard 18 against dealer 8, 9, 10, and Ace.',
+                        'Because of the dealer 22 push rule, you should be slightly more aggressive when hitting other hard totals.',
+                    ],
+                };
             case 'free_action':
                 return {
                     title: 'Hard Totals Guide',
@@ -970,6 +1305,16 @@ function getStrategyTableContent(room: RoomConfig, tab: 'hard' | 'soft' | 'pairs
                         'Treat stiff hands carefully — hit until you reach a safe threshold.',
                     ],
                 };
+            case 'firecard_21':
+                return {
+                    title: 'Hard Totals Guide',
+                    summary: 'Use the Burn rule to target your second card when dealing with mediocre hard totals against strong dealer cards.',
+                    bullets: [
+                        'B means Burn your second card should the advisor suggest it based on the current composition.',
+                        'Always burn a hard 15 or 16 against a dealer 7 through Ace.',
+                        'Never burn once you have reached 17 or higher to avoid risking a winning hand.',
+                    ],
+                };
             default:
                 return {
                     title: 'Hard Totals Guide',
@@ -1011,6 +1356,16 @@ function getStrategyTableContent(room: RoomConfig, tab: 'hard' | 'soft' | 'pairs
                         'No soft doubles: Basic strategy shifts back to hitting in many spots where standard rooms would double.',
                         'Soft 18 remains the major pivot hand: Stand vs Dealer 2-8, Hit vs 9-Ace.',
                         'Since there is no surrender, you must draw to improve vulnerable soft hands against high upcards.',
+                    ],
+                };
+            case 'firecard_21':
+                return {
+                    title: 'Soft Totals Guide',
+                    summary: 'Soft hands provide flexibility, but the Burn rule adds an extra layer of decision-making for suboptimal soft starts.',
+                    bullets: [
+                        'The Burn wager is generally less useful for soft hands than hard hands, but can be used to chase an Ace Bonus.',
+                        'Follow the chart for soft hitting and doubling thresholds.',
+                        'If you draw an Ace of Spades after burning, you win the top 7:1 bonus.',
                     ],
                 };
             default:
@@ -1068,6 +1423,26 @@ function getStrategyTableContent(room: RoomConfig, tab: 'hard' | 'soft' | 'pairs
                     'The face-card row represents J/J, Q/Q, and K/K logic because there are no rank-10 cards here.',
                 ],
             };
+        case 'firecard_21':
+            return {
+                title: 'Pairs Guide',
+                summary: 'Standard pair strategy applies, with the extra option to burn one card if the initial pair is weak.',
+                bullets: [
+                    'Standard split logic for most pairs. Double After Split is allowed.',
+                    'Because of the 1:1 blackjack payout, the value of splitting 10s is even lower than usual.',
+                    'Burn wagers do not apply to split hands; you must make the decision on the initial deal.',
+                ],
+            };
+        case 'zapout_21':
+        case 'exchange_21':
+            return {
+                title: 'Pairs Guide',
+                summary: 'Because of the dealer 22 push, the value of split hands changes slightly to favor more aggressive defense.',
+                bullets: [
+                    'Splitting allows you to attack weak dealer cards even when a dealer 22 might push your total.',
+                    'Maintain discipline on 10,10 and 5,5.',
+                ],
+            };
         default:
             return {
                 title: 'Pairs Guide',
@@ -1103,7 +1478,13 @@ export default function StrategyModal({
         ? ['rules', 'hard', 'soft', 'pairs', 'special', 'counting']
         : room.id === 'free_action'
             ? ['rules', 'hard', 'soft', 'pairs', 'free_hand', 'counting']
-            : ['rules', 'hard', 'soft', 'pairs', 'counting']) as Tab[];
+            : room.id === 'exchange_21'
+                ? ['rules', 'hard', 'soft', 'pairs', 'switch_advice', 'counting']
+            : room.id === 'zapout_21'
+                ? ['rules', 'hard', 'soft', 'pairs', 'counting']
+            : room.id === 'firecard_21'
+                ? ['rules', 'hard', 'soft', 'pairs', 'counting']
+                : ['rules', 'hard', 'soft', 'pairs', 'counting']) as Tab[];
 
     const strategyType = room.id;
 
@@ -1136,6 +1517,12 @@ export default function StrategyModal({
                                     ? HARD_DOWNTOWN
                                     : strategyType === 'european'
                                         ? HARD_EUROPEAN
+                                    : strategyType === 'zapout_21'
+                                        ? HARD_ZAPOUT
+                                    : strategyType === 'exchange_21'
+                                        ? HARD_EXCHANGE
+                                    : strategyType === 'firecard_21'
+                                        ? HARD_FIRECARD
                                         : HARD_CLASSIC)
             : tab === 'soft'
                 ? (strategyType === 'free_action'
@@ -1152,7 +1539,9 @@ export default function StrategyModal({
                                         ? SOFT_DOWNTOWN
                                         : strategyType === 'european'
                                             ? SOFT_EUROPEAN
-                                            : SOFT_CLASSIC)
+                                            : strategyType === 'firecard_21'
+                                                ? SOFT_FIRECARD
+                                                : SOFT_CLASSIC)
                 : tab === 'pairs'
                     ? (strategyType === 'free_action'
                         ? PAIRS_FA
@@ -1166,7 +1555,9 @@ export default function StrategyModal({
                                         ? PAIRS_VEGAS
                                         : strategyType === 'european'
                                             ? PAIRS_EUROPEAN
-                                            : PAIRS_CLASSIC)
+                                            : strategyType === 'firecard_21'
+                                                ? PAIRS_FIRECARD
+                                                : PAIRS_CLASSIC)
                     : [];
 
     const activeRows = tab === 'free_hand' ? freeHandRows : rows;
@@ -1183,9 +1574,11 @@ export default function StrategyModal({
             ? I18_EUROPEAN
             : strategyType === 'uk'
                 ? I18_UK
-                : strategyType === 'free_action'
+                : strategyType === 'free_action' || strategyType === 'zapout_21' || strategyType === 'exchange_21'
                     ? PUSH_22_DEVIATIONS
-                    : standardHiLoDeviations;
+                    : strategyType === 'firecard_21'
+                        ? FIRECARD_DEVIATIONS
+                        : standardHiLoDeviations;
 
     const tabConfig: Record<Tab, { label: string; rowTitle: string }> = {
         rules: { label: 'Rules', rowTitle: '' },
@@ -1195,6 +1588,7 @@ export default function StrategyModal({
         free_hand: { label: 'Free Hand', rowTitle: 'Hand' },
         special: { label: 'Special Case', rowTitle: '' },
         counting: { label: 'Card Counting', rowTitle: '' },
+        switch_advice: { label: 'Switch Advice', rowTitle: '' },
     };
 
     return (
@@ -1375,6 +1769,135 @@ export default function StrategyModal({
                                     <span>RTP {room.rtp}</span>
                                 </div>
                             </div>
+                        </div>
+                    ) : tab === 'switch_advice' ? (
+                        <div className="space-y-6">
+                            <div
+                                className="rounded-2xl border p-5 relative overflow-hidden"
+                                style={{
+                                    background: `linear-gradient(135deg, ${room.accentColor}18 0%, rgba(255,255,255,0.02) 100%)`,
+                                    borderColor: `${room.accentColor}26`,
+                                }}
+                            >
+                                <div className="relative z-10">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-1 px-2 py-0.5 rounded w-fit" style={{ background: `${room.accentColor}20`, color: room.accentColor }}>
+                                        Exchange 21 Protocol
+                                    </p>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <h3 className="text-xl font-black text-white/90" style={{ fontFamily: "'Georgia', serif" }}>
+                                            Switching Strategy & EV
+                                        </h3>
+                                        <span className="text-[8px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 font-black tracking-widest uppercase">Under Development</span>
+                                    </div>
+                                    <p className="text-[12px] leading-relaxed text-white/50 max-w-lg">
+                                        The Switch rule is your ultimate weapon. Our advisor calculates the <span className="text-white/80 font-bold">Expected Value (EV)</span> of both hand combinations. If switching increases your total win probability, the button will glow.
+                                    </p>
+                                </div>
+                                <div className="absolute top-[-20%] right-[-5%] opacity-10 pointer-events-none">
+                                    <ArrowLeftRight size={160} style={{ color: room.accentColor }} />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/8">
+                                    <h4 className="text-[11px] font-black uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-2">
+                                        <Info size={14} /> Core Principles
+                                    </h4>
+                                    <ul className="space-y-3">
+                                        <li className="flex gap-2 text-[11px] text-white/60 leading-snug">
+                                            <span className="text-amber-500 font-bold">•</span>
+                                            <span>Prioritize creating <span className="text-white/80 font-bold">one</span> excellent hand (20, 21, or 11 to double) over keeping two mediocre hands.</span>
+                                        </li>
+                                        <li className="flex gap-2 text-[11px] text-white/60 leading-snug">
+                                            <span className="text-amber-500 font-bold">•</span>
+                                            <span>Always switch to create <span className="text-white/80 font-bold">Split opportunities</span> (like AA or 88) against weak dealer cards (3-6).</span>
+                                        </li>
+                                        <li className="flex gap-2 text-[11px] text-white/60 leading-snug">
+                                            <span className="text-amber-500 font-bold">•</span>
+                                            <span>If you have two "stiff" hands (12-16) against a Dealer 10, switch them! Salvaging one hand into a 10 or 20 saves half your bet.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-emerald-500/5 p-4 rounded-xl border border-emerald-500/10">
+                                    <h4 className="text-[11px] font-black uppercase tracking-wider text-emerald-400 mb-3">Mathematical Goal</h4>
+                                    <p className="text-[11px] text-white/50 italic leading-relaxed">
+                                        "A Switch is profitable if the SUM of the EVs of the new hands is higher than the original. Sometimes you sacrifice a strong hand to fix a terrible one for a net gain."
+                                    </p>
+                                </div>
+                            </div>
+
+                            <section className="space-y-3">
+                                <h4 className="text-[11px] font-black uppercase tracking-widest text-white/30 px-1">Example Situations</h4>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {[
+                                        {
+                                            title: "Salvaging Stiff Hands",
+                                            dealer: "10",
+                                            h1: ["10", "6"],
+                                            h2: ["10", "5"],
+                                            result: "Switch to [10, 10] and [6, 5]",
+                                            why: "Converts two high-risk hands into one strong 20 and one weak 11. Much higher survival rate.",
+                                            recommended: true
+                                        },
+                                        {
+                                            title: "Making a Monster",
+                                            dealer: "7",
+                                            h1: ["A", "5"],
+                                            h2: ["Q", "10"],
+                                            result: "Switch to [A, 10] and [Q, 5]",
+                                            why: "Creates a Natural 21 (Blackjack) immediately. Don't risk two hits when you can secure 1:1 payout.",
+                                            recommended: true
+                                        },
+                                        {
+                                            title: "The Split Setup",
+                                            dealer: "5",
+                                            h1: ["A", "8"],
+                                            h2: ["A", "2"],
+                                            result: "Switch to [A, A] and [8, 2]",
+                                            why: "Splitting Aces against 5 is extremely profitable. Hand 2 becomes a soft 13/3 which you can then improve.",
+                                            recommended: true
+                                        },
+                                        {
+                                            title: "Over-Optimization Trap",
+                                            dealer: "6",
+                                            h1: ["10", "10"],
+                                            h2: ["10", "10"],
+                                            result: "Stay [20] and [20]",
+                                            why: "Don't switch to create a split if you already have two 20s. Two 20s against a 6 is a massive mathematical lock.",
+                                            recommended: false
+                                        }
+                                    ].map((ex, idx) => (
+                                        <div key={idx} className="bg-white/5 rounded-xl border border-white/8 p-4 flex flex-col md:flex-row md:items-center gap-4">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${ex.recommended ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                                                        {ex.recommended ? 'RECOMMENDED' : 'STAY PAT'}
+                                                    </span>
+                                                    <h5 className="text-xs font-bold text-white/90">{ex.title}</h5>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4 text-[10px]">
+                                                    <div>
+                                                        <span className="block text-white/30 uppercase tracking-tighter mb-1">Hand 1</span>
+                                                        <span className="text-white/70">[{ex.h1[0]}, {ex.h1[1]}]</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="block text-white/30 uppercase tracking-tighter mb-1">Hand 2</span>
+                                                        <span className="text-white/70">[{ex.h2[0]}, {ex.h2[1]}]</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 border-t md:border-t-0 md:border-l border-white/10 pt-3 md:pt-0 md:pl-4">
+                                                <div className="text-[10px] mb-1">
+                                                    <span className="text-amber-400 font-bold uppercase tracking-tighter mr-2">vs Dealer {ex.dealer}</span>
+                                                    <span className="text-white/50">{ex.result}</span>
+                                                </div>
+                                                <p className="text-[10px] text-white/40 leading-relaxed">{ex.why}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
                         </div>
                     ) : tab === 'special' ? (
                         <div className="space-y-6">
@@ -1799,27 +2322,39 @@ export default function StrategyModal({
                                     {strategyType === 'iberian_21'
                                         ? (countTab === 'kw' ? 'Iberian 21: Walker Indices' : 'Iberian 21: Hi-Lo Deviations')
                                         : strategyType === 'free_action'
-                                            ? 'Advanced: Push 22 Deviations'
-                                            : strategyType === 'uk'
-                                                ? 'Advanced: UK Standards (OBO Protected)'
-                                                : strategyType === 'european'
-                                                    ? 'Advanced: Strict ENHC Deviations'
-                                                    : room.gameRules.allowSurrender
-                                                        ? 'Advanced: Key Deviations (Illustrious 18 + Fab 4)'
-                                                        : 'Advanced: Key Deviations (Illustrious 18)'}
+                                            ? 'Advanced: Push 22 Deviations (Free Action)'
+                                            : strategyType === 'zapout_21'
+                                                ? 'Advanced: Push 22 Deviations (Zap Out 21)'
+                                                : strategyType === 'exchange_21'
+                                                    ? 'Advanced: Push 22 Deviations (Exchange 21)'
+                                                    : strategyType === 'firecard_21'
+                                                        ? 'Advanced: Fire Card Deviations'
+                                                        : strategyType === 'uk'
+                                                            ? 'Advanced: UK Standards (OBO Protected)'
+                                                            : strategyType === 'european'
+                                                                ? 'Advanced: Strict ENHC Deviations'
+                                                                : room.gameRules.allowSurrender
+                                                                    ? 'Advanced: Key Deviations (Illustrious 18 + Fab 4)'
+                                                                    : 'Advanced: Key Deviations (Illustrious 18)'}
                                 </p>
                                 <p className="text-[12px] leading-relaxed mb-3" style={{ color: 'rgba(240,230,214,0.45)' }}>
                                     {strategyType === 'iberian_21'
                                         ? `These indices are specifically for Iberian 21 using the ${countTab === 'kw' ? 'Katarina Walker' : 'Hi-Lo'} system. Deviate from basic strategy when the True Count (TC) reaches these thresholds:`
                                         : strategyType === 'free_action'
-                                            ? 'At specific True Counts, the Hand Advisor uses specialized indices calculated for the Push 22 rule. These account for the dealer pushing on 22, making certain standing decisions more conservative.'
-                                            : strategyType === 'uk'
-                                                ? 'Since UK rules use the Original Bets Only (OBO) rule, you are protected against dealer blackjacks after doubling or splitting. Use standard Illustrious 18 indices for maximum advantage.'
-                                                : strategyType === 'european'
-                                                    ? 'Strict ENHC rules mean you lose all bets if the dealer has a blackjack. These specialized indices require much higher True Counts before doubling or splitting against a 10 or Ace to justify the increased risk.'
-                                                    : room.gameRules.allowSurrender
-                                                        ? 'At specific True Counts, the Hand Advisor can move beyond basic strategy using the Illustrious 18 plus the Fab 4 surrender set.'
-                                                        : 'At specific True Counts, the Hand Advisor can move beyond basic strategy using the core Illustrious 18 play deviations. Surrender indices are hidden because this room does not allow surrender.'}
+                                            ? 'At specific True Counts, the Hand Advisor uses specialized Push 22 indices for the Free Action room. These account for the dealer pushing on 22, making certain standing decisions more conservative.'
+                                            : strategyType === 'zapout_21'
+                                                ? 'At specific True Counts, the Hand Advisor uses specialized Push 22 indices for Zap Out 21. These account for the dealer pushing on 22 and replace the standard Illustrious 18 table. Zap action indices are for the initial Zap decision only.'
+                                                : strategyType === 'exchange_21'
+                                                    ? 'At specific True Counts, the Hand Advisor uses specialized Push 22 indices for Exchange 21. These account for the dealer pushing on 22 and are adapted from the Push 22 base set with Exchange-specific adjustments.'
+                                                    : strategyType === 'firecard_21'
+                                                        ? 'At specific True Counts, the Hand Advisor uses specialized indices adapted for Fire Card 21. These include unique True Count indices for when to use the Burn action instead of hitting.'
+                                                        : strategyType === 'uk'
+                                                            ? 'Since UK rules use the Original Bets Only (OBO) rule, you are protected against dealer blackjacks after doubling or splitting. Use standard Illustrious 18 indices for maximum advantage.'
+                                                            : strategyType === 'european'
+                                                                ? 'Strict ENHC rules mean you lose all bets if the dealer has a blackjack. These specialized indices require much higher True Counts before doubling or splitting against a 10 or Ace to justify the increased risk.'
+                                                                : room.gameRules.allowSurrender
+                                                                    ? 'At specific True Counts, the Hand Advisor can move beyond basic strategy using the Illustrious 18 plus the Fab 4 surrender set.'
+                                                                    : 'At specific True Counts, the Hand Advisor can move beyond basic strategy using the core Illustrious 18 play deviations. Surrender indices are hidden because this room does not allow surrender.'}
                                 </p>
 
                                 <div className="w-full overflow-x-auto">
@@ -1993,9 +2528,9 @@ export default function StrategyModal({
                             {(() => {
                                 const usedActions = new Set<Action>();
                                 const allData = [
-                                    ...(strategyType === 'free_action' ? HARD_FA : strategyType === 'iberian_21' ? HARD_IBERIAN : strategyType === 'atlantic_city' ? HARD_AC : strategyType === 'vegas_strip' ? HARD_VEGAS : strategyType === 'vegas_downtown' ? HARD_DOWNTOWN : strategyType === 'european' ? HARD_EUROPEAN : HARD_CLASSIC),
-                                    ...(strategyType === 'free_action' ? SOFT_FA : strategyType === 'iberian_21' ? SOFT_IBERIAN : strategyType === 'atlantic_city' ? SOFT_AC : strategyType === 'vegas_strip' ? SOFT_VEGAS : strategyType === 'vegas_downtown' ? SOFT_DOWNTOWN : strategyType === 'european' ? SOFT_EUROPEAN : SOFT_CLASSIC),
-                                    ...(strategyType === 'free_action' ? PAIRS_FA : strategyType === 'iberian_21' ? PAIRS_IBERIAN : strategyType === 'atlantic_city' ? PAIRS_AC : strategyType === 'vegas_strip' || strategyType === 'vegas_downtown' ? PAIRS_VEGAS : strategyType === 'european' ? PAIRS_EUROPEAN : PAIRS_CLASSIC),
+                                    ...(strategyType === 'free_action' ? HARD_FA : strategyType === 'iberian_21' ? HARD_IBERIAN : strategyType === 'zapout_21' ? HARD_ZAPOUT : strategyType === 'exchange_21' ? HARD_EXCHANGE : strategyType === 'firecard_21' ? HARD_FIRECARD : strategyType === 'atlantic_city' ? HARD_AC : strategyType === 'vegas_strip' ? HARD_VEGAS : strategyType === 'vegas_downtown' ? HARD_DOWNTOWN : strategyType === 'european' ? HARD_EUROPEAN : HARD_CLASSIC),
+                                    ...(strategyType === 'free_action' ? SOFT_FA : strategyType === 'iberian_21' ? SOFT_IBERIAN : strategyType === 'firecard_21' ? SOFT_FIRECARD : strategyType === 'atlantic_city' ? SOFT_AC : strategyType === 'vegas_strip' ? SOFT_VEGAS : strategyType === 'vegas_downtown' ? SOFT_DOWNTOWN : strategyType === 'european' ? SOFT_EUROPEAN : SOFT_CLASSIC),
+                                    ...(strategyType === 'free_action' ? PAIRS_FA : strategyType === 'iberian_21' ? PAIRS_IBERIAN : strategyType === 'firecard_21' ? PAIRS_FIRECARD : strategyType === 'atlantic_city' ? PAIRS_AC : strategyType === 'vegas_strip' || strategyType === 'vegas_downtown' ? PAIRS_VEGAS : strategyType === 'european' ? PAIRS_EUROPEAN : PAIRS_CLASSIC),
                                 ];
                                 allData.forEach(r => r.forEach(a => usedActions.add(a as Action)));
                                 const legendEntries = (Object.entries(ACTION_STYLES) as [Action, typeof ACTION_STYLES[Action]][]).filter(([key]) => usedActions.has(key));

@@ -142,6 +142,9 @@ export default function HandAdvisor({
         const canSplitHand = rules.canSplit(currentHand, currentSeatHandsLength).allowed;
         const canSurrenderNow = rules.canSurrender(currentHand).allowed;
         const canDoubleNow = rules.canDoubleDown(currentHand).allowed;
+        const canZapNow = rules.canZap ? rules.canZap(currentHand).allowed : false;
+        const canBurnNow = rules.canBurn ? rules.canBurn(currentHand).allowed : false;
+        
         const tableAction = getStrategyAction(
             cards,
             total,
@@ -151,9 +154,9 @@ export default function HandAdvisor({
             canDoubleNow,
             canSplitHand,
             canSurrenderNow,
-            { resolveConditions: roomId !== 'iberian_21' }
+            { resolveConditions: roomId !== 'iberian_21', canZap: canZapNow, canBurn: canBurnNow }
         );
-        const compositionOverride = showSpecialCases
+        let compositionOverride = showSpecialCases
             ? getCompositionDependentOverride(
                 cards,
                 total,
@@ -162,7 +165,7 @@ export default function HandAdvisor({
                 roomId,
             )
             : null;
-        const topOverride = compositionOverride?.isTopOverride ? compositionOverride : null;
+        let topOverride = compositionOverride?.isTopOverride ? compositionOverride : null;
         const dealerNorm = normRank(dealerUpCard.rank);
 
         const basicAction = tableAction;
@@ -204,6 +207,13 @@ export default function HandAdvisor({
             if (action === 'DS' && !canDoubleNow) action = basicAction;
             if ((action === 'SP' || action === 'FSP') && !canSplitHand) action = basicAction;
             if (action === 'SU' && !canSurrenderNow) action = basicAction;
+        }
+
+        if (currentHand?.isDoubleDown) {
+            action = canSurrenderNow ? 'RS' : 'S';
+            deviation = null;
+            topOverride = null;
+            compositionOverride = null;
         }
 
         return {

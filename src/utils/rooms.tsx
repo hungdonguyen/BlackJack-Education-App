@@ -56,7 +56,7 @@ export interface RoomConfig {
 }
 
 import React from 'react';
-import { Spade, Ticket, Anchor, Zap, Crown } from 'lucide-react';
+import { Spade, Ticket, Anchor, Zap, Crown, ArrowLeftRight, Flame } from 'lucide-react';
 
 export const ROOMS: Record<string, RoomConfig> = {
     classic: {
@@ -267,6 +267,81 @@ export const ROOMS: Record<string, RoomConfig> = {
         icon: <Ticket className="w-5 h-5 drop-shadow-md text-green-400" />,
         accentColor: '#22c55e',
         logoPath: '/images/logo/rooms/european.png',
+    },
+    zapout_21: {
+        id: 'zapout_21',
+        name: 'Zap Out 21',
+        subtitle: 'Zappit Blackjack Variant',
+        description: 'Zap Out 21 — Zap away bad hands! Trade any hard 15-18 for two new cards (once per hand). Dealer hitting 22 pushes all non-busted player hands except natural Blackjacks. Natural Blackjacks pay 3:2, Zapped Blackjacks pay 1:1. Double on any two cards. Can split once.',
+        feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #1e3a8a 0%, #1e40af 25%, #1d4ed8 50%, #2563eb 80%, #3b82f6 100%)',
+        bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #000000 0%, #111827 50%, #1f2937 100%)',
+        borderColor: 'rgba(59, 130, 246, 0.4)',
+        rules: {
+            blackjackPays: 'Natural Blackjack Pays 3:2, Zapped Blackjack Pays 1:1',
+            insurancePays: 'Insurance Pays 2 to 1',
+            dealerStands: 'Dealer pushes on 22',
+        },
+        gameRules: {
+            numberOfDecks: 6,
+            dealerHitsSoft17: true,
+            allowSurrender: false,
+        },
+        blackjackMultiplier: 1.5,
+        betRange: [1, 1_000_000],
+        rtp: '98.87%',
+        icon: <Zap className="w-5 h-5 drop-shadow-md text-blue-400 fill-blue-500" />,
+        accentColor: '#3b82f6',
+        logoPath: '/images/logo/rooms/zapout21.png',
+    },
+    exchange_21: {
+        id: 'exchange_21',
+        name: 'Exchange 21',
+        subtitle: 'Switch Your Cards',
+        description: 'Exchange 21 — Must play 2 hands with equal bets. You can swap the second card dealt to each hand. Dealer hitting 22 pushes all non-busted player hands except natural Blackjacks. Natural blackjacks pay 1:1. Double on any two cards. Can split once.',
+        feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #1e293b 0%, #334155 25%, #475569 50%, #64748b 80%, #94a3b8 100%)',
+        bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #020617 0%, #0f172a 50%, #1e293b 100%)',
+        borderColor: 'rgba(148, 163, 184, 0.4)',
+        rules: {
+            blackjackPays: 'Blackjack Pays 1:1',
+            insurancePays: 'Insurance Pays 2 to 1',
+            dealerStands: 'Dealer pushes on 22',
+        },
+        gameRules: {
+            numberOfDecks: 6,
+            dealerHitsSoft17: true,
+            allowSurrender: false,
+        },
+        blackjackMultiplier: 1.0,
+        betRange: [1, 1_000_000],
+        rtp: '99.58%',
+        icon: <ArrowLeftRight className="w-5 h-5 drop-shadow-md text-slate-300" />,
+        accentColor: '#94a3b8',
+        logoPath: '/images/logo/rooms/exchange21.png',
+    },
+    firecard_21: {
+        id: 'firecard_21',
+        name: 'Fire Card 21',
+        subtitle: 'Burn the 2nd Card',
+        description: 'Fire Card Blackjack — Not happy with your second card? Burn it for 0.5x your bet! This high-variance room pays 1:1 for Natural Blackjacks but features massive Ace bonuses (up to 7:1) to balance the odds. Double After Split is permitted.',
+        feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #450a0a 0%, #7f1d1d 25%, #991b1b 50%, #b91c1c 80%, #dc2626 100%)',
+        bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #2a0000 0%, #3f0000 50%, #5a0000 100%)',
+        borderColor: 'rgba(248, 113, 113, 0.4)',
+        rules: {
+            blackjackPays: 'Blackjack Pays 1:1',
+            insurancePays: 'Insurance Pays 2 to 1',
+            dealerStands: 'Dealer hits soft 17',
+        },
+        gameRules: {
+            numberOfDecks: 6,
+            dealerHitsSoft17: true,
+            allowSurrender: false,
+        },
+        blackjackMultiplier: 1.0,
+        betRange: [1, 1_000_000],
+        rtp: '99.46%',
+        icon: <Flame className="w-5 h-5 drop-shadow-md text-orange-500 fill-orange-400" />,
+        accentColor: '#f97316',
+        logoPath: '/images/logo/rooms/firecard21.png',
     },
 };
 
