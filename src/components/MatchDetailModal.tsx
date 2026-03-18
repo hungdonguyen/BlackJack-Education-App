@@ -7,8 +7,9 @@
 // ============================================
 
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { Fragment } from 'react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, X, ArrowLeft, Shield } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ArrowLeft, Shield, Flame } from 'lucide-react';
 import { MatchRecord } from '@/types/game';
 import { HandStatus, Rank, Suit } from '@/types/enums';
 import { calculateMatchStats, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
@@ -187,13 +188,14 @@ export default function MatchDetailModal({
                         {/* Rows */}
                         <div className="space-y-2">
                             {match.seats.map((seat) => {
-                                const seatBet = seat.hands.reduce((s, h) => s + h.betAmount, 0)
+                                const seatBet = seat.hands.reduce((s, h) => s + h.betAmount + (h.burnWagerAmount ?? 0), 0)
                                     + (seat.insuranceCost ?? 0)
                                     + (seat.sideBetAmount ?? 0);
-                                const seatPnl = seat.hands.reduce((s, h) => s + h.payout, 0)
+                                const seatPnl = seat.hands.reduce((s, h) => s + h.payout - (h.burnWagerAmount ?? 0) + (h.burnWagerPayout ?? 0), 0)
                                     - (seat.insuranceCost ?? 0) + (seat.insurancePayout ?? 0)
                                     - (seat.sideBetAmount ?? 0) + (seat.sideBetPayout ?? 0);
                                 const hasExtras = seat.hands.length > 1
+                                    || seat.hands.some(h => h.isBurned)
                                     || !!(seat.insuranceCost && seat.insuranceCost > 0)
                                     || !!(seat.sideBetAmount && seat.sideBetAmount > 0);
 
@@ -212,8 +214,8 @@ export default function MatchDetailModal({
                                             const isLastHand = hIdx === seat.hands.length - 1;
 
                                             return (
-                                                <div key={`${seat.seatId}-${hIdx}`}
-                                                    className="grid items-center gap-x-1 px-2 py-2"
+                                                <Fragment key={`${seat.seatId}-${hIdx}`}>
+                                                    <div className="grid items-center gap-x-1 px-2 py-2"
                                                     style={{
                                                         gridTemplateColumns: '80px 1fr 56px 90px 100px',
                                                         background: 'rgba(255,255,255,0.025)',
@@ -252,11 +254,6 @@ export default function MatchDetailModal({
                                                             {hand.isBurned && (
                                                                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-orange-600/20 text-orange-400 border border-orange-500/30">
                                                                     BURNED
-                                                                </span>
-                                                            )}
-                                                            {hand.isBurned && (hand.burnWagerPayout ?? 0) > 0 && (
-                                                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-yellow-300 border border-amber-500/30">
-                                                                    BURN BONUS (+${hand.burnWagerPayout})
                                                                 </span>
                                                             )}
                                                             {match.roomId === 'iberian_21' && hand.result === HandStatus.WON && pnl > hand.betAmount && !hand.isDoubleDown && (
@@ -313,6 +310,36 @@ export default function MatchDetailModal({
                                                         </span>
                                                     </div>
                                                 </div>
+
+                                                {/* Burn Bonus row — per hand */}
+                                                {hand.isBurned && (
+                                                    <div className="grid items-center gap-x-1 px-2 py-1.5"
+                                                        style={{
+                                                            gridTemplateColumns: '80px 1fr 56px 90px 100px',
+                                                            background: 'rgba(249,115,22,0.03)',
+                                                            borderBottom: (!isLastHand || hasExtras) ? '1px solid rgba(255,255,255,0.04)' : undefined,
+                                                        }}>
+                                                        <div className="flex items-center gap-1">
+                                                            <Flame size={11} className="text-orange-400" />
+                                                            <span className="text-[9px] font-bold text-orange-400/80 uppercase">Burn Bonus</span>
+                                                        </div>
+                                                        <div className="text-[9px] text-orange-300/60 font-bold">
+                                                            ✓ Discarded {hand.burnedCard?.rank} of {hand.burnedCard?.suit} — Bonus Paid
+                                                        </div>
+                                                        <div />
+                                                        <div className="text-right">
+                                                            <span className="text-[10px] font-bold text-orange-400/60 tabular-nums">
+                                                                -{hand.burnWagerAmount?.toLocaleString()}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <span className="text-[12px] font-black text-emerald-400 tabular-nums">
+                                                                +{hand.burnWagerPayout?.toLocaleString()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </Fragment>
                                             );
                                         })}
 

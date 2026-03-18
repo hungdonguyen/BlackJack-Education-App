@@ -7,6 +7,7 @@ import { GameStore } from '@/types/game';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { CHIP_VALUES, DEFAULT_BANKROLL } from '@/utils/constants';
 import { getRoomConfig } from '@/utils/rooms';
+import { checkTutorialAction } from '@/utils/tutorialInterceptor';
 
 /** A record of a single bet placement for undo */
 export interface BetRecord {
@@ -26,6 +27,7 @@ export interface BettingSlice {
   previousSideBets: Record<number, number>;
   insufficientFundsWarning: boolean;
   sideBets: Record<number, number>;
+  totalBetSinceLastClaim: number;
 
   // Actions
   selectChip: (value: number) => void;
@@ -35,7 +37,7 @@ export interface BettingSlice {
   clearAllBets: () => void;
   toggleSeat: (seatId: number) => void;
   addFunds: (amount: number) => void;
-  claimDaily: () => boolean;
+  claimDaily: () => number;
   setCurrentRoom: (roomId: string) => void;
   rebet: () => void;
   triggerInsufficientFunds: () => void;
@@ -59,21 +61,41 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   totalBetSinceLastClaim: 0,
 
   selectChip: (value: number) => {
+    const state = get();
+    if (!checkTutorialAction(state, `chip-${value}`)) return;
     set({ selectedChipValue: value });
   },
 
   placeBet: (seatId: number, amount: number) => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
+    if (!checkTutorialAction(state, `seat-${seatId}`)) return;
     const multiplier = state.currentRoom === 'exchange_21' ? 2 : 1;
     const totalAmount = amount * multiplier;
-    if (totalAmount > state.bankroll) {
+    
+    const roomCfg = getRoomConfig(state.currentRoom);
+    const balance = roomCfg.isTutorial ? state.tutorialBalance : state.bankroll;
+
+    // In tutorial mode, only seat 3 is allowed
+    if (roomCfg.isTutorial && seatId !== 3) return;
+
+    if (totalAmount > balance) {
       get().triggerInsufficientFunds();
       return;
     }
 
+    // In tutorial mode, cap each seat's bet at $100 to ensure the player can afford splits
+    if (roomCfg.isTutorial) {
+      const seat = state.seats.find(s => s.id === seatId);
+      if (seat) {
+        const currentBet = seat.hands.reduce((sum, h) => sum + h.betAmount, 0);
+        if (currentBet + totalAmount > 100) return;
+      }
+    }
+
     set((s) => ({
-      bankroll: s.bankroll - totalAmount,
+      bankroll: roomCfg.isTutorial ? s.bankroll : s.bankroll - totalAmount,
+      tutorialBalance: roomCfg.isTutorial ? s.tutorialBalance - totalAmount : s.tutorialBalance,
       betHistory: [...s.betHistory, { seatId, amount: totalAmount }],
       seats: s.seats.map((seat) => {
         if (seat.id !== seatId) return seat;
@@ -92,6 +114,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   undoBet: () => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
+    if (!checkTutorialAction(state, 'action-undo')) return;
     if (state.betHistory.length === 0) return;
 
     const lastBet = state.betHistory[state.betHistory.length - 1];
@@ -105,8 +128,10 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     const newSideBets = { ...state.sideBets };
     if (sideRefund > 0) delete newSideBets[lastBet.seatId];
 
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
     set((s) => ({
-      bankroll: s.bankroll + lastBet.amount + sideRefund,
+      bankroll: isTutorial ? s.bankroll : s.bankroll + lastBet.amount + sideRefund,
+      tutorialBalance: isTutorial ? s.tutorialBalance + lastBet.amount + sideRefund : s.tutorialBalance,
       betHistory: s.betHistory.slice(0, -1),
       sideBets: newSideBets,
       seats: s.seats.map((seat) => {
@@ -125,6 +150,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   clearBet: (seatId: number) => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
+    if (!checkTutorialAction(state, `clear-seat-${seatId}`)) return;
 
     const seat = state.seats.find((s) => s.id === seatId);
     if (!seat) return;
@@ -135,8 +161,10 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     const newSideBets = { ...state.sideBets };
     if (sideRefund > 0) delete newSideBets[seatId];
 
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
     set((s) => ({
-      bankroll: s.bankroll + mainRefund + sideRefund,
+      bankroll: isTutorial ? s.bankroll : s.bankroll + mainRefund + sideRefund,
+      tutorialBalance: isTutorial ? s.tutorialBalance + mainRefund + sideRefund : s.tutorialBalance,
       betHistory: s.betHistory.filter((b: { seatId: number; amount: number }) => b.seatId !== seatId),
       sideBets: newSideBets,
       seats: s.seats.map((st) => {
@@ -152,6 +180,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   clearAllBets: () => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
+    if (!checkTutorialAction(state, 'action-clear')) return;
 
     const mainRefund = state.seats.reduce(
       (sum, seat) => sum + seat.hands.reduce((s, h) => s + h.betAmount, 0),
@@ -159,8 +188,10 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     );
     const sideRefund = Object.values(state.sideBets).reduce((sum, v) => sum + v, 0);
 
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
     set((s) => ({
-      bankroll: s.bankroll + mainRefund + sideRefund,
+      bankroll: isTutorial ? s.bankroll : s.bankroll + mainRefund + sideRefund,
+      tutorialBalance: isTutorial ? s.tutorialBalance + mainRefund + sideRefund : s.tutorialBalance,
       betHistory: [],
       sideBets: {},
       seats: s.seats.map((seat) => ({
@@ -173,6 +204,9 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   rebet: () => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
+    if (!checkTutorialAction(state, 'action-rebet')) return;
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
+    const balance = isTutorial ? state.tutorialBalance : state.bankroll;
 
     // Determine current total bets on the table
     let currentTotalBet = 0;
@@ -182,17 +216,16 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
 
     // If there are bets, this functions as a "Double" (x2)
     if (currentTotalBet > 0) {
-      if (currentTotalBet > state.bankroll) {
+      if (currentTotalBet > balance) {
         get().triggerInsufficientFunds();
         return; // Not enough funds to double
       }
 
       set((s) => ({
-        bankroll: s.bankroll - currentTotalBet,
+        bankroll: isTutorial ? s.bankroll : s.bankroll - currentTotalBet,
+        tutorialBalance: isTutorial ? s.tutorialBalance - currentTotalBet : s.tutorialBalance,
         betHistory: [
           ...s.betHistory,
-          // We don't record the full list of seats in history for a singular x2 action, 
-          // or we could record them iteratively. A simpler approach is just applying the double:
           ...s.seats
             .filter((st) => st.isActive && st.hands.some((h) => h.betAmount > 0))
             .map((st) => ({
@@ -219,20 +252,20 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
 
     const previousSideBetTotal = Object.values(state.previousSideBets).reduce((sum, v) => sum + v, 0);
     const previousTotal = state.previousBets.reduce((sum, b) => sum + b.amount, 0) + previousSideBetTotal;
-    if (previousTotal > state.bankroll) {
+    if (previousTotal > balance) {
         get().triggerInsufficientFunds();
         return;
     }
 
     set((s) => ({
-      bankroll: s.bankroll - previousTotal,
+      bankroll: isTutorial ? s.bankroll : s.bankroll - previousTotal,
+      tutorialBalance: isTutorial ? s.tutorialBalance - previousTotal : s.tutorialBalance,
       betHistory: [...s.betHistory, ...state.previousBets],
       sideBets: { ...state.previousSideBets },
       seats: s.seats.map((seat) => {
         const prevBet = state.previousBets.find((b) => b.seatId === seat.id);
         if (!prevBet) return seat;
         
-        // Ensure seat is active if it had a previous bet
         return {
           ...seat,
           isActive: true,
@@ -247,8 +280,13 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   toggleSeat: (seatId: number) => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
+    if (!checkTutorialAction(state, `toggle-seat-${seatId}`)) return;
 
       set((s) => {
+        const roomCfg = getRoomConfig(s.currentRoom);
+        // In tutorial mode, only seat 3 can be toggled (and must stay active)
+        if (roomCfg.isTutorial) return s;
+
         const targetSeat = s.seats.find((seat) => seat.id === seatId);
         if (!targetSeat) return s;
 
@@ -266,9 +304,11 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
         const nextSideBets = { ...s.sideBets };
         delete nextSideBets[seatId];
 
+        const isTutorial = getRoomConfig(s.currentRoom).isTutorial;
         return {
           ...s,
-          bankroll: s.bankroll + mainRefund + sideRefund,
+          bankroll: isTutorial ? s.bankroll : s.bankroll + mainRefund + sideRefund,
+          tutorialBalance: isTutorial ? s.tutorialBalance + mainRefund + sideRefund : s.tutorialBalance,
           betHistory: s.betHistory.filter((bet) => bet.seatId !== seatId),
           sideBets: nextSideBets,
           seats: s.seats.map((seat) => {
@@ -299,11 +339,11 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     const state = get();
     const now = Date.now();
     const THIRTY_MIN = 30 * 60 * 1000;
-    if (now - state.lastDailyClaim < THIRTY_MIN) return false;
+    if (now - state.lastDailyClaim < THIRTY_MIN) return 0;
 
     const isBonusClaim = (state.dailyClaimCount + 1) % 3 === 0;
     const baseClaim = isBonusClaim ? 1000 : 500;
-    const activityBonus = Math.floor((state.totalBetSinceLastClaim || 0) * 0.1);
+    const activityBonus = Math.floor((state.totalBetSinceLastClaim || 0) * 0.02);
     const claimAmount = baseClaim + activityBonus;
 
     set((s) => ({
@@ -312,7 +352,9 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
       dailyClaimCount: s.dailyClaimCount + 1,
       totalBetSinceLastClaim: 0,
     }));
-    return true;
+    
+    get().syncAchievements();
+    return claimAmount;
   },
 
   setCurrentRoom: (roomId: string) => {
@@ -349,14 +391,17 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     // Require a main bet on this seat before placing a side bet
     const seat = state.seats.find(s => s.id === seatId);
     if (!seat || seat.hands.reduce((sum, h) => sum + h.betAmount, 0) === 0) return;
-    if (amount > state.bankroll) {
+    const isTutorial = roomCfg.isTutorial;
+    const balance = isTutorial ? state.tutorialBalance : state.bankroll;
+    if (amount > balance) {
       get().triggerInsufficientFunds();
       return;
     }
-    set({
-      bankroll: state.bankroll - amount,
-      sideBets: { ...state.sideBets, [seatId]: (state.sideBets[seatId] || 0) + amount },
-    });
+    set((s) => ({
+      bankroll: isTutorial ? s.bankroll : s.bankroll - amount,
+      tutorialBalance: isTutorial ? s.tutorialBalance - amount : s.tutorialBalance,
+      sideBets: { ...s.sideBets, [seatId]: (s.sideBets[seatId] || 0) + amount },
+    }));
   },
 
   clearSideBet: (seatId: number) => {
@@ -366,10 +411,12 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     if (refund <= 0) return;
     const newSideBets = { ...state.sideBets };
     delete newSideBets[seatId];
-    set({
-      bankroll: state.bankroll + refund,
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
+    set((s) => ({
+      bankroll: isTutorial ? s.bankroll : s.bankroll + refund,
+      tutorialBalance: isTutorial ? s.tutorialBalance + refund : s.tutorialBalance,
       sideBets: newSideBets,
-    });
+    }));
   },
 });
 

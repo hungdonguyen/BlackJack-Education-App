@@ -38,6 +38,9 @@ export default function Seat({ seatId, style }: SeatProps) {
 
     if (!seat) return null;
 
+    // In tutorial mode, only seat 3 is shown
+    if (roomConfig.isTutorial && seatId !== 3) return null;
+
     const isBetting = gamePhase === GamePhase.BETTING;
     const isCurrentTurn = gamePhase === GamePhase.PLAYER_TURN && currentSeatIndex === seatId - 1;
     const isInsuranceTurn = gamePhase === GamePhase.INSURANCE && currentSeatIndex === seatId - 1;
@@ -70,7 +73,7 @@ export default function Seat({ seatId, style }: SeatProps) {
     };
 
     return (
-        <div className="relative flex flex-col items-center" style={style}>
+        <div id={`seat-${seatId}`} className="relative flex flex-col items-center" style={style}>
             {/* ─── Side Bet Toggle (Free Action room only) ─── */}
             {roomConfig.hasSideBet && seat.isActive && isBetting && (
                 <div className="absolute -left-[92px] top-1/2 -translate-y-1/2 flex flex-col items-center" style={{ zIndex: 12 }}>
@@ -78,14 +81,18 @@ export default function Seat({ seatId, style }: SeatProps) {
                         <motion.button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (sideBetAmount > 0) {
-                                    clearSideBet(seatId);
-                                    playSound('chip-lay');
-                                } else if (mainBet > 0) {
+                                if (mainBet > 0) {
                                     placeSideBet(seatId, selectedChipValue);
                                     playSound('chip-lay');
                                 }
-                                // no-op if no main bet — store also guards this
+                            }}
+                            onContextMenu={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (sideBetAmount > 0) {
+                                    clearSideBet(seatId);
+                                    playSound('chip-lay');
+                                }
                             }}
                             disabled={sideBetAmount === 0 && mainBet === 0}
                             title={sideBetAmount === 0 && mainBet === 0 ? 'Place a main bet first' : undefined}

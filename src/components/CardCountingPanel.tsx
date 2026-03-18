@@ -9,8 +9,9 @@ import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase } from '@/types/enums';
-import { Info } from 'lucide-react';
+import { Info, FlaskConical } from 'lucide-react';
 import { getCardCountingAnalysis } from '@/utils/countingAnalysis';
+import { getRoomConfig } from '@/utils/rooms';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export default function CardCountingPanel({
     }, [dealerHand.cards, numDecks, roomId, seats, shoe, userSystem]);
 
     const bdr = borderColor ?? `${accentColor}30`;
+    const isBeta = getRoomConfig(roomId).isBeta ?? false;
 
     // Gauge for true count: map -10..+10 to 0..100
     const tcPct = Math.min(Math.max((analysis.trueCount + 10) / 20, 0), 1) * 100;
@@ -102,6 +104,23 @@ export default function CardCountingPanel({
                             </span>
                         </div>
                     </div>
+
+                    {/* ── Under Development Banner for Beta Rooms ── */}
+                    {isBeta && (
+                        <div
+                            className="mx-3.5 mt-3 mb-2 px-3 py-2 rounded-xl flex items-center gap-2.5"
+                            style={{
+                                background: 'rgba(251,146,60,0.1)',
+                                border: '1px solid rgba(251,146,60,0.3)',
+                            }}
+                        >
+                            <FlaskConical size={13} className="text-orange-400 shrink-0" />
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-400">Under Development</p>
+                                <p className="text-[8px] text-orange-300/60 font-semibold mt-0.5 leading-snug">Count values may be inaccurate for this variant</p>
+                            </div>
+                        </div>
+                    )}
 
                     {/* ── Running Count & True Count ── */}
                     <div className="px-3.5 pt-3 pb-2.5">

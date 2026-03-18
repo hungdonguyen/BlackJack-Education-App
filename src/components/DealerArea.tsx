@@ -177,6 +177,8 @@ function ShoeIndicator() {
 export default function DealerArea() {
     const dealerHand = useGameStore((s) => s.dealerHand);
     const gamePhase = useGameStore((s) => s.gamePhase);
+    const currentRoom = useGameStore((s) => s.currentRoom);
+    const isTutorial = getRoomConfig(currentRoom).isTutorial;
 
     const hasCards = dealerHand.cards.length > 0;
     const showAllValues = gamePhase === GamePhase.DEALER_TURN || gamePhase === GamePhase.PAYOUT;
@@ -269,9 +271,11 @@ export default function DealerArea() {
             </div>
 
             {/* Shoe indicator — right of dealer hand, flex sibling */}
-            <div className="flex items-start pt-7 pl-4">
-                <ShoeIndicator />
-            </div>
+            {!isTutorial && (
+                <div className="flex items-start pt-7 pl-4">
+                    <ShoeIndicator />
+                </div>
+            )}
 
         </motion.div>
     );

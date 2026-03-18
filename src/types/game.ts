@@ -5,6 +5,16 @@
 import { Suit, Rank, HandStatus, GamePhase } from './enums';
 import { SettingsSlice } from '@/store/settingsSlice';
 
+/** A tutorial step definition */
+export interface TutorialStep {
+  id: number;
+  message: string;
+  condition: (state: GameState) => boolean;
+  targetElementId?: string;
+  position?: 'top' | 'bottom' | 'center' | 'dealer' | 'player';
+  requiresClick?: boolean;
+}
+
 /** A single playing card */
 export interface Card {
   suit: Suit;
@@ -148,6 +158,7 @@ export interface GameState {
 
   // Side bets (Free Action room)
   sideBets: Record<number, number>; // seatId -> side bet amount
+
 }
 
 /** All actions available on the game store */
@@ -194,7 +205,7 @@ export interface GameActions {
 
   // Utility
   addFunds: (amount: number) => void;
-  claimDaily: () => boolean;
+  claimDaily: () => number;
   setCurrentRoom: (roomId: string) => void;
   triggerInsufficientFunds: () => void;
   clearInsufficientFunds: () => void;
@@ -209,9 +220,12 @@ export interface GameActions {
 
   // Helpers
   canAfford: (amount: number) => boolean;
+
 }
 
 import { DevToolsSlice } from '@/store/devToolsSlice';
+import { AchievementSlice } from '@/store/achievementSlice';
+import { TutorialSlice } from '@/store/tutorialSlice';
 
 /** Combined store type */
-export type GameStore = GameState & GameActions & SettingsSlice & DevToolsSlice;
+export type GameStore = GameState & GameActions & SettingsSlice & DevToolsSlice & AchievementSlice & TutorialSlice;

@@ -53,10 +53,14 @@ export interface RoomConfig {
     isFreeAction?: boolean;
     /** Path to the room logo image */
     logoPath: string;
+    /** Whether this is a tutorial room */
+    isTutorial?: boolean;
+    /** Whether this room is in beta */
+    isBeta?: boolean;
 }
 
 import React from 'react';
-import { Spade, Ticket, Anchor, Zap, Crown, ArrowLeftRight, Flame } from 'lucide-react';
+import { Spade, Ticket, Anchor, Zap, Crown, ArrowLeftRight, Flame, BookOpen } from 'lucide-react';
 
 export const ROOMS: Record<string, RoomConfig> = {
     classic: {
@@ -162,6 +166,7 @@ export const ROOMS: Record<string, RoomConfig> = {
         accentColor: '#eab308',
         hasSideBet: true,
         isFreeAction: true,
+        isBeta: true,
         logoPath: '/images/logo/rooms/freeaction.png',
     },
     atlantic_city: {
@@ -214,6 +219,7 @@ export const ROOMS: Record<string, RoomConfig> = {
         rtp: '99.24%',
         icon: <Spade className="w-5 h-5 drop-shadow-md text-red-500 fill-red-600" />,
         accentColor: '#be123c',
+        isBeta: true,
         logoPath: '/images/logo/rooms/iberian21.png',
     },
     uk: {
@@ -291,6 +297,7 @@ export const ROOMS: Record<string, RoomConfig> = {
         rtp: '98.87%',
         icon: <Zap className="w-5 h-5 drop-shadow-md text-blue-400 fill-blue-500" />,
         accentColor: '#3b82f6',
+        isBeta: true,
         logoPath: '/images/logo/rooms/zapout21.png',
     },
     exchange_21: {
@@ -316,6 +323,7 @@ export const ROOMS: Record<string, RoomConfig> = {
         rtp: '99.58%',
         icon: <ArrowLeftRight className="w-5 h-5 drop-shadow-md text-slate-300" />,
         accentColor: '#94a3b8',
+        isBeta: true,
         logoPath: '/images/logo/rooms/exchange21.png',
     },
     firecard_21: {
@@ -341,7 +349,34 @@ export const ROOMS: Record<string, RoomConfig> = {
         rtp: '99.46%',
         icon: <Flame className="w-5 h-5 drop-shadow-md text-orange-500 fill-orange-400" />,
         accentColor: '#f97316',
+        isBeta: true,
         logoPath: '/images/logo/rooms/firecard21.png',
+    },
+    tutorial_beginner: {
+        id: 'tutorial_beginner',
+        name: 'Beginner Tutorial',
+        subtitle: 'Learn the Basics',
+        description: 'Complete this guided tutorial to learn how to place bets, when to hit or stand, and how to win against the dealer. Includes forced card sequences to demonstrate key logic.',
+        feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #1e1b4b 0%, #151433 25%, #0f1026 50%, #070817 80%, #02020a 100%)',
+        bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #0c0724 0%, #060312 50%, #020108 100%)',
+        borderColor: 'rgba(99, 102, 241, 0.4)',
+        rules: {
+            blackjackPays: 'Blackjack Pays 3 to 2',
+            insurancePays: 'Insurance Pays 2 to 1',
+            dealerStands: 'Dealer stands on soft 17',
+        },
+        gameRules: {
+            numberOfDecks: 6,
+            dealerHitsSoft17: false,
+            allowSurrender: false,
+        },
+        blackjackMultiplier: 1.5,
+        betRange: [100, 100], // Fixed bet for tutorial
+        rtp: 'Tutorial',
+        icon: <BookOpen className="w-5 h-5 drop-shadow-md text-indigo-400" />,
+        accentColor: '#6366f1',
+        isTutorial: true,
+        logoPath: '/images/logo/rooms/classic.png', // Reusing classic logo for now
     },
 };
 

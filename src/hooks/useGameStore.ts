@@ -70,6 +70,12 @@ export function useStoreHydration(): boolean {
                   patch.showCardCounting = parsed.state.showCardCounting;
                 if (parsed.state.countSystem === 'Hi-Lo' || parsed.state.countSystem === 'Katarina Walker')
                   patch.countSystem = parsed.state.countSystem;
+                
+                // Achievements
+                if (parsed.state.unlockedAchievements)
+                  patch.unlockedAchievements = parsed.state.unlockedAchievements;
+                if (parsed.state.achievementProgress)
+                  patch.achievementProgress = parsed.state.achievementProgress;
               }
             } catch (err) {
               console.warn('[useStoreHydration] Failed to parse save.json:', err);
@@ -116,6 +122,8 @@ export function useStoreHydration(): boolean {
             showHandAdvisor: state.showHandAdvisor,
             showCardCounting: state.showCardCounting,
             countSystem: state.countSystem,
+            unlockedAchievements: state.unlockedAchievements,
+            achievementProgress: state.achievementProgress,
           };
           base.version = 0;
           await writeSaveFile(JSON.stringify(base));
@@ -136,6 +144,8 @@ export function useStoreHydration(): boolean {
                 showHandAdvisor: state.showHandAdvisor,
                 showCardCounting: state.showCardCounting,
                 countSystem: state.countSystem,
+                unlockedAchievements: state.unlockedAchievements,
+                achievementProgress: state.achievementProgress,
               },
               version: 0,
             })
@@ -160,7 +170,9 @@ export function useStoreHydration(): boolean {
           state.musicTrackOverride !== prevState.musicTrackOverride ||
           state.showHandAdvisor !== prevState.showHandAdvisor ||
           state.showCardCounting !== prevState.showCardCounting ||
-          state.countSystem !== prevState.countSystem
+          state.countSystem !== prevState.countSystem ||
+          state.unlockedAchievements !== prevState.unlockedAchievements ||
+          state.achievementProgress !== prevState.achievementProgress
         ) {
           debouncedSave(state);
         }

@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, BookOpen, Info, Plus, Minus, ChevronsUp, ArrowLeftRight, Shield, Flag } from 'lucide-react';
+import { X, BookOpen, Info, Plus, Minus, ChevronsUp, ArrowLeftRight, Shield, Flag, FlaskConical } from 'lucide-react';
 import { RoomConfig } from '@/utils/rooms';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GameStore } from '@/types/game';
@@ -2071,6 +2071,24 @@ export default function StrategyModal({
                     ) : tab === 'counting' ? (
                         /* ─── Card Counting Guide ─── */
                         <div className="space-y-5">
+                            {room.isBeta && (
+                                <div
+                                    className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3.5"
+                                    style={{
+                                        background: 'rgba(251,146,60,0.1)',
+                                        border: '1px solid rgba(251,146,60,0.3)',
+                                    }}
+                                >
+                                    <FlaskConical size={16} className="text-orange-400 shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-400">Under Development</p>
+                                        <p className="text-[10px] text-orange-300/60 font-semibold mt-0.5 leading-relaxed">
+                                            Card counting indices and betting logic for this variant are currently being calibrated.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                             {strategyType === 'iberian_21' && (
                                 <div className="flex justify-center mb-2">
                                     <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 relative">
@@ -2405,6 +2423,24 @@ export default function StrategyModal({
                     ) : (
                         /* ─── Strategy Charts ─── */
                         <>
+                            {room.isBeta && (
+                                <div
+                                    className="mb-4 px-4 py-3 rounded-2xl flex items-start gap-3.5"
+                                    style={{
+                                        background: 'rgba(251,146,60,0.1)',
+                                        border: '1px solid rgba(251,146,60,0.3)',
+                                    }}
+                                >
+                                    <FlaskConical size={16} className="text-orange-400 shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-400">Under Development</p>
+                                        <p className="text-[10px] text-orange-300/60 font-semibold mt-0.5 leading-relaxed">
+                                            The basic strategy matrix for this variant is currently under review and may be subject to changes.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
 
                             {strategyTableContent && (
                                 <div className="mb-4 rounded-2xl border p-4" style={{ background: `linear-gradient(135deg, ${room.accentColor}0f 0%, rgba(255,255,255,0.02) 100%)`, borderColor: `${room.accentColor}26` }}>

@@ -13,10 +13,15 @@ export function calculateMatchStats(match: MatchRecord) {
     let totalSideBetCost = 0;
     let totalSideBetPayout = 0;
 
+    let totalBurnWagerCost = 0;
+    let totalBurnWagerPayout = 0;
+
     match.seats.forEach(s => {
         s.hands.forEach(h => {
             totalBet += h.betAmount;
             totalWin += h.payout;
+            if (h.burnWagerAmount) totalBurnWagerCost += h.burnWagerAmount;
+            if (h.burnWagerPayout) totalBurnWagerPayout += h.burnWagerPayout;
         });
 
         if (s.insuranceCost) totalInsuranceCost += s.insuranceCost;
@@ -25,15 +30,20 @@ export function calculateMatchStats(match: MatchRecord) {
         if (s.sideBetPayout) totalSideBetPayout += s.sideBetPayout;
     });
 
-    const netPnl = totalWin - totalInsuranceCost + totalInsurancePayout - totalSideBetCost + totalSideBetPayout;
+    const netPnl = totalWin 
+        - totalInsuranceCost + totalInsurancePayout 
+        - totalSideBetCost + totalSideBetPayout
+        - totalBurnWagerCost + totalBurnWagerPayout;
 
     return {
-        totalBet,
+        totalBet: totalBet + totalBurnWagerCost,
         totalWin,
         totalInsuranceCost,
         totalInsurancePayout,
         totalSideBetCost,
         totalSideBetPayout,
+        totalBurnWagerCost,
+        totalBurnWagerPayout,
         netPnl
     };
 }

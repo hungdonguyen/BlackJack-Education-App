@@ -6,7 +6,7 @@
 
 import { useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, TrendingUp } from 'lucide-react';
+import { Info, TrendingUp, FlaskConical } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { getRules } from '@/rules';
 import { GamePhase } from '@/types/enums';
@@ -87,6 +87,7 @@ export default function HandAdvisor({
     const activeSystem = getActiveCountingSystem(roomId, userSystem);
     const omitTens = roomId === 'iberian_21';
     const room = getRoomConfig(roomId);
+    const isBeta = room.isBeta ?? false;
     const rules = getRules(roomId);
     const isVisible = gamePhase === GamePhase.PLAYER_TURN || gamePhase === GamePhase.INSURANCE;
 
@@ -210,7 +211,19 @@ export default function HandAdvisor({
         }
 
         if (currentHand?.isDoubleDown) {
-            action = canSurrenderNow ? 'RS' : 'S';
+            // Double Down Rescue semantics: 
+            // We only want to rescue a doubled hand if we caught a bad card and are forced to stand with terrible expectation.
+            // A good approximation of mathematically correct rescue spots in Spanish/Iberian 21:
+            // Rescue hard/soft 12-16 vs dealer 8, 9, 10, A. Rescue 17 vs A.
+            const isStrongDealer = ['8', '9', '10', 'A'].includes(dealerNorm);
+            const isWorstStiff = total >= 12 && total <= 16 && isStrongDealer;
+            const is17vsAce = total === 17 && dealerNorm === 'A';
+            
+            if ((isWorstStiff || is17vsAce) && canSurrenderNow) {
+                action = 'RS';
+            } else {
+                action = 'S';
+            }
             deviation = null;
             topOverride = null;
             compositionOverride = null;
@@ -553,7 +566,26 @@ export default function HandAdvisor({
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-center mt-4 pt-3 border-t border-white/5 font-sans" onClick={onOpenStrategy}>
+                        {/* Under Development Banner for Beta Rooms */}
+                        {isBeta && (
+                            <motion.div
+                                className="rounded-xl px-3 py-2.5 mb-2.5 flex items-start gap-2.5"
+                                style={{
+                                    background: 'rgba(251,146,60,0.1)',
+                                    border: '1px solid rgba(251,146,60,0.3)',
+                                }}
+                                initial={{ opacity: 0, y: -4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                            >
+                                <FlaskConical size={13} className="text-orange-400 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-400">Under Development</p>
+                                    <p className="text-[8px] text-orange-300/60 font-semibold mt-0.5 leading-snug">Strategy for this variant is still being calibrated</p>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        <div className="flex items-center justify-center mt-2 pt-3 border-t border-white/5 font-sans" onClick={onOpenStrategy}>
                             <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5 cursor-pointer hover:text-white/70 transition-colors">
                                 <Info size={11} /> Find out more details in Strategy
                             </span>

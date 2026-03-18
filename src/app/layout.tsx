@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Cinzel } from "next/font/google";
 import "./globals.css";
+import { AchievementToast } from "@/components/AchievementToast";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -39,6 +40,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${cinzel.variable} antialiased font-sans`}>
         {children}
+        <AchievementToast />
       </body>
     </html>
   );

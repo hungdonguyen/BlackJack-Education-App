@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Wallet, BookOpen, Sparkles, Zap } from 'lucide-react';
+import { Wallet, BookOpen, Sparkles, Zap, Trophy } from 'lucide-react';
 import appIcon from '../../src-tauri/icons/icon.png';
 import { ROOMS } from '@/utils/rooms';
 import LegalAgreementModal from '@/components/LegalAgreementModal';
@@ -16,6 +16,8 @@ import StrategyModal from '@/components/StrategyModal';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
 import { MusicPlayer } from '@/components/MusicPlayer';
+import { AchievementModal } from '@/components/AchievementModal';
+import { AchievementToast } from '@/components/AchievementToast'; // Though added to layout, keeping here if needed
 
 const STRATEGY_ROOM_IDS = [
   'classic',
@@ -37,6 +39,7 @@ export default function HomePage() {
   const router = useRouter();
   const [accepted, setAccepted] = useState(false);
   const [showStrategy, setShowStrategy] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<StrategyRoomId>('classic');
 
   const isHydrated = useStoreHydration();
@@ -157,9 +160,9 @@ export default function HomePage() {
             </div>
 
             {/* Subtitle */}
-            <p className="text-white/40 text-center max-w-md text-sm leading-relaxed px-4">
-              Professional Multi-hand Blackjack with realistic casino logic.
-              Select your favorite lobby rules and play like a true high roller.
+            <p className="text-white/40 text-center max-w-lg text-sm leading-relaxed px-4">
+              A premium Blackjack simulator with realistic casino logic and diverse rulesets.
+              Practice optimal strategies, track your progress, and master the game in a risk-free environment.
             </p>
 
             {/* Action Buttons */}
@@ -243,7 +246,6 @@ export default function HomePage() {
                   <Zap size={13} />
                   Quick Play
                 </motion.button>
-
                 {/* Strategy Button */}
                 <motion.button
                   onClick={() => { playSound('click'); setShowStrategy(true); }}
@@ -258,6 +260,38 @@ export default function HomePage() {
                 >
                   <BookOpen size={13} />
                   Strategy Guide
+                </motion.button>
+
+                {/* Achievement Button */}
+                <motion.button
+                  onClick={() => { playSound('click'); setShowAchievements(true); }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] cursor-pointer transition-all"
+                  style={{
+                    background: 'rgba(212,168,67,0.1)',
+                    border: '1px solid rgba(212,168,67,0.3)',
+                    color: '#d4a843',
+                  }}
+                  whileHover={{ y: -2, scale: 1.04, backgroundColor: 'rgba(212,168,67,0.15)' }}
+                  whileTap={{ scale: 0.96 }}
+                >
+                  <Trophy size={13} fill="currentColor" />
+                  Achievements
+                </motion.button>
+
+                {/* Tutorial Button */}
+                <motion.button
+                  onClick={() => { playSound('click'); router.push('/tutorial-lobby'); }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] cursor-pointer transition-all"
+                  style={{
+                    background: 'rgba(99,102,241,0.1)',
+                    border: '1px solid rgba(99,102,241,0.3)',
+                    color: '#818cf8',
+                  }}
+                  whileHover={{ y: -2, scale: 1.04, backgroundColor: 'rgba(99,102,241,0.15)' }}
+                  whileTap={{ scale: 0.96 }}
+                >
+                  <BookOpen size={13} />
+                  Tutorial
                 </motion.button>
               </div>
             </div>
@@ -308,6 +342,17 @@ export default function HomePage() {
               </div>
             )}
           </AnimatePresence>
+
+          {/* ─── Achievement Modal ─── */}
+          <AnimatePresence>
+            {showAchievements && (
+              <AchievementModal
+                isOpen={showAchievements}
+                onClose={() => setShowAchievements(false)}
+              />
+            )}
+          </AnimatePresence>
+          
 
           {/* Bottom decoration */}
           <div className="absolute bottom-6 text-center space-y-2">

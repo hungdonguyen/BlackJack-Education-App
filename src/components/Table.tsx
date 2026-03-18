@@ -20,6 +20,7 @@ import ChipRack from './ChipRack';
 import ActionPanel from './ActionPanel';
 import DevTools from './DevTools';
 import PortraitOverlay from './PortraitOverlay';
+import TutorialGuide from './TutorialGuide';
 import PayoutPanel from './PayoutPanel';
 import StrategyModal from './StrategyModal';
 import HandAdvisor from './HandAdvisor';
@@ -47,6 +48,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const declineInsurance = useGameStore((s) => s.declineInsurance);
     const gamePhase = useGameStore((s) => s.gamePhase);
     const bankroll = useGameStore((s) => s.bankroll);
+    const tutorialBalance = useGameStore((s) => s.tutorialBalance);
     const seats = useGameStore((s) => s.seats);
     const stand = useGameStore((s) => s.stand);
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
@@ -62,6 +64,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const triggerInsufficientFunds = useGameStore((s) => s.triggerInsufficientFunds);
     const insuranceBets = useGameStore((s) => s.insuranceBets);
     const resetRound = useGameStore((s) => s.resetRound);
+    const resetTutorialProgress = useGameStore((s) => s.resetTutorialProgress);
     const isHydrated = useStoreHydration();
 
     // Viewport scaling — fixed design canvas scaled to fit any screen
@@ -89,6 +92,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const [claimCelebration, setClaimCelebration] = useState<{ amount: number; isBonus: boolean } | null>(null);
     const [claimNudgeTick, setClaimNudgeTick] = useState(0);
     const [selectedMatchIndex, setSelectedMatchIndex] = useState<number | null>(null);
+    const [showExitConfirmation, setShowExitConfirmation] = useState<{ target: 'lobby' | 'home' | null }>({ target: null });
 
     useEffect(() => {
         const syncFullscreenState = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -116,10 +120,13 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const currentHand = currentSeat?.hands[currentSeat.currentHandIndex];
     const lastOutcomeMatchIdRef = useRef<string | null>(null);
 
-    // Set current room in store
+    // Set current room in store and reset tutorial if needed
     useEffect(() => {
         setCurrentRoom(roomId);
-    }, [roomId, setCurrentRoom]);
+        if (room.isTutorial) {
+            resetTutorialProgress();
+        }
+    }, [roomId, setCurrentRoom, room.isTutorial, resetTutorialProgress]);
 
     const { playSound } = useAudio();
 
@@ -131,15 +138,36 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     };
 
     const returnToLobby = () => {
+        if (room.isTutorial) {
+            setShowExitConfirmation({ target: 'lobby' });
+            return;
+        }
         closeTransientLayers();
         resetRound();
         router.push('/lobby');
     };
 
     const returnHome = () => {
+        if (room.isTutorial) {
+            setShowExitConfirmation({ target: 'home' });
+            return;
+        }
         closeTransientLayers();
         resetRound();
         router.push('/');
+    };
+
+    const confirmExit = () => {
+        const target = showExitConfirmation.target;
+        setShowExitConfirmation({ target: null });
+        closeTransientLayers();
+        resetTutorialProgress();
+        resetRound();
+        if (target === 'lobby') {
+            router.push('/lobby');
+        } else {
+            router.push('/');
+        }
     };
 
     const toggleFullscreen = async () => {
@@ -202,7 +230,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         let resetTimeout: NodeJS.Timeout | undefined;
         let expired = false;
 
-        if (isPlayerTurn) {
+        if (isPlayerTurn && !room.isTutorial) {
             resetTimeout = setTimeout(() => setTimer(TURN_TIMER_SECONDS), 0);
             interval = setInterval(() => {
                 setTimer((prev) => {
@@ -235,7 +263,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         let resetTimeout: NodeJS.Timeout | undefined;
         let expired = false;
 
-        if (isInsurance) {
+        if (isInsurance && !room.isTutorial) {
             resetTimeout = setTimeout(() => setInsuranceTimer(INSURANCE_TIMER_SECONDS), 0);
             interval = setInterval(() => {
                 setInsuranceTimer((prev) => {
@@ -326,14 +354,13 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
     const handleClaimDaily = () => {
         const nextClaimIsBonus = (dailyClaimCount + 1) % 3 === 0;
-        const claimAmount = nextClaimIsBonus ? 1000 : 500;
-        const success = claimDaily();
-        if (!success) {
+        const amountClaimed = claimDaily();
+        if (amountClaimed <= 0) {
             setClaimNudgeTick((value) => value + 1);
             return;
         }
 
-        setClaimCelebration({ amount: claimAmount, isBonus: nextClaimIsBonus });
+        setClaimCelebration({ amount: amountClaimed, isBonus: nextClaimIsBonus });
         playSound(nextClaimIsBonus ? 'win' : 'chip-lay');
         setTimeout(() => setClaimCelebration(null), nextClaimIsBonus ? 3200 : 2400);
     };
@@ -346,7 +373,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const claimReady = claimCooldownMs === 0;
     const claimProgressRatio = claimReady ? 1 : Math.max(0, 1 - claimCooldownMs / CLAIM_COOLDOWN_MS);
     const baseClaim = isBonusClaim ? 1000 : 500;
-    const activityBonus = Math.floor((totalBetSinceLastClaim || 0) * 0.1);
+    const activityBonus = Math.floor((totalBetSinceLastClaim || 0) * 0.02);
     const nextClaimAmount = baseClaim + activityBonus;
     const bonusProgress = dailyClaimCount % 3;
     const roomBasePercent = 100 / ROOM_UI_SCALE;
@@ -578,6 +605,47 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                     </motion.div>
                                 </div>
                             )}
+
+                            {/* Tutorial Exit Confirmation */}
+                            {showExitConfirmation.target && (
+                                <div className="absolute inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                                    <motion.div
+                                        className="relative w-full max-w-sm rounded-2xl p-8 border border-white/10 shadow-2xl text-center"
+                                        style={{ background: 'rgba(15, 10, 8, 0.98)' }}
+                                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                    >
+                                        <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6">
+                                            <Flag size={28} className="text-red-500" />
+                                        </div>
+                                        
+                                        <h3 className="text-2xl font-black text-white/95 mb-2">Leave Tutorial?</h3>
+                                        <p className="text-white/50 text-sm leading-relaxed mb-8">
+                                            Are you sure you want to exit? Your tutorial progress will be lost and you'll have to start over next time.
+                                        </p>
+
+                                        <div className="flex flex-col gap-3">
+                                            <motion.button
+                                                onClick={() => { playSound('click'); confirmExit(); }}
+                                                className="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black uppercase tracking-wider shadow-lg shadow-red-600/20 transition-colors cursor-pointer"
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                            >
+                                                Confirm Exit
+                                            </motion.button>
+                                            <motion.button
+                                                onClick={() => { playSound('click'); setShowExitConfirmation({ target: null }); }}
+                                                className="w-full py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-bold uppercase tracking-widest transition-colors mb-2 cursor-pointer"
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                            >
+                                                Keep Learning
+                                            </motion.button>
+                                        </div>
+                                    </motion.div>
+                                </div>
+                            )}
                         </AnimatePresence>
 
                         {/* Dealer Area — top center */}
@@ -588,28 +656,31 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                         {/* Payout stack — left side */}
                         <div className="absolute top-[85px] left-[15px] z-15 flex w-[250px] flex-col gap-2">
                             <PayoutPanel roomConfig={room} />
-                            <DailyClaimPanel
-                                claimReady={claimReady}
-                                isBonusClaim={isBonusClaim}
-                                claimStep={claimStep}
-                                claimCooldown={claimCooldown}
-                                nextClaimAmount={nextClaimAmount}
-                                bonusProgress={bonusProgress}
-                                claimProgressRatio={claimProgressRatio}
-                                claimNudgeTick={claimNudgeTick}
-                                onClaim={handleClaimDaily}
-                            />
+                             {!room.isTutorial && (
+                                <DailyClaimPanel
+                                    claimReady={claimReady}
+                                    isBonusClaim={isBonusClaim}
+                                    claimStep={claimStep}
+                                    claimCooldown={claimCooldown}
+                                    nextClaimAmount={nextClaimAmount}
+                                    bonusProgress={bonusProgress}
+                                    claimProgressRatio={claimProgressRatio}
+                                    claimNudgeTick={claimNudgeTick}
+                                    onClaim={handleClaimDaily}
+                                />
+                             )}
                         </div>
 
+
                         {/* Hand Advisor — right of PayoutPanel */}
-                        {showHandAdvisor && (
+                        {showHandAdvisor && !room.isTutorial && (
                             <div className="absolute top-[85px] left-[275px] z-15">
                                 <HandAdvisor roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} onOpenStrategy={() => setShowStrategy(true)} />
                             </div>
                         )}
 
                         {/* Card Counting Panel — right side next to history */}
-                        {showCardCounting && (
+                        {showCardCounting && !room.isTutorial && (
                             <div className="absolute top-[85px] z-15" style={{ right: 216 }}>
                                 <CardCountingPanel roomId={roomId} numDecks={room.gameRules.numberOfDecks} accentColor={room.accentColor} borderColor={room.borderColor} onOpenSettings={() => setShowSettings(true)} onOpenStrategy={() => setShowStrategy(true)} />
                             </div>
@@ -755,15 +826,15 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                 <div className="flex items-center gap-5">
                                     <div className="flex flex-col">
                                         <span className="text-[9px] text-white/30 uppercase tracking-[0.2em]">Balance</span>
-                                        <span className="text-lg font-black tabular-nums leading-tight" style={{ color: room.accentColor }}>
-                                            ${bankroll.toLocaleString()}
+                                         <span className="text-lg font-black tabular-nums leading-tight" style={{ color: room.accentColor }}>
+                                            ${((room.isTutorial ? tutorialBalance : bankroll) ?? 0).toLocaleString()}
                                         </span>
                                     </div>
                                     <div className="w-px h-8 bg-white/10" />
                                     <div className="flex flex-col">
                                         <span className="text-[9px] text-white/30 uppercase tracking-[0.2em]">Total Bet</span>
                                         <span className="text-lg font-black text-white/80 tabular-nums leading-tight">
-                                            ${totalBet.toLocaleString()}
+                                            ${(totalBet ?? 0).toLocaleString()}
                                         </span>
                                     </div>
                                     <div className="w-px h-8 bg-white/10" />
@@ -822,6 +893,9 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                         </AnimatePresence>
 
                     </div>{/* end room scale wrapper */}
+
+                    {/* Tutorial Guide dialogue — OUTSIDE room scale wrapper for stable positioning */}
+                    <TutorialGuide show={!showExitConfirmation.target} />
                 </div>{/* end design canvas */}
             </div>{/* end viewport wrapper */}
         </>
@@ -992,11 +1066,16 @@ function DailyClaimPanel({
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/35">
                             <Timer size={15} />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.24em] text-white/70 leading-tight">
-                            Daily Claim
-                        </span>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[10px] font-black uppercase tracking-[0.24em] text-white/70 leading-tight">
+                                Daily Claim
+                            </span>
+                            <span className="text-[9px] font-bold text-white/30 uppercase tracking-wider mt-0.5">
+                                Next: ${nextClaimAmount.toLocaleString()}
+                            </span>
+                        </div>
                     </div>
-                    <span className="text-base font-black tabular-nums text-white/78">
+                    <span className="text-base font-black tabular-nums text-white/78 shrink-0">
                         {claimCooldown}
                     </span>
                 </div>
@@ -1057,10 +1136,10 @@ function DailyClaimPanel({
 
                     <div className="mt-1 flex items-end justify-between gap-2">
                         <div>
-                            <div className={`text-lg font-black leading-none tabular-nums ${claimReady
+                             <div className={`font-black leading-tight tabular-nums break-all ${claimReady
                                 ? isBonusClaim ? 'text-yellow-300' : 'text-emerald-300'
                                 : 'text-white/78'
-                                }`}>
+                                } ${nextClaimAmount >= 1000000 ? 'text-base' : 'text-lg'}`}>
                                 {claimReady ? `+$${nextClaimAmount.toLocaleString()}` : claimCooldown}
                             </div>
                             <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">

@@ -12,12 +12,16 @@ import { getRules } from '@/rules';
 import { getRoomConfig } from '@/utils/rooms';
 import { useAudio } from '@/utils/audio';
 import { getExchange21Advice, ExchangeAdvice } from '@/utils/strategyAdvisor';
+import { useRouter } from 'next/navigation';
+import { BEGINNER_TUTORIAL_LESSONS } from '@/utils/tutorialData';
 
 export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSeat }: { timer?: number; insuranceTimer?: number; currentInsuranceSeat?: number }) {
+    const router = useRouter();
     const gamePhase = useGameStore((s) => s.gamePhase);
     const seats = useGameStore((s) => s.seats);
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
     const bankroll = useGameStore((s) => s.bankroll);
+    const tutorialBalance = useGameStore((s) => s.tutorialBalance);
     const betHistory = useGameStore((s) => s.betHistory);
     const hit = useGameStore((s) => s.hit);
     const stand = useGameStore((s) => s.stand);
@@ -34,6 +38,10 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const rebet = useGameStore((s) => s.rebet);
     const acceptInsurance = useGameStore((s) => s.acceptInsurance);
     const declineInsurance = useGameStore((s) => s.declineInsurance);
+    const tutorialRound = useGameStore((s) => s.tutorialRound);
+    const isLastTutorialLesson = tutorialRound >= BEGINNER_TUTORIAL_LESSONS.length - 1;
+    const resetTutorialProgress = useGameStore((s) => s.resetTutorialProgress);
+    const setTutorialStep = useGameStore((s) => s.setTutorialStep);
     const { playSound } = useAudio();
 
     const isPlayerTurn = gamePhase === GamePhase.PLAYER_TURN;
@@ -54,6 +62,8 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const roomConfig = getRoomConfig(currentRoom);
     const minBet = roomConfig.betRange[0];
 
+    const currentBalance = (roomConfig.isTutorial ? tutorialBalance : bankroll) ?? 0;
+
     const canHit = isPlayerTurn && isPlaying && !currentHand?.isDoubleDown;
     
     // Switch Advisor check (calculated early to influence canStand)
@@ -70,7 +80,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     if (isPlayerTurn && isPlaying && currentHand) {
         const result = rules.canDoubleDown(currentHand);
         isDblFree = result.isFree;
-        canDbl = result.allowed && (result.isFree || bankroll >= result.cost);
+        canDbl = result.allowed && (result.isFree || currentBalance >= result.cost);
     }
 
     let canSpl = false;
@@ -78,7 +88,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     if (isPlayerTurn && isPlaying && currentHand) {
         const result = rules.canSplit(currentHand, currentSeat?.hands.length || 0);
         isSplFree = result.isFree;
-        canSpl = result.allowed && (result.isFree || bankroll >= result.cost);
+        canSpl = result.allowed && (result.isFree || currentBalance >= result.cost);
     }
 
     let canSur = false;
@@ -111,7 +121,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     let burnCost = 0;
     if (isPlayerTurn && isPlaying && currentHand && rules.canBurn) {
         const result = rules.canBurn(currentHand);
-        canBurnHand = result.allowed && bankroll >= result.cost;
+        canBurnHand = result.allowed && currentBalance >= result.cost;
         burnCost = result.cost;
     }
 
@@ -132,7 +142,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const totalInsuranceCost = isInsurance && currentSeat
         ? (currentSeat.hands[0]?.betAmount ?? 0) / 2
         : 0;
-    const canInsurance = bankroll >= totalInsuranceCost;
+    const canInsurance = currentBalance >= totalInsuranceCost;
 
     return (
         <div className="flex flex-col items-center" style={{ minHeight: '80px', justifyContent: 'center' }}>
@@ -147,7 +157,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                         exit={{ opacity: 0, scale: 0.8 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     >
-                        {timer !== undefined && (
+                        {timer !== undefined && !roomConfig.isTutorial && (
                             <motion.div
                                 className={`flex items-center justify-center rounded-full border-2 bg-black/80 backdrop-blur-md shadow-xl
                                     ${timer <= 5 ? 'border-red-500/80' : timer <= 10 ? 'border-yellow-500/80 text-yellow-500' : 'border-emerald-500/80 text-emerald-400'}`}
@@ -178,23 +188,23 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
 
                         <div className="flex items-center gap-3">
                             {isDblFree ? (
-                                <FreeCircleButton label="FREE ACTION DOUBLE" icon={<Zap className="w-4 h-4" />}
+                                <FreeCircleButton id="action-double" label="FREE ACTION DOUBLE" icon={<Zap className="w-4 h-4" />}
                                     onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={50} />
                             ) : (
-                                <CircleButton label="DOUBLE DOWN" icon="2x" color="#f39c12" hoverColor="#f1c40f"
+                                <CircleButton id="action-double" label="DOUBLE DOWN" icon="2x" color="#f39c12" hoverColor="#f1c40f"
                                     onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={45} />
                             )}
 
-                            <CircleButton label="HIT" icon="+" color="#2ecc71" hoverColor="#27ae60"
+                            <CircleButton id="action-hit" label="HIT" icon="+" color="#2ecc71" hoverColor="#27ae60"
                                 onClick={() => { playSound('click'); hit(); }} disabled={!canHit} size={53} />
-                            <CircleButton label="STAND" icon="−" color="#e74c3c" hoverColor="#c0392b"
+                            <CircleButton id="action-stand" label="STAND" icon="−" color="#e74c3c" hoverColor="#c0392b"
                                 onClick={() => { playSound('click'); stand(); }} disabled={!canStand} size={53} />
 
                             {isSplFree ? (
-                                <FreeCircleButton label="FREE ACTION SPLIT" icon={<Zap className="w-4 h-4" />}
+                                <FreeCircleButton id="action-split" label="FREE ACTION SPLIT" icon={<Zap className="w-4 h-4" />}
                                     onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={50} />
                             ) : (
-                                <CircleButton label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
+                                <CircleButton id="action-split" label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
                                     onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={45} />
                             )}
 
@@ -237,7 +247,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     >
                         {/* Insurance timer */}
-                        {insuranceTimer !== undefined && (
+                        {insuranceTimer !== undefined && !roomConfig.isTutorial && (
                             <motion.div
                                 className={`flex items-center justify-center rounded-full border-2 bg-black/80 backdrop-blur-md shadow-xl
                                     ${insuranceTimer <= 3 ? 'border-red-500/80' : insuranceTimer <= 5 ? 'border-yellow-500/80 text-yellow-500' : 'border-yellow-400/80 text-yellow-400'}`}
@@ -267,6 +277,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                             </p>
                             <div className="flex items-center gap-3 justify-center">
                                 <motion.button
+                                    id="insurance-accept"
                                     onClick={() => { playSound('click'); acceptInsurance(); }}
                                     disabled={!canInsurance}
                                     className={`px-6 py-2.5 rounded-full font-extrabold text-xs uppercase tracking-wider transition-all
@@ -280,6 +291,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                                     <Check className="w-3.5 h-3.5 mr-1" /> Accept
                                 </motion.button>
                                 <motion.button
+                                    id="insurance-decline"
                                     onClick={() => { playSound('click'); declineInsurance(); }}
                                     className="px-6 py-2.5 rounded-full font-extrabold text-xs uppercase tracking-wider cursor-pointer
                                         bg-white/5 border border-white/15 text-white/60 hover:bg-white/10 hover:text-white/80 transition-all"
@@ -303,10 +315,11 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                     >
                         {hasBets ? (
                             <>
-                                <SmallButton label="UNDO" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); undoBet(); }} disabled={!hasUndo} variant="ghost" />
-                                <SmallButton label="CLEAR" icon={<X className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); clearAllBets(); }} disabled={!hasBets} variant="danger" />
-                                <SmallButton label="x2" icon={<span className="text-sm">2x</span>} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={false} variant="ghost" />
+                                <SmallButton id="action-undo" label="UNDO" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); undoBet(); }} disabled={!hasUndo} variant="ghost" />
+                                <SmallButton id="action-clear" label="CLEAR" icon={<X className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); clearAllBets(); }} disabled={!hasBets} variant="danger" />
+                                <SmallButton id="action-rebet-x2" label="x2" icon={<span className="text-sm">2x</span>} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={false} variant="ghost" />
                                 <motion.button
+                                    id="deal-button"
                                     onClick={() => { playSound('card-slide'); startDeal(); }}
                                     disabled={!hasBets}
                                     className="px-8 py-3 rounded-full font-extrabold text-sm uppercase tracking-[0.2em] cursor-pointer
@@ -321,7 +334,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                             </>
                         ) : (
                             <div className="flex items-center" style={{ minHeight: '48px', marginTop: '10px' }}>
-                                <SmallButton label="REBET" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={!hasPreviousBets} variant="ghost" />
+                                <SmallButton id="action-rebet" label="REBET" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={!hasPreviousBets} variant="ghost" />
                             </div>
                         )}
                     </motion.div>
@@ -348,34 +361,67 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
 
                 {/* ── Payout ── */}
                 {isPayout && (
-                    <motion.button
-                        key="payout"
-                        onClick={resetRound}
-                        className="px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
-                            bg-linear-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white
-                            shadow-[0_0_30px_rgba(16,185,129,0.4),0_8px_20px_rgba(0,0,0,0.3)]
-                            hover:shadow-[0_0_50px_rgba(16,185,129,0.6),0_12px_30px_rgba(0,0,0,0.4)]
-                            hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400
-                            border-2 border-emerald-300/30
-                            transition-all duration-300 relative overflow-hidden"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.93 }}
-                    >
-                        <motion.span
-                            className="absolute inset-0 bg-linear-to-r from-white/0 via-white/30 to-white/0"
-                            initial={{ x: '-100%' }}
-                            animate={{ x: '200%' }}
-                            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                        />
-                        <span className="relative flex items-center gap-2">
-                            <Sparkles className="w-5 h-5" />
-                            NEW ROUND
-                            <Sparkles className="w-5 h-5" />
-                        </span>
-                    </motion.button>
+                    isLastTutorialLesson ? (
+                        <motion.button
+                            key="payout"
+                            id="finish-tutorial-button"
+                            onClick={() => { resetTutorialProgress(); router.push('/tutorial-lobby'); }}
+                            className="px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
+                                bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white
+                                shadow-[0_0_30px_rgba(139,92,246,0.4),0_8px_20px_rgba(0,0,0,0.3)]
+                                hover:shadow-[0_0_50px_rgba(139,92,246,0.6),0_12px_30px_rgba(0,0,0,0.4)]
+                                hover:from-indigo-400 hover:via-purple-400 hover:to-pink-400
+                                border-2 border-indigo-300/30
+                                transition-all duration-300 relative overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            whileHover={{ scale: 1.08 }}
+                            whileTap={{ scale: 0.93 }}
+                        >
+                            <motion.span
+                                className="absolute inset-0 bg-linear-to-r from-white/0 via-white/30 to-white/0"
+                                initial={{ x: '-100%' }}
+                                animate={{ x: '200%' }}
+                                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                            />
+                            <span className="relative flex items-center gap-2">
+                                <Sparkles className="w-5 h-5" />
+                                FINISH TUTORIAL
+                                <Sparkles className="w-5 h-5" />
+                            </span>
+                        </motion.button>
+                    ) : (
+                        <motion.button
+                            key="payout"
+                            id="new-round-button"
+                            onClick={resetRound}
+                            className="px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
+                                bg-linear-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white
+                                shadow-[0_0_30px_rgba(16,185,129,0.4),0_8px_20px_rgba(0,0,0,0.3)]
+                                hover:shadow-[0_0_50px_rgba(16,185,129,0.6),0_12px_30px_rgba(0,0,0,0.4)]
+                                hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400
+                                border-2 border-emerald-300/30
+                                transition-all duration-300 relative overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            whileHover={{ scale: 1.08 }}
+                            whileTap={{ scale: 0.93 }}
+                        >
+                            <motion.span
+                                className="absolute inset-0 bg-linear-to-r from-white/0 via-white/30 to-white/0"
+                                initial={{ x: '-100%' }}
+                                animate={{ x: '200%' }}
+                                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                            />
+                            <span className="relative flex items-center gap-2">
+                                <Sparkles className="w-5 h-5" />
+                                NEW ROUND
+                                <Sparkles className="w-5 h-5" />
+                            </span>
+                        </motion.button>
+                    )
                 )}
             </AnimatePresence>
         </div>
@@ -384,13 +430,15 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
 
 // ── CircleButton ──
 interface CircleButtonProps {
+    id?: string;
     label: string; icon: React.ReactNode; color: string; hoverColor: string;
     onClick: () => void; disabled: boolean; size: number;
 }
 
-function CircleButton({ label, icon, color, hoverColor, onClick, disabled, size }: CircleButtonProps) {
+function CircleButton({ id, label, icon, color, hoverColor, onClick, disabled, size }: CircleButtonProps) {
     return (
         <motion.button
+            id={id}
             onClick={onClick} disabled={disabled}
             className="flex flex-col items-center gap-1.5 cursor-pointer"
             style={{ opacity: disabled ? 0.2 : 1 }}
@@ -414,8 +462,8 @@ function CircleButton({ label, icon, color, hoverColor, onClick, disabled, size 
 }
 
 // ── SmallButton ──
-function SmallButton({ label, icon, onClick, disabled, variant }: {
-    label: string; icon: React.ReactNode; onClick: () => void; disabled: boolean; variant: 'ghost' | 'danger';
+function SmallButton({ id, label, icon, onClick, disabled, variant }: {
+    id?: string; label: string; icon: React.ReactNode; onClick: () => void; disabled: boolean; variant: 'ghost' | 'danger';
 }) {
     const styles = variant === 'danger'
         ? 'border-red-500/30 text-red-400/70 hover:bg-red-500/10 hover:text-red-400'
@@ -423,6 +471,7 @@ function SmallButton({ label, icon, onClick, disabled, variant }: {
 
     return (
         <motion.button
+            id={id}
             onClick={onClick} disabled={disabled}
             className={`px-4 py-2 rounded-full border text-[11px] font-bold uppercase tracking-wider
                 transition-all duration-200 cursor-pointer
@@ -437,13 +486,15 @@ function SmallButton({ label, icon, onClick, disabled, variant }: {
 
 // ── FreeCircleButton — Golden shimmer for FREE actions ──
 interface FreeCircleButtonProps {
+    id?: string;
     label: string; icon: React.ReactNode;
     onClick: () => void; disabled: boolean; size: number;
 }
 
-function FreeCircleButton({ label, icon, onClick, disabled, size }: FreeCircleButtonProps) {
+function FreeCircleButton({ id, label, icon, onClick, disabled, size }: FreeCircleButtonProps) {
     return (
         <motion.button
+            id={id}
             onClick={onClick} disabled={disabled}
             className="flex flex-col items-center gap-1.5 cursor-pointer"
             style={{ opacity: disabled ? 0.2 : 1 }}

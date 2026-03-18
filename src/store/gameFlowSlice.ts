@@ -12,6 +12,8 @@ import { getRoomConfig } from '@/utils/rooms';
 import { BLACKJACK_PAYOUT } from '@/utils/constants';
 import { createEmptyHand } from './bettingSlice';
 import { SPEED_DELAYS } from './settingsSlice';
+import { BEGINNER_TUTORIAL_LESSONS } from '@/utils/tutorialData';
+import { checkTutorialAction } from '@/utils/tutorialInterceptor';
 
 /** Guard flag — prevents concurrent dealerPlay execution */
 let _dealerPlayLock = false;
@@ -78,22 +80,36 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   insuranceBets: {},
   actionCounter: 0,
 
+
   canAfford: (amount: number) => {
-    return get().bankroll >= amount;
+    const state = get();
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
+    return (isTutorial ? state.tutorialBalance : state.bankroll) >= amount;
   },
 
   initializeShoe: () => {
     const state = get();
     const roomCfg = getRoomConfig(state.currentRoom);
-    const numDecks = roomCfg.gameRules.numberOfDecks;
-    const omitTens = roomCfg.gameRules.omitTens;
-    const shoe = shuffleShoe(createShoe(numDecks, omitTens));
-    set({ shoe });
+    
+    if (roomCfg.isTutorial && state.currentRoom === 'tutorial_beginner') {
+      const lesson = BEGINNER_TUTORIAL_LESSONS[state.tutorialRound] || BEGINNER_TUTORIAL_LESSONS[0];
+      set({ 
+        forcedShoe: [...lesson.forcedCards], 
+        tutorialStep: 0,
+        tutorialBalance: state.tutorialRound === 0 ? 1000 : state.tutorialBalance // Keep balance across rounds
+      });
+    } else {
+      const numDecks = roomCfg.gameRules.numberOfDecks;
+      const omitTens = roomCfg.gameRules.omitTens;
+      const shoe = shuffleShoe(createShoe(numDecks, omitTens));
+      set({ shoe, forcedShoe: null, tutorialStep: 0 });
+    }
   },
 
   startDeal: async () => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
+    if (!checkTutorialAction(state, 'deal-button')) return;
 
     const currentRoomCfg = getRoomConfig(state.currentRoom);
     const minBet = currentRoomCfg.betRange[0];
@@ -109,23 +125,14 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     if (!hasValidBet) return;
 
     // Transition to DEALING phase immediately to hide betting UI
-    // Capture previous bets to allow rebet/x2 in the next round
-    const currentBets: { seatId: number; amount: number }[] = [];
-    state.seats.forEach((s) => {
-      const activeBet = s.hands.reduce((sum, h) => sum + h.betAmount, 0);
-      if (activeBet > 0) currentBets.push({ seatId: s.id, amount: activeBet });
-    });
-
-    set({ gamePhase: GamePhase.DEALING, previousBets: currentBets, previousSideBets: { ...state.sideBets } });
+    set({ gamePhase: GamePhase.DEALING, previousBets: [], previousSideBets: {} });
 
     // Check if shoe needs reshuffling
     let shoe = [...state.shoe];
-    const numDecks = currentRoomCfg.gameRules.numberOfDecks;
-    const reshuffleThreshold = currentRoomCfg.gameRules.reshuffleThreshold;
-    const omitTens = currentRoomCfg.gameRules.omitTens;
+    let forcedShoe = state.forcedShoe ? [...state.forcedShoe] : null;
     
-    if (shoe.length === 0 || shouldReshuffle(shoe, numDecks, reshuffleThreshold, omitTens)) {
-      shoe = shuffleShoe(createShoe(numDecks, omitTens));
+    if (!forcedShoe && (shoe.length === 0 || shouldReshuffle(shoe, currentRoomCfg.gameRules.numberOfDecks, currentRoomCfg.gameRules.reshuffleThreshold, currentRoomCfg.gameRules.omitTens))) {
+      shoe = shuffleShoe(createShoe(currentRoomCfg.gameRules.numberOfDecks, currentRoomCfg.gameRules.omitTens));
     }
 
     // Active seats that need cards
@@ -134,29 +141,27 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     );
 
     let newSeats = [...state.seats];
-    if (currentRoomCfg.id === 'exchange_21') {
-      newSeats = newSeats.map(seat => {
-        if (!seat.isActive || seat.hands.length === 0 || seat.hands[0].betAmount === 0) return seat;
-        if (seat.hands.length === 1) {
-            const h = seat.hands[0];
-            const baseBet = h.betAmount / 2;
-            const h1 = { ...h, betAmount: baseBet };
-            const h2 = { ...h, id: `${h.id}-2`, betAmount: baseBet };
-            return { ...seat, hands: [h1, h2] };
-        }
-        return seat;
-      });
-      set({ seats: newSeats });
-    }
-
     const dealerCards: Card[] = [];
 
+    const dealFromSource = (isDealer: boolean = false, hidden: boolean = false): Card => {
+      if (forcedShoe && forcedShoe.length > 0) {
+        const card = forcedShoe.pop()!;
+        if (isDealer) {
+            return { ...card, isHidden: hidden };
+        }
+        return card;
+      }
+      return dealCard(shoe, isDealer && hidden);
+    };
+
     const dealToHand = async (seatId: number, handId: string) => {
-      const delays = SPEED_DELAYS[get().dealerSpeed];
+      const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
+      const speed = isTutorial ? 'normal' : get().dealerSpeed;
+      const delays = SPEED_DELAYS[speed];
       await new Promise((resolve) => setTimeout(resolve, delays.dealCard));
       const seatIndex = newSeats.findIndex((s) => s.id === seatId);
-      const card = dealCard(shoe);
-      newSeats = [...newSeats]; // copy array
+      const card = dealFromSource(false);
+      newSeats = [...newSeats];
       newSeats[seatIndex] = {
         ...newSeats[seatIndex],
         hands: newSeats[seatIndex].hands.map((hand) => {
@@ -166,14 +171,17 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           return hand;
         }),
       };
-      set({ seats: newSeats, shoe: [...shoe] });
+      set({ seats: newSeats, shoe: [...shoe], forcedShoe: forcedShoe ? [...forcedShoe] : null });
     };
 
     const dealToDealer = async (isHidden: boolean = false) => {
-      const delays = SPEED_DELAYS[get().dealerSpeed];
+      const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
+      const speed = isTutorial ? 'normal' : get().dealerSpeed;
+      const delays = SPEED_DELAYS[speed];
       await new Promise((resolve) => setTimeout(resolve, delays.dealCard));
-      dealerCards.push(dealCard(shoe, isHidden));
-      set({ dealerHand: { cards: [...dealerCards] }, shoe: [...shoe] });
+      const card = dealFromSource(true, isHidden);
+      dealerCards.push(card);
+      set({ dealerHand: { cards: [...dealerCards] }, shoe: [...shoe], forcedShoe: forcedShoe ? [...forcedShoe] : null });
     };
 
     // --- First round of cards ---
@@ -201,7 +209,9 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     }
 
     // Wait a brief moment after all cards are dealt before checking for Blackjacks
-    const postDealDelay = SPEED_DELAYS[get().dealerSpeed].postDeal;
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
+    const speed = isTutorial ? 'normal' : get().dealerSpeed;
+    const postDealDelay = SPEED_DELAYS[speed].postDeal;
     await new Promise((resolve) => setTimeout(resolve, postDealDelay));
 
     // Check for natural Blackjacks
@@ -308,6 +318,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   acceptInsurance: () => {
     const state = get();
     if (state.gamePhase !== GamePhase.INSURANCE) return;
+    if (!checkTutorialAction(state, 'insurance-accept')) return;
 
     const currentSeat = state.seats[state.currentSeatIndex];
     if (!currentSeat || !currentSeat.isActive) return;
@@ -319,8 +330,10 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       return; 
     }
 
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
     const newInsuranceBets = { ...state.insuranceBets, [currentSeat.id]: insuranceAmount };
-    const newBankroll = state.bankroll - insuranceAmount;
+    const newBankroll = isTutorial ? state.bankroll : state.bankroll - insuranceAmount;
+    const newTutorialBalance = isTutorial ? state.tutorialBalance - insuranceAmount : state.tutorialBalance;
 
     // Find next eligible insurance seat
     const isIberian = state.currentRoom === 'iberian_21';
@@ -339,6 +352,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       set({
         insuranceBets: newInsuranceBets,
         bankroll: newBankroll,
+        tutorialBalance: newTutorialBalance,
         currentSeatIndex: nextSeatIndex,
       });
       return;
@@ -355,6 +369,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     set({
       insuranceBets: newInsuranceBets,
       bankroll: newBankroll,
+      tutorialBalance: newTutorialBalance,
       gamePhase: nextPhase,
       currentSeatIndex: firstPlayableIndex === -1 ? 0 : firstPlayableIndex,
     });
@@ -367,6 +382,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   declineInsurance: () => {
     const state = get();
     if (state.gamePhase !== GamePhase.INSURANCE) return;
+    if (!checkTutorialAction(state, 'insurance-decline')) return;
 
     // Find next eligible insurance seat
     const isIberian = state.currentRoom === 'iberian_21';
@@ -411,6 +427,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   hit: () => {
     const state = get();
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+    if (!checkTutorialAction(state, 'action-hit')) return;
 
     const currentHand = getCurrentHand(state);
     if (!currentHand || currentHand.status !== HandStatus.PLAYING || currentHand.isDoubleDown) return;
@@ -419,15 +436,10 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     set({ actionCounter: state.actionCounter + 1 });
 
     let shoe = [...state.shoe];
+    let forcedShoe = state.forcedShoe ? [...state.forcedShoe] : null;
 
-    if (shoe.length === 0) {
-      const roomCfg = getRoomConfig(state.currentRoom);
-      const numDecks = roomCfg.gameRules.numberOfDecks;
-      const omitTens = roomCfg.gameRules.omitTens;
-      shoe = shuffleShoe(createShoe(numDecks, omitTens));
-    }
-
-    const newCard = dealCard(shoe);
+    const card = (forcedShoe && forcedShoe.length > 0) ? forcedShoe.pop()! : dealCard(shoe);
+    const newCard = card;
 
     const updatedSeats = state.seats.map((seat, seatIdx) => {
       if (seatIdx !== state.currentSeatIndex) return seat;
@@ -456,7 +468,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       };
     });
 
-    set({ shoe, seats: updatedSeats });
+    set({ shoe, seats: updatedSeats, forcedShoe: forcedShoe ? [...forcedShoe] : null });
 
     // If busted or 21, auto-advance
     const updatedHand = updatedSeats[state.currentSeatIndex].hands[
@@ -470,6 +482,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
    stand: () => {
     const state = get();
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+    if (!checkTutorialAction(state, 'action-stand')) return;
 
     const currentSeat = state.seats[state.currentSeatIndex];
     if (!currentSeat) return;
@@ -503,6 +516,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   doubleDown: () => {
     const state = get();
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+    if (!checkTutorialAction(state, 'action-double')) return;
 
     const currentHand = getCurrentHand(state);
 
@@ -521,14 +535,15 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     if (!isFree && !state.canAfford(cost)) return;
 
     let shoe = [...state.shoe];
+    let forcedShoe = state.forcedShoe ? [...state.forcedShoe] : null;
 
-    if (shoe.length === 0) {
+    if (!forcedShoe && shoe.length === 0) {
       const numDecks = roomCfg.gameRules.numberOfDecks;
       const omitTens = roomCfg.gameRules.omitTens;
       shoe = shuffleShoe(createShoe(numDecks, omitTens));
     }
 
-    const newCard = dealCard(shoe);
+    const newCard = (forcedShoe && forcedShoe.length > 0) ? forcedShoe.pop()! : dealCard(shoe);
 
     const updatedSeats = state.seats.map((seat, seatIdx) => {
       if (seatIdx !== state.currentSeatIndex) return seat;
@@ -561,10 +576,13 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       };
     });
 
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
     set({
       shoe,
       seats: updatedSeats,
-      bankroll: isFree ? state.bankroll : state.bankroll - cost,
+      bankroll: isTutorial || isFree ? state.bankroll : state.bankroll - cost,
+      tutorialBalance: isTutorial && !isFree ? state.tutorialBalance - cost : state.tutorialBalance,
+      forcedShoe: forcedShoe ? [...forcedShoe] : null,
     });
 
     // If locked to STAND, auto-advance
@@ -577,6 +595,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   surrender: () => {
     const state = get();
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+    if (!checkTutorialAction(state, 'action-surrender')) return;
 
     const currentHand = getCurrentHand(state);
     if (!currentHand || currentHand.status !== HandStatus.PLAYING) return;
@@ -603,9 +622,11 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       };
     });
 
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
     set({
       seats: updatedSeats,
-      bankroll: state.bankroll + refund,
+      bankroll: isTutorial ? state.bankroll : state.bankroll + refund,
+      tutorialBalance: isTutorial ? state.tutorialBalance + refund : state.tutorialBalance,
     });
 
     get().advanceToNextHand();
@@ -616,6 +637,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     // Increment action counter to reset turn timer
     set({ actionCounter: state.actionCounter + 1 });
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+    if (!checkTutorialAction(state, 'action-zap')) return;
 
     const seat = state.seats[state.currentSeatIndex];
     if (!seat) return;
@@ -677,6 +699,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const state = get();
     set({ actionCounter: state.actionCounter + 1 });
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+    if (!checkTutorialAction(state, 'action-burn')) return;
 
     const seat = state.seats[state.currentSeatIndex];
     if (!seat) return;
@@ -733,7 +756,13 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       return { ...s, hands: newHands };
     });
 
-    set({ bankroll: state.bankroll + bankrollDelta, shoe, seats: updatedSeats });
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
+    set({ 
+      bankroll: isTutorial ? state.bankroll : state.bankroll + bankrollDelta, 
+      tutorialBalance: isTutorial ? state.tutorialBalance + bankrollDelta : state.tutorialBalance,
+      shoe, 
+      seats: updatedSeats 
+    });
 
     const updatedHand = updatedSeats[state.currentSeatIndex].hands[seat.currentHandIndex];
     if (updatedHand.status !== HandStatus.PLAYING) {
@@ -745,6 +774,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const state = get();
     set({ actionCounter: state.actionCounter + 1 });
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+    if (!checkTutorialAction(state, 'action-switch')) return;
 
     const seat = state.seats.find((s) => s.isActive && s.id === state.seats[state.currentSeatIndex].id);
     if (!seat) return;
@@ -812,6 +842,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     // Increment action counter to reset turn timer
     set({ actionCounter: state.actionCounter + 1 });
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+    if (!checkTutorialAction(state, 'action-split')) return;
 
     const seat = state.seats[state.currentSeatIndex];
     if (!seat) return;
@@ -830,12 +861,19 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
 
     const splitBet = currentHand.betAmount;
     let shoe = [...state.shoe];
+    let forcedShoe = state.forcedShoe ? [...state.forcedShoe] : null;
 
-    // Create two new hands from the split
     const card1 = currentHand.cards[0];
     const card2 = currentHand.cards[1];
 
-    if (shoe.length < 2) {
+    const dealFromSource = (): Card => {
+      if (forcedShoe && forcedShoe.length > 0) {
+        return forcedShoe.pop()!;
+      }
+      return dealCard(shoe);
+    };
+
+    if (!forcedShoe && shoe.length < 2) {
       const roomCfg = getRoomConfig(state.currentRoom);
       const numDecks = roomCfg.gameRules.numberOfDecks;
       const omitTens = roomCfg.gameRules.omitTens;
@@ -843,8 +881,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       shoe = [...shoe, ...newShoe]; // prepend remaining cards if any
     }
 
-    const newCard1 = dealCard(shoe);
-    const newCard2 = dealCard(shoe);
+    const newCard1 = dealFromSource();
+    const newCard2 = dealFromSource();
 
     const isSplitAces = card1.value === 11;
     const restrictSplitAces = state.currentRoom !== 'iberian_21';
@@ -912,10 +950,13 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       };
     });
 
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
     set({
       shoe,
       seats: updatedSeats,
-      bankroll: isFree ? state.bankroll : state.bankroll - cost,
+      bankroll: isTutorial || isFree ? state.bankroll : state.bankroll - cost,
+      tutorialBalance: isTutorial && !isFree ? state.tutorialBalance - cost : state.tutorialBalance,
+      forcedShoe: forcedShoe ? [...forcedShoe] : null,
     });
 
     // If first split hand is already resolved, advance
@@ -979,14 +1020,20 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     _dealerPlayLock = true;
 
     try {
-    const shoe = [...state.shoe];
-    let dealerCards = [...state.dealerHand.cards];
+      let shoe = [...state.shoe];
+      let forcedShoe = state.forcedShoe ? [...state.forcedShoe] : null;
 
-    // Reveal hidden card
-    dealerCards = dealerCards.map((c) => ({
-      ...c,
-      isHidden: false,
-    }));
+      // Reveal hidden card
+      let dealerCards = state.dealerHand.cards.map((c) => ({
+        ...c,
+        isHidden: false,
+      }));
+      set({ dealerHand: { cards: dealerCards } });
+
+      const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
+      const speed = isTutorial ? 'normal' : get().dealerSpeed;
+      const flipDelay = SPEED_DELAYS[speed].flipCard || 800;
+      await new Promise((resolve) => setTimeout(resolve, flipDelay));
 
     // Check if all player hands are busted or surrendered — if so, dealer doesn't need to draw
     const allBustedOrSurrendered = state.seats
@@ -1019,7 +1066,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         (dealerValue.total === 17 && dealerValue.isSoft && hitsSoft17)
       ) {
         // Wait before drawing next card
-        const hitDelay = SPEED_DELAYS[get().dealerSpeed].dealerHit;
+        const hitDelay = SPEED_DELAYS[isTutorial ? 'normal' : get().dealerSpeed].dealerHit;
         await new Promise((resolve) => setTimeout(resolve, hitDelay));
 
         // Bail out if phase changed externally (e.g. reset)
@@ -1036,11 +1083,12 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
           currentShoe = shuffleShoe(createShoe(numDecks, omitTens));
         }
 
-        const newCard = dealCard(currentShoe);
+        const newCard = (forcedShoe && forcedShoe.length > 0) ? forcedShoe.pop()! : dealCard(currentShoe);
         dealerCards.push(newCard);
         dealerValue = calculateHandValue(dealerCards);
 
         // Update state so UI shows the new card
+        set({ dealerHand: { cards: [...dealerCards] }, shoe: currentShoe, forcedShoe: forcedShoe ? [...forcedShoe] : null });
         set({
           dealerHand: { cards: [...dealerCards] },
           shoe: currentShoe,
@@ -1049,7 +1097,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     }
 
     // Small delay before payout phase for visual pacing
-    const prePayoutDelay = SPEED_DELAYS[get().dealerSpeed].prePayout;
+    const prePayoutDelay = SPEED_DELAYS[isTutorial ? 'normal' : get().dealerSpeed].prePayout;
     await new Promise((resolve) => setTimeout(resolve, prePayoutDelay));
 
     set({
@@ -1219,8 +1267,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
                     ? 0
                     : hand.status === HandStatus.SURRENDERED
                     ? -(hand.betAmount / 2)
-                    : -(hand.betAmount - freeAmt))
-                  - (hand.burnWagerAmount || 0) + (hand.burnWagerPayout || 0),
+                    : -(hand.betAmount - freeAmt)),
                 isSplit: hand.isSplit,
                 isFreeActionSplit: hand.isFreeActionSplit,
                 isDoubleDown: hand.isDoubleDown,
@@ -1248,16 +1295,22 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
         newHistory.splice(0, newHistory.length - MAX_STORE_HISTORY);
     }
 
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
     set({
       seats: updatedSeats,
-      bankroll: bankrollAfter,
+      bankroll: isTutorial ? state.bankroll : bankrollAfter,
+      tutorialBalance: isTutorial ? state.tutorialBalance + totalPayout : state.tutorialBalance,
       matchHistory: newHistory,
-      totalBetSinceLastClaim: (state.totalBetSinceLastClaim || 0) + totalStaked,
+      totalBetSinceLastClaim: isTutorial ? (state.totalBetSinceLastClaim || 0) : (state.totalBetSinceLastClaim || 0) + totalStaked,
     });
+
+    // Check for achievements after payout
+    get().checkAchievements(matchRecord);
   },
 
   resetRound: () => {
     const state = get();
+    if (!checkTutorialAction(state, 'new-round-button')) return;
 
     // Check if shoe needs reshuffling
     let shoe = state.shoe;
@@ -1270,13 +1323,28 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
       shoe = shuffleShoe(createShoe(numDecks, omitTens));
     }
 
+    const isTutorial = roomCfg.isTutorial;
+    const nextTutorialRound = isTutorial ? state.tutorialRound + 1 : 0;
+    const isTutorialCompleted = isTutorial && nextTutorialRound >= BEGINNER_TUTORIAL_LESSONS.length;
+
+    let forcedShoe = state.forcedShoe;
+    if (isTutorial && !isTutorialCompleted) {
+      const lesson = BEGINNER_TUTORIAL_LESSONS[nextTutorialRound];
+      if (lesson) {
+        forcedShoe = [...lesson.forcedCards];
+      }
+    }
+
     set({
       shoe,
+      forcedShoe,
       gamePhase: GamePhase.BETTING,
       dealerHand: { cards: [] },
       currentSeatIndex: 0,
       insuranceBets: {},
       sideBets: {},
+      tutorialRound: nextTutorialRound,
+      tutorialCompleted: isTutorialCompleted,
       seats: state.seats.map((seat) => ({
         ...seat,
         hands: [createEmptyHand(seat.id, 0)],

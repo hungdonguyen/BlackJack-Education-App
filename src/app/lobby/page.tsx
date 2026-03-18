@@ -16,7 +16,7 @@ import 'swiper/css/navigation';
 
 export default function LobbyPage() {
     const router = useRouter();
-    const rooms = Object.values(ROOMS);
+    const rooms = Object.values(ROOMS).filter(r => !r.isTutorial);
     const { playSound } = useAudio();
 
     const ITEMS_PER_PAGE = 6;
@@ -65,12 +65,6 @@ export default function LobbyPage() {
                     <span className="text-xs font-bold uppercase tracking-wider">Home</span>
                 </motion.button>
 
-                {/* Center: Lobby Title */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <h1 className="text-lg font-extrabold text-amber-400/80 uppercase tracking-[0.3em] flex items-center">
-                        <Home size={20} className="mr-2 mb-0.5" /> Lobby
-                    </h1>
-                </div>
 
                 {/* Right Side: Music Player */}
                 <div className="ml-auto flex items-center pr-2">
@@ -215,7 +209,14 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
             >
                 <div className="flex items-start justify-between mb-1.5">
                     <div>
-                        <h3 className="text-[15px] font-extrabold text-white/90">{room.name}</h3>
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-[15px] font-extrabold text-white/90">{room.name}</h3>
+                            {room.isBeta && (
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 uppercase">
+                                    Beta
+                                </span>
+                            )}
+                        </div>
                         <p className="text-[9px] font-medium uppercase tracking-[0.15em] mt-0.5"
                             style={{ color: room.accentColor }}
                         >

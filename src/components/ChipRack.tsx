@@ -10,20 +10,25 @@ import { useGameStore } from '@/hooks/useGameStore';
 import { getChipImagePath } from '@/utils/assets';
 import { CHIP_VALUES, CHIP_LABELS } from '@/utils/constants';
 import { GamePhase } from '@/types/enums';
+import { getRoomConfig } from '@/utils/rooms';
 
 export default function ChipRack() {
     const bankroll = useGameStore((s) => s.bankroll);
+    const tutorialBalance = useGameStore((s) => s.tutorialBalance);
+    const currentRoom = useGameStore((s) => s.currentRoom);
     const selectedChipValue = useGameStore((s) => s.selectedChipValue);
     const selectChip = useGameStore((s) => s.selectChip);
     const gamePhase = useGameStore((s) => s.gamePhase);
 
     const isBettingPhase = gamePhase === GamePhase.BETTING;
+    const roomConfig = getRoomConfig(currentRoom);
+    const currentBalance = (roomConfig.isTutorial ? tutorialBalance : bankroll) ?? 0;
 
     return (
         <div className="flex items-end gap-1.5">
             {CHIP_VALUES.filter(v => v >= 1).map((value) => {
                 const isSelected = selectedChipValue === value;
-                const canAfford = bankroll >= value;
+                const canAfford = currentBalance >= value;
                 const isDisabled = !isBettingPhase || !canAfford;
                 const handleSelect = () => {
                     if (!isDisabled) selectChip(value);
@@ -32,6 +37,7 @@ export default function ChipRack() {
                 return (
                     <motion.button
                         key={value}
+                        id={`chip-${value}`}
                         layout
                         initial={false}
                         onPointerDown={handleSelect}
