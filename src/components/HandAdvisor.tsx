@@ -89,7 +89,8 @@ export default function HandAdvisor({
     const room = getRoomConfig(roomId);
     const isBeta = room.isBeta ?? false;
     const rules = getRules(roomId);
-    const isVisible = gamePhase === GamePhase.PLAYER_TURN || gamePhase === GamePhase.INSURANCE;
+    const isVisible = (gamePhase === GamePhase.PLAYER_TURN || gamePhase === GamePhase.INSURANCE) && 
+                      (!room.isTutorial || roomId === 'tutorial_strategy');
 
     const currentSeat = seats[currentSeatIndex];
     const currentHand = gamePhase === GamePhase.INSURANCE
@@ -585,7 +586,7 @@ export default function HandAdvisor({
                             </motion.div>
                         )}
 
-                        <div className="flex items-center justify-center mt-2 pt-3 border-t border-white/5 font-sans" onClick={onOpenStrategy}>
+                        <div id="strategy-module" className="flex items-center justify-center mt-2 pt-3 border-t border-white/5 font-sans" onClick={onOpenStrategy}>
                             <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5 cursor-pointer hover:text-white/70 transition-colors">
                                 <Info size={11} /> Find out more details in Strategy
                             </span>

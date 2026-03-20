@@ -8,7 +8,7 @@ export type AdviceAction = StrategyAction | 'INS' | 'NINS';
 
 export interface CompositionDependentOverride {
     id: string;
-    roomId: string;
+    strategyType: string;
     tab: 'hard' | 'soft' | 'pairs';
     playerTotal: number;
     isSoft: boolean;
@@ -91,9 +91,9 @@ export const HARD_FA: StrategyAction[][] = [
     ['H','H','H','S','S','H','H','H','H','H'],
     ['H','S','S','S','S','H','H','H','H','H'],
     ['S','S','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','H','H','H','RH','RH'],
-    ['S','S','S','S','S','H','H','RH','RH','RH'],
-    ['S','S','S','S','S','S','S','S','S','RS'],
+    ['S','S','S','S','S','H','H','H','H','H'],
+    ['S','S','S','S','S','H','H','H','H','H'],
+    ['S','S','S','S','S','S','S','S','S','S'],
     ['S','S','S','S','S','S','S','S','S','S'],
     ['S','S','S','S','S','S','S','S','S','S'],
     ['S','S','S','S','S','S','S','S','S','S'],
@@ -431,74 +431,74 @@ export const ACTION_META: Record<AdviceAction, ActionMeta> = {
         glow: 'rgba(34,197,94,0.35)', border: 'rgba(34,197,94,0.4)', bg: 'rgba(21,128,61,0.2)',
         desc: 'Draw another card',
         reasoning: (total, isSoft, dealerUp) => isSoft
-            ? `Soft ${total} — Current hand is weak, draw to improve`
+            ? `Soft ${total} — An Ace gives flexibility. Hitting a soft hand is completely safe to improve without busting.`
             : dealerUp === 'A' || ['7','8','9','10'].includes(dealerUp)
-                ? `Dealer is strong (${dealerUp}) — Cannot stand on ${total}`
-                : `Total of ${total} is not competitive enough`,
+                ? `Dealer shows a strong ${dealerUp}. Your ${total} is likely to lose if you stand. Taking a risk to hit is statistically required.`
+                : `Your ${total} is too weak. Drawing a card gives you a better chance to win.`,
     },
     S: {
         label: 'STAND', shortLabel: 'S', color: '#fca5a5',
         glow: 'rgba(239,68,68,0.35)', border: 'rgba(239,68,68,0.4)', bg: 'rgba(185,28,28,0.2)',
         desc: 'Keep your hand',
         reasoning: (total, isSoft, dealerUp) => total >= 17
-            ? `${total}${isSoft ? ' soft' : ''} — Strong hand, no need to risk drawing more`
+            ? `You have a strong ${total}${isSoft ? ' soft' : ''}. The risk of busting is too high to justify drawing.`
             : ['2','3','4','5','6'].includes(dealerUp)
-                ? `Dealer is weak (${dealerUp}) — Let the dealer bust, that's the optimal play`
-                : 'High bust risk if you continue drawing',
+                ? `Dealer shows a weak ${dealerUp} and has a high chance to bust. Avoid busting yourself by standing.`
+                : `Standing is statistically better here. Let the dealer take the risk of busting.`,
     },
     D: {
         label: 'DOUBLE DOWN', shortLabel: 'D', color: '#fcd34d',
         glow: 'rgba(234,179,8,0.35)', border: 'rgba(234,179,8,0.45)', bg: 'rgba(161,98,7,0.2)',
         desc: 'Double bet, draw 1 card',
         reasoning: (total, _isSoft, dealerUp) => total >= 10 && total <= 11
-            ? `${total} — Ideal position to maximise profit`
-            : `Dealer is weak (${dealerUp}) and you hold the advantage`,
+            ? `You have ${total}, a mathematically powerful hand. Double your bet to maximize profit.`
+            : `Dealer shows a weak ${dealerUp} and you have the advantage. Doubling increases your expected value.`,
     },
     DS: {
         label: 'DOUBLE / STAND', shortLabel: 'DS', color: '#67e8f9',
         glow: 'rgba(6,182,212,0.35)', border: 'rgba(6,182,212,0.4)', bg: 'rgba(14,116,144,0.2)',
         desc: 'Double if allowed, otherwise Stand',
-        reasoning: () => 'Take the Double if you have enough chips; otherwise Standing is still the optimal choice',
+        reasoning: () => 'Take the Double if you have enough chips; otherwise Standing is still the optimal choice.',
     },
     SP: {
         label: 'SPLIT', shortLabel: 'SP', color: '#93c5fd',
         glow: 'rgba(59,130,246,0.35)', border: 'rgba(59,130,246,0.4)', bg: 'rgba(29,78,216,0.2)',
         desc: 'Split into 2 independent hands',
         reasoning: (total, _isSoft, dealerUp) => total === 22
-            ? 'Pair of Aces — Always split, chance at two Blackjacks'
+            ? 'Pair of Aces — Always split! This gives you two chances at massive 21s.'
             : total === 16
-                ? 'Pair of 8s — 16 is the worst hand, split to recover'
-                : `Dealer is weak (${dealerUp}) — Split to double your advantage`,
+                ? 'Pair of 8s — 16 is the worst hand. Splitting is the only way to recover liability into two potential winners.'
+                : `Dealer shows a weak ${dealerUp}. Splitting capitalizes on their weakness to double your winnings.`,
     },
     SU: {
         label: 'SURRENDER', shortLabel: 'SU', color: '#d8b4fe',
         glow: 'rgba(139,92,246,0.35)', border: 'rgba(139,92,246,0.4)', bg: 'rgba(109,40,217,0.2)',
         desc: 'Forfeit hand, recover 50% of bet',
-        reasoning: (total, _isSoft, dealerUp) => `Total ${total} vs Dealer (${dealerUp}) — Win rate < 25%, Surrendering is optimal to minimise losses`,
+        reasoning: (total, _isSoft, dealerUp) => `Your ${total} vs Dealer ${dealerUp} has terrible odds. Surrendering saves 50% of your bet, making it mathematically smart.`,
     },
     RS: {
         label: 'SURRENDER / STAND', shortLabel: 'RS', color: '#d8b4fe',
         glow: 'rgba(139,92,246,0.35)', border: 'rgba(139,92,246,0.4)', bg: 'rgba(109,40,217,0.2)',
         desc: 'Surrender if possible, otherwise Stand',
-        reasoning: (total, _isSoft, dealerUp) => `Total ${total} vs Dealer (${dealerUp}) — Surrender saves money here, but Stand if Surrender is not available`,
+        reasoning: (total, _isSoft, dealerUp) => `Your ${total} vs Dealer ${dealerUp} is highly unfavorable. Surrender to save half your bet. If unavailable, stand.`,
     },
     FD: {
         label: 'FREE ACTION DOUBLE', shortLabel: 'FD', color: '#facc15',
         glow: 'rgba(250,204,21,0.5)', border: 'rgba(250,204,21,0.6)', bg: 'rgba(161,98,7,0.3)',
         desc: 'Double with free chips',
-        reasoning: (total) => `Hard ${total} — Always take the Free Action Double, it's risk-free profit!`,
+        reasoning: (total) => `Hard ${total} — Always take the Free Action Double! It's risk-free profit with no downside.`,
     },
     FSP: {
         label: 'FREE ACTION SPLIT', shortLabel: 'FSP', color: '#facc15',
         glow: 'rgba(250,204,21,0.5)', border: 'rgba(250,204,21,0.6)', bg: 'rgba(161,98,7,0.3)',
         desc: 'Split hand with free chips',
-        reasoning: () => 'Non-10 pair — Always take the Free Action Split, double your chances for free!',
+        reasoning: () => 'Non-10 pair — Always take the Free Action Split! Double your chances to win for free.',
     },
     Z: {
         label: 'ZAP OUT', shortLabel: 'Z', color: '#3b82f6',
         glow: 'rgba(59,130,246,0.35)', border: 'rgba(59,130,246,0.4)', bg: 'rgba(29,78,216,0.2)',
         desc: 'Discard current hand and draw two new cards',
-        reasoning: (total) => `Hard ${total} — Worst hands in the game. Zap them away to improve your chances!`,
+        reasoning: (total) => `Hard ${total} — This is one of the worst hands. Zap it away to drastically improve your chances!`,
     },
     S4: {
         label: 'STAND (HIT IF 4+ CARDS)', shortLabel: 'S4', color: '#fca5a5',
@@ -583,7 +583,7 @@ export const ACTION_META: Record<AdviceAction, ActionMeta> = {
 export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     {
         id: 'IB21-SC-H12-10-2-4',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 12,
         isSoft: false,
@@ -599,7 +599,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H12-9-3-4',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 12,
         isSoft: false,
@@ -615,7 +615,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H12-8-4-4',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 12,
         isSoft: false,
@@ -630,7 +630,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H12-7-5-4',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 12,
         isSoft: false,
@@ -645,7 +645,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H13-10-3-6',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 13,
         isSoft: false,
@@ -660,7 +660,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H13-9-4-6',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 13,
         isSoft: false,
@@ -675,7 +675,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H13-8-5-6',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 13,
         isSoft: false,
@@ -690,7 +690,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H13-7-6-6',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 13,
         isSoft: false,
@@ -705,7 +705,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-TOP-H13-6-7-ANY',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 13,
         isSoft: false,
@@ -721,7 +721,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H14-10-4-10',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 14,
         isSoft: false,
@@ -736,7 +736,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H14-9-5-10',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 14,
         isSoft: false,
@@ -751,7 +751,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H14-8-6-10',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 14,
         isSoft: false,
@@ -766,7 +766,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-TOP-H14-6-8-ANY',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 14,
         isSoft: false,
@@ -782,7 +782,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H15-10-5-9',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 15,
         isSoft: false,
@@ -798,7 +798,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H15-9-6-9',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 15,
         isSoft: false,
@@ -813,7 +813,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H15-8-7-9',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 15,
         isSoft: false,
@@ -828,7 +828,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-TOP-H15-7-8-ANY',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 15,
         isSoft: false,
@@ -844,7 +844,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H16-10-6-10',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 16,
         isSoft: false,
@@ -860,7 +860,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H16-9-7-10',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 16,
         isSoft: false,
@@ -875,7 +875,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H17-10-7-A',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 17,
         isSoft: false,
@@ -890,7 +890,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H17-9-8-A',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 17,
         isSoft: false,
@@ -905,7 +905,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H17-8-7-2-A',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 17,
         isSoft: false,
@@ -920,7 +920,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H18-7-6-5-10',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 18,
         isSoft: false,
@@ -935,7 +935,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H18-10-8-10',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 18,
         isSoft: false,
@@ -950,7 +950,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H11-6-5-A',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 11,
         isSoft: false,
@@ -966,7 +966,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H11-7-4-A',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 11,
         isSoft: false,
@@ -982,7 +982,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H11-8-3-A',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 11,
         isSoft: false,
@@ -998,7 +998,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-H11-9-2-A',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'hard',
         playerTotal: 11,
         isSoft: false,
@@ -1014,7 +1014,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-S18-A-4-3-2',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'soft',
         playerTotal: 18,
         isSoft: true,
@@ -1030,7 +1030,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-S18-A-5-2-2',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'soft',
         playerTotal: 18,
         isSoft: true,
@@ -1046,7 +1046,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-S18-A-6-A-2',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'soft',
         playerTotal: 18,
         isSoft: true,
@@ -1061,7 +1061,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-P77-8',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'pairs',
         playerTotal: 14,
         isSoft: false,
@@ -1076,7 +1076,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-P77-9',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'pairs',
         playerTotal: 14,
         isSoft: false,
@@ -1091,7 +1091,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-P77-10',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'pairs',
         playerTotal: 14,
         isSoft: false,
@@ -1106,7 +1106,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-TOP-P77-ANY',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'pairs',
         playerTotal: 14,
         isSoft: false,
@@ -1121,7 +1121,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-P66-4',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'pairs',
         playerTotal: 12,
         isSoft: false,
@@ -1136,7 +1136,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-P88-10',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'pairs',
         playerTotal: 16,
         isSoft: false,
@@ -1151,7 +1151,7 @@ export const COMPOSITION_DEPENDENT_OVERRIDES: CompositionDependentOverride[] = [
     },
     {
         id: 'IB21-SC-P99-10',
-        roomId: 'iberian_21',
+        strategyType: 'iberian_21',
         tab: 'pairs',
         playerTotal: 18,
         isSoft: false,

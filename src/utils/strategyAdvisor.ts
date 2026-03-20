@@ -7,10 +7,10 @@ import { Card } from '@/types/game';
 import { calculateHandValue } from '@/utils/hand';
 import {
     StrategyAction, AdviceAction, CompositionDependentOverride, ActionMeta,
-    HARD_CLASSIC, HARD_DOWNTOWN, HARD_FA, HARD_FA_FREE, HARD_AC,
+    HARD_CLASSIC, HARD_DOWNTOWN, HARD_FA, HARD_AC,
     HARD_IBERIAN, HARD_EUROPEAN, HARD_UK, HARD_ZAPOUT, HARD_EXCHANGE,
     HARD_FIRECARD, HARD_VEGAS,
-    SOFT_CLASSIC, SOFT_DOWNTOWN, SOFT_FA, SOFT_FA_FREE, SOFT_AC,
+    SOFT_CLASSIC, SOFT_DOWNTOWN, SOFT_FA, SOFT_AC,
     SOFT_IBERIAN, SOFT_EUROPEAN, SOFT_UK, SOFT_VEGAS, SOFT_ZAPOUT,
     SOFT_EXCHANGE, SOFT_FIRECARD,
     PAIRS_TABLE, PAIRS_FA, PAIRS_IBERIAN, PAIRS_EUROPEAN,
@@ -55,48 +55,68 @@ function getPairRowIdx(cards: Card[]): number {
     return PAIR_ROWS.indexOf(rank as (typeof PAIR_ROWS)[number]);
 }
 
-export function getStrategyTables(strategyType: string) {
-    if (strategyType === 'free_action') {
-        return { hard: HARD_FA, soft: SOFT_FA, pairs: PAIRS_FA };
-    }
+const HARD_FA_FREE: StrategyAction[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 5-8
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 9
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 10
+    ['FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD', 'FD'], // 11
+    ['H', 'H', 'H', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 12
+    ['H', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['H', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 15
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'H', 'H'], // 16
+    ['S', 'S', 'S', 'S', 'S', 'H', 'H', 'H', 'S', 'H'], // 17
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], // 18-20
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+];
 
-    if (strategyType === 'iberian_21') {
-        return { hard: HARD_IBERIAN, soft: SOFT_IBERIAN, pairs: PAIRS_IBERIAN };
-    }
+const SOFT_FA_FREE: StrategyAction[][] = [
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 13
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 14
+    ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'], // 15
+    ['H', 'H', 'H', 'H', 'D', 'H', 'H', 'H', 'H', 'H'], // 16 (D vs dealer 6)
+    ['H', 'H', 'H', 'D', 'D', 'H', 'H', 'H', 'H', 'H'], // 17 (D vs dealer 5, 6)
+    ['H', 'H', 'D', 'D', 'D', 'S', 'H', 'H', 'H', 'H'], // 18 (D vs 4-6, S vs 7)
+    ['S', 'S', 'S', 'D', 'D', 'S', 'S', 'S', 'S', 'S'], // 19 (D vs 5-6)
+    ['S', 'S', 'S', 'S', 'D', 'S', 'S', 'S', 'S', 'S'], // 20 (D vs 6)
+];
 
-    if (strategyType === 'atlantic_city') {
-        return { hard: HARD_AC, soft: SOFT_AC, pairs: PAIRS_TABLE };
-    }
+export interface StrategyTables {
+    hard: StrategyAction[][];
+    soft: StrategyAction[][];
+    pairs: StrategyAction[][];
+    free_hand?: {
+        hard: StrategyAction[][];
+        soft: StrategyAction[][];
+    };
+}
 
-    if (strategyType === 'vegas_strip') {
-        return { hard: HARD_VEGAS, soft: SOFT_VEGAS, pairs: PAIRS_TABLE };
-    }
+const STRATEGY_MAP: Record<string, StrategyTables> = {
+    'free_action': { 
+        hard: HARD_FA, 
+        soft: SOFT_FA, 
+        pairs: PAIRS_FA,
+        free_hand: { hard: HARD_FA_FREE, soft: SOFT_FA_FREE }
+    },
+    'iberian_21': { hard: HARD_IBERIAN, soft: SOFT_IBERIAN, pairs: PAIRS_IBERIAN },
+    'atlantic_city': { hard: HARD_AC, soft: SOFT_AC, pairs: PAIRS_TABLE },
+    'vegas_strip': { hard: HARD_VEGAS, soft: SOFT_VEGAS, pairs: PAIRS_TABLE },
+    'vegas_downtown': { hard: HARD_DOWNTOWN, soft: SOFT_DOWNTOWN, pairs: PAIRS_TABLE },
+    'european': { hard: HARD_EUROPEAN, soft: SOFT_EUROPEAN, pairs: PAIRS_EUROPEAN },
+    'uk': { hard: HARD_UK, soft: SOFT_UK, pairs: PAIRS_UK },
+    'zapout_21': { hard: HARD_ZAPOUT, soft: SOFT_ZAPOUT, pairs: PAIRS_ZAPOUT },
+    'exchange_21': { hard: HARD_EXCHANGE, soft: SOFT_EXCHANGE, pairs: PAIRS_EXCHANGE },
+    'firecard_21': { hard: HARD_FIRECARD, soft: SOFT_FIRECARD, pairs: PAIRS_FIRECARD },
+    'classic': { hard: HARD_CLASSIC, soft: SOFT_CLASSIC, pairs: PAIRS_TABLE },
+    'standard': { hard: HARD_CLASSIC, soft: SOFT_CLASSIC, pairs: PAIRS_TABLE },
+};
 
-    if (strategyType === 'vegas_downtown') {
-        return { hard: HARD_DOWNTOWN, soft: SOFT_DOWNTOWN, pairs: PAIRS_TABLE };
-    }
-
-    if (strategyType === 'european') {
-        return { hard: HARD_EUROPEAN, soft: SOFT_EUROPEAN, pairs: PAIRS_EUROPEAN };
-    }
-
-    if (strategyType === 'uk') {
-        return { hard: HARD_UK, soft: SOFT_UK, pairs: PAIRS_UK };
-    }
-
-    if (strategyType === 'zapout_21') {
-        return { hard: HARD_ZAPOUT, soft: SOFT_ZAPOUT, pairs: PAIRS_ZAPOUT };
-    }
-
-    if (strategyType === 'exchange_21') {
-        return { hard: HARD_EXCHANGE, soft: SOFT_EXCHANGE, pairs: PAIRS_EXCHANGE };
-    }
-
-    if (strategyType === 'firecard_21') {
-        return { hard: HARD_FIRECARD, soft: SOFT_FIRECARD, pairs: PAIRS_FIRECARD };
-    }
-
-    return { hard: HARD_CLASSIC, soft: SOFT_CLASSIC, pairs: PAIRS_TABLE };
+export function getStrategyTables(strategyType: string): StrategyTables {
+    return STRATEGY_MAP[strategyType] || STRATEGY_MAP['classic'];
 }
 
 export function getCompositionDependentOverride(
@@ -104,14 +124,14 @@ export function getCompositionDependentOverride(
     total: number,
     isSoft: boolean,
     dealerUpRank: string,
-    roomId: string,
+    strategyType: string,
 ): CompositionDependentOverride | null {
     const dealerUpcard = normRank(dealerUpRank);
     const handPattern = getHandPattern(cards);
     const matches: CompositionDependentOverride[] = [];
 
     for (const override of COMPOSITION_DEPENDENT_OVERRIDES) {
-        if (override.roomId !== roomId) continue;
+        if (override.strategyType !== strategyType) continue;
         if (override.playerTotal !== total) continue;
         if (override.isSoft !== isSoft) continue;
         if (override.dealerUpcard !== dealerUpcard && override.dealerUpcard !== '*') continue;
@@ -250,25 +270,27 @@ export function getStrategyAction(
 
 // Very basic Expected Value estimator used ONLY for Exchange 21 Switch advice.
 // Real EV spreadsheets are massive matrices, so this uses rough approximations based purely on the player's best assumed action vs dealer upcard.
-export function getHandEV(cards: Card[], dealerUpcard: string, isExchange: boolean = false): number {
+export function getHandEV(cards: Card[], dealerUpcard: string, isSwitched = false, strategyType = 'classic'): number {
     const value = calculateHandValue(cards);
     if (value.total > 21) return -1.0; // Bust
-    if (value.total === 21 && cards.length === 2 && !isExchange) return 1.5; // Natural BJ (rough, ignores 1:1 on exchange, but handled by logic below)
-    if (value.total === 21 && cards.length === 2 && isExchange) return 1.0; // Switched BJ
+    if (value.total === 21 && cards.length === 2) return isSwitched ? 1.0 : 1.5; // Natural BJ
     
+    const pTotal = value.total;
+    const isSoft = value.isSoft;
+    const dUpStr = normRank(dealerUpcard);
+
     // getStrategyAction signature: cards, total, isSoft, dealerUpRank, strategyType, canDouble, canSplit, canSurrender, resolveOptions
     const action = getStrategyAction(
         cards, 
-        value.total, 
-        value.isSoft, 
-        dealerUpcard, 
-        'exchange_21', 
+        pTotal,
+        isSoft, 
+        dUpStr, 
+        strategyType, 
         true, // canDouble (assume true for pure strength EV)
         cards.length === 2 && cards[0].rank === cards[1].rank, // canSplit
         true  // canSurrender
     );
     const dUp = ['10', 'J', 'Q', 'K'].includes(dealerUpcard) ? 10 : dealerUpcard === 'A' ? 11 : parseInt(dealerUpcard);
-    const pTotal = value.total;
 
     // Extremely simplified EV grid just to compare hand strength.
     let ev = 0;

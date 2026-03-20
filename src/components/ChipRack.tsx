@@ -29,7 +29,7 @@ export default function ChipRack() {
             {CHIP_VALUES.filter(v => v >= 1).map((value) => {
                 const isSelected = selectedChipValue === value;
                 const canAfford = currentBalance >= value;
-                const isDisabled = !isBettingPhase || !canAfford;
+                const isDisabled = !isBettingPhase || !canAfford || (currentRoom === 'tutorial_double' && value !== 100);
                 const handleSelect = () => {
                     if (!isDisabled) selectChip(value);
                 };
@@ -45,6 +45,7 @@ export default function ChipRack() {
                             if (event.detail === 0) handleSelect();
                         }}
                         disabled={isDisabled}
+                        aria-label={`Select ${CHIP_LABELS[value]} chip defined value ${value}`}
                         className={`
                             relative flex flex-col items-center group
                             ${isDisabled ? 'opacity-15 cursor-not-allowed' : 'cursor-pointer'}

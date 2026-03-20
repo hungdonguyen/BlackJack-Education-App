@@ -80,7 +80,8 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         return () => window.removeEventListener('resize', update);
     }, []);
 
-    const [showStrategy, setShowStrategy] = useState(false);
+    const showStrategy = useGameStore((state) => state.showStrategyModal);
+    const setShowStrategy = useGameStore((state) => state.setShowStrategyModal);
     const [showSettings, setShowSettings] = useState(false);
     const [showLogoInfo, setShowLogoInfo] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -124,7 +125,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     useEffect(() => {
         setCurrentRoom(roomId);
         if (room.isTutorial) {
-            resetTutorialProgress();
+            resetTutorialProgress(roomId);
         }
     }, [roomId, setCurrentRoom, room.isTutorial, resetTutorialProgress]);
 
@@ -467,7 +468,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                             <div className="absolute inset-0 z-10">
                                 {/* Top HUD bar */}
                                 <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
-                                    <div className="flex items-center justify-start px-4 h-[70px] pl-24"
+                                    <div className="flex items-center justify-start px-4 h-[70px] pl-6"
                                         style={{ background: 'linear-gradient(180deg, rgba(10,6,4,0.95) 0%, rgba(10,6,4,0.7) 70%, transparent 100%)' }}
                                     >
                                         <div className="flex flex-col items-start gap-0 pointer-events-auto">
@@ -480,7 +481,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                                 </span>
                                                 <span className="text-white/20 text-[9px]">|</span>
                                                 <span className="text-[9px] text-white/35 uppercase tracking-wider">
-                                                    ${room.betRange[0].toLocaleString()} – ${room.betRange[1].toLocaleString()}
+                                                    ${room.betRange[0].toLocaleString()} – {room.betRange[1] >= 1000000 ? 'Unlimited' : `$${room.betRange[1].toLocaleString()}`}
                                                 </span>
                                                 <span className="text-white/20 text-[9px]">|</span>
                                                 <span className="text-[9px] text-white/35 uppercase tracking-wider">5 Seats</span>
@@ -489,13 +490,28 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                     </div>
                                 </div>
 
-                                {/* Logo — top-left corner */}
+                                {/* Resized Logo — moved to table felt area (blue box in user request) */}
                                 <div
-                                    className="absolute top-0 left-4 z-20 cursor-pointer hover:scale-105 transition-transform origin-top-left"
-                                    style={{ width: '80px', height: '70px' }}
+                                    className="absolute z-20 cursor-pointer hover:scale-105 transition-all origin-center group"
+                                    style={{
+                                        top: '45px',
+                                        left: '510px',
+                                        width: '250px',
+                                        height: '200px',
+                                        filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.5))'
+                                    }}
                                     onClick={() => { playSound('click'); setShowLogoInfo(true); }}
                                 >
-                                    <Image src={logoPath} alt={room.name} fill className="object-contain object-left" sizes="80px" unoptimized />
+                                    <Image
+                                        src={logoPath}
+                                        alt={room.name}
+                                        fill
+                                        className="object-contain opacity-85 group-hover:opacity-100 transition-opacity"
+                                        sizes="210px"
+                                        unoptimized
+                                    />
+                                    {/* Subtle glow effect behind logo */}
+                                    <div className="absolute inset-0 -z-10 bg-white/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
 
                                 {/* Music Player — top-right corner */}
@@ -566,7 +582,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                                         <Coins size={14} /> Bet Limits
                                                     </span>
                                                     <span className="text-sm font-black text-white/90">
-                                                        ${room.betRange[0]} - ${room.betRange[1].toLocaleString()}
+                                                        ${room.betRange[0]} - {room.betRange[1] >= 1000000 ? 'Unlimited' : `$${room.betRange[1].toLocaleString()}`}
                                                     </span>
                                                 </div>
 
@@ -619,7 +635,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                         <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6">
                                             <Flag size={28} className="text-red-500" />
                                         </div>
-                                        
+
                                         <h3 className="text-2xl font-black text-white/95 mb-2">Leave Tutorial?</h3>
                                         <p className="text-white/50 text-sm leading-relaxed mb-8">
                                             Are you sure you want to exit? Your tutorial progress will be lost and you'll have to start over next time.
@@ -656,7 +672,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                         {/* Payout stack — left side */}
                         <div className="absolute top-[85px] left-[15px] z-15 flex w-[250px] flex-col gap-2">
                             <PayoutPanel roomConfig={room} />
-                             {!room.isTutorial && (
+                            {!room.isTutorial && (
                                 <DailyClaimPanel
                                     claimReady={claimReady}
                                     isBonusClaim={isBonusClaim}
@@ -668,12 +684,12 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                     claimNudgeTick={claimNudgeTick}
                                     onClaim={handleClaimDaily}
                                 />
-                             )}
+                            )}
                         </div>
 
 
                         {/* Hand Advisor — right of PayoutPanel */}
-                        {showHandAdvisor && !room.isTutorial && (
+                        {showHandAdvisor && (
                             <div className="absolute top-[85px] left-[275px] z-15">
                                 <HandAdvisor roomId={roomId} accentColor={room.accentColor} borderColor={room.borderColor} onOpenStrategy={() => setShowStrategy(true)} />
                             </div>
@@ -826,7 +842,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                 <div className="flex items-center gap-5">
                                     <div className="flex flex-col">
                                         <span className="text-[9px] text-white/30 uppercase tracking-[0.2em]">Balance</span>
-                                         <span className="text-lg font-black tabular-nums leading-tight" style={{ color: room.accentColor }}>
+                                        <span className="text-lg font-black tabular-nums leading-tight" style={{ color: room.accentColor }}>
                                             ${((room.isTutorial ? tutorialBalance : bankroll) ?? 0).toLocaleString()}
                                         </span>
                                     </div>
@@ -843,7 +859,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                 <ChipRack />
 
                                 <div className="flex items-center gap-3">
-                                    <button onClick={() => { playSound('click'); setShowStrategy(true); }}
+                                    <button id="strategy-button" onClick={() => { playSound('click'); setShowStrategy(true); }}
                                         className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
                                     ><BookOpen size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Rule & Strategy</button>
                                     <button onClick={() => { playSound('click'); setShowSettings(true); }}
@@ -1136,7 +1152,7 @@ function DailyClaimPanel({
 
                     <div className="mt-1 flex items-end justify-between gap-2">
                         <div>
-                             <div className={`font-black leading-tight tabular-nums break-all ${claimReady
+                            <div className={`font-black leading-tight tabular-nums break-all ${claimReady
                                 ? isBonusClaim ? 'text-yellow-300' : 'text-emerald-300'
                                 : 'text-white/78'
                                 } ${nextClaimAmount >= 1000000 ? 'text-base' : 'text-lg'}`}>

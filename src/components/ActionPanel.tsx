@@ -13,7 +13,7 @@ import { getRoomConfig } from '@/utils/rooms';
 import { useAudio } from '@/utils/audio';
 import { getExchange21Advice, ExchangeAdvice } from '@/utils/strategyAdvisor';
 import { useRouter } from 'next/navigation';
-import { BEGINNER_TUTORIAL_LESSONS } from '@/utils/tutorialData';
+import { BEGINNER_TUTORIAL_LESSONS, DOUBLE_TUTORIAL_LESSONS, STRATEGY_TUTORIAL_LESSONS } from '@/utils/tutorialData';
 
 export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSeat }: { timer?: number; insuranceTimer?: number; currentInsuranceSeat?: number }) {
     const router = useRouter();
@@ -21,6 +21,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const seats = useGameStore((s) => s.seats);
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
     const bankroll = useGameStore((s) => s.bankroll);
+    const currentRoom = useGameStore((s) => s.currentRoom);
     const tutorialBalance = useGameStore((s) => s.tutorialBalance);
     const betHistory = useGameStore((s) => s.betHistory);
     const hit = useGameStore((s) => s.hit);
@@ -39,7 +40,13 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const acceptInsurance = useGameStore((s) => s.acceptInsurance);
     const declineInsurance = useGameStore((s) => s.declineInsurance);
     const tutorialRound = useGameStore((s) => s.tutorialRound);
-    const isLastTutorialLesson = tutorialRound >= BEGINNER_TUTORIAL_LESSONS.length - 1;
+    
+    let lessons = BEGINNER_TUTORIAL_LESSONS;
+    if (currentRoom === 'tutorial_double') lessons = DOUBLE_TUTORIAL_LESSONS;
+    else if (currentRoom === 'tutorial_strategy') lessons = STRATEGY_TUTORIAL_LESSONS;
+
+    const isLastTutorialLesson = tutorialRound >= lessons.length - 1;
+    
     const resetTutorialProgress = useGameStore((s) => s.resetTutorialProgress);
     const setTutorialStep = useGameStore((s) => s.setTutorialStep);
     const { playSound } = useAudio();
@@ -56,7 +63,6 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const isPlaying = currentHand?.status === HandStatus.PLAYING;
     const isBJ = currentHand?.status === HandStatus.BLACKJACK;
 
-    const currentRoom = useGameStore((s) => s.currentRoom);
     const showSwitchAdvice = useGameStore((s) => s.showSwitchAdvice);
     const rules = getRules(currentRoom);
     const roomConfig = getRoomConfig(currentRoom);
@@ -189,48 +195,48 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                         <div className="flex items-center gap-3">
                             {isDblFree ? (
                                 <FreeCircleButton id="action-double" label="FREE ACTION DOUBLE" icon={<Zap className="w-4 h-4" />}
-                                    onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={50} />
+                                    onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={50} ariaLabel="Double Down (Free)" />
                             ) : (
-                                <CircleButton id="action-double" label="DOUBLE DOWN" icon="2x" color="#f39c12" hoverColor="#f1c40f"
-                                    onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={45} />
+                                <CircleButton id="action-double" label={currentRoom === 'tutorial_double' ? "DOUBLE (1 CARD)" : "DOUBLE DOWN"} icon="2x" color="#f39c12" hoverColor="#f1c40f"
+                                    onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={45} ariaLabel="Double Down (2x Bet)" />
                             )}
 
                             <CircleButton id="action-hit" label="HIT" icon="+" color="#2ecc71" hoverColor="#27ae60"
-                                onClick={() => { playSound('click'); hit(); }} disabled={!canHit} size={53} />
+                                onClick={() => { playSound('click'); hit(); }} disabled={!canHit} size={53} ariaLabel="Hit (Draw Card)" />
                             <CircleButton id="action-stand" label="STAND" icon="−" color="#e74c3c" hoverColor="#c0392b"
-                                onClick={() => { playSound('click'); stand(); }} disabled={!canStand} size={53} />
+                                onClick={() => { playSound('click'); stand(); }} disabled={!canStand} size={53} ariaLabel="Stand (End Turn)" />
 
                             {isSplFree ? (
                                 <FreeCircleButton id="action-split" label="FREE ACTION SPLIT" icon={<Zap className="w-4 h-4" />}
-                                    onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={50} />
+                                    onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={50} ariaLabel="Split Hand (Free)" />
                             ) : (
                                 <CircleButton id="action-split" label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
-                                    onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={45} />
+                                    onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={45} ariaLabel="Split Hand" />
                             )}
 
                             {roomConfig.gameRules.allowSurrender && (
                                 <CircleButton label="SURRENDER" icon={<Flag className="w-4 h-4" />} color="#9b59b6" hoverColor="#8e44ad"
-                                    onClick={() => { playSound('click'); surrender(); }} disabled={!canSur} size={45} />
+                                    onClick={() => { playSound('click'); surrender(); }} disabled={!canSur} size={45} ariaLabel="Surrender Hand" />
                             )}
 
                             {rules.canZap && (
                                 <CircleButton label="ZAP OUT" icon={<Zap className="w-5 h-5 text-white animate-pulse" />} color="#3b82f6" hoverColor="#2563eb"
-                                    onClick={() => { playSound('card-slide'); zap(); }} disabled={!canZapHand} size={45} />
+                                    onClick={() => { playSound('card-slide'); zap(); }} disabled={!canZapHand} size={45} ariaLabel="Zap Out" />
                             )}
 
                             {rules.canSwitch && (
                                 showSwitchAdvice && exchangeAdvice?.shouldSwitch ? (
                                     <FreeCircleButton label="ADVISED" icon={<ArrowLeftRight className="w-5 h-5 text-black" />} 
-                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={50} />
+                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={50} ariaLabel="Switch Cards (Advised)" />
                                 ) : (
                                     <CircleButton label="SWITCH" icon={<ArrowLeftRight className="w-5 h-5 text-white" />} color="#64748b" hoverColor="#475569"
-                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={45} />
+                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={45} ariaLabel="Switch Cards" />
                                 )
                             )}
 
                             {rules.canBurn && (
                                 <CircleButton label={`BURN ($${burnCost})`} icon={<Flame className="w-5 h-5 text-white" />} color="#f97316" hoverColor="#ea580c"
-                                    onClick={() => { playSound('card-slide'); burn(); }} disabled={!canBurnHand} size={45} />
+                                    onClick={() => { playSound('card-slide'); burn(); }} disabled={!canBurnHand} size={45} ariaLabel="Burn Card" />
                             )}
                         </div>
                     </motion.div>
@@ -433,12 +439,14 @@ interface CircleButtonProps {
     id?: string;
     label: string; icon: React.ReactNode; color: string; hoverColor: string;
     onClick: () => void; disabled: boolean; size: number;
+    ariaLabel?: string;
 }
 
-function CircleButton({ id, label, icon, color, hoverColor, onClick, disabled, size }: CircleButtonProps) {
+function CircleButton({ id, label, icon, color, hoverColor, onClick, disabled, size, ariaLabel }: CircleButtonProps) {
     return (
         <motion.button
             id={id}
+            aria-label={ariaLabel || label}
             onClick={onClick} disabled={disabled}
             className="flex flex-col items-center gap-1.5 cursor-pointer"
             style={{ opacity: disabled ? 0.2 : 1 }}
@@ -489,13 +497,15 @@ interface FreeCircleButtonProps {
     id?: string;
     label: string; icon: React.ReactNode;
     onClick: () => void; disabled: boolean; size: number;
+    ariaLabel?: string;
 }
 
-function FreeCircleButton({ id, label, icon, onClick, disabled, size }: FreeCircleButtonProps) {
+function FreeCircleButton({ id, label, icon, onClick, disabled, size, ariaLabel }: FreeCircleButtonProps) {
     return (
         <motion.button
             id={id}
             onClick={onClick} disabled={disabled}
+            aria-label={ariaLabel || label}
             className="flex flex-col items-center gap-1.5 cursor-pointer"
             style={{ opacity: disabled ? 0.2 : 1 }}
             whileHover={disabled ? {} : { scale: 1.15, y: -5 }}

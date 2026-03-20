@@ -3,13 +3,19 @@
 // ============================================
 
 import { Suit, Rank, HandStatus, GamePhase } from './enums';
+export { Suit, Rank, HandStatus, GamePhase };
 import { SettingsSlice } from '@/store/settingsSlice';
+// Circular dependency workaround: define a minimal shape or use any, 
+// OR move GameStore definition up (but it needs slices).
+// For now, let's allow condition to access more than just basic GameState.
+// We really want GameStore here but it's defined below.
+// Let's use a placeholder that includes Settings.
 
 /** A tutorial step definition */
 export interface TutorialStep {
   id: number;
   message: string;
-  condition: (state: GameState) => boolean;
+  condition: (state: any) => boolean; // Relaxed to any to allow accessing all slices
   targetElementId?: string;
   position?: 'top' | 'bottom' | 'center' | 'dealer' | 'player';
   requiresClick?: boolean;

@@ -95,6 +95,7 @@ export default function Seat({ seatId, style }: SeatProps) {
                                 }
                             }}
                             disabled={sideBetAmount === 0 && mainBet === 0}
+                            aria-label={`Place side bet on Seat ${seatId}. Current side bet: ${sideBetAmount}`}
                             title={sideBetAmount === 0 && mainBet === 0 ? 'Place a main bet first' : undefined}
                             className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all border-2 overflow-hidden
                                 ${sideBetAmount === 0 && mainBet === 0
@@ -256,6 +257,19 @@ export default function Seat({ seatId, style }: SeatProps) {
             {/* ─── Betting Circle (below cards) ─── */}
             <motion.div
                 layout
+                role="button"
+                tabIndex={isBetting ? 0 : -1}
+                aria-label={
+                    !seat.isActive 
+                        ? `Seat ${seatId}: Currently inactive. Activate to play.` 
+                        : `Seat ${seatId}: ${totalBet > 0 ? `Current bet $${totalBet}` : 'Place bet'}`
+                }
+                onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && isBetting) {
+                        e.preventDefault();
+                        handleClick();
+                    }
+                }}
                 onClick={handleClick}
                 onContextMenu={handleRightClick}
                 className={`

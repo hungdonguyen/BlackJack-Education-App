@@ -1,6 +1,6 @@
 import { GameStore } from '@/types/game';
 import { getRoomConfig } from './rooms';
-import { BEGINNER_TUTORIAL_LESSONS } from './tutorialData';
+import { BEGINNER_TUTORIAL_LESSONS, DOUBLE_TUTORIAL_LESSONS, STRATEGY_TUTORIAL_LESSONS } from './tutorialData';
 
 /**
  * Checks if a game action is allowed during the current tutorial step.
@@ -22,7 +22,15 @@ export function checkTutorialAction(state: GameStore, actionId: string): boolean
     }
 
     const { tutorialRound, tutorialStep } = state;
-    const lesson = BEGINNER_TUTORIAL_LESSONS[tutorialRound];
+    
+    let lessons = BEGINNER_TUTORIAL_LESSONS;
+    if (state.currentRoom === 'tutorial_double') {
+        lessons = DOUBLE_TUTORIAL_LESSONS;
+    } else if (state.currentRoom === 'tutorial_strategy') {
+        lessons = STRATEGY_TUTORIAL_LESSONS;
+    }
+
+    const lesson = lessons[tutorialRound];
     
     if (!lesson) return true;
 
@@ -36,14 +44,14 @@ export function checkTutorialAction(state: GameStore, actionId: string): boolean
         } else {
             // Denied - tried wrong action
             if (state.showTutorialWarning) {
-                state.showTutorialWarning("Vui lòng thực hiện đúng hành động được hướng dẫn!");
+                state.showTutorialWarning("Please perform the instructed action!");
             }
             return false;
         }
     } else if (step.requiresClick) {
         // Enforcing reading the guide first if no target action is currently asked
         if (state.showTutorialWarning) {
-            state.showTutorialWarning("Vui lòng đọc hướng dẫn và làm theo yêu cầu!");
+            state.showTutorialWarning("Please perform the instructed action!");
         }
         return false;
     }

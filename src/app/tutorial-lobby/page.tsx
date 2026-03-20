@@ -18,7 +18,7 @@ export default function TutorialLobby() {
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_#1e1b4b_0%,_transparent_70%)] opacity-40" />
-        <div className="absolute inset-0 bg-[url('/images/bg/grid.png')] opacity-[0.03] bg-repeat" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
       </div>
 
       {/* Header */}
@@ -60,7 +60,7 @@ export default function TutorialLobby() {
               <div className="relative bg-[#0a0a16] border border-white/10 rounded-[2rem] overflow-hidden flex flex-col h-full transition-transform duration-500 group-hover:-translate-y-2">
                 {/* Visual Header */}
                 <div className="h-48 relative overflow-hidden" style={{ background: room.feltGradient }}>
-                    <div className="absolute inset-0 opacity-20 bg-[url('/images/bg/felt-texture.png')]" />
+                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 0.5px, transparent 0.5px)', backgroundSize: '3px 3px' }} />
                     <div className="absolute inset-0 flex items-center justify-center p-8">
                         <div className="relative w-full h-full transform transition-transform duration-700 group-hover:scale-110">
                             <Image 

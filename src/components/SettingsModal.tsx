@@ -66,6 +66,7 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
                         <Settings size={20} /> Settings
                     </h2>
                     <button onClick={() => { playSound('click'); onClose(); }}
+                        aria-label="Close Settings"
                         className="w-8 h-8 rounded-full bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 flex items-center justify-center cursor-pointer transition-all"
                     ><X size={16} /></button>
                 </div>
@@ -319,6 +320,7 @@ function SpeedButton({ label, active, accentColor, onClick }: {
     return (
         <button
             onClick={onClick}
+            aria-pressed={active}
             className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${active
                 ? 'text-black'
                 : 'text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10'

@@ -9,7 +9,7 @@ import { AlertCircle } from 'lucide-react';
 
 import { createPortal } from 'react-dom';
 import { TutorialStep, GameState } from '@/types/game';
-import { BEGINNER_TUTORIAL_LESSONS } from '@/utils/tutorialData';
+import { BEGINNER_TUTORIAL_LESSONS, DOUBLE_TUTORIAL_LESSONS, STRATEGY_TUTORIAL_LESSONS } from '@/utils/tutorialData';
 import { useAudio } from '@/utils/audio';
 
 export default function TutorialGuide({ show = true }: { show?: boolean }) {
@@ -19,7 +19,8 @@ export default function TutorialGuide({ show = true }: { show?: boolean }) {
     const tutorialRound = useGameStore((s) => s.tutorialRound);
     const tutorialWarning = useGameStore((s) => s.tutorialWarning);
     const hideTutorialWarning = useGameStore((s) => s.hideTutorialWarning);
-    const [stepIndex, setStepIndex] = useState(0);
+    const stepIndex = useGameStore((s) => s.tutorialStep);
+    const setStepIndex = useGameStore((s) => s.setTutorialStep);
     const { playSound } = useAudio();
 
     // Auto-hide warning after 3 seconds
@@ -34,17 +35,16 @@ export default function TutorialGuide({ show = true }: { show?: boolean }) {
     }, [tutorialWarning, hideTutorialWarning, playSound]);
 
     const steps = useMemo(() => {
-        if (currentRoom === 'tutorial_beginner') {
-            const lesson = BEGINNER_TUTORIAL_LESSONS[tutorialRound];
-            return lesson ? lesson.steps : [];
+        let lessons = BEGINNER_TUTORIAL_LESSONS;
+        if (currentRoom === 'tutorial_double') {
+            lessons = DOUBLE_TUTORIAL_LESSONS;
+        } else if (currentRoom === 'tutorial_strategy') {
+            lessons = STRATEGY_TUTORIAL_LESSONS;
         }
-        return [];
-    }, [currentRoom, tutorialRound]);
 
-    // Reset step index when round changes
-    useEffect(() => {
-        setStepIndex(0);
-    }, [tutorialRound]);
+        const lesson = lessons[tutorialRound];
+        return lesson ? lesson.steps : [];
+    }, [currentRoom, tutorialRound]);
 
     useEffect(() => {
         if (!roomCfg.isTutorial) return;

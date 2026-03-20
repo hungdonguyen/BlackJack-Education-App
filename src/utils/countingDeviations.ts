@@ -177,6 +177,37 @@ export const FIRECARD_DEVIATIONS: Deviation[] = [
  * @param allowSurrender Whether the room allows surrender
  * @returns The matching Deviation, or null if basic strategy applies
  */
+export function getStandardHiLoDeviations(allowSurrender: boolean, dealerHitsS17: boolean): Deviation[] {
+    return allowSurrender
+        ? [...(dealerHitsS17 ? I18_H17 : I18_S17), ...FAB_4]
+        : (dealerHitsS17 ? I18_H17 : I18_S17);
+}
+
+const DEVIATION_SETS: Record<string, Deviation[] | ((system: CountingSystem) => Deviation[])> = {
+    'iberian_21': (system) => system === 'Katarina Walker' ? IBERIAN_WALKER : IBERIAN_HILO,
+    'free_action': PUSH_22_DEVIATIONS,
+    'zapout_21': ZAPOUT_DEVIATIONS,
+    'exchange_21': EXCHANGE_DEVIATIONS,
+    'firecard_21': FIRECARD_DEVIATIONS,
+    'uk': I18_UK,
+    'european': I18_EUROPEAN,
+};
+
+export function getDeviationSet(
+    deviationsSet: string = 'standard',
+    system: CountingSystem = 'Hi-Lo',
+    allowSurrender: boolean = false,
+    dealerHitsS17: boolean = false
+): Deviation[] {
+    if (deviationsSet === 'standard') {
+        return getStandardHiLoDeviations(allowSurrender, dealerHitsS17);
+    }
+    const set = DEVIATION_SETS[deviationsSet];
+    if (!set) return getStandardHiLoDeviations(allowSurrender, dealerHitsS17);
+    if (typeof set === 'function') return set(system);
+    return set;
+}
+
 export function getDeviation(
     playerTotal: number,
     isSoft: boolean,
@@ -185,49 +216,34 @@ export function getDeviation(
     trueCount: number,
     dealerHitsS17: boolean,
     allowSurrender: boolean,
-    roomId: string = 'classic',
+    deviationsSet: string = 'standard',
     system: CountingSystem = 'Hi-Lo',
 ): Deviation | null {
     let allDeviations: Deviation[] = [];
+    const set = DEVIATION_SETS[deviationsSet];
 
-    if (roomId === 'iberian_21') {
-        allDeviations = system === 'Katarina Walker' ? IBERIAN_WALKER : IBERIAN_HILO;
-    } else if (roomId === 'free_action') {
-        allDeviations = PUSH_22_DEVIATIONS;
-    } else if (roomId === 'zapout_21') {
-        allDeviations = ZAPOUT_DEVIATIONS;
-    } else if (roomId === 'exchange_21') {
-        allDeviations = EXCHANGE_DEVIATIONS;
-    } else if (roomId === 'firecard_21') {
-        // Fab 4 Surrender doesn't apply to Fire Card (surrender disabled), but just in case, we only use FireCard deviations
-        allDeviations = FIRECARD_DEVIATIONS;
-    } else if (roomId === 'uk') {
-        allDeviations = I18_UK;
-    } else if (roomId === 'european') {
-        allDeviations = I18_EUROPEAN;
+    if (typeof set === 'function') {
+        allDeviations = set(system);
+    } else if (set) {
+        allDeviations = set;
     } else {
         const i18Table = dealerHitsS17 ? I18_H17 : I18_S17;
         allDeviations = [...i18Table, ...FAB_4];
     }
 
     for (const dev of allDeviations) {
-        // Skip insurance (playerTotal === 0) — handled separately
         if (dev.playerTotal === 0) continue;
-
-        // Match hand situation
         if (dev.playerTotal !== playerTotal) continue;
         if (dev.isSoft !== isSoft) continue;
         if (dev.isPair !== isPair) continue;
         if (dev.dealerUpcard !== dealerUpcard) continue;
 
-        // Check if true count crosses the threshold
         const fires = dev.direction === 'gte'
             ? trueCount >= dev.index
             : trueCount < dev.index;
 
         if (!fires) continue;
 
-        // Handle surrender downgrade when room doesn't allow it
         if (dev.deviationAction === 'SU' && !allowSurrender) {
             const alternateDeviation = allDeviations.find((candidate) => {
                 if (candidate.id === dev.id || candidate.deviationAction === 'SU') return false;
@@ -254,29 +270,24 @@ export function getDeviation(
     return null;
 }
 
-/**
- * Check if insurance deviation fires (I18-1).
- * Insurance is +EV when true count >= +3 (same for S17 and H17).
- */
+const INSURANCE_INDICES: Record<string, number> = {
+    'iberian_21': 7,
+    'free_action': 7,
+    'zapout_21': 7,
+    'exchange_21': 7,
+};
+
 export function getInsuranceIndex(
-    roomId: string = 'classic',
-    system: CountingSystem = 'Hi-Lo',
+    deviationsSet: string = 'standard',
+    _system: CountingSystem = 'Hi-Lo',
 ): number {
-    if (roomId === 'iberian_21') {
-        return system === 'Katarina Walker' ? 7 : 7;
-    }
-
-    if (roomId === 'free_action' || roomId === 'zapout_21' || roomId === 'exchange_21') {
-        return 7;
-    }
-
-    return 3;
+    return INSURANCE_INDICES[deviationsSet] ?? 3;
 }
 
 export function shouldTakeInsurance(
     trueCount: number,
-    roomId: string = 'classic',
+    deviationsSet: string = 'standard',
     system: CountingSystem = 'Hi-Lo',
 ): boolean {
-    return trueCount >= getInsuranceIndex(roomId, system);
+    return trueCount >= getInsuranceIndex(deviationsSet, system);
 }

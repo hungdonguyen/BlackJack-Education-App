@@ -153,7 +153,10 @@ export default function LobbyPage() {
 }
 
 function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; onClick: () => void }) {
-    const formattedMaxBet = useMemo(() => room.betRange[1].toLocaleString('en-US'), [room.betRange]);
+    const formattedMaxBet = useMemo(() => {
+        if (room.betRange[1] >= 1000000) return 'Unlimited';
+        return `$${room.betRange[1].toLocaleString('en-US')}`;
+    }, [room.betRange]);
 
     return (
         <motion.div
