@@ -10,6 +10,7 @@ interface StrategyCountingTabProps {
     isIberianHiLo: boolean;
     countTab: 'hilo' | 'kw';
     visibleDeviations: any[];
+    deviationTableLabel: string;
 }
 
 export const StrategyCountingTab: React.FC<StrategyCountingTabProps> = ({
@@ -18,7 +19,8 @@ export const StrategyCountingTab: React.FC<StrategyCountingTabProps> = ({
     isIberianWalker,
     isIberianHiLo,
     countTab,
-    visibleDeviations
+    visibleDeviations,
+    deviationTableLabel,
 }) => {
     return (
         <div className="space-y-6">
@@ -185,6 +187,9 @@ export const StrategyCountingTab: React.FC<StrategyCountingTabProps> = ({
             <div>
                 <p className="text-[11px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: `${room.accentColor}80`, fontFamily: "'Georgia', serif" }}>
                     Advanced: Strategy Deviations
+                </p>
+                <p className="text-[10px] leading-relaxed mb-2" style={{ color: 'rgba(240,230,214,0.55)' }}>
+                    {deviationTableLabel}
                 </p>
                 <div className="w-full overflow-x-auto">
                     <table className="w-full border-separate" style={{ borderSpacing: '2px' }}>

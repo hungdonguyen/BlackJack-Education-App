@@ -43,6 +43,7 @@ export const useGameStoreBase = create<GameStore>()(
         countSystem: state.countSystem,
         showSpecialCases: state.showSpecialCases,
         showSwitchAdvice: state.showSwitchAdvice,
+        switchAdviceEngine: state.switchAdviceEngine,
         // Achievements
         unlockedAchievements: state.unlockedAchievements,
         achievementProgress: state.achievementProgress,

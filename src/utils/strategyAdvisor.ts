@@ -5,6 +5,8 @@
 
 import { Card } from '@/types/game';
 import { calculateHandValue } from '@/utils/hand';
+import { buildExchange21Advice } from './exchangeSwitchAdvice';
+import type { ExchangeAdvice, SwitchAdviceEngine } from './exchangeSwitchAdvice';
 import {
     StrategyAction, AdviceAction, CompositionDependentOverride, ActionMeta,
     HARD_CLASSIC, HARD_DOWNTOWN, HARD_FA, HARD_AC,
@@ -20,6 +22,7 @@ import {
 } from './strategyTables';
 export type { StrategyAction, AdviceAction, CompositionDependentOverride, ActionMeta };
 export { ACTION_META, COMPOSITION_DEPENDENT_OVERRIDES };
+export type { ExchangeAdvice, SwitchAdviceEngine };
 
 
 
@@ -327,121 +330,20 @@ export function getHandEV(cards: Card[], dealerUpcard: string, isSwitched = fals
     return ev;
 }
 
-export interface ExchangeAdvice {
-    shouldSwitch: boolean;
-    reasoning: string;
-    originalEV: number;
-    switchedEV: number;
-}
-
-export function getExchange21Advice(hand1: Card[], hand2: Card[], dealerUpcard: string): ExchangeAdvice | null {
-    if (hand1.length !== 2 || hand2.length !== 2) return null;
-
-    // Hand 1 cards: top card is [1] (second card dealt), bottom is [0]
-    // Hand 2 cards: top card is [1], bottom is [0]
-    const h1c1 = hand1[0];
-    const h1c2 = hand1[1];
-    const h2c1 = hand2[0];
-    const h2c2 = hand2[1];
-
-    // Original hands
-    const origH1 = [h1c1, h1c2];
-    const origH2 = [h2c1, h2c2];
-
-    // Switched hands (swap the SECOND cards dealt)
-    const switchH1 = [h1c1, h2c2];
-    const switchH2 = [h2c1, h1c2];
-
-    const evOrig1 = getHandEV(origH1, dealerUpcard, false);
-    const evOrig2 = getHandEV(origH2, dealerUpcard, false);
-    const totalOrigEV = evOrig1 + evOrig2;
-
-    const evSwtch1 = getHandEV(switchH1, dealerUpcard, true);
-    const evSwtch2 = getHandEV(switchH2, dealerUpcard, true);
-    const totalSwtchEV = evSwtch1 + evSwtch2;
-
-    // Check if the result of switching is functionally identical to the original hands
-    // We compare sorted [total|isSoft] strings to detect redundant swaps.
-    const h1Val = calculateHandValue(origH1);
-    const h2Val = calculateHandValue(origH2);
-    const s1Val = calculateHandValue(switchH1);
-    const s2Val = calculateHandValue(switchH2);
-
-    const oSummary = [`${h1Val.total}${h1Val.isSoft}`, `${h2Val.total}${h2Val.isSoft}`].sort().join('|');
-    const sSummary = [`${s1Val.total}${s1Val.isSoft}`, `${s2Val.total}${s2Val.isSoft}`].sort().join('|');
-    const isRedundant = oSummary === sSummary;
-
-    // We only advise a switch if it's not redundant AND provides a noticeable benefit (> 0.05 EV)
-    let shouldSwitch = !isRedundant && (totalSwtchEV > (totalOrigEV + 0.05));
-    let reasoning = 'Keep your current hands.';
-
-    if (isRedundant) {
-        return {
-            shouldSwitch: false,
-            reasoning: 'Switching results in the same hand combination.',
-            originalEV: totalOrigEV,
-            switchedEV: totalSwtchEV
-        };
-    }
-
-    // Hardcoded obvious swaps (heuristic overrides for better UX advice)
-    const oV1 = calculateHandValue(origH1).total;
-    const oV2 = calculateHandValue(origH2).total;
-    const sV1 = calculateHandValue(switchH1).total;
-    const sV2 = calculateHandValue(switchH2).total;
-
-    // Rule 1: Make a 21
-    if ((sV1 === 21 || sV2 === 21) && !(oV1 === 21 || oV2 === 21)) {
-        shouldSwitch = true;
-        reasoning = 'Switch to make a 21.';
-    }
-    // Rule 2: Break up a stiffness to make a 20 or an 11
-    else if ((sV1 === 20 || sV2 === 20 || sV1 === 11 || sV2 === 11) && 
-            ((oV1 >= 12 && oV1 <= 16) || (oV2 >= 12 && oV2 <= 16))) {
-        shouldSwitch = true;
-        reasoning = 'Switch to build a strong hand and break up stiffs.';
-    }
-    // Rule 3: Make strong pairs for splitting
-    // Helper: check if a hand forms a pair of a given rank
-    else if ((() => {
-        const switchedPairRank = (switchH1[0].rank === switchH1[1].rank) ? switchH1[0].rank 
-            : (switchH2[0].rank === switchH2[1].rank) ? switchH2[0].rank : null;
-        const origHasSamePair = (origH1[0].rank === origH1[1].rank && origH1[0].rank === switchedPairRank) ||
-                                 (origH2[0].rank === origH2[1].rank && origH2[0].rank === switchedPairRank);
-        if (!switchedPairRank || origHasSamePair) return false;
-        
-        const d = dealerUpcard;
-        // Always split A-A and 8-8 → recommend against any dealer
-        if (['A', '8'].includes(switchedPairRank)) return true;
-        // 9-9: split vs 2-9 except 7
-        if (switchedPairRank === '9' && ['2','3','4','5','6','8','9'].includes(d)) return true;
-        // 7-7: split vs 2-7
-        if (switchedPairRank === '7' && ['2','3','4','5','6','7'].includes(d)) return true;
-        // 6-6: split vs 2-6
-        if (switchedPairRank === '6' && ['2','3','4','5','6'].includes(d)) return true;
-        // 2-2, 3-3: split vs 2-7
-        if (['2','3'].includes(switchedPairRank) && ['2','3','4','5','6','7'].includes(d)) return true;
-        return false;
-    })()) {
-         shouldSwitch = true;
-         reasoning = 'Switch to create a splittable pair.';
-    } 
-    // Rule 4: Create a double-down opportunity (10 or 11) from a weak stiff
-    else if ((sV1 === 11 || sV2 === 11 || sV1 === 10 || sV2 === 10) && 
-             (oV1 >= 12 && oV1 <= 16 && oV2 >= 12 && oV2 <= 16)) {
-        shouldSwitch = true;
-        reasoning = 'Switch to create a high-value double-down opportunity.';
-    }    // Fallback EV comparison
-    else if (shouldSwitch) {
-        reasoning = `Switching gives you mathematically better hands (+${(totalSwtchEV - totalOrigEV).toFixed(2)} EV).`;
-    }
-
-    return {
-        shouldSwitch,
-        reasoning,
-        originalEV: totalOrigEV,
-        switchedEV: totalSwtchEV
-    };
+export function getExchange21Advice(
+    hand1: Card[],
+    hand2: Card[],
+    dealerUpcard: string,
+    engine: SwitchAdviceEngine = 'cindy_advanced',
+): ExchangeAdvice | null {
+    return buildExchange21Advice({
+        hand1,
+        hand2,
+        dealerUpcard,
+        engine,
+        getHandEV,
+        normalizeRank: normRank,
+    });
 }
 
 export function computeBustStats(cards: Card[], shoe: Card[]) {

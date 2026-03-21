@@ -15,6 +15,15 @@ export interface BetRecord {
   amount: number;
 }
 
+const EXCHANGE_ROOM_ID = 'exchange_21';
+
+function getBettingHandsForRoom(roomId: string, seatId: number): GameStore['seats'][0]['hands'] {
+  if (roomId === EXCHANGE_ROOM_ID) {
+    return [createEmptyHand(seatId, 0), createEmptyHand(seatId, 1)];
+  }
+  return [createEmptyHand(seatId, 0)];
+}
+
 export interface BettingSlice {
   // State
   bankroll: number;
@@ -70,7 +79,8 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
     if (!checkTutorialAction(state, `seat-${seatId}`)) return;
-    const multiplier = state.currentRoom === 'exchange_21' ? 2 : 1;
+    const isExchangeRoom = state.currentRoom === EXCHANGE_ROOM_ID;
+    const multiplier = isExchangeRoom ? 2 : 1;
     const totalAmount = amount * multiplier;
     
     const roomCfg = getRoomConfig(state.currentRoom);
@@ -101,9 +111,14 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
         if (seat.id !== seatId) return seat;
         if (!seat.isActive) return seat;
 
-        const updatedHands = seat.hands.map((hand) => ({
+        const baseHands = isExchangeRoom && seat.hands.length < 2
+          ? getBettingHandsForRoom(s.currentRoom, seatId)
+          : seat.hands;
+        const perHandIncrement = isExchangeRoom ? amount : totalAmount;
+
+        const updatedHands = baseHands.map((hand) => ({
           ...hand,
-          betAmount: hand.betAmount + totalAmount,
+          betAmount: hand.betAmount + perHandIncrement,
         }));
 
         return { ...seat, hands: updatedHands };
@@ -129,6 +144,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     if (sideRefund > 0) delete newSideBets[lastBet.seatId];
 
     const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
+    const perHandRollback = state.currentRoom === EXCHANGE_ROOM_ID ? lastBet.amount / 2 : lastBet.amount;
     set((s) => ({
       bankroll: isTutorial ? s.bankroll : s.bankroll + lastBet.amount + sideRefund,
       tutorialBalance: isTutorial ? s.tutorialBalance + lastBet.amount + sideRefund : s.tutorialBalance,
@@ -140,7 +156,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
           ...seat,
           hands: seat.hands.map((hand) => ({
             ...hand,
-            betAmount: Math.max(0, hand.betAmount - lastBet.amount),
+            betAmount: Math.max(0, hand.betAmount - perHandRollback),
           })),
         };
       }),
@@ -265,13 +281,14 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
       seats: s.seats.map((seat) => {
         const prevBet = state.previousBets.find((b) => b.seatId === seat.id);
         if (!prevBet) return seat;
+        const isExchangeRoom = state.currentRoom === EXCHANGE_ROOM_ID;
+        const baseHands = isExchangeRoom ? getBettingHandsForRoom(state.currentRoom, seat.id) : seat.hands;
+        const perHandBet = isExchangeRoom ? prevBet.amount / 2 : prevBet.amount;
         
         return {
           ...seat,
           isActive: true,
-          hands: seat.hands.map((hand, idx) =>
-            idx === 0 ? { ...hand, betAmount: prevBet.amount } : hand
-          ),
+          hands: baseHands.map((hand) => ({ ...hand, betAmount: perHandBet })),
         };
       }),
     }));
@@ -294,7 +311,15 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
           return {
             ...s,
             seats: s.seats.map((seat) =>
-              seat.id === seatId ? { ...seat, isActive: true } : seat
+              seat.id === seatId
+                ? {
+                    ...seat,
+                    isActive: true,
+                    hands: getBettingHandsForRoom(s.currentRoom, seatId),
+                    currentHandIndex: 0,
+                    hasSwitched: false,
+                  }
+                : seat
             ),
           };
         }
@@ -317,7 +342,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
             return {
               ...seat,
               isActive: false,
-              hands: [createEmptyHand(seatId, 0)],
+              hands: getBettingHandsForRoom(s.currentRoom, seatId),
               currentHandIndex: 0,
               freeActionTokens: 0,
               sideBetAmount: 0,
@@ -363,12 +388,26 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
 
     const currentShoe = state.shoe;
     const savedShoes = state.savedShoes || {};
+    const isExchangeRoom = roomId === EXCHANGE_ROOM_ID;
 
     set({ 
       currentRoom: roomId,
       savedShoes: { ...savedShoes, [state.currentRoom]: currentShoe },
       shoe: savedShoes[roomId] || [],
       selectedChipValue: roomId === 'tutorial_double' ? 100 : 1,
+      betHistory: [],
+      seats: state.seats.map((seat: GameStore['seats'][0]) => {
+        const totalBet = seat.hands.reduce((sum: number, hand: GameStore['seats'][0]['hands'][0]) => sum + hand.betAmount, 0);
+        const baseHands = getBettingHandsForRoom(roomId, seat.id);
+        const perHandBet = isExchangeRoom ? totalBet / 2 : totalBet;
+
+        return {
+          ...seat,
+          hands: baseHands.map((hand) => ({ ...hand, betAmount: perHandBet })),
+          currentHandIndex: 0,
+          hasSwitched: false,
+        };
+      }),
     } as any);
   },
 

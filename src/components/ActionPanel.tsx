@@ -64,6 +64,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const isBJ = currentHand?.status === HandStatus.BLACKJACK;
 
     const showSwitchAdvice = useGameStore((s) => s.showSwitchAdvice);
+    const switchAdviceEngine = useGameStore((s) => s.switchAdviceEngine);
     const rules = getRules(currentRoom);
     const roomConfig = getRoomConfig(currentRoom);
     const minBet = roomConfig.betRange[0];
@@ -118,7 +119,8 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
             exchangeAdvice = getExchange21Advice(
                 currentSeat.hands[0].cards, 
                 currentSeat.hands[1].cards, 
-                dealerHandCards[0]?.rank || '2'
+                dealerHandCards[0]?.rank || '2',
+                switchAdviceEngine,
             );
         }
     }
@@ -188,6 +190,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                                     <Sparkles className="w-3.5 h-3.5" />
                                     <span className="uppercase tracking-wider">{exchangeAdvice.shouldSwitch ? 'Switch Advised' : 'Stand Pat'}</span>
                                 </div>
+                                <div className="text-[9px] uppercase tracking-[0.14em] opacity-70 mb-0.5">{exchangeAdvice.engineLabel}</div>
                                 <span className="opacity-80 ">{exchangeAdvice.reasoning}</span>
                             </motion.div>
                         )}

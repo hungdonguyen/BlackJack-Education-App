@@ -39,6 +39,14 @@ const DESIGN_WIDTH = 1920;
 const DESIGN_HEIGHT = 1080;
 const ROOM_UI_SCALE = 1.08;
 
+const compactClaimNumber = (value: number) => {
+    if (Math.abs(value) < 1_000_000) return value.toLocaleString();
+    return new Intl.NumberFormat('en-US', {
+        notation: 'compact',
+        maximumFractionDigits: 1,
+    }).format(value);
+};
+
 export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const room = getRoomConfig(roomId);
     const router = useRouter();
@@ -1069,6 +1077,8 @@ function DailyClaimPanel({
     claimNudgeTick: number;
     onClaim: () => void;
 }) {
+    const compactAmount = compactClaimNumber(nextClaimAmount);
+
     if (!claimReady) {
         return (
             <motion.div
@@ -1086,8 +1096,8 @@ function DailyClaimPanel({
                             <span className="text-[10px] font-black uppercase tracking-[0.24em] text-white/70 leading-tight">
                                 Daily Claim
                             </span>
-                            <span className="text-[9px] font-bold text-white/30 uppercase tracking-wider mt-0.5">
-                                Next: ${nextClaimAmount.toLocaleString()}
+                            <span className="mt-0.5 max-w-[110px] truncate text-[9px] font-bold uppercase tracking-wider text-white/30">
+                                Next: ${compactAmount}
                             </span>
                         </div>
                     </div>
@@ -1152,11 +1162,11 @@ function DailyClaimPanel({
 
                     <div className="mt-1 flex items-end justify-between gap-2">
                         <div>
-                            <div className={`font-black leading-tight tabular-nums break-all ${claimReady
+                            <div className={`max-w-[145px] truncate whitespace-nowrap font-black leading-tight tabular-nums ${claimReady
                                 ? isBonusClaim ? 'text-yellow-300' : 'text-emerald-300'
                                 : 'text-white/78'
                                 } ${nextClaimAmount >= 1000000 ? 'text-base' : 'text-lg'}`}>
-                                {claimReady ? `+$${nextClaimAmount.toLocaleString()}` : claimCooldown}
+                                {claimReady ? `+$${compactAmount}` : claimCooldown}
                             </div>
                             <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">
                                 {claimReady ? 'Tap To Collect' : 'Unlock In'}

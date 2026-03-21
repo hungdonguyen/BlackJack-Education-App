@@ -273,6 +273,8 @@ export const resetRoundLogic = (set: any, get: () => GameStore) => {
       }
     }
 
+    const isExchangeRoom = state.currentRoom === 'exchange_21';
+
     set({
       shoe,
       forcedShoe,
@@ -286,13 +288,27 @@ export const resetRoundLogic = (set: any, get: () => GameStore) => {
       tutorialCompleted: isTutorialCompleted,
       seats: state.seats.map((seat) => ({
         ...seat,
-        hands: [{
-            id: `seat-${seat.id}-hand-1`,
-            cards: [],
-            betAmount: 0,
-            status: HandStatus.PLAYING,
-            seatId: seat.id
-        }],
+        hands: isExchangeRoom
+          ? [{
+              id: `seat-${seat.id}-hand-1`,
+              cards: [],
+              betAmount: 0,
+              status: HandStatus.PLAYING,
+              seatId: seat.id
+            }, {
+              id: `seat-${seat.id}-hand-2`,
+              cards: [],
+              betAmount: 0,
+              status: HandStatus.PLAYING,
+              seatId: seat.id
+            }]
+          : [{
+              id: `seat-${seat.id}-hand-1`,
+              cards: [],
+              betAmount: 0,
+              status: HandStatus.PLAYING,
+              seatId: seat.id
+            }],
         currentHandIndex: 0,
         freeActionTokens: 0,
         sideBetAmount: 0,

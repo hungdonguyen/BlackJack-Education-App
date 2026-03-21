@@ -27,6 +27,7 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
     const countSystem = useGameStore((s) => s.countSystem);
     const showSpecialCases = useGameStore((s) => s.showSpecialCases);
     const showSwitchAdvice = useGameStore((s) => s.showSwitchAdvice);
+    const switchAdviceEngine = useGameStore((s) => s.switchAdviceEngine);
 
     const setDealerSpeed = useGameStore((s) => s.setDealerSpeed);
     const setSoundEnabled = useGameStore((s) => s.setSoundEnabled);
@@ -35,6 +36,7 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
     const setCountSystem = useGameStore((s) => s.setCountSystem);
     const setShowSpecialCases = useGameStore((s) => s.setShowSpecialCases);
     const setShowSwitchAdvice = useGameStore((s) => s.setShowSwitchAdvice);
+    const setSwitchAdviceEngine = useGameStore((s) => s.setSwitchAdviceEngine);
     const musicEnabled = useGameStore((s) => s.musicEnabled);
     const musicVolume = useGameStore((s) => s.musicVolume);
     const soundVolume = useGameStore((s) => s.soundVolume);
@@ -193,13 +195,8 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
                                     <Divider />
                                     <SettingRow
                                         icon={showSwitchAdvice ? <ArrowLeftRight size={18} className="text-cyan-400" /> : <ArrowLeftRight size={18} className="text-white/30" />}
-                                        label={
-                                            <div className="flex items-center gap-2">
-                                                <span>Exchange Switch Advice</span>
-                                                <span className="text-[8px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-500 font-bold uppercase tracking-tight">Developing</span>
-                                            </div>
-                                        }
-                                        description="EV-based switching recommendations"
+                                        label="Exchange Switch Advice"
+                                        description="Choose one of 3 switch coaching systems"
                                     >
                                         <ToggleSwitch
                                             enabled={showSwitchAdvice}
@@ -207,6 +204,34 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
                                             onChange={(val) => { playSound('switch'); setShowSwitchAdvice(val); }}
                                         />
                                     </SettingRow>
+
+                                    {showSwitchAdvice && (
+                                        <div className="pl-12">
+                                            <div className="grid grid-cols-1 gap-1.5 rounded-lg border border-white/10 p-1.5 bg-white/[0.02]">
+                                                <button
+                                                    onClick={() => { playSound('switch'); setSwitchAdviceEngine('cindy_basic'); }}
+                                                    className={`text-left px-2.5 py-2 rounded-md text-[10px] font-bold uppercase tracking-[0.12em] transition-all cursor-pointer ${switchAdviceEngine === 'cindy_basic' ? 'text-black' : 'text-white/55 hover:text-white/85 bg-white/5 hover:bg-white/10'}`}
+                                                    style={switchAdviceEngine === 'cindy_basic' ? { background: accentColor } : undefined}
+                                                >
+                                                    Cindy Liu Basic
+                                                </button>
+                                                <button
+                                                    onClick={() => { playSound('switch'); setSwitchAdviceEngine('cindy_advanced'); }}
+                                                    className={`text-left px-2.5 py-2 rounded-md text-[10px] font-bold uppercase tracking-[0.12em] transition-all cursor-pointer ${switchAdviceEngine === 'cindy_advanced' ? 'text-black' : 'text-white/55 hover:text-white/85 bg-white/5 hover:bg-white/10'}`}
+                                                    style={switchAdviceEngine === 'cindy_advanced' ? { background: accentColor } : undefined}
+                                                >
+                                                    Cindy Liu Advanced
+                                                </button>
+                                                <button
+                                                    onClick={() => { playSound('switch'); setSwitchAdviceEngine('arnold_snyder'); }}
+                                                    className={`text-left px-2.5 py-2 rounded-md text-[10px] font-bold uppercase tracking-[0.12em] transition-all cursor-pointer ${switchAdviceEngine === 'arnold_snyder' ? 'text-black' : 'text-white/55 hover:text-white/85 bg-white/5 hover:bg-white/10'}`}
+                                                    style={switchAdviceEngine === 'arnold_snyder' ? { background: accentColor } : undefined}
+                                                >
+                                                    Arnold Snyder
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </>
                             )}
                         </>
@@ -302,7 +327,7 @@ function SettingRow({ icon, label, description, children }: {
                     {icon}
                 </div>
                 <div className="min-w-0">
-                    <p className="text-sm font-bold text-white/90 leading-tight">{label}</p>
+                    <div className="text-sm font-bold text-white/90 leading-tight">{label}</div>
                     <p className="text-[10px] text-white/35 leading-tight mt-0.5">{description}</p>
                 </div>
             </div>

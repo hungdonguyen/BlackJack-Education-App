@@ -33,6 +33,27 @@ interface StrategyModalProps {
 
 type Tab = 'rules' | 'hard' | 'soft' | 'pairs' | 'special' | 'counting' | 'free_hand' | 'switch_advice';
 
+function getDeviationTableLabel(room: RoomConfig, countTab: 'hilo' | 'kw'): string {
+    const setId = room.deviationsSet;
+
+    if (setId === 'iberian_21') {
+        return countTab === 'kw'
+            ? 'Deviation Table: Iberian 21 Katarina Walker Indices'
+            : 'Deviation Table: Iberian 21 Hi-Lo Indices';
+    }
+
+    if (setId === 'free_action') return 'Deviation Table: Push 22 (Free Bet) Indices';
+    if (setId === 'exchange_21') return 'Deviation Table: Push 22 (Switch/Exchange 21) Indices';
+    if (setId === 'zapout_21') return 'Deviation Table: Push 22 (Zap Out trimmed set)';
+    if (setId === 'firecard_21') return 'Deviation Table: Fire Card 21 (H17 + Burn Indices)';
+    if (setId === 'european') return 'Deviation Table: European ENHC (E18 custom set)';
+    if (setId === 'uk') return 'Deviation Table: Illustrious 18 + Fab 4 (UK set)';
+
+    const baseTable = room.gameRules.dealerHitsSoft17 ? 'Illustrious 18 (H17)' : 'Illustrious 18 (S17)';
+    const surrenderPart = room.gameRules.allowSurrender ? ' + Fab 4' : '';
+    return `Deviation Table: ${baseTable}${surrenderPart}`;
+}
+
 export default function StrategyModal({ room, onClose }: StrategyModalProps) {
     const [tab, setTab] = useState<Tab>(room.id === 'tutorial_strategy' ? 'hard' : 'rules');
     const countSystem = useGameStore((s: GameStore) => s.countSystem);
@@ -71,7 +92,13 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                     ? strategyTables.pairs
                     : [];
 
-    const visibleDeviations = getDeviationSet(strategyType, countTab === 'kw' ? 'Katarina Walker' : 'Hi-Lo');
+    const visibleDeviations = getDeviationSet(
+        room.deviationsSet,
+        countTab === 'kw' ? 'Katarina Walker' : 'Hi-Lo',
+        room.gameRules.allowSurrender,
+        room.gameRules.dealerHitsSoft17,
+    );
+    const deviationTableLabel = getDeviationTableLabel(room, countTab);
 
     const handleTabChange = (newTab: Tab) => {
         playSound('click');
@@ -149,6 +176,7 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                                     isIberianHiLo={isIberianHiLo}
                                     countTab={countTab}
                                     visibleDeviations={visibleDeviations}
+                                    deviationTableLabel={deviationTableLabel}
                                 />
                             )}
 

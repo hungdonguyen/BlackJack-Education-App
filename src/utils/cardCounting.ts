@@ -123,7 +123,7 @@ export function calculateTrueCountFromShoe(
 
     const decksRemaining = Math.max(shoe.length / getCardsPerDeck(omitTens), 0.5);
     const trueCountRaw = runningCount / decksRemaining;
-    const trueCount = Math.floor(trueCountRaw);
+    const trueCount = Math.round(trueCountRaw * 10) / 10;
 
     return {
         runningCount,

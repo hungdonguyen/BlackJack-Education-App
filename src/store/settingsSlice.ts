@@ -4,6 +4,7 @@
 
 import { StateCreator } from 'zustand';
 import { GameStore } from '@/types/game';
+import type { SwitchAdviceEngine } from '@/utils/exchangeSwitchAdvice';
 
 export type DealerSpeed = 'normal' | 'fast';
 
@@ -20,6 +21,7 @@ export interface SettingsSlice {
   countSystem: 'Hi-Lo' | 'Katarina Walker';
   showSpecialCases: boolean;
   showSwitchAdvice: boolean;
+  switchAdviceEngine: SwitchAdviceEngine;
   showStrategyModal: boolean;
 
   // Actions
@@ -34,6 +36,7 @@ export interface SettingsSlice {
   setCountSystem: (sys: 'Hi-Lo' | 'Katarina Walker') => void;
   setShowSpecialCases: (show: boolean) => void;
   setShowSwitchAdvice: (show: boolean) => void;
+  setSwitchAdviceEngine: (engine: SwitchAdviceEngine) => void;
   setShowStrategyModal: (show: boolean) => void;
 }
 
@@ -67,6 +70,7 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   countSystem: 'Katarina Walker',
   showSpecialCases: true,
   showSwitchAdvice: true,
+  switchAdviceEngine: 'cindy_advanced',
   showStrategyModal: false,
 
   setDealerSpeed: (speed) => set({ dealerSpeed: speed }),
@@ -80,5 +84,6 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   setCountSystem: (sys: 'Hi-Lo' | 'Katarina Walker') => set({ countSystem: sys }),
   setShowSpecialCases: (show: boolean) => set({ showSpecialCases: show }),
   setShowSwitchAdvice: (show: boolean) => set({ showSwitchAdvice: show }),
+  setSwitchAdviceEngine: (engine: SwitchAdviceEngine) => set({ switchAdviceEngine: engine }),
   setShowStrategyModal: (show: boolean) => set({ showStrategyModal: show }),
 });
