@@ -65,46 +65,53 @@ export function checkNewAchievements(
   );
   if (hasFiveCards) tryUnlock('five_card_charlie');
 
-  // 8 & 9. Win streaks
-  if (progress.currentStreak >= 5) tryUnlock('win_streak_5');
-  if (progress.currentStreak >= 10) tryUnlock('win_streak_10');
+  // Low bankroll win
+  if (wonHands.length > 0 && match.bankrollBefore < 5) tryUnlock('low_bankroll');
 
-  // 10. Card Shark — 100 total wins
-  if (progress.totalWins >= 100) tryUnlock('card_shark');
+  // 8 & 9 & 10. Win streaks
+  if (progress.currentStreak >= 10) tryUnlock('win_streak_5');
+  if (progress.currentStreak >= 20) tryUnlock('win_streak_10');
+  if (progress.currentStreak >= 50) tryUnlock('win_streak_20');
 
-  // 11. High Roller — $100K bet
+  // 10. Card Shark — 500 total wins
+  if (progress.totalWins >= 500) tryUnlock('wins_100');
+  
+  if (progress.totalWins >= 2500) tryUnlock('wins_500');
+
+  // 11. High Roller — $100K bet -> let's make it $1M
   const maxBet = Math.max(...allHands.map((h) => h.betAmount), 0);
-  if (maxBet >= 100_000) tryUnlock('high_roller');
+  if (maxBet >= 10_000_000) tryUnlock('high_roller');
 
-  // 12. Millionaire
-  if (bankroll >= 1_000_000) tryUnlock('millionaire');
-
+  // 12. Millionaire -> 10M, Billionaire
+  if (bankroll >= 10_000_000) tryUnlock('millionaire');
+  if (bankroll >= 10_000_000_000) tryUnlock('billionaire');
+  
   // 13. Comeback Kid
-  if (progress.hasBeenUnder100 && bankroll >= 10_000) tryUnlock('comeback_kid');
+  if (progress.hasBeenUnder100 && bankroll >= 100_000) tryUnlock('comeback_kid');
 
   // 14. World Traveler — all 11 rooms
-  if (progress.roomsPlayed.length >= 11) tryUnlock('world_traveler');
+  if (progress.roomsPlayed.length >= 11) tryUnlock('room_explorer');
 
   // ═══ DAILY CLAIM ACHIEVEMENTS ═══
-  if (dailyClaimCount >= 10) tryUnlock('daily_regular');
-  if (dailyClaimCount >= 25) tryUnlock('daily_devoted');
-  if (dailyClaimCount >= 50) tryUnlock('daily_dedicated');
-  if (dailyClaimCount >= 100) tryUnlock('daily_obsessed');
-  if (dailyClaimCount >= 200) tryUnlock('daily_eternal');
+  if (dailyClaimCount >= 25) tryUnlock('daily_regular');
+  if (dailyClaimCount >= 50) tryUnlock('daily_devoted');
+  if (dailyClaimCount >= 100) tryUnlock('daily_dedicated');
+  if (dailyClaimCount >= 250) tryUnlock('daily_obsessed');
+  if (dailyClaimCount >= 500) tryUnlock('daily_eternal');
 
   // ═══ MASTERY ACHIEVEMENTS ═══
 
-  // 20. Perfect Ten — 10 wins in session without any loss
-  if (progress.sessionWins >= 10 && progress.sessionLosses === 0) tryUnlock('perfect_ten');
+  // 20. Perfect Ten — 20 wins in session without any loss
+  if (progress.sessionWins >= 20 && progress.sessionLosses === 0) tryUnlock('perfect_ten');
 
-  // 21. Legend — 500 total wins
-  if (progress.totalWins >= 500) tryUnlock('legend');
+  // 21. Legend — 10000 total wins
+  if (progress.totalWins >= 10000) tryUnlock('wins_1000');
 
-  // 22. Dealer's Nightmare — dealer bust wins
-  if (progress.dealerBustWins >= 10) tryUnlock('bust_master');
+  // 22. Dealer's Nightmare — dealer bust wins (50)
+  if (progress.dealerBustWins >= 50) tryUnlock('bust_master');
 
-  // 23. Standoff — 20 pushes total
-  if (progress.totalPushes >= 20) tryUnlock('push_it');
+  // 23. Standoff — 100 pushes total
+  if (progress.totalPushes >= 100) tryUnlock('push_it');
 
   // 24. All In Glory — bet entire bankroll and win (checked by comparing bankrollBefore)
   const totalBetThisRound = allHands.reduce((sum, h) => sum + h.betAmount, 0);
@@ -115,8 +122,8 @@ export function checkNewAchievements(
 
   // ═══ GAME-SPECIFIC VARIANT ACHIEVEMENTS ═══
 
-  // Zap Master — win 10 after zap
-  if (progress.zapWins >= 10) tryUnlock('zap_master');
+  // Zap Master — win 25 after zap
+  if (progress.zapWins >= 25) tryUnlock('zap_master');
 
   // Lightning Reflexes — zap and get 21
   if (match.roomId === 'zapout_21') {
@@ -136,8 +143,8 @@ export function checkNewAchievements(
     if (zappedTo21) tryUnlock('zap_comeback');
   }
 
-  // Fire Walker — win 10 after burn
-  if (progress.burnWins >= 10) tryUnlock('fire_walker');
+  // Fire Walker — win 25 after burn
+  if (progress.burnWins >= 25) tryUnlock('fire_walker');
 
   // Ace Pyromaniac — burn an Ace of Spades
   if (match.roomId === 'firecard_21') {

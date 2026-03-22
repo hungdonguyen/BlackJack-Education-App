@@ -11,6 +11,7 @@ import { createSettingsSlice } from './settingsSlice';
 import { createDevToolsSlice } from './devToolsSlice';
 import { createAchievementSlice } from './achievementSlice';
 import { createTutorialSlice } from './tutorialSlice';
+import { createDailyClaimSlice } from './dailyClaimSlice';
 
 export const useGameStoreBase = create<GameStore>()(
   persist(
@@ -21,6 +22,7 @@ export const useGameStoreBase = create<GameStore>()(
       ...createDevToolsSlice(...a),
       ...createAchievementSlice(...a),
       ...createTutorialSlice(...a),
+      ...createDailyClaimSlice(...a),
     }),
     {
       name: 'blackjack-storage',
@@ -31,6 +33,9 @@ export const useGameStoreBase = create<GameStore>()(
         lastDailyClaim: state.lastDailyClaim,
         dailyClaimCount: state.dailyClaimCount,
         totalBetSinceLastClaim: state.totalBetSinceLastClaim,
+        insuranceClaimsToday: state.insuranceClaimsToday,
+        lastInsuranceReset: state.lastInsuranceReset,
+        totalClaimedAmount: state.totalClaimedAmount,
         // Settings
         dealerSpeed: state.dealerSpeed,
         soundEnabled: state.soundEnabled,

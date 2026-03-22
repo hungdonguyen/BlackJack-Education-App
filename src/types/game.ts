@@ -151,10 +151,6 @@ export interface GameState {
   // History
   matchHistory: MatchRecord[];
 
-  // Daily claim
-  lastDailyClaim: number;
-  dailyClaimCount: number;
-  totalBetSinceLastClaim: number;
 
   // UI Warnings
   insufficientFundsWarning: boolean;
@@ -162,9 +158,9 @@ export interface GameState {
   // Insurance
   insuranceBets: Record<number, number>; // seatId -> insurance bet amount
 
+
   // Side bets (Free Action room)
   sideBets: Record<number, number>; // seatId -> side bet amount
-
 }
 
 /** All actions available on the game store */
@@ -211,7 +207,6 @@ export interface GameActions {
 
   // Utility
   addFunds: (amount: number) => void;
-  claimDaily: () => number;
   setCurrentRoom: (roomId: string) => void;
   triggerInsufficientFunds: () => void;
   clearInsufficientFunds: () => void;
@@ -229,9 +224,23 @@ export interface GameActions {
 
 }
 
+export interface DailyClaimSlice {
+  lastDailyClaim: number;
+  dailyClaimCount: number;
+  totalBetSinceLastClaim: number;
+  insuranceClaimsToday: number;
+  lastInsuranceReset: number;
+  totalClaimedAmount: number;
+
+  claimDaily: () => number;
+  claimTimedReward: () => number;
+  claimRebate: () => number;
+  claimInsurance: () => number;
+}
+
 import { DevToolsSlice } from '@/store/devToolsSlice';
 import { AchievementSlice } from '@/store/achievementSlice';
 import { TutorialSlice } from '@/store/tutorialSlice';
 
 /** Combined store type */
-export type GameStore = GameState & GameActions & SettingsSlice & DevToolsSlice & AchievementSlice & TutorialSlice;
+export type GameStore = GameState & GameActions & SettingsSlice & DevToolsSlice & AchievementSlice & TutorialSlice & DailyClaimSlice;

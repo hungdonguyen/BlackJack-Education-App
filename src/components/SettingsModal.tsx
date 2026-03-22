@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { X, Gauge, Zap, Volume2, VolumeX, Eye, EyeOff, Settings, Music, Expand, Minimize2, Power, LogOut, ArrowLeftRight } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
+import { COMPOSITION_DEPENDENT_OVERRIDES } from '@/utils/strategyAdvisor';
 
 interface SettingsModalProps {
     roomId: string;
@@ -44,6 +45,8 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
     const setMusicVolume = useGameStore((s) => s.setMusicVolume);
     const setSoundVolume = useGameStore((s) => s.setSoundVolume);
     const { playSound } = useAudio();
+
+    const roomHasSpecialCases = COMPOSITION_DEPENDENT_OVERRIDES.some(o => o.strategyType === roomId);
 
     return (
         <motion.div className="absolute inset-0 z-[200] flex items-center justify-center"
@@ -177,18 +180,22 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
 
                     {showHandAdvisor && (
                         <>
-                            <Divider />
-                            <SettingRow
-                                icon={showSpecialCases ? <Zap size={18} className="text-blue-400" /> : <Zap size={18} className="text-white/30" />}
-                                label="Special Case Suggestions"
-                                description="Toggle composition-dependent strategy overrides"
-                            >
-                                <ToggleSwitch
-                                    enabled={showSpecialCases}
-                                    accentColor={accentColor}
-                                    onChange={(val) => { playSound('switch'); setShowSpecialCases(val); }}
-                                />
-                            </SettingRow>
+                              {roomHasSpecialCases && (
+                                  <>
+                                      <Divider />
+                                      <SettingRow
+                                          icon={showSpecialCases ? <Zap size={18} className="text-blue-400" /> : <Zap size={18} className="text-white/30" />}
+                                          label="Special Case Suggestions"
+                                          description="Toggle composition-dependent strategy overrides"
+                                      >
+                                          <ToggleSwitch
+                                              enabled={showSpecialCases}
+                                              accentColor={accentColor}
+                                              onChange={(val) => { playSound('switch'); setShowSpecialCases(val); }}
+                                          />
+                                      </SettingRow>
+                                  </>
+                              )}
 
                             {roomId === 'exchange_21' && (
                                 <>

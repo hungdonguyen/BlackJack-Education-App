@@ -7,7 +7,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
-import { Info, Home, X, Coins, Shield, Spade, Timer, Gift, ClipboardList, Plus, Minus, ChevronsUp, ArrowLeftRight, Sparkles, User, BookOpen, Settings, LayoutGrid, Flag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Info, Home, X, Coins, Shield, Spade, Timer, ClipboardList, Plus, Minus, ChevronsUp, ArrowLeftRight, Sparkles, User, BookOpen, Settings, LayoutGrid, Flag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { getRoomConfig } from '@/utils/rooms';
 import { calculateHandValue, canSplit, canDoubleDown } from '@/utils/hand';
@@ -64,11 +64,9 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const matchHistory = useGameStore((s) => s.matchHistory);
     const setMatchHistory = useGameStore((s) => s.setMatchHistory);
     const lastDailyClaim = useGameStore((s) => s.lastDailyClaim);
-    const claimDaily = useGameStore((s) => s.claimDaily);
     const totalBetSinceLastClaim = useGameStore((s) => s.totalBetSinceLastClaim);
     const setCurrentRoom = useGameStore((s) => s.setCurrentRoom);
     const insufficientFundsWarning = useGameStore((s) => s.insufficientFundsWarning);
-    const dailyClaimCount = useGameStore((s) => s.dailyClaimCount);
     const triggerInsufficientFunds = useGameStore((s) => s.triggerInsufficientFunds);
     const insuranceBets = useGameStore((s) => s.insuranceBets);
     const resetRound = useGameStore((s) => s.resetRound);
@@ -96,10 +94,6 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const [timer, setTimer] = useState(TURN_TIMER_SECONDS);
     const [insuranceTimer, setInsuranceTimer] = useState(INSURANCE_TIMER_SECONDS);
     const [winNotification, setWinNotification] = useState<{ amount: number; isWin: boolean; isPush?: boolean } | null>(null);
-    const [claimCooldown, setClaimCooldown] = useState('');
-    const [claimCooldownMs, setClaimCooldownMs] = useState(0);
-    const [claimCelebration, setClaimCelebration] = useState<{ amount: number; isBonus: boolean } | null>(null);
-    const [claimNudgeTick, setClaimNudgeTick] = useState(0);
     const [selectedMatchIndex, setSelectedMatchIndex] = useState<number | null>(null);
     const [showExitConfirmation, setShowExitConfirmation] = useState<{ target: 'lobby' | 'home' | null }>({ target: null });
 
@@ -335,56 +329,10 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         }
     }, [isPayout, gamePhase, matchHistory, playSound]);
 
-    // Claim cooldown timer — only runs when a cooldown is actually active
-    useEffect(() => {
-        const tick = () => {
-            const elapsed = Date.now() - lastDailyClaim;
-            if (elapsed >= CLAIM_COOLDOWN_MS) {
-                setClaimCooldown('');
-                setClaimCooldownMs(0);
-                return true; // cooldown expired — stop the interval
-            }
-            const remaining = CLAIM_COOLDOWN_MS - elapsed;
-            const m = Math.floor(remaining / 60000);
-            const s = Math.floor((remaining % 60000) / 1000);
-            setClaimCooldown(`${m}m ${s}s`);
-            setClaimCooldownMs(remaining);
-            return false;
-        };
 
-        // If no cooldown is active right now, clear display and skip interval entirely
-        if (tick()) return;
+// Logo path from room config
+const logoPath = room.logoPath;
 
-        const interval = setInterval(() => {
-            if (tick()) clearInterval(interval);
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [lastDailyClaim]);
-
-    const handleClaimDaily = () => {
-        const nextClaimIsBonus = (dailyClaimCount + 1) % 3 === 0;
-        const amountClaimed = claimDaily();
-        if (amountClaimed <= 0) {
-            setClaimNudgeTick((value) => value + 1);
-            return;
-        }
-
-        setClaimCelebration({ amount: amountClaimed, isBonus: nextClaimIsBonus });
-        playSound(nextClaimIsBonus ? 'win' : 'chip-lay');
-        setTimeout(() => setClaimCelebration(null), nextClaimIsBonus ? 3200 : 2400);
-    };
-
-    // Logo path from room config
-    const logoPath = room.logoPath;
-
-    const claimStep = (dailyClaimCount % 3) + 1;
-    const isBonusClaim = claimStep === 3;
-    const claimReady = claimCooldownMs === 0;
-    const claimProgressRatio = claimReady ? 1 : Math.max(0, 1 - claimCooldownMs / CLAIM_COOLDOWN_MS);
-    const baseClaim = isBonusClaim ? 1000 : 500;
-    const activityBonus = Math.floor((totalBetSinceLastClaim || 0) * 0.02);
-    const nextClaimAmount = baseClaim + activityBonus;
-    const bonusProgress = dailyClaimCount % 3;
     const roomBasePercent = 100 / ROOM_UI_SCALE;
 
     if (!isHydrated) {
@@ -680,19 +628,6 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                         {/* Payout stack — left side */}
                         <div className="absolute top-[85px] left-[15px] z-15 flex w-[250px] flex-col gap-2">
                             <PayoutPanel roomConfig={room} />
-                            {!room.isTutorial && (
-                                <DailyClaimPanel
-                                    claimReady={claimReady}
-                                    isBonusClaim={isBonusClaim}
-                                    claimStep={claimStep}
-                                    claimCooldown={claimCooldown}
-                                    nextClaimAmount={nextClaimAmount}
-                                    bonusProgress={bonusProgress}
-                                    claimProgressRatio={claimProgressRatio}
-                                    claimNudgeTick={claimNudgeTick}
-                                    onClaim={handleClaimDaily}
-                                />
-                            )}
                         </div>
 
 
@@ -813,34 +748,6 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                                 )}
                         </AnimatePresence>
 
-                        <AnimatePresence>
-                            {claimCelebration && (
-                                <motion.div
-                                    className="absolute left-1/2 bottom-28 z-[60] pointer-events-none"
-                                    initial={{ opacity: 0, y: 24, scale: 0.92, x: '-50%' }}
-                                    animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
-                                    exit={{ opacity: 0, y: -12, scale: 0.95, x: '-50%' }}
-                                    transition={{ duration: 0.24, ease: 'easeOut' }}
-                                >
-                                    <div
-                                        className={`px-6 py-3 rounded-2xl border backdrop-blur-md shadow-2xl ${claimCelebration.isBonus
-                                            ? 'bg-amber-500/14 border-amber-300/45 text-amber-100'
-                                            : 'bg-emerald-500/14 border-emerald-300/35 text-emerald-100'
-                                            }`}
-                                    >
-                                        <p className="text-center text-[10px] uppercase tracking-[0.35em] font-black opacity-80">
-                                            {claimCelebration.isBonus ? 'BONUS CLAIMED' : 'DAILY CLAIMED'}
-                                        </p>
-                                        <p className={`text-center text-2xl font-black tabular-nums mt-1 ${claimCelebration.isBonus ? 'text-yellow-300' : 'text-emerald-300'}`}>
-                                            +${claimCelebration.amount.toLocaleString()}
-                                        </p>
-                                        <p className="text-center text-[11px] font-bold opacity-75 mt-1">
-                                            {claimCelebration.isBonus ? 'Third claim bonus delivered to your stack.' : 'Come back after the cooldown for the next table bonus.'}
-                                        </p>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
 
                         {/* ─── Bottom HUD Bar ─── */}
                         <div className="absolute bottom-0 left-0 right-0 z-50">
@@ -1056,175 +963,4 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
     );
 }
 
-function DailyClaimPanel({
-    claimReady,
-    isBonusClaim,
-    claimStep,
-    claimCooldown,
-    nextClaimAmount,
-    bonusProgress,
-    claimProgressRatio,
-    claimNudgeTick,
-    onClaim,
-}: {
-    claimReady: boolean;
-    isBonusClaim: boolean;
-    claimStep: number;
-    claimCooldown: string;
-    nextClaimAmount: number;
-    bonusProgress: number;
-    claimProgressRatio: number;
-    claimNudgeTick: number;
-    onClaim: () => void;
-}) {
-    const compactAmount = compactClaimNumber(nextClaimAmount);
-
-    if (!claimReady) {
-        return (
-            <motion.div
-                key={`claim-cooldown-${claimNudgeTick}`}
-                className="relative z-20 w-full overflow-hidden rounded-2xl border border-white/10 bg-black/38 px-3.5 py-3"
-                animate={claimNudgeTick > 0 ? { x: [0, -4, 4, -3, 0] } : { x: 0 }}
-                transition={{ duration: 0.35 }}
-            >
-                <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/35">
-                            <Timer size={15} />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-black uppercase tracking-[0.24em] text-white/70 leading-tight">
-                                Daily Claim
-                            </span>
-                            <span className="mt-0.5 max-w-[110px] truncate text-[9px] font-bold uppercase tracking-wider text-white/30">
-                                Next: ${compactAmount}
-                            </span>
-                        </div>
-                    </div>
-                    <span className="text-base font-black tabular-nums text-white/78 shrink-0">
-                        {claimCooldown}
-                    </span>
-                </div>
-            </motion.div>
-        );
-    }
-
-    return (
-        <motion.button
-            key={claimNudgeTick}
-            onClick={onClaim}
-            aria-disabled={!claimReady}
-            className={`relative z-20 w-full overflow-hidden rounded-2xl border px-3.5 py-3 text-left transition-all ${isBonusClaim
-                ? 'cursor-pointer border-yellow-400/50 bg-linear-to-r from-amber-500/18 via-yellow-500/12 to-amber-300/18 shadow-[0_0_22px_rgba(250,204,21,0.16)]'
-                : 'cursor-pointer border-emerald-400/32 bg-linear-to-r from-emerald-500/16 via-emerald-400/10 to-cyan-400/12 shadow-[0_0_16px_rgba(16,185,129,0.12)]'
-                }`}
-            whileHover={{ scale: 1.015, y: -2 }}
-            whileTap={{ scale: 0.985 }}
-            animate={{
-                boxShadow: isBonusClaim
-                    ? ['0 0 16px rgba(250,204,21,0.08)', '0 0 24px rgba(250,204,21,0.18)', '0 0 16px rgba(250,204,21,0.08)']
-                    : ['0 0 10px rgba(16,185,129,0.06)', '0 0 18px rgba(16,185,129,0.14)', '0 0 10px rgba(16,185,129,0.06)']
-            }}
-            transition={{ duration: isBonusClaim ? 1.8 : 2.2, repeat: Infinity, ease: 'easeInOut' }}
-        >
-            <motion.div
-                className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent"
-                animate={{ x: ['-120%', '220%'] }}
-                transition={{ duration: isBonusClaim ? 1.4 : 2.2, repeat: Infinity, ease: 'linear' }}
-            />
-
-            <div className="absolute inset-x-0 top-0 h-8 border-b border-white/6 bg-black/18" />
-
-            <div className="relative z-10 flex items-start gap-3">
-                <div className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${claimReady
-                    ? isBonusClaim
-                        ? 'border-yellow-300/55 bg-yellow-300/10 text-yellow-300'
-                        : 'border-emerald-300/35 bg-emerald-300/10 text-emerald-300'
-                    : 'border-white/10 bg-white/5 text-white/25'
-                    }`}>
-                    {claimReady ? <Gift size={17} /> : <Timer size={16} />}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.24em] text-white/70">
-                            Daily Claim
-                        </span>
-                        <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${isBonusClaim
-                            ? 'text-yellow-300'
-                            : claimReady
-                                ? 'text-emerald-300'
-                                : 'text-white/40'
-                            }`}>
-                            {isBonusClaim ? 'Bonus' : `Step ${claimStep}/3`}
-                        </span>
-                    </div>
-
-                    <div className="mt-1 flex items-end justify-between gap-2">
-                        <div>
-                            <div className={`max-w-[145px] truncate whitespace-nowrap font-black leading-tight tabular-nums ${claimReady
-                                ? isBonusClaim ? 'text-yellow-300' : 'text-emerald-300'
-                                : 'text-white/78'
-                                } ${nextClaimAmount >= 1000000 ? 'text-base' : 'text-lg'}`}>
-                                {claimReady ? `+$${compactAmount}` : claimCooldown}
-                            </div>
-                            <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">
-                                {claimReady ? 'Tap To Collect' : 'Unlock In'}
-                            </div>
-                        </div>
-
-                        <div className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${claimReady
-                            ? isBonusClaim
-                                ? 'border-yellow-300/40 bg-yellow-300/12 text-yellow-200'
-                                : 'border-emerald-300/25 bg-emerald-300/10 text-emerald-200'
-                            : 'border-white/10 bg-white/5 text-white/45'
-                            }`}>
-                            {claimReady ? 'Ready' : 'Locked'}
-                        </div>
-                    </div>
-
-                    <div className="mt-2 text-[10px] font-semibold text-white/48 leading-snug">
-                        {claimReady
-                            ? isBonusClaim
-                                ? 'Milestone payout is ready below the payout table.'
-                                : 'Claim now to keep your streak moving toward the bonus.'
-                            : 'Come back when the timer fills to collect more chips.'}
-                    </div>
-
-                    <div className="mt-2.5 flex items-center gap-1.5">
-                        {[1, 2, 3].map((step) => {
-                            const active = step <= bonusProgress;
-                            const next = claimReady && step === claimStep;
-                            return (
-                                <div
-                                    key={step}
-                                    className={`h-2.5 w-2.5 rounded-full border ${active
-                                        ? 'border-yellow-300 bg-yellow-300 shadow-[0_0_8px_rgba(253,224,71,0.7)]'
-                                        : next
-                                            ? 'border-emerald-300 bg-emerald-300/65 shadow-[0_0_8px_rgba(52,211,153,0.3)]'
-                                            : 'border-white/18 bg-white/5'
-                                        }`}
-                                />
-                            );
-                        })}
-                        <div className="ml-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/35">
-                            {`${claimStep}/3 Ready`}
-                        </div>
-                    </div>
-
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
-                        <motion.div
-                            className={`h-full rounded-full ${claimReady
-                                ? isBonusClaim ? 'bg-linear-to-r from-amber-300 via-yellow-300 to-amber-400' : 'bg-linear-to-r from-emerald-300 via-emerald-400 to-cyan-300'
-                                : 'bg-linear-to-r from-white/30 via-white/60 to-white/30'
-                                }`}
-                            animate={{ width: `${Math.max(claimProgressRatio * 100, claimReady ? 100 : 6)}%` }}
-                            transition={{ duration: claimReady ? 0.18 : 0.8, ease: 'easeOut' }}
-                        />
-                    </div>
-                </div>
-            </div>
-        </motion.button>
-    );
-}
 

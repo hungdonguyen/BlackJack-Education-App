@@ -528,14 +528,14 @@ export const STRATEGY_TUTORIAL_LESSONS: TutorialLesson[] = [
             {
                 id: 1,
                 message: "Before we bet, let's explore the strategy data. Click 'Rule & Strategy' below.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && !s.showStrategyModal,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING,
                 targetElementId: 'strategy-button',
                 position: 'bottom'
             },
             {
                 id: 2,
                 message: "This is the Hard Totals section. Use this when you don't have an Ace or a Pair.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.showStrategyModal,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING,
                 targetElementId: 'tab-hard',
                 position: 'dealer',
                 requiresClick: true
@@ -543,7 +543,7 @@ export const STRATEGY_TUTORIAL_LESSONS: TutorialLesson[] = [
             {
                 id: 3,
                 message: "This is Soft Totals (hands with Aces). Very important for flexible plays.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.showStrategyModal,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING,
                 targetElementId: 'tab-soft',
                 position: 'dealer',
                 requiresClick: true
@@ -551,7 +551,7 @@ export const STRATEGY_TUTORIAL_LESSONS: TutorialLesson[] = [
             {
                 id: 4,
                 message: "This is Pairs. Tells you when to Split (like 8s and Aces).",
-                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.showStrategyModal,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING,
                 targetElementId: 'tab-pairs',
                 position: 'dealer',
                 requiresClick: true
@@ -559,21 +559,21 @@ export const STRATEGY_TUTORIAL_LESSONS: TutorialLesson[] = [
             {
                 id: 5,
                 message: "Great! You can always check this during the game. Close it now to place your bet.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.showStrategyModal,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING,
                 targetElementId: 'strategy-close-btn',
                 position: 'bottom'
             },
             {
                 id: 6,
                 message: "Now select the $100 chip.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && !s.showStrategyModal && s.seats[2].hands[0].betAmount === 0,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount === 0,
                 targetElementId: 'chip-100',
                 position: 'bottom'
             },
             {
                 id: 7,
                 message: "Place a bet on Seat 3 to start the round.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && !s.showStrategyModal && s.selectedChipValue === 100 && s.seats[2].hands[0].betAmount === 0,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue === 100 && s.seats[2].hands[0].betAmount === 0,
                 targetElementId: 'seat-3',
                 position: 'bottom'
             },

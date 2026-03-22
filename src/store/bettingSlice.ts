@@ -29,14 +29,11 @@ export interface BettingSlice {
   bankroll: number;
   selectedChipValue: number;
   betHistory: BetRecord[];
-  lastDailyClaim: number;
-  dailyClaimCount: number;
   currentRoom: string;
   previousBets: { seatId: number; amount: number }[];
   previousSideBets: Record<number, number>;
   insufficientFundsWarning: boolean;
   sideBets: Record<number, number>;
-  totalBetSinceLastClaim: number;
 
   // Actions
   selectChip: (value: number) => void;
@@ -46,7 +43,6 @@ export interface BettingSlice {
   clearAllBets: () => void;
   toggleSeat: (seatId: number) => void;
   addFunds: (amount: number) => void;
-  claimDaily: () => number;
   setCurrentRoom: (roomId: string) => void;
   rebet: () => void;
   triggerInsufficientFunds: () => void;
@@ -60,14 +56,11 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   bankroll: DEFAULT_BANKROLL,
   selectedChipValue: 1,
   betHistory: [],
-  lastDailyClaim: 0,
-  dailyClaimCount: 0,
   currentRoom: 'classic',
   previousBets: [],
   previousSideBets: {},
   insufficientFundsWarning: false,
   sideBets: {},
-  totalBetSinceLastClaim: 0,
 
   selectChip: (value: number) => {
     const state = get();
@@ -107,6 +100,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
       bankroll: roomCfg.isTutorial ? s.bankroll : s.bankroll - totalAmount,
       tutorialBalance: roomCfg.isTutorial ? s.tutorialBalance - totalAmount : s.tutorialBalance,
       betHistory: [...s.betHistory, { seatId, amount: totalAmount }],
+      totalBetSinceLastClaim: s.totalBetSinceLastClaim + totalAmount,
       seats: s.seats.map((seat) => {
         if (seat.id !== seatId) return seat;
         if (!seat.isActive) return seat;
@@ -360,27 +354,6 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     set({ bankroll: Math.max(0, amount) });
   },
 
-  claimDaily: () => {
-    const state = get();
-    const now = Date.now();
-    const THIRTY_MIN = 30 * 60 * 1000;
-    if (now - state.lastDailyClaim < THIRTY_MIN) return 0;
-
-    const isBonusClaim = (state.dailyClaimCount + 1) % 3 === 0;
-    const baseClaim = isBonusClaim ? 1000 : 500;
-    const activityBonus = Math.floor((state.totalBetSinceLastClaim || 0) * 0.02);
-    const claimAmount = baseClaim + activityBonus;
-
-    set((s) => ({
-      bankroll: s.bankroll + claimAmount,
-      lastDailyClaim: now,
-      dailyClaimCount: s.dailyClaimCount + 1,
-      totalBetSinceLastClaim: 0,
-    }));
-    
-    get().syncAchievements();
-    return claimAmount;
-  },
 
   setCurrentRoom: (roomId: string) => {
     const state = get() as any;
