@@ -5,6 +5,7 @@
 import { Card, Shoe } from '@/types/game';
 import { Suit, Rank } from '@/types/enums';
 import { NUM_DECKS, RESHUFFLE_THRESHOLD } from './constants';
+import { invoke } from '@tauri-apps/api/core';
 
 /** Map of rank to base numeric value */
 const RANK_VALUES: Record<Rank, number> = {
@@ -64,6 +65,20 @@ export function shuffleShoe(shoe: Shoe): Shoe {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+
+/** Tries to use the native Rust implementation to generate and shuffle shoes securely, falls back to JS in web-mode. */
+export async function getShuffledShoe(numDecks: number = NUM_DECKS, omitTens: boolean = false): Promise<Shoe> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+    try {
+      const shoe = await invoke<Card[]>('shuffle_and_deal', { numDecks, omitTens });
+      return shoe;
+    } catch (e) {
+      console.error('Failed to get shoe from Rust backend, falling back to JS.', e);
+    }
+  }
+  return shuffleShoe(createShoe(numDecks, omitTens));
 }
 
 /** Check if the shoe needs reshuffling.

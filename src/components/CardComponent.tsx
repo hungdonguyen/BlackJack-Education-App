@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { Card } from '@/types/game';
 import { getCardImagePath, getCardBackPath } from '@/utils/assets';
 import { useAudio } from '@/utils/audio';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface CardComponentProps {
     card: Card;
@@ -53,13 +53,15 @@ export default function CardComponent({
     const fanOffset = FAN_OFFSETS[size];
     const rotation = FAN_ROTATIONS[index % FAN_ROTATIONS.length] ?? 0;
     const { playSound } = useAudio();
+    const hasPlayedSoundRef = useRef(false);
 
     useEffect(() => {
-        if (animate) {
+        if (animate && !hasPlayedSoundRef.current) {
+            hasPlayedSoundRef.current = true;
             // Slight delay to sync with animation, or immediate
             const timer = setTimeout(() => {
                 playSound('card-slide');
-            }, index * 180); // matches the 0.18s delay in framer-motion
+            }, index * 180); // matches the 0.18s delay in framer-motion        
             return () => clearTimeout(timer);
         }
     }, [animate, index, playSound]);

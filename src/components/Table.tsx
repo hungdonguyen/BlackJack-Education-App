@@ -7,6 +7,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useGameStoreBase } from '@/store/gameStore';
 import { Info, Home, X, Coins, Shield, Spade, Timer, ClipboardList, Plus, Minus, ChevronsUp, ArrowLeftRight, Sparkles, User, BookOpen, Settings, LayoutGrid, Flag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GamePhase, HandStatus } from '@/types/enums';
@@ -31,11 +32,9 @@ import SettingsModal from './SettingsModal';
 import { MusicPlayer } from './MusicPlayer';
 import { calculateMatchNetPnl, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
 import { useAudio } from '@/utils/audio';
-import { useBGM } from '@/utils/bgm';
+import { useViewportScale } from '@/hooks/useViewportScale';
+import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys';
 
-const TURN_TIMER_SECONDS = 30;
-const INSURANCE_TIMER_SECONDS = 10;
-const CLAIM_COOLDOWN_MS = 30 * 60 * 1000;
 const DESIGN_WIDTH = 1920;
 const DESIGN_HEIGHT = 1080;
 const ROOM_UI_SCALE = 1.08;
@@ -53,67 +52,28 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const router = useRouter();
 
     const initializeShoe = useGameStore((s) => s.initializeShoe);
-    const shoe = useGameStore((s) => s.shoe);
-    const declineInsurance = useGameStore((s) => s.declineInsurance);
+    const shoe = useGameStore(useShallow((s) => s.shoe));
     const gamePhase = useGameStore((s) => s.gamePhase);
     const bankroll = useGameStore((s) => s.bankroll);
     const tutorialBalance = useGameStore((s) => s.tutorialBalance);
-    const seats = useGameStore((s) => s.seats);
-    const stand = useGameStore((s) => s.stand);
+    const seats = useGameStore(useShallow((s) => s.seats));
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
-    const actionCounter = useGameStore((s) => s.actionCounter);
-    const matchHistory = useGameStore((s) => s.matchHistory);
-    const setMatchHistory = useGameStore((s) => s.setMatchHistory);
-    const lastDailyClaim = useGameStore((s) => s.lastDailyClaim);
-    const totalBetSinceLastClaim = useGameStore((s) => s.totalBetSinceLastClaim);
+    const matchHistory = useGameStore(useShallow((s) => s.matchHistory));
     const setCurrentRoom = useGameStore((s) => s.setCurrentRoom);
     const insufficientFundsWarning = useGameStore((s) => s.insufficientFundsWarning);
-    const triggerInsufficientFunds = useGameStore((s) => s.triggerInsufficientFunds);
-    const insuranceBets = useGameStore((s) => s.insuranceBets);
+    const insuranceBets = useGameStore(useShallow((s) => s.insuranceBets));
     const resetRound = useGameStore((s) => s.resetRound);
     const resetTutorialProgress = useGameStore((s) => s.resetTutorialProgress);
     const isHydrated = useStoreHydration();
 
-    // Viewport scaling — fixed design canvas scaled to fit any screen
-    const [viewScale, setViewScale] = useState(1);
-    useEffect(() => {
-        const update = () => {
-            const sx = window.innerWidth / DESIGN_WIDTH;
-            const sy = window.innerHeight / DESIGN_HEIGHT;
-            setViewScale(Math.min(sx, sy));
-        };
-        update();
-        window.addEventListener('resize', update);
-        return () => window.removeEventListener('resize', update);
-    }, []);
-
-    const showStrategy = useGameStore((state) => state.showStrategyModal);
-    const setShowStrategy = useGameStore((state) => state.setShowStrategyModal);
-    const [showSettings, setShowSettings] = useState(false);
-    const [showLogoInfo, setShowLogoInfo] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    const [timer, setTimer] = useState(TURN_TIMER_SECONDS);
-    const [insuranceTimer, setInsuranceTimer] = useState(INSURANCE_TIMER_SECONDS);
-    const [winNotification, setWinNotification] = useState<{ amount: number; isWin: boolean; isPush?: boolean } | null>(null);
-    const [selectedMatchIndex, setSelectedMatchIndex] = useState<number | null>(null);
-    const [showExitConfirmation, setShowExitConfirmation] = useState<{ target: 'lobby' | 'home' | null }>({ target: null });
-
-    useEffect(() => {
-        const syncFullscreenState = () => setIsFullscreen(Boolean(document.fullscreenElement));
-        syncFullscreenState();
-        document.addEventListener('fullscreenchange', syncFullscreenState);
-        return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
-    }, []);
+    const viewScale = useViewportScale(DESIGN_WIDTH, DESIGN_HEIGHT);
 
     const showHandAdvisor = useGameStore((s) => s.showHandAdvisor);
     const showCardCounting = useGameStore((s) => s.showCardCounting);
 
 
-    const isPlayerTurn = gamePhase === GamePhase.PLAYER_TURN;
     const isInsurance = gamePhase === GamePhase.INSURANCE;
     const isPayout = gamePhase === GamePhase.PAYOUT;
-    const isVegasStrip = roomId === 'vegas_strip';
-    const isVegasDowntown = roomId === 'vegas_downtown';
 
     const totalBet = seats
         .filter((s) => s.isActive)
@@ -121,7 +81,6 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         Object.values(insuranceBets).reduce((sum, amount) => sum + amount, 0);
 
     const currentSeat = seats[currentSeatIndex];
-    const currentHand = currentSeat?.hands[currentSeat.currentHandIndex];
     const lastOutcomeMatchIdRef = useRef<string | null>(null);
 
     // Set current room in store and reset tutorial if needed
@@ -131,6 +90,20 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             resetTutorialProgress(roomId);
         }
     }, [roomId, setCurrentRoom, room.isTutorial, resetTutorialProgress]);
+
+    const [winNotification, setWinNotification] = useState<{amount: number, isWin: boolean, isPush?: boolean} | null>(null);
+    const [showLogoInfo, setShowLogoInfo] = useState(false);
+    const [showStrategy, setShowStrategy] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const [selectedMatchIndex, setSelectedMatchIndex] = useState<number | null>(null);
+    const [showExitConfirmation, setShowExitConfirmation] = useState<{target: 'lobby'|'home'|null}>({target: null});
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    useEffect(() => {
+        const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+    }, []);
 
     const { playSound } = useAudio();
 
@@ -194,113 +167,27 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         }
     }, [shoe.length, initializeShoe, playSound]);
 
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== 'Escape') return;
-
-            event.preventDefault();
-
+    useGlobalHotkeys({
+        onEscape: () => {
             if (selectedMatchIndex !== null) {
                 setSelectedMatchIndex(null);
                 return;
             }
-
             if (showSettings) {
                 setShowSettings(false);
                 return;
             }
-
             if (showStrategy) {
                 setShowStrategy(false);
                 return;
             }
-
             if (showLogoInfo) {
                 setShowLogoInfo(false);
                 return;
             }
-
             returnToLobby();
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [resetRound, returnToLobby, router, selectedMatchIndex, showLogoInfo, showSettings, showStrategy]);
-
-    // 30-second turn timer — stand() deferred via setTimeout to avoid
-    // calling Zustand mutations inside a React state updater (batch context).
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        let resetTimeout: NodeJS.Timeout | undefined;
-        let expired = false;
-
-        if (isPlayerTurn && !room.isTutorial) {
-            resetTimeout = setTimeout(() => setTimer(TURN_TIMER_SECONDS), 0);
-            interval = setInterval(() => {
-                setTimer((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(interval);
-                        if (!expired) {
-                            expired = true;
-                            // sees fully committed Zustand state
-                            setTimeout(() => {
-                                const state = useGameStoreBase.getState();
-                                const isMadness = state.currentRoom === 'madness_21';
-                                const currentSeat = state.seats[state.currentSeatIndex];
-                                const currentHand = currentSeat?.hands[currentSeat.currentHandIndex];
-                                
-                                if (isMadness && currentHand && currentHand.cards.length === 1) {
-                                    state.hit();
-                                } else {
-                                    state.stand();
-                                }
-                            }, 0);
-                        }
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-        } else {
-            resetTimeout = setTimeout(() => setTimer(TURN_TIMER_SECONDS), 0);
         }
-
-        return () => {
-            clearInterval(interval);
-            if (resetTimeout) clearTimeout(resetTimeout);
-        };
-    }, [isPlayerTurn, stand, currentSeatIndex, currentSeat?.currentHandIndex, actionCounter]);
-
-    // 10-second insurance timer — auto-decline if expired
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        let resetTimeout: NodeJS.Timeout | undefined;
-        let expired = false;
-
-        if (isInsurance && !room.isTutorial) {
-            resetTimeout = setTimeout(() => setInsuranceTimer(INSURANCE_TIMER_SECONDS), 0);
-            interval = setInterval(() => {
-                setInsuranceTimer((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(interval);
-                        if (!expired) {
-                            expired = true;
-                            setTimeout(() => declineInsurance(), 0);
-                        }
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-        } else {
-            resetTimeout = setTimeout(() => setInsuranceTimer(INSURANCE_TIMER_SECONDS), 0);
-        }
-
-        return () => {
-            clearInterval(interval);
-            if (resetTimeout) clearTimeout(resetTimeout);
-        };
-    }, [isInsurance, declineInsurance, currentSeatIndex]);
+    });
 
     // Safety: recover from stuck DEALER_TURN (e.g. async error in dealerPlay)
     const dealerPlay = useGameStore((s) => s.dealerPlay);
@@ -663,7 +550,8 @@ const logoPath = room.logoPath;
 
                         {/* Action Buttons — center */}
                         <div className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4" style={{ top: 'calc(33% + 25px)' }}>
-                            <ActionPanel timer={timer} insuranceTimer={isInsurance ? insuranceTimer : undefined} currentInsuranceSeat={isInsurance ? seats[currentSeatIndex]?.id : undefined} />
+                            <ActionPanel
+                                currentInsuranceSeat={isInsurance ? seats[currentSeatIndex]?.id : undefined} />
                         </div>
 
                         {/* 5 Seats — inverted arc (middle lowest) */}
@@ -882,7 +770,7 @@ function GamePhaseIndicator({ phase }: { phase: GamePhase }) {
 function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void }) {
     const { playSound } = useAudio();
     const [page, setPage] = useState(1);
-    const matchHistory = useGameStore((s) => s.matchHistory);
+    const matchHistory = useGameStore(useShallow((s) => s.matchHistory));
     const totalLen = matchHistory.length;
     const ITEMS_PER_PAGE = 8;
     const totalPages = Math.max(1, Math.ceil(totalLen / ITEMS_PER_PAGE));

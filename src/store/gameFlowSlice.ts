@@ -26,6 +26,7 @@ import { calculatePayoutsLogic } from './logic/payouts';
 
 export interface GameFlowSlice {
   // State
+  roundId: number;
   shoe: Card[];
   savedShoes: Record<string, Card[]>;
   gamePhase: GamePhase;
@@ -64,6 +65,7 @@ export interface GameFlowSlice {
 }
 
 export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice> = (set, get) => ({
+  roundId: 0,
   shoe: [],
   savedShoes: {},
   gamePhase: GamePhase.BETTING,

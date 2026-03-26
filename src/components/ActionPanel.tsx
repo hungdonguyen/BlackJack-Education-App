@@ -6,24 +6,27 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
+import { useShallow } from 'zustand/react/shallow';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { Shield, Check, X, Undo2, Spade, Home, Sparkles, Flag, Zap, ArrowLeftRight, Flame } from 'lucide-react';
 import { getRules } from '@/rules';
 import { getRoomConfig } from '@/utils/rooms';
+import { TurnTimer, InsuranceTimer } from './ActionTimers';
+import React, { useMemo } from 'react';
 import { useAudio } from '@/utils/audio';
 import { getExchange21Advice, ExchangeAdvice } from '@/utils/strategyAdvisor';
 import { useRouter } from 'next/navigation';
 import { BEGINNER_TUTORIAL_LESSONS, DOUBLE_TUTORIAL_LESSONS, STRATEGY_TUTORIAL_LESSONS } from '@/utils/tutorialData';
 
-export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSeat }: { timer?: number; insuranceTimer?: number; currentInsuranceSeat?: number }) {
+const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { currentInsuranceSeat?: number }) {
     const router = useRouter();
     const gamePhase = useGameStore((s) => s.gamePhase);
-    const seats = useGameStore((s) => s.seats);
+    const seats = useGameStore(useShallow((s) => s.seats));
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
     const bankroll = useGameStore((s) => s.bankroll);
     const currentRoom = useGameStore((s) => s.currentRoom);
     const tutorialBalance = useGameStore((s) => s.tutorialBalance);
-    const betHistory = useGameStore((s) => s.betHistory);
+    const betHistory = useGameStore(useShallow((s) => s.betHistory));
     const hit = useGameStore((s) => s.hit);
     const stand = useGameStore((s) => s.stand);
     const doubleDown = useGameStore((s) => s.doubleDown);
@@ -73,67 +76,84 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const currentBalance = (roomConfig.isTutorial ? tutorialBalance : bankroll) ?? 0;
 
     const isMadness = currentRoom === 'madness_21';
-    const canHit = isPlayerTurn && isPlaying && (!currentHand?.isDoubleDown || isMadness);
-    
-    // Switch Advisor check (calculated early to influence canStand)
-    let canSwitchHand = false;
-    if (isPlayerTurn && currentSeat && rules.canSwitch) {
-        const result = rules.canSwitch(currentSeat);
-        canSwitchHand = result.allowed;
-    }
 
-    const canStand = isPlayerTurn && (isPlaying || (isBJ && canSwitchHand)) && !(isMadness && currentHand?.cards.length === 1);
 
-    let canDbl = false;
-    let isDblFree = false;
-    if (isPlayerTurn && isPlaying && currentHand) {
-        const result = rules.canDoubleDown(currentHand);
-        isDblFree = result.isFree;
-        canDbl = result.allowed && (result.isFree || currentBalance >= result.cost);
-    }
+    const canHit = useMemo(() => {
+        return isPlayerTurn && isPlaying && (!currentHand?.isDoubleDown || isMadness);
+    }, [isPlayerTurn, isPlaying, currentHand?.isDoubleDown, isMadness]);
 
-    let canSpl = false;
-    let isSplFree = false;
-    if (isPlayerTurn && isPlaying && currentHand) {
-        const result = rules.canSplit(currentHand, currentSeat?.hands.length || 0);
-        isSplFree = result.isFree;
-        canSpl = result.allowed && (result.isFree || currentBalance >= result.cost);
-    }
+    const canSwitchHand = useMemo(() => {
+        if (isPlayerTurn && currentSeat && rules.canSwitch) {
+            return rules.canSwitch(currentSeat).allowed;
+        }
+        return false;
+    }, [isPlayerTurn, currentSeat, rules]);
 
-    let canSur = false;
-    if (isPlayerTurn && isPlaying && currentHand) {
-        const result = rules.canSurrender(currentHand);
-        canSur = result.allowed;
-    }
+    const canStand = useMemo(() => {
+        return isPlayerTurn && (isPlaying || (isBJ && canSwitchHand)) && !(isMadness && currentHand?.cards.length === 1);
+    }, [isPlayerTurn, isPlaying, isBJ, canSwitchHand, isMadness, currentHand?.cards.length]);
 
-    let canZapHand = false;
-    if (isPlayerTurn && isPlaying && currentHand && rules.canZap) {
-        const result = rules.canZap(currentHand);
-        canZapHand = result.allowed;
-    }
+    const { canDbl, isDblFree } = useMemo(() => {
+        if (isPlayerTurn && isPlaying && currentHand) {
+            const result = rules.canDoubleDown(currentHand);
+            return {
+                isDblFree: result.isFree,
+                canDbl: result.allowed && (result.isFree || currentBalance >= result.cost)
+            };
+        }
+        return { canDbl: false, isDblFree: false };
+    }, [isPlayerTurn, isPlaying, currentHand, rules, currentBalance]);
 
-    let exchangeAdvice: ExchangeAdvice | null = null;
-    const dealerHandCards = useGameStore((s) => s.dealerHand.cards);
-    if (canSwitchHand && currentSeat && showSwitchAdvice) {
-        
-        // Calculate Switch Advisor if it's the first move of an Exchange 21 game
-        if (currentRoom === 'exchange_21' && currentSeat.hands.length === 2) {
-            exchangeAdvice = getExchange21Advice(
-                currentSeat.hands[0].cards, 
-                currentSeat.hands[1].cards, 
+    const { canSpl, isSplFree } = useMemo(() => {
+        if (isPlayerTurn && isPlaying && currentHand) {
+            const result = rules.canSplit(currentHand, currentSeat?.hands.length || 0);
+            return {
+                isSplFree: result.isFree,
+                canSpl: result.allowed && (result.isFree || currentBalance >= result.cost)
+            };
+        }
+        return { canSpl: false, isSplFree: false };
+    }, [isPlayerTurn, isPlaying, currentHand, currentSeat?.hands.length, rules, currentBalance]);
+
+    const canSur = useMemo(() => {
+        if (isPlayerTurn && isPlaying && currentHand) {
+            return rules.canSurrender(currentHand).allowed;
+        }
+        return false;
+    }, [isPlayerTurn, isPlaying, currentHand, rules]);
+
+    const canZapHand = useMemo(() => {
+        if (isPlayerTurn && isPlaying && currentHand && rules.canZap) {
+            return rules.canZap(currentHand).allowed;
+        }
+        return false;
+    }, [isPlayerTurn, isPlaying, currentHand, rules]);
+
+    const dealerHandCards = useGameStore(useShallow((s) => s.dealerHand.cards));
+
+    const exchangeAdvice = useMemo(() => {
+        if (canSwitchHand && currentSeat && showSwitchAdvice && currentRoom === 'exchange_21' && currentSeat.hands.length === 2) {
+            return getExchange21Advice(
+                currentSeat.hands[0].cards,
+                currentSeat.hands[1].cards,
                 dealerHandCards[0]?.rank || '2',
                 switchAdviceEngine,
             );
         }
-    }
+        return null;
+    }, [canSwitchHand, currentSeat, showSwitchAdvice, currentRoom, dealerHandCards, switchAdviceEngine]);
 
-    let canBurnHand = false;
-    let burnCost = 0;
-    if (isPlayerTurn && isPlaying && currentHand && rules.canBurn) {
-        const result = rules.canBurn(currentHand);
-        canBurnHand = result.allowed && currentBalance >= result.cost;
-        burnCost = result.cost;
-    }
+    const { canBurnHand, burnCost } = useMemo(() => {
+        if (isPlayerTurn && isPlaying && currentHand && rules.canBurn) {
+            const result = rules.canBurn(currentHand);
+            return {
+                canBurnHand: result.allowed && currentBalance >= result.cost,
+                burnCost: result.cost
+            };
+        }
+        return { canBurnHand: false, burnCost: 0 };
+    }, [isPlayerTurn, isPlaying, currentHand, rules, currentBalance]);
+
 
     // The game can start if at least one active seat places a minimum bet.
     // Empty seats will simply be skipped by startDeal().
@@ -167,16 +187,8 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                         exit={{ opacity: 0, scale: 0.8 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     >
-                        {timer !== undefined && !roomConfig.isTutorial && (
-                            <motion.div
-                                className={`flex items-center justify-center rounded-full border-2 bg-black/80 backdrop-blur-md shadow-xl
-                                    ${timer <= 5 ? 'border-red-500/80' : timer <= 10 ? 'border-yellow-500/80 text-yellow-500' : 'border-emerald-500/80 text-emerald-400'}`}
-                                style={{ width: 46, height: 46 }}
-                                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}
-                            >
-                                <span className={`text-lg font-black tabular-nums ${timer <= 5 ? 'text-red-500 animate-pulse' : ''}`}>{timer}</span>
-                            </motion.div>
-                        )}
+                        <TurnTimer />
+                        
                         
                         {/* Switch Advisor Tip */}
                         {showSwitchAdvice && exchangeAdvice && (
@@ -262,16 +274,8 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     >
                         {/* Insurance timer */}
-                        {insuranceTimer !== undefined && !roomConfig.isTutorial && (
-                            <motion.div
-                                className={`flex items-center justify-center rounded-full border-2 bg-black/80 backdrop-blur-md shadow-xl
-                                    ${insuranceTimer <= 3 ? 'border-red-500/80' : insuranceTimer <= 5 ? 'border-yellow-500/80 text-yellow-500' : 'border-yellow-400/80 text-yellow-400'}`}
-                                style={{ width: 46, height: 46 }}
-                                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}
-                            >
-                                <span className={`text-lg font-black tabular-nums ${insuranceTimer <= 3 ? 'text-red-500 animate-pulse' : ''}`}>{insuranceTimer}</span>
-                            </motion.div>
-                        )}
+                        <InsuranceTimer />
+                        
 
                         <div className="px-6 py-3 rounded-xl bg-black/60 backdrop-blur-md border border-yellow-400/20 text-center"
                             style={{ boxShadow: '0 0 30px rgba(250, 204, 21, 0.15)' }}
@@ -441,9 +445,10 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
             </AnimatePresence>
         </div>
     );
-}
+});
 
-// ── CircleButton ──
+export default ActionPanel;
+
 interface CircleButtonProps {
     id?: string;
     label: string; icon: React.ReactNode; color: string; hoverColor: string;
