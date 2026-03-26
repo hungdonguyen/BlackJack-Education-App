@@ -19,8 +19,8 @@ export const madness: RoomConfig = {
     gameRules: {
         numberOfDecks: 8,
         dealerHitsSoft17: true,
-        allowSurrender: true,
-        allowDoubleDownRescue: true,
+        allowSurrender: false,
+        allowDoubleDownRescue: false,
         allowInfiniteDouble: true,
         playerInitialCards: 1, // Only get 1 card to start
     },

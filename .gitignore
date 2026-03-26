@@ -26,6 +26,9 @@
 *.pem
 .venv/
 downloadconfig.txt
+build_output.txt
+tsc_output.txt
+ts_error.txt
 
 # debug
 *.log

@@ -26,9 +26,8 @@ export class Madness21Rules implements IRules {
     }
 
     canSurrender(hand: Hand): ActionValidity {
-        // Can only surrender if it's the first card
-        const allowed = hand.cards.length === 1 && hand.status === HandStatus.PLAYING;
-        return { allowed, isFree: false, cost: 0 };
+        // Double Down Madness does not allow surrender
+        return { allowed: false, isFree: false, cost: 0 };
     }
 
     evaluateHand(
