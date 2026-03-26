@@ -11,12 +11,12 @@ import {
     StrategyAction, AdviceAction, CompositionDependentOverride, ActionMeta,
     HARD_CLASSIC, HARD_DOWNTOWN, HARD_FA, HARD_AC,
     HARD_IBERIAN, HARD_EUROPEAN, HARD_UK, HARD_ZAPOUT, HARD_EXCHANGE,
-    HARD_FIRECARD, HARD_VEGAS,
+    HARD_FIRECARD, HARD_VEGAS, HARD_MADNESS,
     SOFT_CLASSIC, SOFT_DOWNTOWN, SOFT_FA, SOFT_AC,
     SOFT_IBERIAN, SOFT_EUROPEAN, SOFT_UK, SOFT_VEGAS, SOFT_ZAPOUT,
-    SOFT_EXCHANGE, SOFT_FIRECARD,
+    SOFT_EXCHANGE, SOFT_FIRECARD, SOFT_MADNESS,
     PAIRS_TABLE, PAIRS_FA, PAIRS_IBERIAN, PAIRS_EUROPEAN,
-    PAIRS_UK, PAIRS_ZAPOUT, PAIRS_EXCHANGE, PAIRS_FIRECARD,
+    PAIRS_UK, PAIRS_ZAPOUT, PAIRS_EXCHANGE, PAIRS_FIRECARD, PAIRS_MADNESS,
     DEALER_UPCARDS, PAIR_ROWS,
     ACTION_META, COMPOSITION_DEPENDENT_OVERRIDES
 } from './strategyTables';
@@ -112,6 +112,7 @@ const STRATEGY_MAP: Record<string, StrategyTables> = {
     'european': { hard: HARD_EUROPEAN, soft: SOFT_EUROPEAN, pairs: PAIRS_EUROPEAN },
     'uk': { hard: HARD_UK, soft: SOFT_UK, pairs: PAIRS_UK },
     'zapout_21': { hard: HARD_ZAPOUT, soft: SOFT_ZAPOUT, pairs: PAIRS_ZAPOUT },
+    'madness_21': { hard: HARD_MADNESS, soft: SOFT_MADNESS, pairs: PAIRS_MADNESS },
     'exchange_21': { hard: HARD_EXCHANGE, soft: SOFT_EXCHANGE, pairs: PAIRS_EXCHANGE },
     'firecard_21': { hard: HARD_FIRECARD, soft: SOFT_FIRECARD, pairs: PAIRS_FIRECARD },
     'classic': { hard: HARD_CLASSIC, soft: SOFT_CLASSIC, pairs: PAIRS_TABLE },
@@ -183,6 +184,10 @@ export function getStrategyAction(
     const tables = getStrategyTables(strategyType);
     let action: StrategyAction;
 
+    const isMadness = strategyType === 'madness_21';
+    const startHard = isMadness ? 2 : 5;
+    const startSoft = isMadness ? 12 : 13;
+
     const pairIndex = getPairRowIdx(cards);
     if (pairIndex >= 0) {
         action = tables.pairs[pairIndex][dealerIndex];
@@ -192,15 +197,15 @@ export function getStrategyAction(
                 // Soft 12 (A,A) should always hit if it cannot be split
                 action = 'H';
             } else {
-                const clampedTotal = Math.min(Math.max(total, 5), 20);
-                action = tables.hard[clampedTotal - 5]?.[dealerIndex] ?? 'H';
+                const clampedTotal = Math.min(Math.max(total, startHard), 20);
+                action = tables.hard[clampedTotal - startHard]?.[dealerIndex] ?? 'H';
             }
         }
-    } else if (isSoft && total >= 13 && total <= 20) {
-        action = tables.soft[total - 13]?.[dealerIndex] ?? 'H';
+    } else if (isSoft && total >= startSoft && total <= 20) {
+        action = tables.soft[total - startSoft]?.[dealerIndex] ?? 'H';
     } else {
-        const clampedTotal = Math.min(Math.max(total, 5), 20);
-        action = tables.hard[clampedTotal - 5]?.[dealerIndex] ?? (total >= 17 ? 'S' : 'H');
+        const clampedTotal = Math.min(Math.max(total, startHard), 20);
+        action = tables.hard[clampedTotal - startHard]?.[dealerIndex] ?? (total >= 17 ? 'S' : 'H');
     }
 
     if ((action === 'D' || action === 'FD') && !canDouble) {

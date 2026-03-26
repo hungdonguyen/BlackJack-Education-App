@@ -3,6 +3,7 @@ import { HandStatus } from '@/types/enums';
 import { getRoomConfig } from '@/utils/rooms';
 import { calculateHandValue, isBlackjack } from '@/utils/hand';
 import { getRules } from '@/rules';
+import { evaluateSideBets } from './sideBets';
 
 const SIDE_BET_PAYOUTS: Record<number, number> = {
     1: 3, 2: 10, 3: 40, 4: 100, 5: 150, 6: 250, 7: 250, 8: 250,
@@ -76,26 +77,20 @@ export const calculatePayoutsLogic = (set: any, get: () => GameStore) => {
       };
     });
 
-    const sideBetPayouts: Record<number, number> = {};
-    for (const [seatIdStr, sideBetAmount] of Object.entries(state.sideBets)) {
-      const seatId = Number(seatIdStr);
-      if (sideBetAmount <= 0) continue;
-      const seat = updatedSeats.find(s => s.id === seatId);
-      const tokens = seat?.freeActionTokens || 0;
-      const multiplier = SIDE_BET_PAYOUTS[tokens] || 0;
-      if (multiplier > 0) {
-        const payout = sideBetAmount + (sideBetAmount * multiplier);
+    const sideBetPayouts = evaluateSideBets(state, updatedSeats, dealerValue);
+    for (const payout of Object.values(sideBetPayouts)) {
         totalPayout += payout;
-        sideBetPayouts[seatId] = payout;
-      }
     }
 
     const bankrollAfter = state.bankroll + totalPayout;
+
+    const dealerPush22 = rules.evaluateHand({ cards: [], betAmount: 0, status: HandStatus.PLAYING } as any, { total: 0, isSoft: false }, state.dealerHand.cards, dealerValue).metadata?.dealerPush22;
 
     const matchRecord: MatchRecord = {
       id: `match-${Date.now()}`,
       timestamp: Date.now(),
       roomId: state.currentRoom,
+      dealerPush22,
       seats: updatedSeats
         .filter((s) => s.isActive)
         .map((seat) => ({
@@ -128,6 +123,8 @@ export const calculatePayoutsLogic = (set: any, get: () => GameStore) => {
                 isSplit: hand.isSplit,
                 isFreeActionSplit: hand.isFreeActionSplit,
                 isDoubleDown: hand.isDoubleDown,
+                doubleCount: hand.doubleCount,
+                isSuitedBJ: evaluation?.metadata?.isSuitedBJ,
                 isFreeActionDouble: hand.isFreeActionDouble,
                 isSwitched: hand.isSwitched,
                 cards: hand.cards.map((c) => ({ suit: c.suit, rank: c.rank })),

@@ -30,6 +30,7 @@ export const zapout: RoomConfig = {
     logoPath: '/images/logo/rooms/zapout21.png',
     strategyType: 'zapout_21',
     deviationsSet: 'zapout_21',
+    strategySource: 'Geoff Hall / Michael Shackleford',
     rulesClass: ZapOut21Rules,
     strategyModalContent: {
         overview: "Zap Out 21 (Zappit) allows you to swap bad hands (15-18) for new cards, but costs you in Dealer Pushes on 22.",

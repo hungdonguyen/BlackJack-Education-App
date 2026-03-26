@@ -195,22 +195,41 @@ export const HARD_UK: StrategyAction[][] = [
 ];
 
 export const HARD_ZAPOUT: StrategyAction[][] = [
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','H','H','H','H','H','H','H','H','H'],
-    ['H','D','D','D','D','H','H','H','H','H'],
-    ['D','D','D','D','D','D','D','D','H','H'],
-    ['D','D','D','D','D','D','D','D','D','H'],
-    ['H','H','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','H','H','H','H','H'],
-    ['S','S','S','S','S','H','H','H','H','H'],
-    ['Z','Z','Z','Z','Z','Z','Z','Z','Z','Z'],
-    ['Z','Z','Z','Z','Z','Z','Z','Z','Z','Z'],
-    ['Z','Z','Z','Z','Z','Z','Z','Z','Z','Z'],
-    ['S','S','S','S','S','S','Z','Z','Z','Z'],
-    ['S','S','S','S','S','S','S','S','S','S'],
-    ['S','S','S','S','S','S','S','S','S','S'],
+    ['H','H','H','H','H','H','H','H','H','H'], // 5
+    ['H','H','H','H','H','H','H','H','H','H'], // 6
+    ['H','H','H','H','H','H','H','H','H','H'], // 7
+    ['H','H','H','H','H','H','H','H','H','H'], // 8
+    ['H','D','D','D','D','H','H','H','H','H'], // 9
+    ['D','D','D','D','D','D','D','D','H','H'], // 10
+    ['D','D','D','D','D','D','D','D','D','H'], // 11
+    ['H','H','S','S','S','H','H','H','H','H'], // 12
+    ['S','S','S','S','S','H','H','H','H','H'], // 13
+    ['S','S','S','S','S','H','H','H','H','H'], // 14
+    ['Z','Z','Z','Z','Z','Z','Z','Z','Z','Z'], // 15
+    ['Z','Z','Z','Z','Z','Z','Z','Z','Z','Z'], // 16
+    ['Z','Z','Z','Z','Z','Z','Z','Z','Z','Z'], // 17
+    ['S','S','S','S','S','S','Z','Z','Z','Z'], // 18
+    ['S','S','S','S','S','S','S','S','S','S'], // 19
+    ['S','S','S','S','S','S','S','S','S','S'], // 20
+];
+
+export const HARD_MADNESS: StrategyAction[][] = [
+    ['H','H','H','H','D','D','H','H','H','H'], // 2
+    ['H','H','H','H','D','H','H','H','H','H'], // 3
+    ['H','H','H','H','H','H','H','H','H','H'], // 4
+    ['H','H','H','H','H','H','H','H','H','H'], // 5
+    ['H','H','H','H','H','H','H','H','H','H'], // 6
+    ['H','H','H','H','H','H','H','H','H','H'], // 7
+    ['H','H','H','D','D','D','H','H','H','H'], // 8
+    ['H','D','D','D','D','D','D','H','H','H'], // 9
+    ['D','D','D','D','D','D','D','D','H','H'], // 10
+    ['D','D','D','D','D','D','D','D','D','D'], // 11
+    ['H','H','H','S','S','H','H','H','H','H'], // 12
+    ['H','S','S','S','S','H','H','H','H','H'], // 13
+    ['S','S','S','S','S','H','H','H','H','H'], // 14
+    ['S','S','S','S','S','H','H','H','H','H'], // 15
+    ['S','S','S','S','S','H','H','H','H','H'], // 16
+    ['S','S','S','S','S','S','S','S','S','S'], // 17+
 ];
 
 export const HARD_EXCHANGE: StrategyAction[][] = [
@@ -337,6 +356,17 @@ export const SOFT_EUROPEAN: StrategyAction[][] = [
 export const SOFT_UK = SOFT_CLASSIC;
 export const SOFT_VEGAS = SOFT_CLASSIC;
 export const SOFT_ZAPOUT = SOFT_CLASSIC;
+
+export const SOFT_MADNESS: StrategyAction[][] = [
+    ['H','D','D','D','D','D','D','H','H','H'], // 12
+    ['H','H','D','D','D','D','D','H','H','H'], // 13
+    ['H','H','H','D','D','D','H','H','H','H'], // 14
+    ['H','H','H','H','D','H','H','H','H','H'], // 15
+    ['H','H','H','H','D','H','H','H','H','H'], // 16
+    ['H','H','H','H','D','D','H','H','H','H'], // 17
+    ['S','S','S','D','D','S','S','H','H','H'], // 18
+    ['S','S','S','S','S','S','S','S','S','S'], // 19+
+];
 export const SOFT_EXCHANGE = SOFT_CLASSIC;
 
 export const SOFT_FIRECARD: StrategyAction[][] = [
@@ -408,6 +438,19 @@ export const PAIRS_EUROPEAN: StrategyAction[][] = [
 
 export const PAIRS_UK = PAIRS_TABLE;
 export const PAIRS_ZAPOUT = PAIRS_TABLE;
+
+export const PAIRS_MADNESS: StrategyAction[][] = [
+    ['SP','SP','SP','SP','SP','SP','H','H','H','H'], // 2,2
+    ['SP','SP','SP','SP','SP','SP','H','H','H','H'], // 3,3
+    ['H','H','H','SP','SP','H','H','H','H','H'], // 4,4
+    ['D','D','D','D','D','D','D','D','H','H'], // 5,5
+    ['SP','SP','SP','SP','SP','H','H','H','H','H'], // 6,6
+    ['SP','SP','SP','SP','SP','SP','H','H','H','H'], // 7,7
+    ['SP','SP','SP','SP','SP','SP','SP','SP','SP','SP'], // 8,8
+    ['SP','SP','SP','SP','SP','H','SP','SP','S','S'], // 9,9
+    ['S','S','S','S','S','S','S','S','S','S'], // 10,10
+    ['SP','SP','SP','SP','SP','SP','SP','SP','SP','SP'], // A,A
+];
 export const PAIRS_EXCHANGE = PAIRS_TABLE;
 
 export const PAIRS_FIRECARD: StrategyAction[][] = [

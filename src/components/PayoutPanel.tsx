@@ -159,6 +159,21 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
                         </div>
                     </>
                 )}
+                {roomConfig?.sideBetType === 'push_22' && (
+                    <>
+                        <div className="px-3 py-2 border-t border-purple-500/20 bg-purple-500/10">
+                            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] flex items-center text-purple-400">
+                                <CreditCard size={12} className="mr-1.5" /> Push 22 Bonus
+                            </span>
+                        </div>
+                        <div className="p-2.5 space-y-1.5">
+                            <div className="flex items-center justify-between px-1">
+                                <span className="text-[10px] font-medium text-purple-200/80">Dealer busts with 22</span>
+                                <span className="text-[10px] font-bold tabular-nums text-purple-400">11 : 1</span>
+                            </div>
+                        </div>
+                    </>
+                )}
             </motion.div>
         </div>
     );

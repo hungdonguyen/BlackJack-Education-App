@@ -7,6 +7,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
+import { useGameStoreBase } from '@/store/gameStore';
 import { Info, Home, X, Coins, Shield, Spade, Timer, ClipboardList, Plus, Minus, ChevronsUp, ArrowLeftRight, Sparkles, User, BookOpen, Settings, LayoutGrid, Flag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { getRoomConfig } from '@/utils/rooms';
@@ -241,9 +242,19 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
                         clearInterval(interval);
                         if (!expired) {
                             expired = true;
-                            // Defer outside React's batch so advanceToNextHand
                             // sees fully committed Zustand state
-                            setTimeout(() => stand(), 0);
+                            setTimeout(() => {
+                                const state = useGameStoreBase.getState();
+                                const isMadness = state.currentRoom === 'madness_21';
+                                const currentSeat = state.seats[state.currentSeatIndex];
+                                const currentHand = currentSeat?.hands[currentSeat.currentHandIndex];
+                                
+                                if (isMadness && currentHand && currentHand.cards.length === 1) {
+                                    state.hit();
+                                } else {
+                                    state.stand();
+                                }
+                            }, 0);
                         }
                         return 0;
                     }

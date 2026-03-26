@@ -22,6 +22,7 @@ import { DailyClaimModal } from '@/components/DailyClaimModal';
 import SettingsModal from '@/components/SettingsModal';
 
 const STRATEGY_ROOM_IDS = [
+  'madness_21',
   'classic',
   'vegas_strip',
   'vegas_downtown',
@@ -393,7 +394,7 @@ export default function HomePage() {
               <div className="fixed inset-0 z-[200]">
                 {/* Room selector floating above modal */}
                 <motion.div
-                  className="absolute top-4 left-1/2 z-[210] flex max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/35 px-3 py-3 backdrop-blur-md md:top-8 md:left-8 md:max-w-[240px] md:translate-x-0 md:flex-col md:items-start md:justify-start md:gap-3"
+                  className="absolute top-4 left-1/2 z-[210] flex max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/35 px-3 py-3 backdrop-blur-md md:top-24 md:left-8 md:max-w-[240px] md:translate-x-0 md:flex-col md:items-start md:justify-start md:gap-3"
                   initial={{ opacity: 0, y: -16 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -16 }}

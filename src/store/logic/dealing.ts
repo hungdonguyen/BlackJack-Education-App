@@ -132,14 +132,21 @@ export const startDealLogic = async (set: any, get: () => GameStore) => {
     }
     await dealToDealer(false);
 
-    for (const seat of dealingSeats) {
-        const currentSeat = newSeats.find(s => s.id === seat.id);
-        if (currentSeat) {
-          for (const hand of currentSeat.hands) {
-            await dealToHand(seat.id, hand.id);
-          }
+    const playerInitialCards = currentRoomCfg.gameRules.playerInitialCards ?? 2;
+
+    if (playerInitialCards > 1) {
+      for (let i = 1; i < playerInitialCards; i++) {
+        for (const seat of dealingSeats) {
+            const currentSeat = newSeats.find(s => s.id === seat.id);
+            if (currentSeat) {
+              for (const hand of currentSeat.hands) {
+                await dealToHand(seat.id, hand.id);
+              }
+            }
         }
+      }
     }
+
     if (!currentRoomCfg.gameRules.enhc) {
       await dealToDealer(true);
     }

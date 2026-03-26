@@ -57,8 +57,12 @@ export interface RoomConfig {
         omitTens?: boolean;
         /** If true, allows surrender after double down */
         allowDoubleDownRescue?: boolean;
+        /** If true, allows hitting and doubling repeatedly after double down */
+        allowInfiniteDouble?: boolean;
         /** European No Hole Card rule */
         enhc?: boolean;
+        /** Number of initial cards dealt to the player. Default: 2 */
+        playerInitialCards?: number;
     };
     /** Blackjack payout multiplier (e.g. 1.5 for 3:2) */
     blackjackMultiplier: number;
@@ -76,6 +80,8 @@ export interface RoomConfig {
     accentColor: string;
     /** Whether this room has a side bet */
     hasSideBet?: boolean;
+    /** Type of side bet */
+    sideBetType?: 'free_action' | 'push_22' | 'multi_action';
     /** Whether this room is a Free Action variant */
     isFreeAction?: boolean;
     /** Path to the room logo image */
@@ -98,6 +104,8 @@ export interface RoomConfig {
     strategyTableManual: {
         hard: StrategyTableContent;
         soft: StrategyTableContent;
-        pairs: StrategyTableContent;
+        pairs?: StrategyTableContent;
     };
+    /** Citation for the strategy source */
+    strategySource?: string;
 }

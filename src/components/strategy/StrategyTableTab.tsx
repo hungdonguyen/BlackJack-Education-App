@@ -115,6 +115,26 @@ export const StrategyTableTab: React.FC<StrategyTableTabProps> = ({ room, tab, a
                 </table>
             </div>
 
+            <div className="mt-4 px-1 flex flex-col gap-1.5 opacity-30 hover:opacity-100 transition-opacity duration-300">
+                {room.strategySource && (
+                    <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-black uppercase tracking-[0.15em] text-white/60">Source:</span>
+                        <span className="text-[10px] font-bold italic tracking-wide text-white/50">{room.strategySource}</span>
+                    </div>
+                )}
+                <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black uppercase tracking-[0.15em] text-white/60">House RTP:</span>
+                    <span className="text-[10px] font-bold tracking-wide text-white/70">{room.baseGameRtp || room.rtp}</span>
+                    {room.sideBetRtp && (
+                        <>
+                            <span className="text-white/20">•</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-yellow-500/50">Side Bet RTP:</span>
+                            <span className="text-[10px] font-bold tracking-wide text-yellow-500/70">{room.sideBetRtp}</span>
+                        </>
+                    )}
+                </div>
+            </div>
+
             <Ornament color={room.accentColor} />
 
             <div className="mt-5 px-0.5">

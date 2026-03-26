@@ -29,6 +29,7 @@ export interface GameFlowSlice {
   shoe: Card[];
   savedShoes: Record<string, Card[]>;
   gamePhase: GamePhase;
+  hoveredAction: 'switch' | 'burn' | 'zap' | null;
   seats: GameStore['seats'];
   dealerHand: GameStore['dealerHand'];
   currentSeatIndex: number;
@@ -37,6 +38,7 @@ export interface GameFlowSlice {
   actionCounter: number;
   
   // Actions
+  setHoveredAction: (action: 'switch' | 'burn' | 'zap' | null) => void;
   initializeShoe: () => void;
   startDeal: () => void;
   hit: () => void;
@@ -65,6 +67,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   shoe: [],
   savedShoes: {},
   gamePhase: GamePhase.BETTING,
+  hoveredAction: null,
   seats: Array.from({ length: 5 }, (_, i) => ({
     id: i + 1,
     isActive: i === 2, // Middle seat active by default
@@ -82,6 +85,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
     const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
     return (isTutorial ? (state.tutorialBalance ?? 0) : state.bankroll) >= amount;
   },
+
+  setHoveredAction: (action) => set({ hoveredAction: action }),
 
   initializeShoe: () => initializeShoeLogic(set, get),
   startDeal: () => startDealLogic(set, get),

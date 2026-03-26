@@ -22,6 +22,10 @@ interface CardComponentProps {
     size?: 'sm' | 'md' | 'lg';
     /** Whether the card was just switched */
     isSwitched?: boolean;
+    /** Highlights the card to indicate it will be affected by an action */
+    isHighlighted?: boolean;
+    /** Color for the highlight glow */
+    highlightColor?: string;
 }
 
 const SIZE_MAP = {
@@ -41,6 +45,8 @@ export default function CardComponent({
     animate = true,
     size = 'md',
     isSwitched = false,
+    isHighlighted = false,
+    highlightColor = '#ffffff',
 }: CardComponentProps) {
     const dimensions = SIZE_MAP[size];
     const imagePath = card.isHidden ? getCardBackPath() : getCardImagePath(card);
@@ -89,7 +95,12 @@ export default function CardComponent({
                 style={{
                     width: `${dimensions.width}px`,
                     height: `${dimensions.height}px`,
-                    boxShadow: '3px 5px 15px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4)',
+                    boxShadow: isHighlighted 
+                        ? `0 0 20px 4px ${highlightColor}, 3px 5px 15px rgba(0,0,0,0.6)`
+                        : '3px 5px 15px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4)',
+                    transform: isHighlighted ? 'translateY(-8px) scale(1.05)' : 'none',
+                    transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+                    zIndex: isHighlighted ? 50 : 'auto',
                 }}
             >
                 <Image

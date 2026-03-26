@@ -144,6 +144,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
       tutorialBalance: isTutorial ? s.tutorialBalance + lastBet.amount + sideRefund : s.tutorialBalance,
       betHistory: s.betHistory.slice(0, -1),
       sideBets: newSideBets,
+      totalBetSinceLastClaim: Math.max(0, s.totalBetSinceLastClaim - lastBet.amount),
       seats: s.seats.map((seat) => {
         if (seat.id !== lastBet.seatId) return seat;
         return {

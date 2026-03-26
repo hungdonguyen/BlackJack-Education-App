@@ -10,6 +10,7 @@ import { european } from './european';
 import { zapout } from './zapout';
 import { exchange } from './exchange';
 import { firecard } from './firecard';
+import { madness } from './madness';
 import { tutorialBeginner, tutorialDouble, tutorialStrategy } from './tutorials';
 
 export * from './types';
@@ -26,6 +27,7 @@ export const ROOMS: Record<string, RoomConfig> = {
     zapout_21: zapout,
     exchange_21: exchange,
     firecard_21: firecard,
+    madness_21: madness,
     tutorial_beginner: tutorialBeginner,
     tutorial_double: tutorialDouble,
     tutorial_strategy: tutorialStrategy,

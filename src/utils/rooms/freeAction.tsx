@@ -29,11 +29,13 @@ export const freeAction: RoomConfig = {
     icon: React.createElement(Zap, { className: "w-5 h-5 drop-shadow-md text-yellow-400 fill-yellow-400" }),
     accentColor: '#eab308',
     hasSideBet: true,
+    sideBetType: 'multi_action',
     isFreeAction: true,
     isBeta: true,
     logoPath: '/images/logo/rooms/freeaction.png',
     strategyType: 'free_action',
     deviationsSet: 'free_action',
+    strategySource: 'Michael Shackleford (Wizard of Odds)',
     rulesClass: FreeActionRules,
     strategyModalContent: {
         overview: "Free Action Blackjack (similar to Free Bet) offers free Double Downs and Splits in exchange for the Dealer pushing on 22.",

@@ -10,6 +10,10 @@ export interface ActionValidity {
 export interface PayoutResult {
     status: HandStatus;
     payoutMultiplier: number;
+    metadata?: {
+        isSuitedBJ?: boolean;
+        dealerPush22?: boolean;
+    };
 }
 
 export interface IRules {

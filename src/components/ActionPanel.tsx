@@ -32,6 +32,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
     const zap = useGameStore((s) => s.zap);
     const switchCards = useGameStore((s) => s.switchCards);
     const burn = useGameStore((s) => s.burn);
+    const setHoveredAction = useGameStore((s) => s.setHoveredAction);
     const startDeal = useGameStore((s) => s.startDeal);
     const resetRound = useGameStore((s) => s.resetRound);
     const undoBet = useGameStore((s) => s.undoBet);
@@ -71,7 +72,8 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
 
     const currentBalance = (roomConfig.isTutorial ? tutorialBalance : bankroll) ?? 0;
 
-    const canHit = isPlayerTurn && isPlaying && !currentHand?.isDoubleDown;
+    const isMadness = currentRoom === 'madness_21';
+    const canHit = isPlayerTurn && isPlaying && (!currentHand?.isDoubleDown || isMadness);
     
     // Switch Advisor check (calculated early to influence canStand)
     let canSwitchHand = false;
@@ -80,7 +82,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
         canSwitchHand = result.allowed;
     }
 
-    const canStand = isPlayerTurn && (isPlaying || (isBJ && canSwitchHand));
+    const canStand = isPlayerTurn && (isPlaying || (isBJ && canSwitchHand)) && !(isMadness && currentHand?.cards.length === 1);
 
     let canDbl = false;
     let isDblFree = false;
@@ -200,7 +202,7 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
                                 <FreeCircleButton id="action-double" label="FREE ACTION DOUBLE" icon={<Zap className="w-4 h-4" />}
                                     onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={50} ariaLabel="Double Down (Free)" />
                             ) : (
-                                <CircleButton id="action-double" label={currentRoom === 'tutorial_double' ? "DOUBLE (1 CARD)" : "DOUBLE DOWN"} icon="2x" color="#f39c12" hoverColor="#f1c40f"
+                                <CircleButton id="action-double" label={`DOUBLE DOWN ($${currentHand?.betAmount})`} icon="2x" color="#f39c12" hoverColor="#f1c40f"
                                     onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={45} ariaLabel="Double Down (2x Bet)" />
                             )}
 
@@ -224,22 +226,26 @@ export default function ActionPanel({ timer, insuranceTimer, currentInsuranceSea
 
                             {rules.canZap && (
                                 <CircleButton label="ZAP OUT" icon={<Zap className="w-5 h-5 text-white animate-pulse" />} color="#3b82f6" hoverColor="#2563eb"
-                                    onClick={() => { playSound('card-slide'); zap(); }} disabled={!canZapHand} size={45} ariaLabel="Zap Out" />
+                                    onClick={() => { playSound('card-slide'); zap(); }} disabled={!canZapHand} size={45} ariaLabel="Zap Out"
+                                    onMouseEnter={() => setHoveredAction('zap')} onMouseLeave={() => setHoveredAction(null)} />
                             )}
 
                             {rules.canSwitch && (
                                 showSwitchAdvice && exchangeAdvice?.shouldSwitch ? (
                                     <FreeCircleButton label="ADVISED" icon={<ArrowLeftRight className="w-5 h-5 text-black" />} 
-                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={50} ariaLabel="Switch Cards (Advised)" />
+                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={50} ariaLabel="Switch Cards (Advised)"
+                                        onMouseEnter={() => setHoveredAction('switch')} onMouseLeave={() => setHoveredAction(null)} />
                                 ) : (
                                     <CircleButton label="SWITCH" icon={<ArrowLeftRight className="w-5 h-5 text-white" />} color="#64748b" hoverColor="#475569"
-                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={45} ariaLabel="Switch Cards" />
+                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={45} ariaLabel="Switch Cards"
+                                        onMouseEnter={() => setHoveredAction('switch')} onMouseLeave={() => setHoveredAction(null)} />
                                 )
                             )}
 
                             {rules.canBurn && (
                                 <CircleButton label={`BURN ($${burnCost})`} icon={<Flame className="w-5 h-5 text-white" />} color="#f97316" hoverColor="#ea580c"
-                                    onClick={() => { playSound('card-slide'); burn(); }} disabled={!canBurnHand} size={45} ariaLabel="Burn Card" />
+                                    onClick={() => { playSound('card-slide'); burn(); }} disabled={!canBurnHand} size={45} ariaLabel="Burn Card"
+                                    onMouseEnter={() => setHoveredAction('burn')} onMouseLeave={() => setHoveredAction(null)} />
                             )}
                         </div>
                     </motion.div>
@@ -443,14 +449,18 @@ interface CircleButtonProps {
     label: string; icon: React.ReactNode; color: string; hoverColor: string;
     onClick: () => void; disabled: boolean; size: number;
     ariaLabel?: string;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
 }
 
-function CircleButton({ id, label, icon, color, hoverColor, onClick, disabled, size, ariaLabel }: CircleButtonProps) {
+function CircleButton({ id, label, icon, color, hoverColor, onClick, disabled, size, ariaLabel, onMouseEnter, onMouseLeave }: CircleButtonProps) {
     return (
         <motion.button
             id={id}
             aria-label={ariaLabel || label}
             onClick={onClick} disabled={disabled}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
             className="flex flex-col items-center gap-1.5 cursor-pointer"
             style={{ opacity: disabled ? 0.2 : 1 }}
             whileHover={disabled ? {} : { scale: 1.12, y: -4 }}
@@ -501,13 +511,17 @@ interface FreeCircleButtonProps {
     label: string; icon: React.ReactNode;
     onClick: () => void; disabled: boolean; size: number;
     ariaLabel?: string;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
 }
 
-function FreeCircleButton({ id, label, icon, onClick, disabled, size, ariaLabel }: FreeCircleButtonProps) {
+function FreeCircleButton({ id, label, icon, onClick, disabled, size, ariaLabel, onMouseEnter, onMouseLeave }: FreeCircleButtonProps) {
     return (
         <motion.button
             id={id}
             onClick={onClick} disabled={disabled}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
             aria-label={ariaLabel || label}
             className="flex flex-col items-center gap-1.5 cursor-pointer"
             style={{ opacity: disabled ? 0.2 : 1 }}

@@ -32,6 +32,7 @@ export const iberian21: RoomConfig = {
     logoPath: '/images/logo/rooms/iberian21.png',
     strategyType: 'iberian_21',
     deviationsSet: 'iberian_21',
+    strategySource: 'Katarina Walker (The Pro\'s Guide to Spanish 21)',
     rulesClass: Iberian21Rules,
     strategyModalContent: {
         overview: "Iberian 21 (Spanish 21) uses a 48-card deck (no 10s) but compensates with massive player-friendly rules and bonuses.",

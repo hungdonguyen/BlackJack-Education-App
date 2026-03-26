@@ -50,11 +50,11 @@ export const SPEED_DELAYS = {
     flipCard: 800,    // ms to pause after revealing hole card
   },
   fast: {
-    dealCard: 50,
-    postDeal: 50,
-    dealerHit: 50,
-    prePayout: 50,
-    flipCard: 50,
+    dealCard: 300,
+    postDeal: 300,
+    dealerHit: 500,
+    prePayout: 500,
+    flipCard: 300,
   },
 } as const;
 

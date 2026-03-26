@@ -33,6 +33,7 @@ export default function Seat({ seatId, style }: SeatProps) {
     const placeSideBet = useGameStore((s) => s.placeSideBet);
     const clearSideBet = useGameStore((s) => s.clearSideBet);
     const sideBets = useGameStore((s) => s.sideBets);
+    const hoveredAction = useGameStore((s) => s.hoveredAction);
     const roomConfig = getRoomConfig(currentRoom);
     const { playSound } = useAudio();
 
@@ -113,8 +114,8 @@ export default function Seat({ seatId, style }: SeatProps) {
                             whileTap={sideBetAmount > 0 || mainBet > 0 ? { scale: 0.9 } : {}}
                         >
                             <Image
-                                src="/images/logo/bonus/multiaction.png"
-                                alt="Multi Action Bonus"
+                                src={roomConfig.sideBetType === 'push_22' ? "/images/logo/bonus/push22.png" : "/images/logo/bonus/multiaction.png"}
+                                alt={roomConfig.sideBetType === 'push_22' ? "Push 22 Bonus" : "Multi Action Bonus"}
                                 width={32}
                                 height={32}
                                 className={`object-contain ${sideBetAmount > 0 ? 'drop-shadow-lg' : 'opacity-40'}`}
@@ -134,7 +135,7 @@ export default function Seat({ seatId, style }: SeatProps) {
                         </span>
                     )}
                     <span className="text-[6px] font-extrabold uppercase tracking-[0.1em] text-yellow-500/60 mt-0.5 whitespace-nowrap">
-                        Multi Action Bonus
+                        {roomConfig.sideBetType === 'push_22' ? "Push 22 Bonus" : "Multi Action Bonus"}
                     </span>
                 </div>
             )}
@@ -199,16 +200,36 @@ export default function Seat({ seatId, style }: SeatProps) {
                                     />
                                 )}
 
-                                {hand.cards.map((card, cardIdx) => (
-                                    <CardComponent
-                                        key={`${hand.id}-${cardIdx}-${hand.isSwitched ? 'switched' : 'normal'}`}
-                                        card={card}
-                                        index={cardIdx}
-                                        totalCards={hand.cards.length}
-                                        size="sm"
-                                        isSwitched={hand.isSwitched && cardIdx === 1} // Only animate the swapped card
-                                    />
-                                ))}
+                                {hand.cards.map((card, cardIdx) => {
+                                    let isHighlighted = false;
+                                    let highlightColor = '#ffffff';
+
+                                    if (hoveredAction) {
+                                        if (hoveredAction === 'switch' && isCurrentTurn && (handIdx === 0 || handIdx === 1) && cardIdx === 1) {
+                                            isHighlighted = true;
+                                            highlightColor = '#64748b'; // Match SWITCH button color
+                                        } else if (hoveredAction === 'burn' && isActiveHand && cardIdx === 1) {
+                                            isHighlighted = true;
+                                            highlightColor = '#f97316'; // Match BURN button color
+                                        } else if (hoveredAction === 'zap' && isActiveHand && (cardIdx === 0 || cardIdx === 1)) {
+                                            isHighlighted = true;
+                                            highlightColor = '#3b82f6'; // Match ZAP button color
+                                        }
+                                    }
+
+                                    return (
+                                        <CardComponent
+                                            key={`${hand.id}-${cardIdx}-${hand.isSwitched ? 'switched' : 'normal'}`}
+                                            card={card}
+                                            index={cardIdx}
+                                            totalCards={hand.cards.length}
+                                            size="sm"
+                                            isSwitched={hand.isSwitched && cardIdx === 1} // Only animate the swapped card
+                                            isHighlighted={isHighlighted}
+                                            highlightColor={highlightColor}
+                                        />
+                                    );
+                                })}
 
                                 {/* Bust overlay */}
                                 <AnimatePresence>

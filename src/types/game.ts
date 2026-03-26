@@ -47,6 +47,8 @@ export interface Hand {
   isSurrendered?: boolean;
   isSplit?: boolean;
   isDoubleDown?: boolean;
+  doubleCount?: number;
+  isSuitedBJ?: boolean;
   isZapped?: boolean;
   isSwitched?: boolean;
   isBurned?: boolean;
@@ -67,7 +69,6 @@ export interface Seat {
   currentHandIndex: number;
   /** Multi Action Bonus side bet amount */
   sideBetAmount?: number;
-  /** Free Action tokens collected this round */
   freeActionTokens?: number;
   hasSwitched?: boolean;
 }
@@ -97,7 +98,9 @@ export interface MatchRecord {
       isSplit?: boolean;
       isFreeActionSplit?: boolean;
       isDoubleDown?: boolean;
+      doubleCount?: number;
       isFreeActionDouble?: boolean;
+      isSuitedBJ?: boolean;
       cards: { suit: Suit; rank: Rank }[];
       zappedCards?: { suit: Suit; rank: Rank }[];
       isSwitched?: boolean;
@@ -114,6 +117,7 @@ export interface MatchRecord {
   dealerCards: { suit: Suit; rank: Rank }[];
   bankrollBefore: number;
   bankrollAfter: number;
+  dealerPush22?: boolean;
 }
 
 /** Hand value calculation result */
@@ -152,7 +156,10 @@ export interface GameState {
   matchHistory: MatchRecord[];
 
 
-  // UI Warnings
+// UI states
+    hoveredAction: 'switch' | 'burn' | 'zap' | null;
+
+    // UI Warnings
   insufficientFundsWarning: boolean;
 
   // Insurance
@@ -165,6 +172,9 @@ export interface GameState {
 
 /** All actions available on the game store */
 export interface GameActions {
+  // General UI
+  setHoveredAction: (action: 'switch' | 'burn' | 'zap' | null) => void;
+
   // Shoe
   initializeShoe: () => void;
 

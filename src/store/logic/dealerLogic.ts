@@ -43,8 +43,11 @@ export const dealerPlayLogic = async (set: any, get: () => GameStore) => {
       const roomCfg = getRoomConfig(state.currentRoom);
       const hasInsuranceBets = Object.values(state.insuranceBets).some((bet) => bet > 0);
       const dealerNeedsToDrawForInsurance = roomCfg.gameRules.enhc && dealerCards.length === 1 && dealerCards[0].rank === Rank.ACE && hasInsuranceBets;
+      
+      const hasBlackjack = state.seats.filter(s => s.isActive).some(s => s.hands.some(h => h.betAmount > 0 && h.status === 'BLACKJACK'));
+      const dealerNeedsToDrawForENHCBlackjack = roomCfg.gameRules.enhc && dealerCards.length === 1 && hasBlackjack;
 
-      if (!allBustedOrSurrendered && !allResolvedOrBlackjack || dealerNeedsToDrawForInsurance) {
+      if (!allBustedOrSurrendered && !allResolvedOrBlackjack || dealerNeedsToDrawForInsurance || dealerNeedsToDrawForENHCBlackjack) {
         const hitsSoft17 = roomCfg.gameRules.dealerHitsSoft17;
         let dealerValue = calculateHandValue(dealerCards);
 

@@ -30,6 +30,7 @@ export const firecard: RoomConfig = {
     logoPath: '/images/logo/rooms/firecard21.png',
     strategyType: 'firecard_21',
     deviationsSet: 'firecard_21',
+    strategySource: 'Custom Strategy for Fire Card 21',
     rulesClass: FireCardRules,
     strategyModalContent: {
         overview: "Fire Card Blackjack allows you to 'Burn' a bad 2nd card for a fee, while offering massive bonuses for Burned Aces.",

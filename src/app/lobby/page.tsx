@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ROOMS, RoomConfig } from '@/utils/rooms';
 import Image from 'next/image';
-import { ArrowLeft, Home, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Home, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { useAudio } from '@/utils/audio';
 import { MusicPlayer } from '@/components/MusicPlayer';
+import { useGameStore } from '@/hooks/useGameStore';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Keyboard } from 'swiper/modules';
 
@@ -18,6 +19,14 @@ export default function LobbyPage() {
     const router = useRouter();
     const rooms = Object.values(ROOMS).filter(r => !r.isTutorial);
     const { playSound } = useAudio();
+    const bankroll = useGameStore((s) => s.bankroll);
+
+    const formatMoney = (v: number) =>
+        v >= 1_000_000
+            ? `$${(v / 1_000_000).toFixed(1)}M`
+            : v >= 1000
+                ? `$${v.toLocaleString()}`
+                : `$${v}`;
 
     const ITEMS_PER_PAGE = 6;
 
@@ -41,11 +50,41 @@ export default function LobbyPage() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [router]);
 
+    // Animation Variants
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.08,
+                delayChildren: 0.1,
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 30, scale: 0.9 },
+        show: { 
+            opacity: 1, 
+            y: 0, 
+            scale: 1,
+            transition: {
+                type: 'spring',
+                stiffness: 100,
+                damping: 20
+            }
+        }
+    };
+
     return (
-        <div className="relative w-screen h-screen overflow-hidden select-none flex flex-col items-center"
+        <motion.div 
+            className="relative w-screen h-screen overflow-hidden select-none flex flex-col items-center"
             style={{
                 background: 'radial-gradient(ellipse 120% 100% at 50% 30%, #301a10 0%, #1a0e0a 40%, #0d0705 100%)',
             }}
+            initial="hidden"
+            animate="show"
+            variants={containerVariants}
         >
             <style>{`
                 .swiper-button-disabled {
@@ -54,32 +93,54 @@ export default function LobbyPage() {
             `}</style>
             
             {/* Top Bar — absolute so it doesn't affect centering */}
-            <div className="absolute top-0 left-0 right-0 z-20 flex items-center h-20 px-6">
+            <motion.div 
+                className="absolute top-0 left-0 right-0 z-20 flex items-center h-20 px-6"
+                variants={{
+                    hidden: { opacity: 0, y: -20 },
+                    show: { opacity: 1, y: 0 }
+                }}
+            >
                 {/* Left Side: Back/Home */}
                 <motion.button
                     onClick={() => { playSound('click'); router.push('/'); }}
-                    className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors cursor-pointer"
+                    className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors cursor-pointer mr-6"
                     whileHover={{ x: -3 }}
                 >
                     <span><ArrowLeft size={16} /></span>
                     <span className="text-xs font-bold uppercase tracking-wider">Home</span>
                 </motion.button>
 
+                {/* Balance Badge */}
+                <motion.div
+                    className="hidden md:flex items-center gap-3 px-4 py-1.5 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 shadow-xl cursor-default"
+                >
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center bg-amber-500/10 border border-amber-500/20">
+                        <Wallet size={12} className="text-amber-400" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[8px] uppercase tracking-wider text-white/40 font-bold">Balance</span>
+                        <span className="text-sm font-black text-amber-500 leading-none">
+                            {formatMoney(bankroll)}
+                        </span>
+                    </div>
+                </motion.div>
+
 
                 {/* Right Side: Music Player */}
                 <div className="ml-auto flex items-center pr-2">
                     <MusicPlayer roomId="lobby" />
                 </div>
-            </div>
+            </motion.div>
 
             {/* Center content — flex 1 allows vertical centering and pushes footer down */}
             <div className="flex-1 flex flex-col items-center justify-center w-full z-10 px-4 md:px-8 mt-12 mb-16">
                 {/* Heading */}
                 <motion.div
                     className="text-center mb-6 shrink-0"
-                    initial={{ opacity: 0, y: -16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1, duration: 0.6 }}
+                    variants={{
+                        hidden: { opacity: 0, scale: 0.9 },
+                        show: { opacity: 1, scale: 1 }
+                    }}
                 >
                     <p className="text-[9px] uppercase tracking-[0.45em] text-amber-400/50 mb-1 font-sans">Welcome to</p>
                     <h2
@@ -100,7 +161,13 @@ export default function LobbyPage() {
                 </motion.div>
 
                 {/* Main Content Area (Swiper Carousel) */}
-                <div className="w-full max-w-[1300px] relative px-10 md:px-16 flex-1 max-h-[640px]">
+                <motion.div 
+                    className="w-full max-w-[1300px] relative px-10 md:px-16 flex-1 max-h-[640px]"
+                    variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        show: { opacity: 1, y: 0 }
+                    }}
+                >
                     <Swiper
                         modules={[Navigation, Keyboard]}
                         spaceBetween={40}
@@ -118,7 +185,7 @@ export default function LobbyPage() {
                             <SwiperSlide key={pageIndex}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 xl:gap-5 w-full max-w-[1100px] mx-auto py-2">
                                     {chunk.map((room, index) => (
-                                        <RoomCard key={room.id} room={room} index={index} onClick={() => { playSound('click'); router.push(`/game/${room.id}`); }} />
+                                        <RoomCard key={room.id} room={room} index={index} onClick={() => { playSound('click'); router.push(`/game/${room.id}`); }} variants={itemVariants} />
                                     ))}
                                 </div>
                             </SwiperSlide>
@@ -136,23 +203,29 @@ export default function LobbyPage() {
                             </div>
                         </>
                     )}
-                </div>
+                </motion.div>
             </div>
 
             {/* Educational Disclaimer */}
-            <div className="absolute bottom-4 left-0 right-0 text-center z-50 pointer-events-none">
+            <motion.div 
+                className="absolute bottom-4 left-0 right-0 text-center z-50 pointer-events-none"
+                variants={{
+                    hidden: { opacity: 0 },
+                    show: { opacity: 1 }
+                }}
+            >
                 <p className="text-xs text-white/30 font-medium uppercase tracking-[0.1em]">
                     This is a strictly educational project. No real money gambling is involved.
                 </p>
                 <div className="text-[8px] text-white/10 mt-1 leading-tight uppercase tracking-wider">
                     Audio Credits: Music by Kevin MacLeod & Audionautix.com · SFX by Kenney.nl
                 </div>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }
 
-function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; onClick: () => void }) {
+function RoomCard({ room, index, onClick, variants }: { room: RoomConfig; index: number; onClick: () => void; variants: any }) {
     const formattedMaxBet = useMemo(() => {
         if (room.betRange[1] >= 1000000) return 'Unlimited';
         return `$${room.betRange[1].toLocaleString('en-US')}`;
@@ -165,9 +238,7 @@ function RoomCard({ room, index, onClick }: { room: RoomConfig; index: number; o
                 border: `1px solid ${room.borderColor}`,
                 boxShadow: `0 0 40px ${room.borderColor}`,
             }}
-            initial={false}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: index * 0.05, duration: 0.28, ease: 'easeOut' }}
+            variants={variants}
             whileHover={{ scale: 1.03, y: -8, boxShadow: `0 0 60px ${room.accentColor}44` }}
             whileTap={{ scale: 0.98 }}
             onClick={onClick}

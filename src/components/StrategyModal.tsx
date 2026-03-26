@@ -67,9 +67,15 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
     const strategyTables = getStrategyTables(room.strategyType);
     const strategyType = room.id;
 
+    const isMadnessRoom = room.id === 'madness_21';
+
     // Row definitions
-    const HARD_ROWS = ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
-    const SOFT_ROWS = ['A,2', 'A,3', 'A,4', 'A,5', 'A,6', 'A,7', 'A,8', 'A,9'];
+    const HARD_ROWS = isMadnessRoom 
+        ? ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17+']
+        : ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
+    const SOFT_ROWS = isMadnessRoom
+        ? ['12', '13', '14', '15', '16', '17', '18', '19+']
+        : ['A,2', 'A,3', 'A,4', 'A,5', 'A,6', 'A,7', 'A,8', 'A,9'];
     const PAIR_ROWS = ['2,2', '3,3', '4,4', '5,5', '6,6', '7,7', '8,8', '9,9', '10,10', 'A,A'];
 
     const activeRows = tab === 'hard'
@@ -109,7 +115,7 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
         { id: 'rules', label: 'Rules', icon: <BookOpen size={14} /> },
         { id: 'hard', label: 'Hard', icon: <Hash size={14} /> },
         { id: 'soft', label: 'Soft', icon: <Layers size={14} /> },
-        { id: 'pairs', label: 'Pairs', icon: <Layout size={14} /> },
+        ...(!isMadnessRoom ? [{ id: 'pairs', label: 'Pairs', icon: <Layout size={14} /> }] : []),
         ...(room.id === 'iberian_21' ? [{ id: 'special', label: 'Special', icon: <Target size={14} /> }] : []),
         ...(room.id === 'free_action' ? [{ id: 'free_hand', label: 'Free', icon: <Zap size={14} /> }] : []),
         ...(room.id === 'exchange_21' ? [{ id: 'switch_advice', label: 'Switch', icon: <ArrowLeftRight size={14} /> }] : []),

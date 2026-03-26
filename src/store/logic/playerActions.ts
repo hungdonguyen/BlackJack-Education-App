@@ -9,6 +9,9 @@ import { getCurrentHand } from './utils';
 
 export const advanceToNextHandLogic = (set: any, get: () => GameStore) => {
     const state = get();
+    // Do not run if game is no longer in PLAYER_TURN phase (prevents fast double-click freeze)
+    if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
+
     const currentSeat = state.seats[state.currentSeatIndex];
 
     if (!currentSeat) {
@@ -57,7 +60,8 @@ export const hitLogic = (set: any, get: () => GameStore) => {
     if (!checkTutorialAction(state, 'action-hit')) return;
 
     const currentHand = getCurrentHand(state);
-    if (!currentHand || currentHand.status !== HandStatus.PLAYING || currentHand.isDoubleDown) return;
+    const roomCfg = getRoomConfig(state.currentRoom);
+    if (!currentHand || currentHand.status !== HandStatus.PLAYING || (currentHand.isDoubleDown && !roomCfg.gameRules.allowInfiniteDouble)) return;
 
     set({ actionCounter: state.actionCounter + 1 });
 
@@ -173,12 +177,16 @@ export const doubleDownLogic = (set: any, get: () => GameStore) => {
           const isIberian = state.currentRoom === 'iberian_21';
           const isImmediateWin = isIberian && is21;
 
+          const stayPlaying = roomCfg.gameRules.allowDoubleDownRescue || roomCfg.gameRules.allowInfiniteDouble;
+          const isMadnessAceDouble = state.currentRoom === 'madness_21' && hand.cards.length === 1 && hand.cards[0].rank === Rank.ACE;
+          
           return {
             ...hand,
             cards: newCards,
             betAmount: hand.betAmount + (isFree ? hand.betAmount : cost),
-            status: busted ? HandStatus.BUST : isImmediateWin ? HandStatus.WON : (is21 || !roomCfg.gameRules.allowDoubleDownRescue) ? HandStatus.STAND : HandStatus.PLAYING,
+            status: busted ? HandStatus.BUST : isImmediateWin ? HandStatus.WON : (is21 || !stayPlaying || isMadnessAceDouble) ? HandStatus.STAND : HandStatus.PLAYING,
             isDoubleDown: true,
+            doubleCount: (hand.doubleCount || 0) + 1,
             isFreeActionDouble: isFree ? true : hand.isFreeActionDouble,
             freeActionBetAmount: isFree ? (hand.freeActionBetAmount || 0) + hand.betAmount : hand.freeActionBetAmount,
           };

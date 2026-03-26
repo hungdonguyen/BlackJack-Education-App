@@ -165,6 +165,11 @@ export default function MatchDetailModal({
                                         <MiniCard key={i} suit={c.suit} rank={c.rank} />
                                     ))}
                                 </div>
+                                {match.dealerPush22 && (
+                                    <div className="mt-2.5 inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded shadow-[0_0_10px_rgba(245,158,11,0.1)]">
+                                        <span className="text-[9px] font-black text-amber-500 uppercase tracking-[0.15em]">Dealer Push 22</span>
+                                    </div>
+                                )}
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] text-white/40 uppercase tracking-widest">Total</p>
@@ -243,7 +248,7 @@ export default function MatchDetailModal({
                                                                 </span>
                                                             ) : hand.isDoubleDown && (
                                                                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                                                                    DOUBLE
+                                                                    {hand.doubleCount && hand.doubleCount > 1 ? `${hand.doubleCount}X DOUBLE` : 'DOUBLE'}
                                                                 </span>
                                                             )}
                                                             {hand.isSwitched && (
@@ -254,6 +259,11 @@ export default function MatchDetailModal({
                                                             {hand.isBurned && (
                                                                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-orange-600/20 text-orange-400 border border-orange-500/30">
                                                                     BURNED
+                                                                </span>
+                                                            )}
+                                                            {hand.isSuitedBJ && (
+                                                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400/40 to-pink-500/40 text-amber-100 border border-amber-400/30 shadow-[0_0_8px_rgba(251,191,36,0.2)]">
+                                                                    SUITED BLACKJACK
                                                                 </span>
                                                             )}
                                                             {match.roomId === 'iberian_21' && hand.result === HandStatus.WON && pnl > hand.betAmount && !hand.isDoubleDown && (
@@ -390,12 +400,18 @@ export default function MatchDetailModal({
                                                     borderBottom: '1px solid rgba(255,255,255,0.04)',
                                                 }}>
                                                 <div className="flex items-center gap-1">
-                                                    <span className="text-[9px] font-extrabold text-yellow-500 uppercase tracking-wider">⚡ Bonus</span>
+                                                    <span className="text-[9px] font-extrabold text-yellow-500 uppercase tracking-wider">
+                                                        {match.roomId === 'madness_21' ? '⚡ Push 22' : '⚡ Bonus'}
+                                                    </span>
                                                 </div>
                                                 <div className="text-[9px] text-yellow-300/70 font-bold">
-                                                    {seat.freeActionTokens && seat.freeActionTokens > 0
-                                                        ? `✓ Collected ${seat.freeActionTokens} Free Action Token${seat.freeActionTokens > 1 ? 's' : ''}`
-                                                        : '✗ No Free Actions taken'
+                                                    {match.roomId === 'madness_21'
+                                                        ? (seat.sideBetPayout && seat.sideBetPayout > 0
+                                                            ? '✓ Dealer busted with 22 — Payout 11:1'
+                                                            : '✗ Dealer did not have 22')
+                                                        : (seat.freeActionTokens && seat.freeActionTokens > 0
+                                                            ? `✓ Collected ${seat.freeActionTokens} Free Action Token${seat.freeActionTokens > 1 ? 's' : ''}`
+                                                            : '✗ No Free Actions taken')
                                                     }
                                                 </div>
                                                 <div />
