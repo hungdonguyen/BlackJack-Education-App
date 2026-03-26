@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import { Card, Seat } from '@/types/game';
 import { Rank } from '@/types/enums';
 
@@ -104,31 +105,51 @@ export function calculateRunningCountFromShoe(
     return runningCount;
 }
 
-export function calculateTrueCountFromShoe(
+export interface TrueCountResult {
+    runningCount: number;
+    decksRemaining: number;
+    trueCountRaw: number;
+    trueCount: number;
+}
+
+export async function calculateTrueCountFromShoe(
     shoe: Card[],
     dealerCards: Card[],
     seats: Seat[],
     numDecks: number,
     system: CountingSystem,
     omitTens: boolean,
-) {
-    const runningCount = calculateRunningCountFromShoe(
-        shoe,
-        dealerCards,
-        seats,
-        numDecks,
-        system,
-        omitTens,
-    );
+): Promise<TrueCountResult> {
+    try {
+        const result = await invoke<TrueCountResult>('calculate_true_count_rust', {
+            shoe,
+            dealerCards,
+            seats,
+            numDecks,
+            system,
+            omitTens
+        });
+        return result;
+    } catch (err) {
+        console.error('Failed to invoke Rust calculate_true_count. Falling back to JS.', err);
+        const runningCount = calculateRunningCountFromShoe(
+            shoe,
+            dealerCards,
+            seats,
+            numDecks,
+            system,
+            omitTens,
+        );
 
-    const decksRemaining = Math.max(shoe.length / getCardsPerDeck(omitTens), 0.5);
-    const trueCountRaw = runningCount / decksRemaining;
-    const trueCount = Math.round(trueCountRaw * 10) / 10;
+        const decksRemaining = Math.max(shoe.length / getCardsPerDeck(omitTens), 0.5);
+        const trueCountRaw = runningCount / decksRemaining;
+        const trueCount = Math.round(trueCountRaw * 10) / 10;
 
-    return {
-        runningCount,
-        decksRemaining,
-        trueCountRaw,
-        trueCount,
-    };
+        return {
+            runningCount,
+            decksRemaining,
+            trueCountRaw,
+            trueCount,
+        };
+    }
 }

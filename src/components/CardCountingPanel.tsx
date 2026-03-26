@@ -5,12 +5,12 @@
 // Real-time running count, true count, and betting advice
 // ============================================
 
-import { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase } from '@/types/enums';
 import { Info, FlaskConical } from 'lucide-react';
-import { getCardCountingAnalysis } from '@/utils/countingAnalysis';
+import { getCardCountingAnalysis, CardCountingAnalysis } from '@/utils/countingAnalysis';
 import { getRoomConfig } from '@/utils/rooms';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -47,19 +47,27 @@ export default function CardCountingPanel({
         gamePhase === GamePhase.PAYOUT ||
         gamePhase === GamePhase.BETTING;
 
-    const analysis = useMemo(() => {
-        return getCardCountingAnalysis({
+    const [analysis, setAnalysis] = useState<CardCountingAnalysis | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+        getCardCountingAnalysis({
             roomId,
             numDecks,
             seats,
             dealerCards: dealerHand.cards,
             shoe,
             userSystem,
-        });
-    }, [dealerHand.cards, numDecks, roomId, seats, shoe, userSystem]);
+        }).then(res => {
+            if (isMounted) setAnalysis(res);
+        }).catch(err => console.error(err));
+        return () => { isMounted = false; };
+    }, [roomId, numDecks, seats, dealerHand.cards, shoe, userSystem]);
 
     const bdr = borderColor ?? `${accentColor}30`;
     const isBeta = getRoomConfig(roomId).isBeta ?? false;
+
+    if (!analysis) return null;
 
     // Gauge for true count: map -10..+10 to 0..100
     const tcPct = Math.min(Math.max((analysis.trueCount + 10) / 20, 0), 1) * 100;

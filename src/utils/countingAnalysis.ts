@@ -115,7 +115,7 @@ function getBettingAdvice(adviceTrueCount: number): BettingAdvice {
     };
 }
 
-export function getCardCountingAnalysis({
+export async function getCardCountingAnalysis({
     roomId,
     numDecks,
     seats,
@@ -129,14 +129,14 @@ export function getCardCountingAnalysis({
     dealerCards: Card[];
     shoe: Card[];
     userSystem: CountingSystem;
-}): CardCountingAnalysis {
+}): Promise<CardCountingAnalysis> {
     const activeSystem = getActiveCountingSystem(roomId, userSystem);
     const omitTens = roomId === 'iberian_21';
     const totalCards = numDecks * getCardsPerDeck(omitTens);
     const cardsRemaining = shoe.length;
     const cardsDealt = totalCards - cardsRemaining;
     const visibleCards = getAllVisibleCards(seats, dealerCards);
-    const countAnalysis = calculateTrueCountFromShoe(
+    const countAnalysis = await calculateTrueCountFromShoe(
         shoe,
         dealerCards,
         seats,

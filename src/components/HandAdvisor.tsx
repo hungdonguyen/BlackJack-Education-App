@@ -4,7 +4,7 @@
 // HandAdvisor — real-time strategy + count deviations
 // ============================================
 
-import { useId } from 'react';
+import { useId, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, TrendingUp, FlaskConical } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
@@ -12,7 +12,7 @@ import { getRules } from '@/rules';
 import { GamePhase } from '@/types/enums';
 import { calculateHandValue } from '@/utils/hand';
 import { getRoomConfig } from '@/utils/rooms';
-import { calculateTrueCountFromShoe } from '@/utils/cardCounting';
+import { calculateTrueCountFromShoe, TrueCountResult } from '@/utils/cardCounting';
 import {
     Deviation,
     getDeviation,
@@ -99,21 +99,30 @@ export default function HandAdvisor({
     const dealerUpCard = dealerHand.cards.find((card) => !card.isHidden);
     const currentSeatHandsLength = currentSeat?.hands.length ?? 0;
 
-    const analysis = (() => {
-        if (!currentHand || !dealerUpCard) return null;
+    const [countAnalysis, setCountAnalysis] = useState<TrueCountResult>({ trueCount: 0, trueCountRaw: 0, runningCount: 0, decksRemaining: 0 });
 
-        const cards = currentHand.cards;
-        const { total, isSoft } = calculateHandValue(cards);
-        const countAnalysis = showCardCounting
-            ? calculateTrueCountFromShoe(
+    useEffect(() => {
+        let isMounted = true;
+        if (showCardCounting) {
+            calculateTrueCountFromShoe(
                 shoe,
                 dealerHand.cards,
                 seats,
                 room.gameRules.numberOfDecks,
                 activeSystem,
-                omitTens,
-            )
-            : { trueCount: 0, trueCountRaw: 0, runningCount: 0, decksRemaining: 0 };
+                omitTens
+            ).then(res => {
+                if (isMounted) setCountAnalysis(res);
+            }).catch(console.error);
+        }
+        return () => { isMounted = false; };
+    }, [showCardCounting, shoe, dealerHand.cards, seats, room.gameRules.numberOfDecks, activeSystem, omitTens]);
+
+    const analysis = (() => {
+        if (!currentHand || !dealerUpCard) return null;
+
+        const cards = currentHand.cards;
+        const { total, isSoft } = calculateHandValue(cards);
 
         if (gamePhase === GamePhase.INSURANCE) {
             const insuranceIndex = getInsuranceIndex(roomId, activeSystem);

@@ -215,7 +215,7 @@ describe('Card Counting Utils', () => {
     });
 
     describe('calculateTrueCountFromShoe', () => {
-        it('should calculate true count correctly', () => {
+        it('should calculate true count correctly', async () => {
              // 1 DECK, no 10s (48 cards). 
              // System: Hi-Lo. Initial = 0.
              // Shoe has 24 cards (0.5 decks remaining).
@@ -224,7 +224,7 @@ describe('Card Counting Utils', () => {
              // True count raw = 2 / 0.5 = 4.
              const customShoe = Array(22).fill(c('7',7)).concat([c('KING',10), c('QUEEN',10)]);
              
-             const result = calculateTrueCountFromShoe(customShoe, [], [], 1, 'Hi-Lo', true); // omitTens = true (48/deck)
+             const result = await calculateTrueCountFromShoe(customShoe, [], [], 1, 'Hi-Lo', true); // omitTens = true (48/deck)
              
              // shoeSum = -2
              // Initial = 0
@@ -239,7 +239,7 @@ describe('Card Counting Utils', () => {
 
              // Also cover omitTens=false (52/deck)
              const shoeStandard = Array(52).fill(c('7',7)); // shoeSum=0, RC=0
-             const resStandard = calculateTrueCountFromShoe(shoeStandard, [], [], 1, 'Hi-Lo', false);
+             const resStandard = await calculateTrueCountFromShoe(shoeStandard, [], [], 1, 'Hi-Lo', false);
              expect(resStandard.decksRemaining).toBe(1);
         });
     });
