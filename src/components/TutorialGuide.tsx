@@ -9,7 +9,7 @@ import { AlertCircle } from 'lucide-react';
 
 import { createPortal } from 'react-dom';
 import { TutorialStep, GameState } from '@/types/game';
-import { BEGINNER_TUTORIAL_LESSONS, DOUBLE_TUTORIAL_LESSONS, STRATEGY_TUTORIAL_LESSONS } from '@/utils/tutorialData';
+import { getLessons } from '@/store/tutorialSlice';
 import { useAudio } from '@/utils/audio';
 
 export default function TutorialGuide({ show = true }: { show?: boolean }) {
@@ -35,13 +35,7 @@ export default function TutorialGuide({ show = true }: { show?: boolean }) {
     }, [tutorialWarning, hideTutorialWarning, playSound]);
 
     const steps = useMemo(() => {
-        let lessons = BEGINNER_TUTORIAL_LESSONS;
-        if (currentRoom === 'tutorial_double') {
-            lessons = DOUBLE_TUTORIAL_LESSONS;
-        } else if (currentRoom === 'tutorial_strategy') {
-            lessons = STRATEGY_TUTORIAL_LESSONS;
-        }
-
+        const lessons = getLessons(currentRoom);
         const lesson = lessons[tutorialRound];
         return lesson ? lesson.steps : [];
     }, [currentRoom, tutorialRound]);
@@ -68,6 +62,8 @@ export default function TutorialGuide({ show = true }: { show?: boolean }) {
             case 'bottom': return "absolute left-[15%] bottom-[20%]";
             case 'dealer': return "absolute right-[15%] top-[25%]";
             case 'player': return "absolute left-[15%] bottom-[40%]";
+            case 'left': return "absolute left-[5%] top-[50%] -translate-y-1/2";
+            case 'right': return "absolute right-[5%] top-[50%] -translate-y-1/2";
             case 'top':
             default: return "absolute left-[15%] top-[25%]";
         }

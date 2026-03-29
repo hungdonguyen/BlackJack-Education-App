@@ -11,7 +11,7 @@ import { zapout } from './zapout';
 import { exchange } from './exchange';
 import { firecard } from './firecard';
 import { madness } from './madness';
-import { tutorialBeginner, tutorialDouble, tutorialStrategy } from './tutorials';
+import { tutorialBeginner, tutorialDouble, tutorialStrategy, tutorialCounting, tutorialSplitting, tutorialMultiHand } from './tutorials';
 
 export * from './types';
 
@@ -31,6 +31,9 @@ export const ROOMS: Record<string, RoomConfig> = {
     tutorial_beginner: tutorialBeginner,
     tutorial_double: tutorialDouble,
     tutorial_strategy: tutorialStrategy,
+    tutorial_counting: tutorialCounting,
+    tutorial_splitting: tutorialSplitting,
+    tutorial_insurance: tutorialMultiHand,
 };
 
 export function getRoomConfig(roomId: string): RoomConfig {

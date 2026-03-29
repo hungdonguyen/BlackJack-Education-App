@@ -1,4 +1,4 @@
-﻿
+
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -6,13 +6,15 @@ mod logic;
 
 fn main() {
     tauri::Builder::default()
-        .setup(|app| {
+        .setup(|_app| {
             // initialization
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             shuffle_and_deal,
-            calculate_true_count_rust
+            calculate_true_count_rust,
+            logic::store::secure_save,
+            logic::store::secure_load
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

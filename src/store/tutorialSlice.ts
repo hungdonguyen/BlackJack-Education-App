@@ -4,14 +4,27 @@
 
 import { StateCreator } from 'zustand';
 import { GameStore, Card } from '@/types/game';
-import { BEGINNER_TUTORIAL_LESSONS, DOUBLE_TUTORIAL_LESSONS, STRATEGY_TUTORIAL_LESSONS, TutorialLesson } from '@/utils/tutorialData';
+import {
+  BEGINNER_TUTORIAL_LESSONS,
+  DOUBLE_TUTORIAL_LESSONS,
+  STRATEGY_TUTORIAL_LESSONS,
+  COUNTING_TUTORIAL_LESSONS,
+  PAIR_SPLITTING_TUTORIAL_LESSONS,
+  MULTI_HAND_TUTORIAL_LESSONS,
+  TutorialLesson
+} from '@/utils/tutorials';
 import { createEmptyHand } from './bettingSlice';
 import { GamePhase } from '@/types/enums';
 
-const getLessons = (roomId: string): TutorialLesson[] => {
-  if (roomId === 'tutorial_double') return DOUBLE_TUTORIAL_LESSONS;
-  if (roomId === 'tutorial_strategy') return STRATEGY_TUTORIAL_LESSONS;
-  return BEGINNER_TUTORIAL_LESSONS;
+export const getLessons = (roomId: string): TutorialLesson[] => {
+  switch (roomId) {
+    case 'tutorial_double':    return DOUBLE_TUTORIAL_LESSONS;
+    case 'tutorial_strategy':  return STRATEGY_TUTORIAL_LESSONS;
+    case 'tutorial_counting':  return COUNTING_TUTORIAL_LESSONS;
+    case 'tutorial_splitting': return PAIR_SPLITTING_TUTORIAL_LESSONS;
+    case 'tutorial_multihand': return MULTI_HAND_TUTORIAL_LESSONS;
+    default:                   return BEGINNER_TUTORIAL_LESSONS;
+  }
 };
 
 export interface TutorialSlice {
@@ -46,13 +59,16 @@ export const createTutorialSlice: StateCreator<GameStore, [], [], TutorialSlice>
     const lesson0 = lessons[0];
 
     // Force settings for Tutorials
-    // Only enable Hand Advisor for Strategy Tutorial (Room 3)
-    const isStrategyTutorial = roomToUse === 'tutorial_strategy';
-    const isTutorial = roomToUse.startsWith('tutorial_');
+    const isStrategyTutorial  = roomToUse === 'tutorial_strategy';
+    const isCountingTutorial  = roomToUse === 'tutorial_counting';
+    const isSplittingTutorial = roomToUse === 'tutorial_splitting';
+    const isInsuranceTutorial = roomToUse === 'tutorial_multihand';
+    const isTutorial = roomToUse && roomToUse.startsWith('tutorial_');
     
     const settingsOverrides = isTutorial ? {
-        showHandAdvisor: isStrategyTutorial, // true for strategy, false for others
-        showCardCounting: false,             // always false for tutorials
+        showHandAdvisor:  isStrategyTutorial || isCountingTutorial || isSplittingTutorial || isInsuranceTutorial,
+        showCardCounting: isCountingTutorial || isSplittingTutorial || isInsuranceTutorial,
+        showSpecialCases: isCountingTutorial,
     } : {};
 
     set({
@@ -61,6 +77,7 @@ export const createTutorialSlice: StateCreator<GameStore, [], [], TutorialSlice>
       tutorialStep: 0,
       tutorialBalance: 1000,
       tutorialCompleted: false,
+      tutorialWarning: null,
       forcedShoe: lesson0 ? [...lesson0.forcedCards] : null,
       // Full game state reset
       gamePhase: GamePhase.BETTING,

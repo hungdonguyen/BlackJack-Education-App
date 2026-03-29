@@ -17,7 +17,7 @@ export interface TutorialStep {
   message: string;
   condition: (state: any) => boolean; // Relaxed to any to allow accessing all slices
   targetElementId?: string;
-  position?: 'top' | 'bottom' | 'center' | 'dealer' | 'player';
+  position?: 'top' | 'bottom' | 'center' | 'dealer' | 'player' | 'left' | 'right';
   requiresClick?: boolean;
 }
 
@@ -165,6 +165,9 @@ export interface GameState {
   // Insurance
   insuranceBets: Record<number, number>; // seatId -> insurance bet amount
 
+  // Modal UI state
+  isStrategyModalOpen: boolean;
+  isSettingsModalOpen: boolean;
 
   // Side bets (Free Action room)
   sideBets: Record<number, number>; // seatId -> side bet amount
@@ -232,6 +235,9 @@ export interface GameActions {
   // Helpers
   canAfford: (amount: number) => boolean;
 
+  // UI Modal state
+  setStrategyModalOpen: (open: boolean) => void;
+  setSettingsModalOpen: (open: boolean) => void;
 }
 
 export interface DailyClaimSlice {

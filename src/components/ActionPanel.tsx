@@ -16,7 +16,7 @@ import React, { useMemo } from 'react';
 import { useAudio } from '@/utils/audio';
 import { getExchange21Advice, ExchangeAdvice } from '@/utils/strategyAdvisor';
 import { useRouter } from 'next/navigation';
-import { BEGINNER_TUTORIAL_LESSONS, DOUBLE_TUTORIAL_LESSONS, STRATEGY_TUTORIAL_LESSONS } from '@/utils/tutorialData';
+import { getLessons } from '@/store/tutorialSlice';
 
 const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { currentInsuranceSeat?: number }) {
     const router = useRouter();
@@ -44,13 +44,10 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
     const acceptInsurance = useGameStore((s) => s.acceptInsurance);
     const declineInsurance = useGameStore((s) => s.declineInsurance);
     const tutorialRound = useGameStore((s) => s.tutorialRound);
-    
-    let lessons = BEGINNER_TUTORIAL_LESSONS;
-    if (currentRoom === 'tutorial_double') lessons = DOUBLE_TUTORIAL_LESSONS;
-    else if (currentRoom === 'tutorial_strategy') lessons = STRATEGY_TUTORIAL_LESSONS;
 
+    const lessons = getLessons(currentRoom);
     const isLastTutorialLesson = tutorialRound >= lessons.length - 1;
-    
+
     const resetTutorialProgress = useGameStore((s) => s.resetTutorialProgress);
     const setTutorialStep = useGameStore((s) => s.setTutorialStep);
     const { playSound } = useAudio();

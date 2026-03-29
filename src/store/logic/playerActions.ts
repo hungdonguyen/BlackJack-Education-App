@@ -3,7 +3,7 @@ import { HandStatus, Rank, Suit } from '@/types/enums';
 import { getRoomConfig } from '@/utils/rooms';
 import { getRules } from '@/rules';
 import { calculateHandValue, isBust, isBlackjack } from '@/utils/hand';
-import { dealCard, createShoe, shuffleShoe } from '@/utils/deck';
+import { dealCard, dealForcedCard, createShoe, shuffleShoe } from '@/utils/deck';
 import { checkTutorialAction } from '@/utils/tutorialInterceptor';
 import { getCurrentHand } from './utils';
 
@@ -68,7 +68,7 @@ export const hitLogic = (set: any, get: () => GameStore) => {
     let shoe = [...state.shoe];
     let forcedShoe = state.forcedShoe ? [...state.forcedShoe] : null;
 
-    const card = (forcedShoe && forcedShoe.length > 0) ? forcedShoe.pop()! : dealCard(shoe);
+    const card = (forcedShoe && forcedShoe.length > 0) ? dealForcedCard(shoe, forcedShoe) : dealCard(shoe);
     const newCard = card;
 
     const updatedSeats = state.seats.map((seat, seatIdx) => {
@@ -161,7 +161,7 @@ export const doubleDownLogic = (set: any, get: () => GameStore) => {
       shoe = shuffleShoe(createShoe(numDecks, omitTens));
     }
 
-    const newCard = (forcedShoe && forcedShoe.length > 0) ? forcedShoe.pop()! : dealCard(shoe);
+    const newCard = (forcedShoe && forcedShoe.length > 0) ? dealForcedCard(shoe, forcedShoe) : dealCard(shoe);
 
     const updatedSeats = state.seats.map((seat, seatIdx) => {
       if (seatIdx !== state.currentSeatIndex) return seat;
@@ -236,7 +236,7 @@ export const splitLogic = (set: any, get: () => GameStore) => {
     const card2 = currentHand.cards[1];
 
     const dealFromSource = (): Card => {
-      if (forcedShoe && forcedShoe.length > 0) return forcedShoe.pop()!;
+      if (forcedShoe && forcedShoe.length > 0) return dealForcedCard(shoe, forcedShoe);
       return dealCard(shoe);
     };
 

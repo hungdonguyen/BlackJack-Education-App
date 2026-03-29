@@ -2,7 +2,7 @@ import { GameStore, GamePhase, Card } from '@/types/game';
 import { Rank } from '@/types/enums';
 import { getRoomConfig } from '@/utils/rooms';
 import { calculateHandValue } from '@/utils/hand';
-import { createShoe, shuffleShoe, dealCard } from '@/utils/deck';
+import { createShoe, shuffleShoe, dealCard, dealForcedCard } from '@/utils/deck';
 import { SPEED_DELAYS } from '../settingsSlice';
 
 let _dealerPlayLock = false;
@@ -67,7 +67,7 @@ export const dealerPlayLogic = async (set: any, get: () => GameStore) => {
             currentShoe = shuffleShoe(createShoe(roomCfg.gameRules.numberOfDecks, roomCfg.gameRules.omitTens));
           }
 
-          const newCard = (forcedShoe && forcedShoe.length > 0) ? forcedShoe.pop()! : dealCard(currentShoe);
+          const newCard = (forcedShoe && forcedShoe.length > 0) ? dealForcedCard(currentShoe, forcedShoe) : dealCard(currentShoe);
           dealerCards.push(newCard);
           dealerValue = calculateHandValue(dealerCards);
 

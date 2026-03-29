@@ -23,7 +23,7 @@ export const vegasStrip: RoomConfig = {
     },
     blackjackMultiplier: 1.5,
     betRange: [1, 1_000_000_000],
-    rtp: '99.63%',
+    rtp: '99.65%',
     icon: <Ticket className="w-5 h-5 drop-shadow-md text-purple-400" />,
     accentColor: '#8b5cf6',
     logoPath: '/images/logo/rooms/vegas_strip.png',

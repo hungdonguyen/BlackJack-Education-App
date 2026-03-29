@@ -70,6 +70,10 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
 
     const showHandAdvisor = useGameStore((s) => s.showHandAdvisor);
     const showCardCounting = useGameStore((s) => s.showCardCounting);
+    const showStrategy = useGameStore((s) => s.isStrategyModalOpen);
+    const setShowStrategy = useGameStore((s) => s.setStrategyModalOpen);
+    const showSettings = useGameStore((s) => s.isSettingsModalOpen);
+    const setShowSettings = useGameStore((s) => s.setSettingsModalOpen);
 
 
     const isInsurance = gamePhase === GamePhase.INSURANCE;
@@ -89,12 +93,13 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         if (room.isTutorial) {
             resetTutorialProgress(roomId);
         }
+        return () => {
+            setCurrentRoom('');
+        };
     }, [roomId, setCurrentRoom, room.isTutorial, resetTutorialProgress]);
 
     const [winNotification, setWinNotification] = useState<{amount: number, isWin: boolean, isPush?: boolean} | null>(null);
     const [showLogoInfo, setShowLogoInfo] = useState(false);
-    const [showStrategy, setShowStrategy] = useState(false);
-    const [showSettings, setShowSettings] = useState(false);
     const [selectedMatchIndex, setSelectedMatchIndex] = useState<number | null>(null);
     const [showExitConfirmation, setShowExitConfirmation] = useState<{target: 'lobby'|'home'|null}>({target: null});
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -139,6 +144,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         setShowExitConfirmation({ target: null });
         closeTransientLayers();
         resetTutorialProgress();
+        setCurrentRoom('');
         resetRound();
         if (target === 'lobby') {
             router.push('/lobby');
@@ -537,7 +543,7 @@ const logoPath = room.logoPath;
                         )}
 
                         {/* Card Counting Panel — right side next to history */}
-                        {showCardCounting && !room.isTutorial && (
+                        {showCardCounting && (!room.isTutorial || roomId === 'tutorial_counting') && (
                             <div className="absolute top-[85px] z-15" style={{ right: 216 }}>
                                 <CardCountingPanel roomId={roomId} numDecks={room.gameRules.numberOfDecks} accentColor={room.accentColor} borderColor={room.borderColor} onOpenSettings={() => setShowSettings(true)} onOpenStrategy={() => setShowStrategy(true)} />
                             </div>

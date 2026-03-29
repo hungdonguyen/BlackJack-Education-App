@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useGameStore } from '@/hooks/useGameStore';
 
 export const PLAYLIST = [
-    { name: 'Cool Vibes', path: '/sounds/bgm/CoolVibes.mp3', vol: 1.5 },
+    { name: 'Cool Vibes', path: '/sounds/bgm/CoolVibes.mp3', vol: 7 },
     { name: 'Airport Lounge', path: '/sounds/bgm/Airport Lounge.mp3', vol: 1.0 },
     { name: 'Funk Game Loop', path: '/sounds/bgm/Funk Game Loop.mp3', vol: 1.0 },
     { name: 'Faster Does It', path: '/sounds/bgm/Faster Does It.mp3', vol: 1.0 },
@@ -98,7 +98,7 @@ export function useBGM(roomId: string) {
         const trackPath = musicTrackOverride || BGM_MAP[roomId] || BGM_MAP.lobby;
         const trackInfo = PLAYLIST.find(t => t.path === trackPath);
         const trackMultiplier = trackInfo?.vol ?? 1.0;
-        const targetVol = BASE_VOLUME * musicVolume * trackMultiplier;
+        const targetVol = Math.min(BASE_VOLUME * musicVolume * trackMultiplier, 1.0);
 
         if (!musicEnabled) {
             if (currentAudio && !currentAudio.paused) {
@@ -155,7 +155,7 @@ export function useBGM(roomId: string) {
             const trackPath = musicTrackOverride || BGM_MAP[roomId] || BGM_MAP.lobby;
             const trackInfo = PLAYLIST.find(t => t.path === trackPath);
             const trackMultiplier = trackInfo?.vol ?? 1.0;
-            currentAudio.volume = BASE_VOLUME * musicVolume * trackMultiplier;
+            currentAudio.volume = Math.min(BASE_VOLUME * musicVolume * trackMultiplier, 1.0);
         }
     }, [musicVolume, musicEnabled, roomId, musicTrackOverride]);
 

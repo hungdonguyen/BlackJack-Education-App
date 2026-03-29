@@ -98,3 +98,31 @@ export function dealCard(shoe: Shoe, hidden: boolean = false): Card {
   }
   return { ...card, isHidden: hidden };
 }
+
+/** 
+ * Deal a forced card and remove a matching card from the main shoe (mutates both arrays).
+ * Necessary for tutorials to keep Card Counting and Shoe logic accurate. 
+ */
+export function dealForcedCard(shoe: Shoe, forcedShoe: Shoe, hidden: boolean = false): Card {
+  const card = forcedShoe.pop();
+  if (!card) {
+    throw new Error('Forced shoe is empty! Cannot deal card.');
+  }
+
+  // Remove matching card from the main shoe to keep deck composition tracking accurate
+  const exactMatchIndex = shoe.findIndex(c => c.rank === card.rank && c.suit === card.suit);
+  if (exactMatchIndex !== -1) {
+    shoe.splice(exactMatchIndex, 1);
+  } else {
+    // Fallback: Remove any card with the same rank
+    const matchRankIndex = shoe.findIndex(c => c.rank === card.rank);
+    if (matchRankIndex !== -1) {
+      shoe.splice(matchRankIndex, 1);
+    } else {
+      // Ultimate fallback: Just pop any card
+      shoe.pop();
+    }
+  }
+
+  return { ...card, isHidden: hidden };
+}

@@ -24,7 +24,7 @@ export const classic: RoomConfig = {
     },
     blackjackMultiplier: 1.5,
     betRange: [1, 1_000_000_000],
-    rtp: '99.47%',
+    rtp: '99.58%',
     icon: <Spade className="w-5 h-5 fill-red-500 stroke-red-500 drop-shadow-md" />,
     accentColor: '#ef4444',
     logoPath: '/images/logo/rooms/classic.png',
@@ -68,7 +68,7 @@ export const classic: RoomConfig = {
         strategyNotes: {
             title: "Strategy Notes",
             items: [
-                "The House Edge is approximately 0.47% with 8 decks.",
+                "The House Edge is approximately 0.42% with 8 decks.",
                 "Basic strategy assumes infinite deck logic but is slightly adjusted for the S17 rule."
             ]
         }

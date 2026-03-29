@@ -1,6 +1,6 @@
 import React from 'react';
 import { IRules } from '@/rules/types';
-import { TutorialLesson } from '../tutorialData';
+import { TutorialLesson } from '../tutorials';
 
 export interface RuleHighlight {
     eyebrow: string;

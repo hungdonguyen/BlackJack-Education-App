@@ -25,7 +25,7 @@ export const iberian21: RoomConfig = {
     },
     blackjackMultiplier: 1.5,
     betRange: [1, 1_000_000_000],
-    rtp: '99.24%',
+    rtp: '99.61%',
     icon: <Spade className="w-5 h-5 drop-shadow-md text-red-500 fill-red-600" />,
     accentColor: '#be123c',
     isBeta: true,

@@ -1,9 +1,10 @@
 import { GameStore, Card, GamePhase } from '@/types/game';
 import { Rank } from '@/types/enums';
 import { getRoomConfig } from '@/utils/rooms';
-import { createShoe, shuffleShoe, dealCard, shouldReshuffle } from '@/utils/deck';
+import { createShoe, shuffleShoe, dealCard, dealForcedCard, shouldReshuffle } from '@/utils/deck';
 import { isBlackjack } from '@/utils/hand';
-import { BEGINNER_TUTORIAL_LESSONS, DOUBLE_TUTORIAL_LESSONS, STRATEGY_TUTORIAL_LESSONS } from '@/utils/tutorialData';
+import { BEGINNER_TUTORIAL_LESSONS, DOUBLE_TUTORIAL_LESSONS, STRATEGY_TUTORIAL_LESSONS } from '@/utils/tutorials';
+import { getLessons } from '../tutorialSlice';
 import { checkTutorialAction } from '@/utils/tutorialInterceptor';
 import { SPEED_DELAYS } from '../settingsSlice';
 import { HandStatus } from '@/types/enums';
@@ -14,15 +15,16 @@ export const initializeShoeLogic = (set: any, get: () => GameStore) => {
     const roomCfg = getRoomConfig(state.currentRoom);
     
     if (roomCfg.isTutorial) {
-      let lessons = BEGINNER_TUTORIAL_LESSONS;
-      if (state.currentRoom === 'tutorial_double') {
-        lessons = DOUBLE_TUTORIAL_LESSONS;
-      } else if (state.currentRoom === 'tutorial_strategy') {
-        lessons = STRATEGY_TUTORIAL_LESSONS;
-      }
+      const numDecks = roomCfg.gameRules.numberOfDecks;
+      const omitTens = roomCfg.gameRules.omitTens;
+      const shoe = shuffleShoe(createShoe(numDecks, omitTens));
+
+      const lessons = getLessons(state.currentRoom);
       
       const lesson = lessons[state.tutorialRound] || lessons[0];
+      
       set({ 
+        shoe,
         forcedShoe: [...lesson.forcedCards], 
         tutorialStep: 0,
         tutorialBalance: state.tutorialRound === 0 ? 1000 : state.tutorialBalance
@@ -83,7 +85,8 @@ export const startDealLogic = async (set: any, get: () => GameStore) => {
 
     const dealFromSource = (isDealer: boolean = false, hidden: boolean = false): Card => {
       if (forcedShoe && forcedShoe.length > 0) {
-        const card = forcedShoe.pop()!;
+        // Use the new dealForcedCard helper so that a matching card is also removed from `shoe`
+        const card = dealForcedCard(shoe, forcedShoe, isDealer && hidden);
         if (isDealer) {
             return { ...card, isHidden: hidden };
         }
@@ -255,12 +258,7 @@ export const resetRoundLogic = (set: any, get: () => GameStore) => {
     }
 
     const isTutorial = roomCfg.isTutorial;
-    let lessons = BEGINNER_TUTORIAL_LESSONS;
-    if (state.currentRoom === 'tutorial_double') {
-      lessons = DOUBLE_TUTORIAL_LESSONS;
-    } else if (state.currentRoom === 'tutorial_strategy') {
-      lessons = STRATEGY_TUTORIAL_LESSONS;
-    }
+    const lessons = isTutorial ? getLessons(state.currentRoom) : [];
     let forcedShoe = state.forcedShoe;
     let nextTutorialRound = state.tutorialRound;
     if (isTutorial) {

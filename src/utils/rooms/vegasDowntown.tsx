@@ -66,7 +66,7 @@ export const vegasDowntown: RoomConfig = {
             title: "Strategy Notes",
             items: [
                 "The Dealer hitting Soft 17 requires more aggressive doubling on your part.",
-                "House edge is roughly 0.38% with Basic Strategy."
+                "House edge is roughly 0.46% with Basic Strategy."
             ]
         }
     },

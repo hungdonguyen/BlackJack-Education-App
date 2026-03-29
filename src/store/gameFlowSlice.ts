@@ -37,7 +37,9 @@ export interface GameFlowSlice {
   matchHistory: MatchRecord[];
   insuranceBets: Record<number, number>;
   actionCounter: number;
-  
+  isStrategyModalOpen: boolean;
+  isSettingsModalOpen: boolean;
+
   // Actions
   setHoveredAction: (action: 'switch' | 'burn' | 'zap' | null) => void;
   initializeShoe: () => void;
@@ -56,6 +58,8 @@ export interface GameFlowSlice {
   zap: () => void;
   switchCards: () => void;
   burn: () => void;
+  setStrategyModalOpen: (open: boolean) => void;
+  setSettingsModalOpen: (open: boolean) => void;
 
   // History
   setMatchHistory: (records: MatchRecord[]) => void;
@@ -81,6 +85,8 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   matchHistory: [],
   insuranceBets: {},
   actionCounter: 0,
+  isStrategyModalOpen: false,
+  isSettingsModalOpen: false,
 
   canAfford: (amount: number) => {
     const state = get();
@@ -113,4 +119,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   setMatchHistory: (records: MatchRecord[]) => {
     set({ matchHistory: records });
   },
+
+  setStrategyModalOpen: (open: boolean) => set({ isStrategyModalOpen: open }),
+  setSettingsModalOpen: (open: boolean) => set({ isSettingsModalOpen: open }),
 });

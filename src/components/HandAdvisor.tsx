@@ -89,8 +89,8 @@ export default function HandAdvisor({
     const room = getRoomConfig(roomId);
     const isBeta = room.isBeta ?? false;
     const rules = getRules(roomId);
-    const isVisible = (gamePhase === GamePhase.PLAYER_TURN || gamePhase === GamePhase.INSURANCE) && 
-                      (!room.isTutorial || roomId === 'tutorial_strategy');
+    const isVisible = (gamePhase === GamePhase.PLAYER_TURN || gamePhase === GamePhase.INSURANCE) &&
+        (!room.isTutorial || roomId === 'tutorial_strategy' || roomId === 'tutorial_counting');
 
     const currentSeat = seats[currentSeatIndex];
     const currentHand = gamePhase === GamePhase.INSURANCE
@@ -155,7 +155,7 @@ export default function HandAdvisor({
         const canDoubleNow = rules.canDoubleDown(currentHand).allowed;
         const canZapNow = rules.canZap ? rules.canZap(currentHand).allowed : false;
         const canBurnNow = rules.canBurn ? rules.canBurn(currentHand).allowed : false;
-        
+
         const tableAction = getStrategyAction(
             cards,
             total,
@@ -228,7 +228,7 @@ export default function HandAdvisor({
             const isStrongDealer = ['8', '9', '10', 'A'].includes(dealerNorm);
             const isWorstStiff = total >= 12 && total <= 16 && isStrongDealer;
             const is17vsAce = total === 17 && dealerNorm === 'A';
-            
+
             if ((isWorstStiff || is17vsAce) && canSurrenderNow) {
                 action = 'RS';
             } else {

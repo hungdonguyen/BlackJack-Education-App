@@ -127,7 +127,7 @@ export const IBERIAN_WALKER: Deviation[] = [
 // ─── Push 22 (Free Bet Blackjack) Deviations ───────────────────────────────
 // Specialized for the "Push 22" rule where dealer 22 pushes all non-busted hands.
 
-export const PUSH_22_DEVIATIONS: Deviation[] = [
+export const PUSH_22_S17: Deviation[] = [
     { id: 'P22-1',  playerTotal: 0,  isSoft: false, isPair: false, dealerUpcard: 'A',  index: 7,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Take Insurance when TC ≥ +7' },
     { id: 'P22-2',  playerTotal: 16, isSoft: false, isPair: false, dealerUpcard: '10', index: 4,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 16 vs 10 only if TC ≥ +4' },
     { id: 'P22-3',  playerTotal: 15, isSoft: false, isPair: false, dealerUpcard: '10', index: 6,  deviationAction: 'S', basicAction: 'H', direction: 'gte', description: 'Stand on 15 vs 10 only if TC ≥ +6' },
@@ -141,16 +141,34 @@ export const PUSH_22_DEVIATIONS: Deviation[] = [
     { id: 'P22-11', playerTotal: 11, isSoft: false, isPair: false, dealerUpcard: 'A',  index: 1,  deviationAction: 'D', basicAction: 'H', direction: 'gte', description: 'Double 11 vs A (instead of Hit)' },
 ];
 
+export const PUSH_22_H17: Deviation[] = PUSH_22_S17.map((d) => {
+    switch (d.id) {
+        case 'P22-6':  // 12 vs 6: S17 0 → H17 -2
+            return { ...d, index: -2 };
+        case 'P22-10': // 10 vs A: S17 +4 → H17 +3
+            return { ...d, index: 3 };
+        case 'P22-11': // 11 vs A: S17 +1 → H17 -1
+            return { ...d, index: -1 };
+        default:
+            return d;
+    }
+});
+
 // ─── Custom Variant Deviations (Zap Out, Exchange, Fire Card) ──────────────
 
 // Zap Out 21: Dealer pushes on 22 (like free bet), but player zaps hard 15-18.
 // So deviation plays for 15, 16 vs 10 are completely excluded.
-export const ZAPOUT_DEVIATIONS: Deviation[] = PUSH_22_DEVIATIONS.filter(
+export const ZAPOUT_S17: Deviation[] = PUSH_22_S17.filter(
+    d => d.playerTotal !== 15 && d.playerTotal !== 16 && d.playerTotal !== 14
+);
+
+export const ZAPOUT_H17: Deviation[] = PUSH_22_H17.filter(
     d => d.playerTotal !== 15 && d.playerTotal !== 16 && d.playerTotal !== 14
 );
 
 // Exchange 21: Dealer pushes on 22.
-export const EXCHANGE_DEVIATIONS: Deviation[] = PUSH_22_DEVIATIONS;
+export const EXCHANGE_S17: Deviation[] = PUSH_22_S17;
+export const EXCHANGE_H17: Deviation[] = PUSH_22_H17;
 
 // Fire Card 21: Dealer hits S17.
 // Burn mechanics: High counts make standing safer, but 'Burn' is often better than 'Hit' as basic strategy.
@@ -183,14 +201,15 @@ export function getStandardHiLoDeviations(allowSurrender: boolean, dealerHitsS17
         : (dealerHitsS17 ? I18_H17 : I18_S17);
 }
 
-const DEVIATION_SETS: Record<string, Deviation[] | ((system: CountingSystem) => Deviation[])> = {
+const DEVIATION_SETS: Record<string, (system: CountingSystem, dealerHitsS17: boolean) => Deviation[]> = {
     'iberian_21': (system) => system === 'Katarina Walker' ? IBERIAN_WALKER : IBERIAN_HILO,
-    'free_action': PUSH_22_DEVIATIONS,
-    'zapout_21': ZAPOUT_DEVIATIONS,
-    'exchange_21': EXCHANGE_DEVIATIONS,
-    'firecard_21': FIRECARD_DEVIATIONS,
-    'uk': I18_UK,
-    'european': I18_EUROPEAN,
+    'free_action': (_system, h17) => h17 ? PUSH_22_H17 : PUSH_22_S17,
+    'zapout_21': (_system, h17) => h17 ? ZAPOUT_H17 : ZAPOUT_S17,
+    'exchange_21': (_system, h17) => h17 ? EXCHANGE_H17 : EXCHANGE_S17,
+    'madness_21': (_system, h17) => h17 ? PUSH_22_H17 : PUSH_22_S17,
+    'firecard_21': (_system) => FIRECARD_DEVIATIONS,
+    'uk': (_system) => I18_UK,
+    'european': (_system) => I18_EUROPEAN,
 };
 
 export function getDeviationSet(
@@ -202,10 +221,9 @@ export function getDeviationSet(
     if (deviationsSet === 'standard') {
         return getStandardHiLoDeviations(allowSurrender, dealerHitsS17);
     }
-    const set = DEVIATION_SETS[deviationsSet];
-    if (!set) return getStandardHiLoDeviations(allowSurrender, dealerHitsS17);
-    if (typeof set === 'function') return set(system);
-    return set;
+    const setFn = DEVIATION_SETS[deviationsSet];
+    if (!setFn) return getStandardHiLoDeviations(allowSurrender, dealerHitsS17);
+    return setFn(system, dealerHitsS17);
 }
 
 export function getDeviation(
@@ -220,12 +238,10 @@ export function getDeviation(
     system: CountingSystem = 'Hi-Lo',
 ): Deviation | null {
     let allDeviations: Deviation[] = [];
-    const set = DEVIATION_SETS[deviationsSet];
+    const setFn = DEVIATION_SETS[deviationsSet];
 
-    if (typeof set === 'function') {
-        allDeviations = set(system);
-    } else if (set) {
-        allDeviations = set;
+    if (setFn) {
+        allDeviations = setFn(system, dealerHitsS17);
     } else {
         const i18Table = dealerHitsS17 ? I18_H17 : I18_S17;
         allDeviations = [...i18Table, ...FAB_4];

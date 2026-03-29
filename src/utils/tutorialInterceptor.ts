@@ -1,6 +1,6 @@
 import { GameStore } from '@/types/game';
 import { getRoomConfig } from './rooms';
-import { BEGINNER_TUTORIAL_LESSONS, DOUBLE_TUTORIAL_LESSONS, STRATEGY_TUTORIAL_LESSONS } from './tutorialData';
+import { getLessons } from '@/store/tutorialSlice';
 
 /**
  * Checks if a game action is allowed during the current tutorial step.
@@ -23,12 +23,7 @@ export function checkTutorialAction(state: GameStore, actionId: string): boolean
 
     const { tutorialRound, tutorialStep } = state;
     
-    let lessons = BEGINNER_TUTORIAL_LESSONS;
-    if (state.currentRoom === 'tutorial_double') {
-        lessons = DOUBLE_TUTORIAL_LESSONS;
-    } else if (state.currentRoom === 'tutorial_strategy') {
-        lessons = STRATEGY_TUTORIAL_LESSONS;
-    }
+    const lessons = getLessons(state.currentRoom);
 
     const lesson = lessons[tutorialRound];
     

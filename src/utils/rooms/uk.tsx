@@ -24,7 +24,7 @@ export const uk: RoomConfig = {
     },
     blackjackMultiplier: 1.5,
     betRange: [1, 1_000_000_000],
-    rtp: '99.55%',
+    rtp: '99.45%',
     icon: <Crown className="w-5 h-5 drop-shadow-md text-indigo-400" />,
     accentColor: '#6366f1',
     logoPath: '/images/logo/rooms/uk_logo.png',
