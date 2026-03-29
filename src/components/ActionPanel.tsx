@@ -235,25 +235,25 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
 
                             {rules.canZap && (
                                 <CircleButton label="ZAP OUT" icon={<Zap className="w-5 h-5 text-white animate-pulse" />} color="#3b82f6" hoverColor="#2563eb"
-                                    onClick={() => { playSound('card-slide'); zap(); }} disabled={!canZapHand} size={45} ariaLabel="Zap Out"
+                                    onClick={() => { playSound('card-slide'); setHoveredAction(null); zap(); }} disabled={!canZapHand} size={45} ariaLabel="Zap Out"
                                     onMouseEnter={() => setHoveredAction('zap')} onMouseLeave={() => setHoveredAction(null)} />
                             )}
 
                             {rules.canSwitch && (
                                 showSwitchAdvice && exchangeAdvice?.shouldSwitch ? (
                                     <FreeCircleButton label="ADVISED" icon={<ArrowLeftRight className="w-5 h-5 text-black" />} 
-                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={50} ariaLabel="Switch Cards (Advised)"
+                                        onClick={() => { playSound('card-slide'); setHoveredAction(null); switchCards(); }} disabled={!canSwitchHand} size={50} ariaLabel="Switch Cards (Advised)"
                                         onMouseEnter={() => setHoveredAction('switch')} onMouseLeave={() => setHoveredAction(null)} />
                                 ) : (
                                     <CircleButton label="SWITCH" icon={<ArrowLeftRight className="w-5 h-5 text-white" />} color="#64748b" hoverColor="#475569"
-                                        onClick={() => { playSound('card-slide'); switchCards(); }} disabled={!canSwitchHand} size={45} ariaLabel="Switch Cards"
+                                        onClick={() => { playSound('card-slide'); setHoveredAction(null); switchCards(); }} disabled={!canSwitchHand} size={45} ariaLabel="Switch Cards"
                                         onMouseEnter={() => setHoveredAction('switch')} onMouseLeave={() => setHoveredAction(null)} />
                                 )
                             )}
 
                             {rules.canBurn && (
                                 <CircleButton label={`BURN ($${burnCost})`} icon={<Flame className="w-5 h-5 text-white" />} color="#f97316" hoverColor="#ea580c"
-                                    onClick={() => { playSound('card-slide'); burn(); }} disabled={!canBurnHand} size={45} ariaLabel="Burn Card"
+                                    onClick={() => { playSound('card-slide'); setHoveredAction(null); burn(); }} disabled={!canBurnHand} size={45} ariaLabel="Burn Card"
                                     onMouseEnter={() => setHoveredAction('burn')} onMouseLeave={() => setHoveredAction(null)} />
                             )}
                         </div>

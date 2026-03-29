@@ -152,52 +152,27 @@ export default function HomePage() {
             }}
           />
 
-          {/* Decorative room logos floating randomly */}
+          {/* Decorative room logos - seamless pattern panning (Option 3) */}
           {isHydrated && (
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {ALL_LOGOS.map((logoPath, i) => {
-                const seed = i * 17.3 + 42;
-                const pseudoRandom = (offset: number) => {
-                  const x = Math.sin(seed + offset) * 10000;
-                  return x - Math.floor(x);
-                };
-
-                const startX = pseudoRandom(1) * 120 - 10;
-                const startY = pseudoRandom(2) * 120 - 10;
-                
-                return (
+              <div 
+                className="absolute w-[200vw] h-[150vh] -top-[25vh] -left-[50vw] flex flex-col justify-center gap-16 opacity-[0.12] -rotate-6 scale-110"
+              >
+                {[0, 1, 2, 3, 4].map((rowIndex) => (
                   <motion.div
-                    key={logoPath}
-                    className="absolute w-32 h-32 opacity-[0.25]"
-                    style={{ willChange: 'transform' }}
-                    initial={{ x: `${startX}vw`, y: `${startY}vh`, rotate: pseudoRandom(3) * 360, scale: pseudoRandom(4) * 0.4 + 0.8 }}
-                    animate={{ 
-                      x: [
-                        `${startX}vw`,
-                        `${pseudoRandom(5) * 140 - 20}vw`,
-                        `${pseudoRandom(6) * 140 - 20}vw`,
-                        `${pseudoRandom(7) * 140 - 20}vw`,
-                        `${startX}vw`
-                      ],
-                      y: [
-                        `${startY}vh`,
-                        `${pseudoRandom(8) * 140 - 20}vh`,
-                        `${pseudoRandom(9) * 140 - 20}vh`,
-                        `${pseudoRandom(10) * 140 - 20}vh`,
-                        `${startY}vh`
-                      ],
-                      rotate: pseudoRandom(11) > 0.5 ? [0, 180, 270, 360, 0] : [360, 270, 180, 0, 360],
-                    }}
-                    transition={{ 
-                      duration: 40 + pseudoRandom(12) * 40, 
-                      repeat: Infinity, 
-                      ease: 'linear' 
-                    }}
+                    key={`row-${rowIndex}`}
+                    className="flex items-center gap-24 whitespace-nowrap"
+                    animate={{ x: rowIndex % 2 === 0 ? ['0%', '-30%'] : ['-30%', '0%'] }}
+                    transition={{ duration: 100 + rowIndex * 15, repeat: Infinity, ease: 'linear' }}
                   >
-                    <Image src={logoPath} fill alt="Room Logo" unoptimized className="object-contain" />
+                    {[...ALL_LOGOS, ...ALL_LOGOS, ...ALL_LOGOS, ...ALL_LOGOS].map((logoPath, i) => (
+                      <div key={`${logoPath}-${i}`} className="relative w-40 h-40 shrink-0">
+                        <Image src={logoPath} fill alt="Room Logo" unoptimized className="object-contain" />
+                      </div>
+                    ))}
                   </motion.div>
-                );
-              })}
+                ))}
+              </div>
             </div>
           )}
 
