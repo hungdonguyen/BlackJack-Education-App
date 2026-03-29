@@ -78,7 +78,7 @@ export default function LobbyPage() {
 
     return (
         <motion.div 
-            className="relative w-screen h-screen overflow-hidden select-none flex flex-col items-center"
+            className="relative w-full h-full overflow-hidden select-none flex flex-col items-center"
             style={{
                 background: 'radial-gradient(ellipse 120% 100% at 50% 30%, #301a10 0%, #1a0e0a 40%, #0d0705 100%)',
             }}
@@ -318,3 +318,4 @@ function RoomCard({ room, index, onClick, variants }: { room: RoomConfig; index:
         </motion.div>
     );
 }
+

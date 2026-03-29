@@ -25,10 +25,12 @@
 .DS_Store
 *.pem
 .venv/
-downloadconfig.txt
 build_output.txt
 tsc_output.txt
 ts_error.txt
+script*.js
+subagent_output.md
+downloadconfig.txt
 
 # debug
 *.log

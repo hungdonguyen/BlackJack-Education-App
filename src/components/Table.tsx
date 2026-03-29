@@ -62,13 +62,15 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const setCurrentRoom = useGameStore((s) => s.setCurrentRoom);
     const insufficientFundsWarning = useGameStore((s) => s.insufficientFundsWarning);
     const insuranceBets = useGameStore(useShallow((s) => s.insuranceBets));
+    const sideBets = useGameStore(useShallow((s) => s.sideBets));
     const resetRound = useGameStore((s) => s.resetRound);
     const resetTutorialProgress = useGameStore((s) => s.resetTutorialProgress);
     const isHydrated = useStoreHydration();
 
-    const viewScale = useViewportScale(DESIGN_WIDTH, DESIGN_HEIGHT);
+    
 
-    const showHandAdvisor = useGameStore((s) => s.showHandAdvisor);
+    const showHandAdvisorState = useGameStore((s) => s.showHandAdvisor);
+    const showHandAdvisor = showHandAdvisorState || roomId === 'tutorial_splitting' || roomId === 'tutorial_strategy';
     const showCardCounting = useGameStore((s) => s.showCardCounting);
     const showStrategy = useGameStore((s) => s.isStrategyModalOpen);
     const setShowStrategy = useGameStore((s) => s.setStrategyModalOpen);
@@ -82,7 +84,8 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const totalBet = seats
         .filter((s) => s.isActive)
         .reduce((sum, s) => sum + s.hands.reduce((hSum, h) => hSum + h.betAmount, 0), 0) +
-        Object.values(insuranceBets).reduce((sum, amount) => sum + amount, 0);
+        Object.values(insuranceBets).reduce((sum, amount) => sum + amount, 0) +
+        Object.values(sideBets || {}).reduce((sum, amount) => sum + amount, 0);
 
     const currentSeat = seats[currentSeatIndex];
     const lastOutcomeMatchIdRef = useRef<string | null>(null);
@@ -206,10 +209,11 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     }, [gamePhase, dealerPlay]);
 
     // Win notification and outcome sound on payout
+    const lastCompletedMatch = useGameStore((s) => s.lastCompletedMatch);
     useEffect(() => {
-        if (isPayout && matchHistory.length > 0) {
-            const lastMatch = matchHistory[matchHistory.length - 1];
-            if (lastOutcomeMatchIdRef.current === lastMatch.id) return;
+        if (isPayout) {
+            const lastMatch = lastCompletedMatch;
+            if (!lastMatch || lastOutcomeMatchIdRef.current === lastMatch.id) return;
             lastOutcomeMatchIdRef.current = lastMatch.id;
 
             const netRoundChange = calculateMatchNetPnl(lastMatch);
@@ -231,7 +235,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             lastOutcomeMatchIdRef.current = null;
             setWinNotification(null);
         }
-    }, [isPayout, gamePhase, matchHistory, playSound]);
+    }, [isPayout, gamePhase, playSound, lastCompletedMatch]);
 
 
 // Logo path from room config
@@ -241,12 +245,10 @@ const logoPath = room.logoPath;
 
     if (!isHydrated) {
         return (
-            <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#1a0e0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: DESIGN_WIDTH, height: DESIGN_HEIGHT, transform: `scale(${viewScale})`, transformOrigin: 'center center', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <motion.div className="text-amber-400/50 text-lg font-bold tracking-[0.3em] uppercase"
-                        animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 2, repeat: Infinity }}
-                    >Loading Table...</motion.div>
-                </div>
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <motion.div className="text-amber-400/50 text-lg font-bold tracking-[0.3em] uppercase"
+                    animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 2, repeat: Infinity }}
+                >Loading Table...</motion.div>
             </div>
         );
     }
@@ -256,11 +258,8 @@ const logoPath = room.logoPath;
             <PortraitOverlay />
             <DevTools />
 
-            {/* Viewport wrapper — centers the scaled canvas */}
-            <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#1a0e0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {/* Design canvas — fixed 1920×1080, transform-scaled to fit */}
-                <div style={{ width: DESIGN_WIDTH, height: DESIGN_HEIGHT, transform: `scale(${viewScale})`, transformOrigin: 'center center', flexShrink: 0, position: 'relative' }}>
-
+            {/* Table layout canvas */}
+            <div style={{ width: '100%', height: '100%', position: 'relative', background: '#1a0e0a' }}>
                     <div
                         className="room-text-scale"
                         style={{
@@ -732,8 +731,7 @@ const logoPath = room.logoPath;
 
                     {/* Tutorial Guide dialogue — OUTSIDE room scale wrapper for stable positioning */}
                     <TutorialGuide show={!showExitConfirmation.target} />
-                </div>{/* end design canvas */}
-            </div>{/* end viewport wrapper */}
+                </div>{/* end table wrapper */}
         </>
     );
 }
@@ -867,5 +865,16 @@ function HistoryPanel({ onMatchClick }: { onMatchClick: (index: number) => void 
         </motion.div>
     );
 }
+
+
+
+
+
+
+
+
+
+
+
 
 

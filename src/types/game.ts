@@ -19,6 +19,7 @@ export interface TutorialStep {
   targetElementId?: string;
   position?: 'top' | 'bottom' | 'center' | 'dealer' | 'player' | 'left' | 'right';
   requiresClick?: boolean;
+  hideOn?: (state: any) => boolean;
 }
 
 /** A single playing card */

@@ -33,7 +33,7 @@ export const ROOMS: Record<string, RoomConfig> = {
     tutorial_strategy: tutorialStrategy,
     tutorial_counting: tutorialCounting,
     tutorial_splitting: tutorialSplitting,
-    tutorial_insurance: tutorialMultiHand,
+    tutorial_multihand: tutorialMultiHand,
 };
 
 export function getRoomConfig(roomId: string): RoomConfig {

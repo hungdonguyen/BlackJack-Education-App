@@ -6,6 +6,43 @@ import { Trophy, X, Lock, CheckCircle2, Star, Zap, Flame, Repeat, Info } from 'l
 import { useGameStore } from '@/hooks/useGameStore';
 import { ACHIEVEMENTS, TIER_CONFIG, AchievementDefinition } from '@/types/achievements';
 
+const ACHIEVEMENT_QUOTES: Record<string, string> = {
+    first_hand: "The journey of a thousand miles begins with a single hand. — Unknown Dealer",
+    natural_blackjack: "Blackjack is the only game where a true natural can beat the house. — Edward O. Thorp",
+    double_trouble: "In blackjack, doubling down is the ultimate expression of confidence. — Don Johnson",
+    split_victory: "Divide and conquer. A wise split is often the difference between walking away rich or broke. — Ken Uston",
+    surrendered: "There is no shame in surrender; it's just math telling you to live to fight another hand. — Stanford Wong",
+    win_streak_5: "Momentum is a fragile thing. When the cards are hot, you better be betting. — Stu Ungar",
+    win_streak_10: "Once you're on a hot streak, the hardest thing is to know when to walk away. — Archie Karas",
+    win_streak_20: "When luck meets strategy, you become an unstoppable force. — Blair Hull",
+    low_bankroll: "A chip and a chair is all you need to mount a legendary comeback. — Jack Straus",
+    all_in_glory: "Fortune favors the bold. Going all-in is the truest test of nerve. — Doyle Brunson",
+    millionaire: "Money won is twice as sweet as money earned. — Paul Newman (The Color of Money)",
+    billionaire: "To beat the casino, you have to think like the casino, and play like a titan. — Kerry Packer",
+    perfect_strategy: "The house edge is beaten by discipline, memory, and an unwavering belief in math. — Richard Feynman",
+    wins_100: "Winning 100 hands isn't just luck; it's the rhythm of a grinder. — David Sklansky",
+    wins_500: "Professional play isn't glamorous; it’s a grind of perfect decisions over time. — Colin Jones",
+    wins_1000: "Legends are made not in single sessions, but over ten thousand perfectly played hands. — Tommy Hyland",
+    room_explorer: "Every casino tells a story, and every table has a lesson to teach. — Max Rubin",
+    daily_regular: "Consistency is the hallmark of the unimaginative, but also the profitable. — Oscar Wilde",
+    daily_devoted: "Show up every day, because you never know when the deck will favor you. — Unknown Grinder",
+    daily_dedicated: "Dedication turns a gamble into an investment. — MIT Blackjack Team",
+    daily_obsessed: "Belief in the math will carry you through the worst variance. — James Grosjean",
+    daily_eternal: "Loyalty to the game brings its own rewards. — Arnold Snyder",
+    zap_master: "Sometimes the best cards are the ones you erase from existence. — Card Conjurer",
+    fire_walker: "When the deck catches fire, you must walk right through it. — Anonymous Advantage Player",
+    switch_artist: "A good player adapts. A great player changes the entire hand to fit their needs. — Richard Epstein",
+    free_deal: "The best things in life are free, especially free actions at a blackjack table. — European Casino Manager",
+    iberian_king: "Three sevens is the mark of true royalty in the game of 21. — Spanish Proverb",
+    bust_master: "Let the dealer hang themselves. It's the most beautiful sight in the casino. — John Tarne",
+    insurance_pay: "Insurance is a sucker bet, unless you know exactly what is in the hole. — Lawrence Revere",
+    multi_blackjack: "Two Blackjacks at once is a glitch in the matrix. — Anonymous Pit Boss",
+    dealer_bust_22: "A dealer busting on 22 is a push that feels like a loss, unless you've laid a trap. — Casino Floor Regular",
+    perfect_21_sum: "Finding 21 on all spots requires a zen-like connection to the shoe. — Asian Pit Boss",
+    exact_zero: "Rising from exactly zero is the greatest comeback story ever told. — Stu Ungar",
+    count_savant: "He's not gambling. He's doing math, and he's doing it perfectly. — Casino Surveillance",
+};
+
 interface AchievementModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,6 +51,8 @@ interface AchievementModalProps {
 export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onClose }) => {
   const unlockedAchievements = useGameStore(s => s.unlockedAchievements);
   const [activeCategory, setActiveCategory] = useState<'all' | 'general' | 'mastery' | 'daily' | 'variant'>('all');
+  const [selectedAchievement, setSelectedAchievement] = useState<AchievementDefinition | null>(null);
+  const [currentQuote, setCurrentQuote] = useState('');
 
   const filteredAchievements = ACHIEVEMENTS.filter(a => 
     activeCategory === 'all' || a.category === activeCategory
@@ -104,7 +143,11 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
                 <motion.div
                   layout
                   key={achievement.id}
-                  className={`group relative p-4 rounded-xl border transition-all duration-500 flex items-center gap-4 ${
+                  onClick={() => {
+                      setSelectedAchievement(achievement);
+                      setCurrentQuote(ACHIEVEMENT_QUOTES[achievement.id] || "Fortune favors the bold. — Virgil");
+                  }}
+                  className={`group relative p-4 rounded-xl border transition-all duration-500 flex items-center gap-4 cursor-pointer ${
                     isUnlocked 
                       ? 'bg-white/[0.03] border-white/10 hover:border-white/20' 
                       : 'bg-transparent border-white/5 opacity-60'
@@ -204,6 +247,95 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
             &copy; 2026 BlackJack Elite — Achievement Protocol
           </div>
         </div>
+        
+        {/* Achievement Details Overlay */}
+        <AnimatePresence>
+          {selectedAchievement && (() => {
+            const isUnlocked = !!unlockedAchievements[selectedAchievement.id];
+            const tier = TIER_CONFIG[selectedAchievement.tier];
+            
+            return (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-50 bg-black/95 backdrop-blur-2xl flex items-center justify-center p-8"
+              >
+                <button
+                  onClick={() => setSelectedAchievement(null)}
+                  className="absolute top-6 right-6 w-12 h-12 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all border border-white/10"
+                >
+                  <X size={24} />
+                </button>
+
+                <div className="max-w-xl w-full flex flex-col items-center text-center">
+                  <div 
+                    className={`relative w-40 h-40 rounded-full flex items-center justify-center border-4 mb-8 transition-all duration-700 ${
+                      isUnlocked ? '' : 'grayscale opacity-40 grayscale-[80%]'
+                    }`}
+                    style={{ 
+                      borderColor: isUnlocked ? tier.color : 'rgba(255,255,255,0.1)',
+                      background: isUnlocked ? tier.bg : 'transparent',
+                      boxShadow: isUnlocked ? `0 0 60px ${tier.glow}` : 'none'
+                    }}
+                  >
+                      {isUnlocked ? (
+                        selectedAchievement.icon ? (
+                          <img 
+                            src={selectedAchievement.icon} 
+                            alt={selectedAchievement.name}
+                            className="w-full h-full object-cover rounded-full p-1"
+                          />
+                        ) : (
+                          <Star size={64} style={{ color: tier.color }} fill={tier.color} className="animate-pulse" />
+                        )
+                      ) : (
+                        <Lock size={64} className="text-white/20" />
+                      )}
+                  </div>
+                  
+                  <span 
+                    className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4"
+                    style={{ 
+                      backgroundColor: isUnlocked ? tier.color : 'rgba(255,255,255,0.1)',
+                      color: isUnlocked ? 'black' : 'rgba(255,255,255,0.3)'
+                    }}
+                  >
+                    {tier.label} {selectedAchievement.roomId ? `• ${selectedAchievement.roomId.split('_')[0]}` : ''}
+                  </span>
+
+                  <h2 className="text-4xl font-black text-white uppercase tracking-tighter mb-4">
+                    {selectedAchievement.secret && !isUnlocked ? 'Secret Achievement' : selectedAchievement.name}
+                  </h2>
+                  
+                  <p className="text-lg text-white/60 mb-8 italic">
+                    {selectedAchievement.secret && !isUnlocked ? 'Unlock this to reveal the requirements.' : selectedAchievement.description}
+                  </p>
+
+                  <div className="w-full h-px bg-white/10 mb-8" />
+                  
+                  <div className="relative w-full p-6 rounded-2xl bg-white/5 border border-white/10 overflow-hidden shadow-xl">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+                      </svg>
+                    </div>
+                    <p className="text-sm font-bold text-white/80 leading-relaxed italic pr-8 relative z-10">
+                       "{currentQuote}"
+                    </p>
+                  </div>
+
+                  {isUnlocked && unlockedAchievements[selectedAchievement.id] && (
+                    <div className="mt-8 flex items-center gap-2 text-white/40 font-bold uppercase tracking-widest text-xs">
+                      <CheckCircle2 size={16} className="text-green-500" />
+                      Unlocked on {new Date(unlockedAchievements[selectedAchievement.id]).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })()}
+        </AnimatePresence>
       </motion.div>
     </div>
   );

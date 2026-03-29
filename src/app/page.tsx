@@ -38,6 +38,21 @@ const STRATEGY_ROOM_IDS = [
 
 type StrategyRoomId = (typeof STRATEGY_ROOM_IDS)[number];
 
+const ALL_LOGOS = [
+  '/images/logo/rooms/atlantic.png',
+  '/images/logo/rooms/classic.png',
+  '/images/logo/rooms/european.png',
+  '/images/logo/rooms/exchange21.png',
+  '/images/logo/rooms/firecard21.png',
+  '/images/logo/rooms/freeaction.png',
+  '/images/logo/rooms/iberian21.png',
+  '/images/logo/rooms/infinity_double_down.png',
+  '/images/logo/rooms/uk_logo.png',
+  '/images/logo/rooms/vegas_downtown.png',
+  '/images/logo/rooms/vegas_strip.png',
+  '/images/logo/rooms/zapout21.png'
+];
+
 export default function HomePage() {
   const router = useRouter();
   const [accepted, setAccepted] = useState(false);
@@ -60,7 +75,7 @@ export default function HomePage() {
 
   return (
     <div
-      className="relative w-screen min-h-screen flex flex-col items-center overflow-x-hidden overflow-y-auto select-none"
+      className="relative w-full min-h-full flex flex-col items-center overflow-x-hidden overflow-y-auto select-none"
       style={{
         background: 'radial-gradient(ellipse 120% 100% at 50% 30%, #301a10 0%, #1a0e0a 40%, #0d0705 100%)',
       }}
@@ -137,24 +152,54 @@ export default function HomePage() {
             }}
           />
 
-          {/* Decorative room logos floating */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {Object.values(ROOMS).map((room, i) => (
-              <motion.div
-                key={room.id}
-                className="absolute w-32 h-32 opacity-[0.06] blur-[2px]"
-                style={{
-                  left: `${(i % 4) * 22 + 8}%`,
-                  top: `${Math.floor(i / 4) * 45 + 15}%`,
-                  willChange: 'transform',
-                }}
-                animate={{ y: [0, -30, 0], rotate: [0, 8, -8, 0], scale: [1, 1.05, 1] }}
-                transition={{ duration: 12 + (i % 3) * 3, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                <Image src={room.logoPath} fill alt={room.name} unoptimized className="object-contain" />
-              </motion.div>
-            ))}
-          </div>
+          {/* Decorative room logos floating randomly */}
+          {isHydrated && (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {ALL_LOGOS.map((logoPath, i) => {
+                const seed = i * 17.3 + 42;
+                const pseudoRandom = (offset: number) => {
+                  const x = Math.sin(seed + offset) * 10000;
+                  return x - Math.floor(x);
+                };
+
+                const startX = pseudoRandom(1) * 120 - 10;
+                const startY = pseudoRandom(2) * 120 - 10;
+                
+                return (
+                  <motion.div
+                    key={logoPath}
+                    className="absolute w-32 h-32 opacity-[0.25]"
+                    style={{ willChange: 'transform' }}
+                    initial={{ x: `${startX}vw`, y: `${startY}vh`, rotate: pseudoRandom(3) * 360, scale: pseudoRandom(4) * 0.4 + 0.8 }}
+                    animate={{ 
+                      x: [
+                        `${startX}vw`,
+                        `${pseudoRandom(5) * 140 - 20}vw`,
+                        `${pseudoRandom(6) * 140 - 20}vw`,
+                        `${pseudoRandom(7) * 140 - 20}vw`,
+                        `${startX}vw`
+                      ],
+                      y: [
+                        `${startY}vh`,
+                        `${pseudoRandom(8) * 140 - 20}vh`,
+                        `${pseudoRandom(9) * 140 - 20}vh`,
+                        `${pseudoRandom(10) * 140 - 20}vh`,
+                        `${startY}vh`
+                      ],
+                      rotate: pseudoRandom(11) > 0.5 ? [0, 180, 270, 360, 0] : [360, 270, 180, 0, 360],
+                    }}
+                    transition={{ 
+                      duration: 40 + pseudoRandom(12) * 40, 
+                      repeat: Infinity, 
+                      ease: 'linear' 
+                    }}
+                  >
+                    <Image src={logoPath} fill alt="Room Logo" unoptimized className="object-contain" />
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
 
 
           {/* Main content wrapper */}
@@ -481,3 +526,4 @@ export default function HomePage() {
     </div>
   );
 }
+

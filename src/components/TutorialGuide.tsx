@@ -69,83 +69,87 @@ export default function TutorialGuide({ show = true }: { show?: boolean }) {
         }
     };
 
+    const shouldHide = currentStep?.hideOn ? currentStep.hideOn(state) : false;
+
     return (
-        <AnimatePresence>
-            {show && (
-                <>
-                    <motion.div
-                        key={stepIndex} // Re-animate when step changes
-                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                        className={`${getPositionClasses(currentStep.position)} z-[100] max-w-[280px]`}
-                    >
-                        <div 
-                            className={`relative bg-black/85 backdrop-blur-xl border ${currentStep.requiresClick ? 'border-yellow-500/60 shadow-[0_0_40px_rgba(234,179,8,0.4)] cursor-pointer hover:bg-black/95 transition-colors' : 'border-indigo-500/60 shadow-[0_0_40px_rgba(99,102,241,0.4)]'} rounded-2xl p-4`}
-                            onClick={() => {
-                                if (currentStep.requiresClick && stepIndex + 1 < steps.length) {
-                                    playSound('click');
-                                    setStepIndex(stepIndex + 1);
-                                }
-                            }}
+        <>
+            <AnimatePresence>
+                {show && !shouldHide && (
+                    <>
+                        <motion.div
+                            key={stepIndex} // Re-animate when step changes
+                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                            className={`${getPositionClasses(currentStep.position)} z-[100] max-w-[280px]`}
                         >
-                            {/* Speech Bubble Arrow - only show if not centered */}
-                            {(currentStep.position !== 'center') && (
-                                <div className={`absolute right-[-8px] top-4 w-4 h-4 bg-black/80 border-r border-t ${currentStep.requiresClick ? 'border-yellow-500/50' : 'border-indigo-500/50'} rotate-45`} />
-                            )}
-                            
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full animate-pulse ${currentStep.requiresClick ? 'bg-yellow-400' : 'bg-indigo-400'}`} />
-                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${currentStep.requiresClick ? 'text-yellow-300' : 'text-indigo-300'}`}>Guide</span>
-                                </div>
-                                <p className="text-xs font-medium leading-relaxed text-white/90">
-                                    {currentStep.message}
-                                </p>
-                                {currentStep.requiresClick && (
-                                    <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-yellow-400/80 uppercase tracking-widest animate-pulse">
-                                        <span>Tap to continue</span>
-                                        <div className="w-1 h-1 bg-yellow-400 rounded-full" />
-                                        <div className="w-1 h-1 bg-yellow-400 rounded-full animation-delay-200" />
-                                        <div className="w-1 h-1 bg-yellow-400 rounded-full animation-delay-400" />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </motion.div>
-
-                    {currentStep.targetElementId && (
-                        <TutorialPointer targetId={currentStep.targetElementId} />
-                    )}
-
-                    {/* Warning Toast */}
-                    <AnimatePresence>
-                        {tutorialWarning && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -20, scale: 0.9, x: '-50%' }}
-                                animate={{ opacity: 1, y: 0, scale: 1, x: '-50%', 
-                                    transition: { type: 'spring', damping: 15, stiffness: 200 }
+                            <div 
+                                className={`relative bg-black/85 backdrop-blur-xl border ${currentStep.requiresClick ? 'border-yellow-500/60 shadow-[0_0_40px_rgba(234,179,8,0.4)] cursor-pointer hover:bg-black/95 transition-colors' : 'border-indigo-500/60 shadow-[0_0_40px_rgba(99,102,241,0.4)]'} rounded-2xl p-4`}
+                                onClick={() => {
+                                    if (currentStep.requiresClick && stepIndex + 1 < steps.length) {
+                                        playSound('click');
+                                        setStepIndex(stepIndex + 1);
+                                    }
                                 }}
-                                exit={{ opacity: 0, y: -20, scale: 0.9, x: '-50%' }}
-                                className="fixed top-12 left-1/2 z-[9999] pointer-events-none"
                             >
-                                <motion.div 
-                                    animate={{ x: [-5, 5, -5, 5, 0] }}
-                                    transition={{ duration: 0.4 }}
-                                    className="px-6 py-3 rounded-xl bg-red-950/90 border border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.4)] backdrop-blur-md flex items-center gap-3"
-                                >
-                                    <AlertCircle className="w-5 h-5 text-red-500 animate-pulse" />
-                                    <span className="text-sm font-bold text-red-100 uppercase tracking-wide">
-                                        {tutorialWarning}
-                                    </span>
-                                </motion.div>
-                            </motion.div>
+                                {/* Speech Bubble Arrow - only show if not centered */}
+                                {(currentStep.position !== 'center') && (
+                                    <div className={`absolute right-[-8px] top-4 w-4 h-4 bg-black/80 border-r border-t ${currentStep.requiresClick ? 'border-yellow-500/50' : 'border-indigo-500/50'} rotate-45`} />
+                                )}
+                                
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full animate-pulse ${currentStep.requiresClick ? 'bg-yellow-400' : 'bg-indigo-400'}`} />
+                                        <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${currentStep.requiresClick ? 'text-yellow-300' : 'text-indigo-300'}`}>Guide</span>
+                                    </div>
+                                    <p className="text-xs font-medium leading-relaxed text-white/90">
+                                        {currentStep.message}
+                                    </p>
+                                    {currentStep.requiresClick && (
+                                        <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-yellow-400/80 uppercase tracking-widest animate-pulse">
+                                            <span>Tap to continue</span>
+                                            <div className="w-1 h-1 bg-yellow-400 rounded-full" />
+                                            <div className="w-1 h-1 bg-yellow-400 rounded-full animation-delay-200" />
+                                            <div className="w-1 h-1 bg-yellow-400 rounded-full animation-delay-400" />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        {currentStep.targetElementId && (
+                            <TutorialPointer targetId={currentStep.targetElementId} />
                         )}
-                    </AnimatePresence>
-                </>
-            )}
-        </AnimatePresence>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* Warning Toast */}
+            <AnimatePresence>
+                {tutorialWarning && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20, scale: 0.9, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, scale: 1, x: '-50%', 
+                            transition: { type: 'spring', damping: 15, stiffness: 200 }
+                        }}
+                        exit={{ opacity: 0, y: -20, scale: 0.9, x: '-50%' }}
+                        className="fixed top-12 left-1/2 z-[9999] pointer-events-none"
+                    >
+                        <motion.div 
+                            animate={{ x: [-5, 5, -5, 5, 0] }}
+                            transition={{ duration: 0.4 }}
+                            className="px-6 py-3 rounded-xl bg-red-950/90 border border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.4)] backdrop-blur-md flex items-center gap-3"
+                        >
+                            <AlertCircle className="w-5 h-5 text-red-500 animate-pulse" />
+                            <span className="text-sm font-bold text-red-100 uppercase tracking-wide">
+                                {tutorialWarning}
+                            </span>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </>
     );
 }
 

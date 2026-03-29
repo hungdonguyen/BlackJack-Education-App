@@ -30,7 +30,7 @@ export default function TutorialLobby() {
   }, [tutorialRooms]);
 
   return (
-    <div className="min-h-screen bg-[#02020a] text-white font-sans selection:bg-indigo-500/30 flex flex-col">
+    <div className="min-h-full h-full bg-[#02020a] text-white font-sans selection:bg-indigo-500/30 flex flex-col">
       <style>{`
         .tutorial-swiper-btn-disabled {
           opacity: 0 !important;
@@ -200,3 +200,5 @@ function TutorialCard({ room, onStart }: { room: RoomConfig; onStart: () => void
     </motion.div>
   );
 }
+
+

@@ -90,7 +90,7 @@ export default function HandAdvisor({
     const isBeta = room.isBeta ?? false;
     const rules = getRules(roomId);
     const isVisible = (gamePhase === GamePhase.PLAYER_TURN || gamePhase === GamePhase.INSURANCE) &&
-        (!room.isTutorial || roomId === 'tutorial_strategy' || roomId === 'tutorial_counting');
+        (!room.isTutorial || roomId === 'tutorial_strategy' || roomId === 'tutorial_counting' || roomId === 'tutorial_multihand');
 
     const currentSeat = seats[currentSeatIndex];
     const currentHand = gamePhase === GamePhase.INSURANCE

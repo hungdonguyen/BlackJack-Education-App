@@ -39,8 +39,8 @@ export default function Seat({ seatId, style }: SeatProps) {
 
     if (!seat) return null;
 
-    // In tutorial mode, only seat 3 is shown
-    if (roomConfig.isTutorial && seatId !== 3) return null;
+    // In tutorial mode, only seat 3 is shown EXCEPT for tutorial_multihand
+    if (roomConfig.isTutorial && seatId !== 3 && currentRoom !== 'tutorial_multihand') return null;
 
     const isBetting = gamePhase === GamePhase.BETTING;
     const isCurrentTurn = gamePhase === GamePhase.PLAYER_TURN && currentSeatIndex === seatId - 1;

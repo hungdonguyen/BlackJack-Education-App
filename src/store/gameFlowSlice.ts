@@ -35,6 +35,7 @@ export interface GameFlowSlice {
   dealerHand: GameStore['dealerHand'];
   currentSeatIndex: number;
   matchHistory: MatchRecord[];
+  lastCompletedMatch: MatchRecord | null;
   insuranceBets: Record<number, number>;
   actionCounter: number;
   isStrategyModalOpen: boolean;
@@ -83,6 +84,7 @@ export const createGameFlowSlice: StateCreator<GameStore, [], [], GameFlowSlice>
   dealerHand: { cards: [] },
   currentSeatIndex: 0,
   matchHistory: [],
+  lastCompletedMatch: null,
   insuranceBets: {},
   actionCounter: 0,
   isStrategyModalOpen: false,

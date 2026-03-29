@@ -79,8 +79,8 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     const roomCfg = getRoomConfig(state.currentRoom);
     const balance = roomCfg.isTutorial ? state.tutorialBalance : state.bankroll;
 
-    // In tutorial mode, only seat 3 is allowed
-    if (roomCfg.isTutorial && seatId !== 3) return;
+    // In tutorial mode, only seat 3 is allowed EXCEPT for tutorial_multihand
+    if (roomCfg.isTutorial && seatId !== 3 && state.currentRoom !== 'tutorial_multihand') return;
 
     if (totalAmount > balance) {
       get().triggerInsufficientFunds();
@@ -292,12 +292,12 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   toggleSeat: (seatId: number) => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
-    if (!checkTutorialAction(state, `toggle-seat-${seatId}`)) return;
+    if (!checkTutorialAction(state, `seat-${seatId}`)) return;
 
       set((s) => {
         const roomCfg = getRoomConfig(s.currentRoom);
-        // In tutorial mode, only seat 3 can be toggled (and must stay active)
-        if (roomCfg.isTutorial) return s;
+        // In tutorial mode, only seat 3 can be toggled (and must stay active) EXCEPT for tutorial_multihand
+        if (roomCfg.isTutorial && s.currentRoom !== 'tutorial_multihand') return s;
 
         const targetSeat = s.seats.find((seat) => seat.id === seatId);
         if (!targetSeat) return s;

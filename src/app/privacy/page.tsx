@@ -10,7 +10,7 @@ export default function PrivacyPage() {
 
     return (
         <div
-            className="h-screen w-full overflow-y-auto"
+            className="h-full w-full overflow-y-auto"
             style={{
                 background: 'radial-gradient(ellipse 120% 100% at 50% 30%, #301a10 0%, #1a0e0a 40%, #0d0705 100%)',
             }}
@@ -163,3 +163,4 @@ export default function PrivacyPage() {
         </div>
     );
 }
+

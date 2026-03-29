@@ -144,20 +144,24 @@ export const calculatePayoutsLogic = (set: any, get: () => GameStore) => {
       bankrollAfter,
     };
     
+    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
+    
     const MAX_STORE_HISTORY = 500;
-    const newHistory = [...state.matchHistory, matchRecord];
+    const newHistory = isTutorial ? state.matchHistory : [...state.matchHistory, matchRecord];
     if (newHistory.length > MAX_STORE_HISTORY) {
         newHistory.splice(0, newHistory.length - MAX_STORE_HISTORY);
     }
 
-    const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
     set({
       seats: updatedSeats,
       bankroll: isTutorial ? state.bankroll : bankrollAfter,
       tutorialBalance: isTutorial ? state.tutorialBalance + totalPayout : state.tutorialBalance,
       matchHistory: newHistory,
+      lastCompletedMatch: matchRecord,
       totalBetSinceLastClaim: isTutorial ? (state.totalBetSinceLastClaim || 0) : (state.totalBetSinceLastClaim || 0) + totalStaked,
     });
 
     get().checkAchievements(matchRecord);
 };
+
+

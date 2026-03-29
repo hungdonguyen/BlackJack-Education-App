@@ -333,7 +333,7 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
                             <>
                                 <SmallButton id="action-undo" label="UNDO" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); undoBet(); }} disabled={!hasUndo} variant="ghost" />
                                 <SmallButton id="action-clear" label="CLEAR" icon={<X className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); clearAllBets(); }} disabled={!hasBets} variant="danger" />
-                                <SmallButton id="action-rebet-x2" label="x2" icon={<span className="text-sm">2x</span>} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={false} variant="ghost" />
+                                { !roomConfig.isTutorial && <SmallButton id="action-rebet-x2" label="x2" icon={<span className="text-sm">2x</span>} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={false} variant="ghost" /> }
                                 <motion.button
                                     id="deal-button"
                                     onClick={() => { playSound('card-slide'); startDeal(); }}
@@ -350,7 +350,7 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
                             </>
                         ) : (
                             <div className="flex items-center" style={{ minHeight: '48px', marginTop: '10px' }}>
-                                <SmallButton id="action-rebet" label="REBET" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={!hasPreviousBets} variant="ghost" />
+                                { !roomConfig.isTutorial && <SmallButton id="action-rebet" label="REBET" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={!hasPreviousBets} variant="ghost" /> }
                             </div>
                         )}
                     </motion.div>

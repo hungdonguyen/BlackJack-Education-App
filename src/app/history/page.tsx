@@ -27,7 +27,7 @@ export default function HistoryPage() {
     const currentMatches = sortedHistory.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-[#0a0604] to-[#140b08] text-white p-6 md:p-12 font-sans select-none overflow-y-auto">
+        <div className="min-h-full h-full bg-linear-to-br from-[#0a0604] to-[#140b08] text-white p-6 md:p-12 font-sans select-none overflow-y-auto">
             <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <button
@@ -195,3 +195,4 @@ export default function HistoryPage() {
         </div>
     );
 }
+
