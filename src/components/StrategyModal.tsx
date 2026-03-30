@@ -134,7 +134,7 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                 initial={{ scale: 0.95, y: 20, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
                 exit={{ scale: 0.95, y: 20, opacity: 0 }}
-                className="relative flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[2.5rem] border shadow-2xl"
+                className="relative flex h-full max-h-[calc(100%-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[2.5rem] border shadow-2xl md:max-h-[calc(100%-3rem)]"
                 style={{
                     background: 'linear-gradient(165deg, #09090b 0%, #111114 100%)',
                     borderColor: 'rgba(255,255,255,0.08)',
@@ -151,7 +151,7 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
                     onTabChange={handleTabChange}
                 />
 
-                <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar scroll-smooth">
+                <div className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar scroll-smooth md:px-8 md:py-6">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={tab}

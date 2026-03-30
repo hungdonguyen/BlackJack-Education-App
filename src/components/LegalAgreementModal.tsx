@@ -237,7 +237,7 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="w-full max-w-2xl h-[80vh] max-h-[700px] flex flex-col rounded-2xl overflow-hidden"
+                        className="w-full max-w-2xl h-full max-h-[calc(100%-2rem)] flex flex-col rounded-2xl overflow-hidden md:max-h-[700px]"
                         style={{
                             background: 'linear-gradient(160deg, #1a1208 0%, #0f0d07 100%)',
                             border: '1px solid rgba(212, 168, 67, 0.2)',

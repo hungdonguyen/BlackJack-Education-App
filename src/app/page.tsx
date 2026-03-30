@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Wallet, BookOpen, Sparkles, Zap, Trophy, Gift } from 'lucide-react';
 import appIcon from '../../src-tauri/icons/icon.png';
-import { ROOMS } from '@/utils/rooms';
+import { ROOMS, getLobbyRooms } from '@/utils/rooms';
 import LegalAgreementModal from '@/components/LegalAgreementModal';
 import StrategyModal from '@/components/StrategyModal';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
@@ -20,47 +20,17 @@ import { AchievementModal } from '@/components/AchievementModal';
 import { AchievementToast } from '@/components/AchievementToast';
 import { DailyClaimModal } from '@/components/DailyClaimModal';
 import SettingsModal from '@/components/SettingsModal';
-
-const STRATEGY_ROOM_IDS = [
-  'madness_21',
-  'classic',
-  'vegas_strip',
-  'vegas_downtown',
-  'free_action',
-  'atlantic_city',
-  'zapout_21',
-  'exchange_21',
-  'firecard_21',
-  'iberian_21',
-  'european',
-  'uk',
-] as const;
-
-type StrategyRoomId = (typeof STRATEGY_ROOM_IDS)[number];
-
-const ALL_LOGOS = [
-  '/images/logo/rooms/atlantic.png',
-  '/images/logo/rooms/classic.png',
-  '/images/logo/rooms/european.png',
-  '/images/logo/rooms/exchange21.png',
-  '/images/logo/rooms/firecard21.png',
-  '/images/logo/rooms/freeaction.png',
-  '/images/logo/rooms/iberian21.png',
-  '/images/logo/rooms/infinity_double_down.png',
-  '/images/logo/rooms/uk_logo.png',
-  '/images/logo/rooms/vegas_downtown.png',
-  '/images/logo/rooms/vegas_strip.png',
-  '/images/logo/rooms/zapout21.png'
-];
+import { FloatingLogosBackdrop, ROOM_LOGO_PATHS } from '@/components/FloatingLogosBackdrop';
 
 export default function HomePage() {
   const router = useRouter();
+  const strategyRooms = getLobbyRooms();
   const [accepted, setAccepted] = useState(false);
   const [showStrategy, setShowStrategy] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showDailyClaim, setShowDailyClaim] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<StrategyRoomId>('classic');
+  const [selectedRoom, setSelectedRoom] = useState('classic');
 
   const isHydrated = useStoreHydration();
   const bankroll = useGameStore((s) => s.bankroll);
@@ -153,28 +123,7 @@ export default function HomePage() {
           />
 
           {/* Decorative room logos - seamless pattern panning (Option 3) */}
-          {isHydrated && (
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <div 
-                className="absolute w-[200vw] h-[150vh] -top-[25vh] -left-[50vw] flex flex-col justify-center gap-16 opacity-[0.12] -rotate-6 scale-110"
-              >
-                {[0, 1, 2, 3, 4].map((rowIndex) => (
-                  <motion.div
-                    key={`row-${rowIndex}`}
-                    className="flex items-center gap-24 whitespace-nowrap"
-                    animate={{ x: rowIndex % 2 === 0 ? ['0%', '-30%'] : ['-30%', '0%'] }}
-                    transition={{ duration: 100 + rowIndex * 15, repeat: Infinity, ease: 'linear' }}
-                  >
-                    {[...ALL_LOGOS, ...ALL_LOGOS, ...ALL_LOGOS, ...ALL_LOGOS].map((logoPath, i) => (
-                      <div key={`${logoPath}-${i}`} className="relative w-40 h-40 shrink-0">
-                        <Image src={logoPath} fill alt="Room Logo" unoptimized className="object-contain" />
-                      </div>
-                    ))}
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          )}
+          {isHydrated && <FloatingLogosBackdrop logoPaths={ROOM_LOGO_PATHS} />}
 
 
           {/* Main content wrapper */}
@@ -194,28 +143,30 @@ export default function HomePage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, ease: 'easeOut' }}
               >
-                {/* Glow ring */}
-                <motion.div
-                  className="absolute inset-0 rounded-full pointer-events-none"
-                  style={{
-                    background: 'radial-gradient(circle, rgba(212,168,67,0.18) 0%, transparent 70%)',
-                    filter: 'blur(12px)',
-                    willChange: 'opacity',
-                  }}
-                  animate={{ opacity: [0.6, 1, 0.6] }}
-                  transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <Image
-                  src={appIcon}
-                  alt="Blackjack Icon"
-                  width={512}
-                  height={512}
-                  sizes="168px"
-                  quality={100}
-                  unoptimized
-                  className="h-full w-full object-contain drop-shadow-[0_0_16px_rgba(212,168,67,0.32)]"
-                  priority
-                />
+                <div className="absolute inset-0 origin-center scale-[1.2]">
+                  {/* Glow ring */}
+                  <motion.div
+                    className="absolute inset-0 rounded-full pointer-events-none"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(212,168,67,0.18) 0%, transparent 70%)',
+                      filter: 'blur(12px)',
+                      willChange: 'opacity',
+                    }}
+                    animate={{ opacity: [0.6, 1, 0.6] }}
+                    transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  <Image
+                    src={appIcon}
+                    alt="Blackjack Icon"
+                    width={512}
+                    height={512}
+                    sizes="168px"
+                    quality={100}
+                    unoptimized
+                    className="h-full w-full object-contain drop-shadow-[0_0_16px_rgba(212,168,67,0.32)]"
+                    priority
+                  />
+                </div>
               </motion.div>
               <h1
                 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text"
@@ -239,7 +190,7 @@ export default function HomePage() {
             {/* Action Cards (Bento Grid) */}
             <div className="w-full max-w-2xl px-4 mt-2">
               {/* Top Row: Main Actions */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3 items-stretch">
                 
                 {/* Enter Lobby - Hero Card */}
                 <motion.div
@@ -250,7 +201,7 @@ export default function HomePage() {
                 >
                   <button
                     onClick={() => { playSound('click'); router.push('/lobby'); }}
-                    className="group relative w-full h-full min-h-[100px] rounded-3xl overflow-hidden cursor-pointer flex items-center justify-between px-6 py-5 text-left transition-all duration-500 hover:scale-[1.02] active:scale-[0.98]"
+                    className="group relative w-full h-full min-h-[108px] rounded-3xl overflow-hidden cursor-pointer flex items-center justify-between px-6 py-5 text-left transition-all duration-500 hover:scale-[1.02] active:scale-[0.98]"
                     style={{
                       background: 'linear-gradient(135deg, #d4a843 0%, #f0d78c 50%, #b38b34 100%)',
                       boxShadow: '0 10px 40px -10px rgba(212,168,67,0.5), inset 0 2px 0 rgba(255,255,255,0.4)',
@@ -266,7 +217,7 @@ export default function HomePage() {
                       <div className="flex items-center gap-3 mb-1">
                         <Sparkles size={16} className="text-black/70 fill-current animate-pulse" />
                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black/60 bg-black/5 px-2 py-1 rounded-md">
-                          Premium Access
+                          Signature Entry
                         </span>
                       </div>
                       <h2 className="text-2xl font-black text-black tracking-tight leading-none uppercase">
@@ -291,29 +242,48 @@ export default function HomePage() {
                 >
                   <button
                     onClick={() => { playSound('click'); router.push('/tutorial-lobby'); }}
-                    className="group relative flex flex-col items-center justify-center gap-2 w-full h-full min-h-[100px] rounded-3xl cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
+                    className="group relative w-full h-full min-h-[108px] rounded-3xl cursor-pointer transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] overflow-hidden text-left px-5 py-4 flex items-center justify-between"
                     style={{
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'linear-gradient(140deg, rgba(80,110,255,0.92) 0%, rgba(125,162,255,0.95) 55%, rgba(61,86,220,0.96) 100%)',
+                      border: '1px solid rgba(151,182,255,0.4)',
+                      boxShadow: '0 12px 36px -12px rgba(86,114,255,0.72), inset 0 2px 0 rgba(255,255,255,0.28)',
                     }}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-t from-[rgba(255,255,255,0.05)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(255,255,255,0.05)] text-white/70">
-                      <BookOpen size={18} className="group-hover:fill-white/20" />
+                    <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
+                    <div className="absolute -inset-[85%] animate-[spin_11s_linear_infinite] opacity-30 bg-[conic-gradient(from_0deg,transparent_0_320deg,white_360deg)] pointer-events-none" />
+
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-1">
+                        <BookOpen size={15} className="text-white/85 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.24em] text-white/80 bg-white/10 px-2 py-1 rounded-md">
+                          Academy
+                        </span>
+                      </div>
+                      <h2 className="text-xl font-black text-white tracking-tight leading-none uppercase">
+                        Tutorial
+                      </h2>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/75 mt-1">
+                        Learn the basics
+                      </p>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/70 group-hover:text-white transition-colors text-center w-full">Tutorial</span>
+
+                    <div className="relative z-10 w-10 h-10 rounded-full bg-black/15 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:bg-black/25 group-hover:translate-x-1 transition-all">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
                   </button>
                 </motion.div>
               </div>
 
               {/* Bottom Row: 5 Feature Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 items-stretch">
                 
                 {/* Quick Play */}
                 <motion.button
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }}
                   onClick={() => { playSound('click'); router.push('/game/classic'); }}
-                  className="group relative flex flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
+                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
                   style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.08)',
@@ -330,7 +300,7 @@ export default function HomePage() {
                 <motion.button
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }}
                   onClick={() => { playSound('click'); setShowStrategy(true); }}
-                  className="group relative flex flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
+                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
                   style={{
                     background: 'linear-gradient(180deg, rgba(212,168,67,0.05) 0%, rgba(30,20,10,0.5) 100%)',
                     border: '1px solid rgba(212,168,67,0.15)',
@@ -347,7 +317,7 @@ export default function HomePage() {
                 <motion.button
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
                   onClick={() => { playSound('click'); setShowDailyClaim(true); }}
-                  className="group relative flex flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
+                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
                   style={{
                     background: 'linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.01) 100%)',
                     border: '1px solid rgba(245,158,11,0.2)',
@@ -368,7 +338,7 @@ export default function HomePage() {
                 <motion.button
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.5 }}
                   onClick={() => { playSound('click'); setShowAchievements(true); }}
-                  className="group relative flex flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
+                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
                   style={{
                     background: 'linear-gradient(180deg, rgba(168,85,247,0.05) 0%, rgba(168,85,247,0.01) 100%)',
                     border: '1px solid rgba(168,85,247,0.2)',
@@ -385,7 +355,7 @@ export default function HomePage() {
                 <motion.button
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.5 }}
                   onClick={() => { playSound('click'); setShowSettings(true); }}
-                  className="group relative flex flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden col-span-2 lg:col-span-1"
+                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden col-span-2 lg:col-span-1"
                   style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.08)',
@@ -414,18 +384,17 @@ export default function HomePage() {
               <div className="fixed inset-0 z-[200]">
                 {/* Room selector floating above modal */}
                 <motion.div
-                  className="absolute top-4 left-1/2 z-[210] flex max-w-[calc(100vw-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/35 px-3 py-3 backdrop-blur-md md:top-24 md:left-8 md:max-w-[240px] md:translate-x-0 md:flex-col md:items-start md:justify-start md:gap-3"
+                  className="absolute top-4 left-1/2 z-[210] flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/35 px-3 py-3 backdrop-blur-md md:top-24 md:left-8 md:max-w-[240px] md:translate-x-0 md:flex-col md:items-start md:justify-start md:gap-3"
                   initial={{ opacity: 0, y: -16 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -16 }}
                 >
-                  {STRATEGY_ROOM_IDS.map((roomId) => {
-                    const room = ROOMS[roomId];
-                    const isActive = selectedRoom === roomId;
+                  {strategyRooms.map((room) => {
+                    const isActive = selectedRoom === room.id;
                     return (
                       <button
-                        key={roomId}
-                        onClick={() => { playSound('click'); setSelectedRoom(roomId); }}
+                        key={room.id}
+                        onClick={() => { playSound('click'); setSelectedRoom(room.id); }}
                         className="px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer"
                         style={{
                           background: isActive
@@ -444,7 +413,7 @@ export default function HomePage() {
                 </motion.div>
 
                 <StrategyModal
-                  room={ROOMS[selectedRoom]}
+                  room={ROOMS[selectedRoom] ?? ROOMS.classic}
                   onClose={() => setShowStrategy(false)}
                 />
               </div>

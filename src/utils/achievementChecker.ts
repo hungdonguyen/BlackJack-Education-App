@@ -26,6 +26,7 @@ export function checkNewAchievements(
 
   // Gather match results for convenience
   const allHands = match.seats.flatMap((s) => s.hands);
+  const hasPlayedAnyHand = allHands.length > 0;
   const wonHands = allHands.filter((h) => h.result === HandStatus.WON || h.result === HandStatus.BLACKJACK);
   const hasBlackjack = allHands.some((h) => h.result === HandStatus.BLACKJACK);
   const hasSurrender = allHands.some((h) => h.result === HandStatus.SURRENDERED);
@@ -35,7 +36,7 @@ export function checkNewAchievements(
   // ═══ GENERAL ACHIEVEMENTS ═══
 
   // 1. First Hand — played at least one round
-  tryUnlock('first_hand');
+  if (hasPlayedAnyHand) tryUnlock('first_hand');
 
   // 2. Natural Blackjack
   if (hasBlackjack) tryUnlock('natural_blackjack');

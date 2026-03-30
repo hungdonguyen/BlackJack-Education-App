@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { useMemo } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Keyboard } from 'swiper/modules';
+import { FloatingLogosBackdrop, ROOM_LOGO_PATHS } from '@/components/FloatingLogosBackdrop';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -44,6 +45,7 @@ export default function TutorialLobby() {
 
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none">
+        <FloatingLogosBackdrop logoPaths={ROOM_LOGO_PATHS} opacityClassName="opacity-[0.07]" className="mix-blend-screen" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_#1e1b4b_0%,_transparent_70%)] opacity-40" />
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
       </div>

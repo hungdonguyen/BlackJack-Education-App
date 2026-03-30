@@ -36,6 +36,16 @@ export const ROOMS: Record<string, RoomConfig> = {
     tutorial_multihand: tutorialMultiHand,
 };
 
+const lobbyRooms = Object.values(ROOMS).filter((room) => !room.isTutorial);
+const stableRooms = lobbyRooms.filter((room) => !room.isBeta);
+const betaRooms = lobbyRooms.filter((room) => room.isBeta);
+
+export const LOBBY_ROOMS: RoomConfig[] = [...stableRooms, ...betaRooms];
+
+export function getLobbyRooms(): RoomConfig[] {
+    return [...LOBBY_ROOMS];
+}
+
 export function getRoomConfig(roomId: string): RoomConfig {
     return ROOMS[roomId] ?? ROOMS.classic;
 }

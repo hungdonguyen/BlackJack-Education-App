@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Gift, Timer, Coins, Shield, Sparkles, TrendingUp, AlertCircle, CheckCircle2, Wallet, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { X, Gift, Timer, Shield, Sparkles, TrendingUp, Wallet } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
 
@@ -111,7 +111,7 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -124,59 +124,59 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-5xl bg-[#0c0c0c] border border-white/10 rounded-3xl overflow-hidden flex flex-col shadow-[0_0_100px_rgba(0,0,0,1)]"
+        className="relative w-full max-w-4xl h-full max-h-[95vh] bg-[#0c0c0c] border border-white/10 rounded-2xl overflow-hidden flex flex-col shadow-[0_0_90px_rgba(0,0,0,1)] md:max-h-[92vh]"
       >
         {/* Header */}
-        <div className="flex-shrink-0 p-8 border-b border-white/5 bg-[radial-gradient(ellipse_at_top,rgba(245,158,11,0.1)_0%,transparent_70%)] flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 flex items-center justify-center text-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.2)] border border-amber-500/20">
-              <Gift size={36} className="drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+        <div className="flex-shrink-0 p-4 md:p-6 border-b border-white/5 bg-[radial-gradient(ellipse_at_top,rgba(245,158,11,0.1)_0%,transparent_70%)] flex items-center justify-between">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 flex items-center justify-center text-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.2)] border border-amber-500/20">
+              <Gift size={26} className="drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
             </div>
             <div>
-              <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/70 uppercase tracking-tighter flex items-center gap-3">
+              <h2 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/70 uppercase tracking-tighter flex items-center gap-2">
                 Daily <span className="text-amber-500">Rewards</span>
               </h2>
-              <p className="text-xs font-bold text-amber-500/50 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
-                <Sparkles size={12} /> Central Rewards Hub
+              <p className="text-[10px] font-bold text-amber-500/50 uppercase tracking-[0.22em] md:tracking-[0.3em] mt-1 flex items-center gap-2">
+                <Sparkles size={10} /> Central Rewards Hub
               </p>
             </div>
           </div>
           
           <button 
             onClick={onClose}
-            className="w-12 h-12 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 hover:rotate-90 text-white/50 hover:text-white transition-all duration-300 border border-white/10 cursor-pointer"
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 hover:rotate-90 text-white/50 hover:text-white transition-all duration-300 border border-white/10 cursor-pointer"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
-        <div className="flex-grow p-8 bg-[#080808] max-h-[85vh] overflow-y-auto">
+        <div className="flex-grow min-h-0 p-4 md:p-6 bg-[#080808] overflow-y-auto">
           
           {/* Account Summary Section */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <div className="relative overflow-hidden bg-white/[0.02] border border-white/5 p-5 rounded-2xl flex items-center justify-between group">
+          <div className="grid grid-cols-2 gap-3 mb-5 md:mb-6">
+            <div className="relative overflow-hidden bg-white/[0.02] border border-white/5 p-4 rounded-xl flex items-center justify-between group">
               <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <div>
                 <div className="flex items-center gap-2 mb-1 text-white/30">
-                  <Wallet size={14} />
+                  <Wallet size={12} />
                   <span className="text-[10px] font-bold uppercase tracking-widest">Bankroll</span>
                 </div>
-                <div className="text-2xl font-black text-white tabular-nums">${bankroll.toLocaleString()}</div>
+                <div className="text-xl md:text-2xl font-black text-white tabular-nums">${bankroll.toLocaleString()}</div>
               </div>
             </div>
-            <div className="relative overflow-hidden bg-amber-500/5 border border-amber-500/20 p-5 rounded-2xl flex items-center justify-between group shadow-[inset_0_0_20px_rgba(245,158,11,0.02)]">
+            <div className="relative overflow-hidden bg-amber-500/5 border border-amber-500/20 p-4 rounded-xl flex items-center justify-between group shadow-[inset_0_0_20px_rgba(245,158,11,0.02)]">
               <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <div>
                 <div className="flex items-center gap-2 mb-1 text-amber-500/50">
-                  <Gift size={14} />
+                  <Gift size={12} />
                   <span className="text-[10px] font-bold uppercase tracking-widest">Total Earned</span>
                 </div>
-                <div className="text-2xl font-black text-amber-400 tabular-nums drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">${(totalClaimedAmount || 0).toLocaleString()}</div>
+                <div className="text-xl md:text-2xl font-black text-amber-400 tabular-nums drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">${(totalClaimedAmount || 0).toLocaleString()}</div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             
             {/* Card 1: Timed Reward */}
             <motion.div 
@@ -189,18 +189,18 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
               {timedClaimReady && (
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-50" />
               )}
-              <div className="p-6 flex-grow flex flex-col items-center text-center">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-xl ${
+              <div className="p-4 md:p-5 flex-grow flex flex-col items-center text-center">
+                <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-5 shadow-xl ${
                   timedClaimReady ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-black' : 'bg-white/5 text-white/20'
                 }`}>
-                  <Timer size={32} className={timedClaimReady ? 'animate-pulse' : ''} />
+                  <Timer size={24} className={timedClaimReady ? 'animate-pulse' : ''} />
                 </div>
                 
                 <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-lg font-black text-white uppercase tracking-tight">Timed Payout</h3>
+                  <h3 className="text-base md:text-lg font-black text-white uppercase tracking-tight">Timed Payout</h3>
                 </div>
                 
-                <div className="text-4xl font-black tabular-nums text-white leading-none my-3">
+                <div className="text-3xl md:text-4xl font-black tabular-nums text-white leading-none my-2 md:my-3">
                   ${compactClaimNumber(baseTimedAmount)}
                 </div>
                 
@@ -208,21 +208,21 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                   STEP {claimStep}/3 {isBonusClaim && 'BONUS'}
                 </div>
                 
-                <div className="mt-4 p-3 bg-black/40 rounded-xl w-full">
+                <div className="mt-3 p-2.5 bg-black/40 rounded-xl w-full">
                   <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
                     {timedClaimReady ? 'Ready for collection' : `Next Payout in`}
                   </p>
                   {!timedClaimReady && (
-                    <p className="text-lg font-mono text-white/70 mt-1 font-bold">{timedCooldown}</p>
+                    <p className="text-base md:text-lg font-mono text-white/70 mt-1 font-bold">{timedCooldown}</p>
                   )}
                 </div>
               </div>
 
-              <div className="p-4 pt-0">
+              <div className="p-3 pt-0">
                 <button
                   onClick={handleClaimTimed}
                   disabled={!timedClaimReady}
-                  className={`w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all ${
+                  className={`w-full py-3 rounded-xl font-black text-xs md:text-sm uppercase tracking-wider md:tracking-widest transition-all ${
                     timedClaimReady 
                       ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-[0_0_30px_rgba(245,158,11,0.3)] cursor-pointer hover:scale-[1.02] active:scale-95' 
                       : 'bg-white/5 text-white/20 cursor-not-allowed'
@@ -244,16 +244,16 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
               {canClaimRebate && (
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-50" />
               )}
-              <div className="p-6 flex-grow flex flex-col items-center text-center">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-xl ${
+              <div className="p-4 md:p-5 flex-grow flex flex-col items-center text-center">
+                <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-5 shadow-xl ${
                   canClaimRebate ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-black' : 'bg-white/5 text-white/20'
                 }`}>
-                  <TrendingUp size={32} />
+                  <TrendingUp size={24} />
                 </div>
                 
-                <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">Rolling Rebate</h3>
+                <h3 className="text-base md:text-lg font-black text-white uppercase tracking-tight mb-2">Rolling Rebate</h3>
                 
-                <div className={`text-4xl font-black tabular-nums leading-none my-3 ${canClaimRebate ? 'text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'text-white/40'}`}>
+                <div className={`text-3xl md:text-4xl font-black tabular-nums leading-none my-2 md:my-3 ${canClaimRebate ? 'text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'text-white/40'}`}>
                   ${currentRebateAmount.toLocaleString()}
                 </div>
                 
@@ -261,7 +261,7 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                   2% Rakeback
                 </div>
 
-                <div className="mt-4 p-3 bg-black/40 rounded-xl w-full">
+                <div className="mt-3 p-2.5 bg-black/40 rounded-xl w-full">
                   <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
                     {canClaimRebate ? 'Status' : 'Progress'}
                   </p>
@@ -271,11 +271,11 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                 </div>
               </div>
 
-              <div className="p-4 pt-0">
+              <div className="p-3 pt-0">
                 <button
                   onClick={handleClaimRebate}
                   disabled={!canClaimRebate}
-                  className={`w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all ${
+                  className={`w-full py-3 rounded-xl font-black text-xs md:text-sm uppercase tracking-wider md:tracking-widest transition-all ${
                     canClaimRebate 
                       ? 'bg-emerald-500 hover:bg-emerald-400 text-black shadow-[0_0_30px_rgba(16,185,129,0.3)] cursor-pointer hover:scale-[1.02] active:scale-95' 
                       : 'bg-white/5 text-white/20 cursor-not-allowed'
@@ -297,16 +297,16 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
               {canClaimInsurance && (
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-50" />
               )}
-              <div className="p-6 flex-grow flex flex-col items-center text-center">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-xl ${
+              <div className="p-4 md:p-5 flex-grow flex flex-col items-center text-center">
+                <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-5 shadow-xl ${
                   canClaimInsurance ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-black' : 'bg-white/5 text-white/20'
                 }`}>
-                  <Shield size={32} />
+                  <Shield size={24} />
                 </div>
                 
-                <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">Safety Protocol</h3>
+                <h3 className="text-base md:text-lg font-black text-white uppercase tracking-tight mb-2">Safety Protocol</h3>
                 
-                <div className={`text-4xl font-black tabular-nums leading-none my-3 ${canClaimInsurance ? 'text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'text-white/40'}`}>
+                <div className={`text-3xl md:text-4xl font-black tabular-nums leading-none my-2 md:my-3 ${canClaimInsurance ? 'text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'text-white/40'}`}>
                   $1,000
                 </div>
 
@@ -314,7 +314,7 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                   {5 - actualInsuranceClaims} USES LEFT TODAY
                 </div>
 
-                <div className="mt-4 p-3 bg-black/40 rounded-xl w-full h-[60px] flex flex-col justify-center">
+                <div className="mt-3 p-2.5 bg-black/40 rounded-xl w-full h-[54px] flex flex-col justify-center">
                   <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest text-center">
                     {canClaimInsurance 
                       ? 'Critical balance! Ready.' 
@@ -331,11 +331,11 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                 </div>
               </div>
 
-              <div className="p-4 pt-0">
+              <div className="p-3 pt-0">
                 <button
                   onClick={handleClaimInsurance}
                   disabled={!canClaimInsurance}
-                  className={`w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all ${
+                  className={`w-full py-3 rounded-xl font-black text-xs md:text-sm uppercase tracking-wider md:tracking-widest transition-all ${
                     canClaimInsurance 
                       ? 'bg-blue-500 hover:bg-blue-400 text-black shadow-[0_0_30px_rgba(59,130,246,0.3)] cursor-pointer hover:scale-[1.02] active:scale-95' 
                       : 'bg-white/5 text-white/20 cursor-not-allowed'
@@ -350,13 +350,15 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Footer info */}
-        <div className="flex-shrink-0 p-6 border-t border-white/5 bg-black/40 flex items-center justify-between px-10">
-          <div className="flex items-center gap-2 text-white/20">
-            <div className="w-2 h-2 rounded-full bg-amber-500/40" />
-            <span className="text-[9px] uppercase font-bold tracking-[0.3em]">Premium Reward Protocol</span>
-          </div>
-          <div className="text-[9px] text-white/10 font-medium uppercase tracking-[0.2em]">
-            Centralized Rewards Engine v2.1
+        <div className="flex-shrink-0 border-t border-white/5 bg-black/40 px-4 py-2.5 md:px-6 md:py-3">
+          <div className="flex items-center justify-between gap-3 text-white/25">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-amber-500/40" />
+              <span className="text-[8px] md:text-[9px] uppercase font-bold tracking-[0.22em]">Virtual Credit System</span>
+            </div>
+            <div className="text-[8px] md:text-[9px] text-white/30 font-semibold uppercase tracking-[0.14em] text-right">
+              This app uses virtual money only. No real-world cash value.
+            </div>
           </div>
         </div>
       </motion.div>

@@ -80,7 +80,7 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-6xl h-full max-h-[85vh] bg-[#0c0c0c] border border-white/10 rounded-2xl overflow-hidden flex flex-col shadow-[0_0_100px_rgba(0,0,0,1)]"
+        className="relative w-full max-w-6xl h-full max-h-[calc(100%-2rem)] bg-[#0c0c0c] border border-white/10 rounded-2xl overflow-hidden flex flex-col shadow-[0_0_100px_rgba(0,0,0,1)] md:max-h-[calc(100%-4rem)]"
       >
         {/* Header */}
         <div className="flex-shrink-0 p-6 border-b border-white/5 bg-gradient-to-r from-yellow-500/10 to-transparent flex items-center justify-between">

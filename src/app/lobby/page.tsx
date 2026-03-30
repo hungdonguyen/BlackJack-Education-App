@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ROOMS, RoomConfig } from '@/utils/rooms';
+import { getLobbyRooms, RoomConfig } from '@/utils/rooms';
 import Image from 'next/image';
 import { ArrowLeft, Home, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
@@ -17,7 +17,7 @@ import 'swiper/css/navigation';
 
 export default function LobbyPage() {
     const router = useRouter();
-    const rooms = Object.values(ROOMS).filter(r => !r.isTutorial);
+    const rooms = useMemo(() => getLobbyRooms(), []);
     const { playSound } = useAudio();
     const bankroll = useGameStore((s) => s.bankroll);
 

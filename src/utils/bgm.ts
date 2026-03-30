@@ -24,6 +24,17 @@ const BGM_MAP: Record<string, string> = {
     atlantic_city: '/sounds/bgm/Bossa Antigua.mp3',
     iberian_21: '/sounds/bgm/Spanish Summer- Audionautix.mp3',
     european: '/sounds/bgm/Backed Clean.mp3',
+    uk: '/sounds/bgm/Airport Lounge.mp3',
+    zapout_21: '/sounds/bgm/Faster Does It.mp3',
+    exchange_21: '/sounds/bgm/Bossa Antigua.mp3',
+    firecard_21: '/sounds/bgm/Whiskey on the Mississippi.mp3',
+    madness_21: '/sounds/bgm/Funk Game Loop.mp3',
+    tutorial_beginner: '/sounds/bgm/CoolVibes.mp3',
+    tutorial_double: '/sounds/bgm/Airport Lounge.mp3',
+    tutorial_strategy: '/sounds/bgm/Bossa Antigua.mp3',
+    tutorial_counting: '/sounds/bgm/Backed Clean.mp3',
+    tutorial_splitting: '/sounds/bgm/Faster Does It.mp3',
+    tutorial_multihand: '/sounds/bgm/Funk Game Loop.mp3',
 };
 
 const FADE_DURATION = 1500; // ms
@@ -33,6 +44,14 @@ const BASE_VOLUME = 0.3; // Increased from 0.15 to allow more range in settings
 let currentAudio: HTMLAudioElement | null = null;
 let currentTrackPath: string | null = null;
 let fadeInterval: ReturnType<typeof setInterval> | null = null;
+
+function resolveTrackPath(roomId: string, musicTrackOverride: string | null): string {
+    if (musicTrackOverride) return musicTrackOverride;
+    if (BGM_MAP[roomId]) return BGM_MAP[roomId];
+    // Keep current track when entering rooms without dedicated BGM.
+    if (currentTrackPath) return currentTrackPath;
+    return BGM_MAP.lobby;
+}
 
 function fadeOut(audio: HTMLAudioElement, duration: number): Promise<void> {
     return new Promise((resolve) => {
@@ -95,7 +114,7 @@ export function useBGM(roomId: string) {
         if (typeof window === 'undefined') return;
 
         // Use override if set, otherwise use room default
-        const trackPath = musicTrackOverride || BGM_MAP[roomId] || BGM_MAP.lobby;
+        const trackPath = resolveTrackPath(roomId, musicTrackOverride);
         const trackInfo = PLAYLIST.find(t => t.path === trackPath);
         const trackMultiplier = trackInfo?.vol ?? 1.0;
         const targetVol = Math.min(BASE_VOLUME * musicVolume * trackMultiplier, 1.0);
@@ -139,20 +158,12 @@ export function useBGM(roomId: string) {
         };
 
         startNewTrack();
-
-        return () => {
-            // Cleanup: fade out on unmount
-            if (currentAudio && !currentAudio.paused) {
-                fadeOut(currentAudio, 500);
-                currentTrackPath = null;
-            }
-        };
     }, [roomId, musicEnabled, musicVolume, musicTrackOverride]);
 
     // Volume change effect
     useEffect(() => {
         if (currentAudio && !currentAudio.paused && musicEnabled) {
-            const trackPath = musicTrackOverride || BGM_MAP[roomId] || BGM_MAP.lobby;
+            const trackPath = resolveTrackPath(roomId, musicTrackOverride);
             const trackInfo = PLAYLIST.find(t => t.path === trackPath);
             const trackMultiplier = trackInfo?.vol ?? 1.0;
             currentAudio.volume = Math.min(BASE_VOLUME * musicVolume * trackMultiplier, 1.0);
@@ -161,14 +172,14 @@ export function useBGM(roomId: string) {
 
 
     const changeTrack = useCallback((offset: number) => {
-        const currentPath = musicTrackOverride || BGM_MAP[roomId] || BGM_MAP.lobby;
+        const currentPath = resolveTrackPath(roomId, musicTrackOverride);
         const currentIndex = PLAYLIST.findIndex(t => t.path === currentPath);
         let nextIndex = (currentIndex + offset) % PLAYLIST.length;
         if (nextIndex < 0) nextIndex = PLAYLIST.length - 1;
         setMusicTrackOverride(PLAYLIST[nextIndex].path);
     }, [roomId, musicTrackOverride, setMusicTrackOverride]);
 
-    const currentTrackName = PLAYLIST.find(t => t.path === (musicTrackOverride || BGM_MAP[roomId] || BGM_MAP.lobby))?.name || 'Unknown';
+    const currentTrackName = PLAYLIST.find(t => t.path === resolveTrackPath(roomId, musicTrackOverride))?.name || 'Unknown';
 
     return { changeTrack, currentTrackName, playlist: PLAYLIST };
 }
