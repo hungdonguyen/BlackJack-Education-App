@@ -2,13 +2,15 @@
 // Tauri File Save System
 // Saves player data to OS AppData directory
 // Save:    AppConfig/save.json    (bankroll, claims)
-// History: AppConfig/history.json (max 10,000 rounds)
+// History: AppConfig/history.json (normal rounds, max 10,000)
+// Sim:     AppConfig/simulator_history.json (simulator rounds, max 10,000)
 // ============================================
 
 import type { MatchRecord } from '@/types/game';
 
 const SAVE_FILE = 'save.json';
 const HISTORY_FILE = 'history.json';
+const SIMULATOR_HISTORY_FILE = 'simulator_history.json';
 const MAX_HISTORY = 10_000;
 
 /** True when running inside Tauri desktop app */
@@ -99,5 +101,42 @@ export async function deleteHistory(): Promise<void> {
         const { remove, exists, BaseDirectory } = await getFs();
         const ok = await exists(HISTORY_FILE, { baseDir: BaseDirectory.AppConfig });
         if (ok) await remove(HISTORY_FILE, { baseDir: BaseDirectory.AppConfig });
+    } catch { /* ignore */ }
+}
+
+export async function loadSimulatorHistory(): Promise<MatchRecord[]> {
+    if (!isTauriEnv()) return [];
+    try {
+        const { readTextFile, exists, BaseDirectory } = await getFs();
+        const ok = await exists(SIMULATOR_HISTORY_FILE, { baseDir: BaseDirectory.AppConfig });
+        if (!ok) return [];
+        const content = await readTextFile(SIMULATOR_HISTORY_FILE, { baseDir: BaseDirectory.AppConfig });
+        return JSON.parse(content) as MatchRecord[];
+    } catch (err) {
+        console.warn('[SaveFile] loadSimulatorHistory failed:', err);
+        return [];
+    }
+}
+
+export async function writeSimulatorHistoryFile(records: MatchRecord[]): Promise<void> {
+    if (!isTauriEnv()) return;
+    try {
+        const { writeTextFile, BaseDirectory } = await getFs();
+        await ensureDir();
+        const trimmed = records.length > MAX_HISTORY
+            ? records.slice(records.length - MAX_HISTORY)
+            : records;
+        await writeTextFile(SIMULATOR_HISTORY_FILE, JSON.stringify(trimmed), { baseDir: BaseDirectory.AppConfig });
+    } catch (err) {
+        console.warn('[SaveFile] writeSimulatorHistoryFile failed:', err);
+    }
+}
+
+export async function deleteSimulatorHistory(): Promise<void> {
+    if (!isTauriEnv()) return;
+    try {
+        const { remove, exists, BaseDirectory } = await getFs();
+        const ok = await exists(SIMULATOR_HISTORY_FILE, { baseDir: BaseDirectory.AppConfig });
+        if (ok) await remove(SIMULATOR_HISTORY_FILE, { baseDir: BaseDirectory.AppConfig });
     } catch { /* ignore */ }
 }

@@ -12,6 +12,7 @@ import { createDevToolsSlice } from './devToolsSlice';
 import { createAchievementSlice } from './achievementSlice';
 import { createTutorialSlice } from './tutorialSlice';
 import { createDailyClaimSlice } from './dailyClaimSlice';
+import { createSimulatorSlice } from './simulatorSlice';
 
 export const useGameStoreBase = create<GameStore>()(
   persist(
@@ -23,6 +24,7 @@ export const useGameStoreBase = create<GameStore>()(
       ...createAchievementSlice(...a),
       ...createTutorialSlice(...a),
       ...createDailyClaimSlice(...a),
+      ...createSimulatorSlice(...a),
     }),
     {
       name: 'blackjack-storage',
@@ -30,6 +32,7 @@ export const useGameStoreBase = create<GameStore>()(
       partialize: (state) => ({
         bankroll: state.bankroll,
         matchHistory: state.matchHistory,
+        simulatorHistory: state.simulatorHistory,
         lastDailyClaim: state.lastDailyClaim,
         dailyClaimCount: state.dailyClaimCount,
         totalBetSinceLastClaim: state.totalBetSinceLastClaim,
@@ -52,6 +55,9 @@ export const useGameStoreBase = create<GameStore>()(
         // Achievements
         unlockedAchievements: state.unlockedAchievements,
         achievementProgress: state.achievementProgress,
+        // Simulator config
+        simulatorConfig: state.simulatorConfig,
+        simulatorPresets: state.simulatorPresets,
       }),
     }
   )

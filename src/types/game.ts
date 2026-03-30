@@ -84,6 +84,37 @@ export interface MatchRecord {
   id: string;
   timestamp: number;
   roomId: string;
+  simulator?: boolean;
+  simulatorSummary?: {
+    handCount: number;
+    pnl: number;
+    roi: number;
+    winRate: number;
+    maxDrawdown: number;
+    bettingSystem: string;
+    playDecisionSource?: string;
+    roomName?: string;
+    seatCount?: number;
+  };
+  simulatorHandHistory?: {
+    handNumber: number;
+    outcome: 'win' | 'loss' | 'push';
+    bet: number;
+    profit: number;
+    bankrollAfter: number;
+    dealerTotal: number;
+    playerTotals: number[];
+    blackjacks: number;
+    actions: string[];
+    dealerCards?: { suit: Suit; rank: Rank; value: number }[];
+    playerHands?: {
+      seatNumber: number;
+      handNumber: number;
+      total: number;
+      surrendered: boolean;
+      cards: { suit: Suit; rank: Rank; value: number }[];
+    }[];
+  }[];
   seats: {
     seatId: number;
     insuranceCost?: number;
@@ -258,6 +289,7 @@ export interface DailyClaimSlice {
 import { DevToolsSlice } from '@/store/devToolsSlice';
 import { AchievementSlice } from '@/store/achievementSlice';
 import { TutorialSlice } from '@/store/tutorialSlice';
+import { SimulatorSlice } from './simulator';
 
 /** Combined store type */
-export type GameStore = GameState & GameActions & SettingsSlice & DevToolsSlice & AchievementSlice & TutorialSlice & DailyClaimSlice;
+export type GameStore = GameState & GameActions & SettingsSlice & DevToolsSlice & AchievementSlice & TutorialSlice & DailyClaimSlice & SimulatorSlice;

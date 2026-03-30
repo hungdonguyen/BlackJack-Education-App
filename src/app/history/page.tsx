@@ -18,7 +18,9 @@ export default function HistoryPage() {
 
     // Sort history by timestamp descending to show latest first reliably
     const sortedHistory = useMemo(() => {
-        return [...matchHistory].sort((a, b) => b.timestamp - a.timestamp);
+        return [...matchHistory]
+            .filter((match) => !match.simulator)
+            .sort((a, b) => b.timestamp - a.timestamp);
     }, [matchHistory]);
     const totalPages = Math.ceil(sortedHistory.length / ITEMS_PER_PAGE) || 1;
     const currentPage = Math.min(Math.max(page, 1), totalPages);

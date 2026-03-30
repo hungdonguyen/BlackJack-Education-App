@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Wallet, BookOpen, Sparkles, Zap, Trophy, Gift } from 'lucide-react';
+import { Wallet, BookOpen, Sparkles, Zap, Trophy, Gift, BarChart3 } from 'lucide-react';
 import appIcon from '../../src-tauri/icons/icon.png';
 import { ROOMS, getLobbyRooms } from '@/utils/rooms';
 import LegalAgreementModal from '@/components/LegalAgreementModal';
@@ -277,7 +277,7 @@ export default function HomePage() {
               </div>
 
               {/* Bottom Row: 5 Feature Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 items-stretch">
+              <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 items-stretch">
                 
                 {/* Quick Play */}
                 <motion.button
@@ -349,6 +349,23 @@ export default function HomePage() {
                     <Trophy size={18} className="group-hover:fill-purple-500/20" />
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-purple-400/80 group-hover:text-purple-400 transition-colors text-center w-full">Trophies</span>
+                </motion.button>
+
+                {/* Simulator */}
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85, duration: 0.5 }}
+                  onClick={() => { playSound('click'); router.push('/simulator'); }}
+                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(6,182,212,0.08) 0%, rgba(2,132,199,0.04) 100%)',
+                    border: '1px solid rgba(34,211,238,0.25)',
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-[rgba(34,211,238,0.16)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(34,211,238,0.2)] text-cyan-300">
+                    <BarChart3 size={18} />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-cyan-300/85 group-hover:text-cyan-200 transition-colors text-center w-full">Simulator</span>
                 </motion.button>
 
                 {/* Settings */}

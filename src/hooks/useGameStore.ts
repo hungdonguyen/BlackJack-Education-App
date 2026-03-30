@@ -8,7 +8,15 @@ import { useState, useEffect } from 'react';
 import { useGameStoreBase } from '@/store/gameStore';
 import { GameStore } from '@/types/game';
 import { DealerSpeed } from '@/store/settingsSlice';
-import { isTauriEnv, readSaveFile, writeSaveFile, loadHistory, writeHistoryFile } from '@/utils/saveFile';
+import {
+  isTauriEnv,
+  readSaveFile,
+  writeSaveFile,
+  loadHistory,
+  writeHistoryFile,
+  loadSimulatorHistory,
+  writeSimulatorHistoryFile,
+} from '@/utils/saveFile';
 
 export function useGameStore<T>(selector: (state: GameStore) => T): T {
   return useGameStoreBase(selector);
@@ -31,13 +39,25 @@ export function useStoreHydration(): boolean {
 
     // ── Tauri mode: read save.json directly, no dependency on Zustand hydration ──
     if (isTauriEnv()) {
-      Promise.all([readSaveFile(), loadHistory()])
-        .then(([content, history]) => {
+      Promise.all([readSaveFile(), loadHistory(), loadSimulatorHistory()])
+        .then(([content, history, simulatorHistoryFromFile]) => {
           if (cancelled) return;
           const patch: Partial<GameStore> = {};
-          
-          if (history && history.length > 0) {
-            patch.matchHistory = history;
+
+          const normalHistory = history.filter((record) => !record.simulator);
+          const simulatorHistoryFromLegacy = history.filter((record) => Boolean(record.simulator));
+
+          const simulatorHistory = simulatorHistoryFromFile.length > 0
+            ? simulatorHistoryFromFile
+            : simulatorHistoryFromLegacy;
+
+          patch.matchHistory = normalHistory;
+          patch.simulatorHistory = simulatorHistory;
+
+          // One-time migration: if simulator history still lives in old history.json, split files.
+          if (simulatorHistoryFromLegacy.length > 0 && simulatorHistoryFromFile.length === 0) {
+            void writeSimulatorHistoryFile(simulatorHistoryFromLegacy);
+            void writeHistoryFile(normalHistory);
           }
 
           if (content) {
@@ -155,6 +175,7 @@ export function useStoreHydration(): boolean {
 
       const debouncedSave = debounce(saveState, 500);
       const debouncedHistorySave = debounce(writeHistoryFile, 1500); // 1.5s debounce for history to avoid rapid writes
+      const debouncedSimulatorHistorySave = debounce(writeSimulatorHistoryFile, 1500);
 
       // Subscribe: write to save.json whenever bankroll/claims change
       const unsubState = useGameStoreBase.subscribe((state, prevState) => {
@@ -180,6 +201,10 @@ export function useStoreHydration(): boolean {
         // Check if history changed
         if (state.matchHistory !== prevState.matchHistory) {
           debouncedHistorySave(state.matchHistory);
+        }
+
+        if (state.simulatorHistory !== prevState.simulatorHistory) {
+          debouncedSimulatorHistorySave(state.simulatorHistory);
         }
       });
 
