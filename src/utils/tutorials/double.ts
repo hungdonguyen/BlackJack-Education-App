@@ -41,7 +41,7 @@ export const DOUBLE_TUTORIAL_LESSONS: TutorialLesson[] = [
                 id: 3,
                 message: "Tap 'DEAL'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0,
-                targetElementId: 'deal-button',
+                targetElementId: 'action-button-deal',
                 position: 'bottom'
             },
             {
@@ -98,7 +98,7 @@ export const DOUBLE_TUTORIAL_LESSONS: TutorialLesson[] = [
                 id: 2,
                 message: "Tap 'DEAL'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0,
-                targetElementId: 'deal-button',
+                targetElementId: 'action-button-deal',
                 position: 'bottom'
             },
             {
@@ -154,7 +154,7 @@ export const DOUBLE_TUTORIAL_LESSONS: TutorialLesson[] = [
                 id: 2,
                 message: "Tap 'DEAL'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0,
-                targetElementId: 'deal-button',
+                targetElementId: 'action-button-deal',
                 position: 'bottom'
             },
             {
@@ -218,7 +218,7 @@ export const DOUBLE_TUTORIAL_LESSONS: TutorialLesson[] = [
                 id: 2,
                 message: "Tap 'DEAL'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0,
-                targetElementId: 'deal-button',
+                targetElementId: 'action-button-deal',
                 position: 'bottom'
             },
             {

@@ -49,7 +49,7 @@ export function getActiveCountingSystem(
     roomId: string,
     userSystem: CountingSystem,
 ): CountingSystem {
-    return roomId === 'iberian_21' ? userSystem : 'Hi-Lo';
+    return roomId.includes('iberian') ? userSystem : 'Hi-Lo';
 }
 
 function getAdviceTrueCount(
@@ -131,7 +131,7 @@ export async function getCardCountingAnalysis({
     userSystem: CountingSystem;
 }): Promise<CardCountingAnalysis> {
     const activeSystem = getActiveCountingSystem(roomId, userSystem);
-    const omitTens = roomId === 'iberian_21';
+    const omitTens = roomId.includes('iberian');
     const totalCards = numDecks * getCardsPerDeck(omitTens);
     const cardsRemaining = shoe.length;
     const cardsDealt = totalCards - cardsRemaining;

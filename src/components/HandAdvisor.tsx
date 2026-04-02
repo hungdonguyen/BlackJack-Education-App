@@ -84,13 +84,12 @@ export default function HandAdvisor({
     const userSystem = useGameStore((state) => state.countSystem);
     const showSpecialCases = useGameStore((state) => state.showSpecialCases);
 
-    const activeSystem = getActiveCountingSystem(roomId, userSystem);
-    const omitTens = roomId === 'iberian_21';
     const room = getRoomConfig(roomId);
+    const activeSystem = getActiveCountingSystem(room.strategyType === 'iberian_21' ? 'iberian_21' : roomId, userSystem);
+    const omitTens = room.gameRules.omitTens ?? false;
     const isBeta = room.isBeta ?? false;
     const rules = getRules(roomId);
-    const isVisible = (gamePhase === GamePhase.PLAYER_TURN || gamePhase === GamePhase.INSURANCE) &&
-        (!room.isTutorial || roomId === 'tutorial_strategy' || roomId === 'tutorial_counting' || roomId === 'tutorial_multihand');
+    const isVisible = (gamePhase === GamePhase.PLAYER_TURN || gamePhase === GamePhase.INSURANCE);
 
     const currentSeat = seats[currentSeatIndex];
     const currentHand = gamePhase === GamePhase.INSURANCE
@@ -125,8 +124,8 @@ export default function HandAdvisor({
         const { total, isSoft } = calculateHandValue(cards);
 
         if (gamePhase === GamePhase.INSURANCE) {
-            const insuranceIndex = getInsuranceIndex(roomId, activeSystem);
-            const action: Action = shouldTakeInsurance(countAnalysis.trueCount, roomId, activeSystem) ? 'INS' : 'NINS';
+            const insuranceIndex = getInsuranceIndex(room.deviationsSet, activeSystem);
+            const action: Action = shouldTakeInsurance(countAnalysis.trueCount, room.deviationsSet, activeSystem) ? 'INS' : 'NINS';
 
             return {
                 total,
@@ -161,11 +160,11 @@ export default function HandAdvisor({
             total,
             isSoft,
             dealerUpCard.rank,
-            roomId,
+            room.strategyType,
             canDoubleNow,
             canSplitHand,
             canSurrenderNow,
-            { resolveConditions: roomId !== 'iberian_21', canZap: canZapNow, canBurn: canBurnNow }
+            { resolveConditions: room.strategyType !== 'iberian_21', canZap: canZapNow, canBurn: canBurnNow }
         );
         let compositionOverride = showSpecialCases
             ? getCompositionDependentOverride(
@@ -173,7 +172,7 @@ export default function HandAdvisor({
                 total,
                 isSoft,
                 dealerUpCard.rank,
-                roomId,
+                room.strategyType,
             )
             : null;
         let topOverride = compositionOverride?.isTopOverride ? compositionOverride : null;
@@ -193,7 +192,7 @@ export default function HandAdvisor({
                 trueCount,
                 room.gameRules.dealerHitsSoft17,
                 room.gameRules.allowSurrender,
-                roomId,
+                room.deviationsSet,
                 activeSystem,
             );
 
@@ -220,7 +219,7 @@ export default function HandAdvisor({
             if (action === 'SU' && !canSurrenderNow) action = basicAction;
         }
 
-        if (currentHand?.isDoubleDown && roomId !== 'madness_21') {
+        if (currentHand?.isDoubleDown && room.strategyType !== 'madness_21') {
             // Double Down Rescue semantics: 
             // We only want to rescue a doubled hand if we caught a bad card and are forced to stand with terrible expectation.
             // A good approximation of mathematically correct rescue spots in Spanish/Iberian 21:

@@ -35,6 +35,14 @@ const BGM_MAP: Record<string, string> = {
     tutorial_counting: '/sounds/bgm/Backed Clean.mp3',
     tutorial_splitting: '/sounds/bgm/Faster Does It.mp3',
     tutorial_multihand: '/sounds/bgm/Funk Game Loop.mp3',
+    tutorial_free_action: '/sounds/bgm/Whiskey on the Mississippi.mp3',
+    tutorial_zapout: '/sounds/bgm/Faster Does It.mp3',
+    tutorial_exchange: '/sounds/bgm/Bossa Antigua.mp3',
+    tutorial_firecard: '/sounds/bgm/Whiskey on the Mississippi.mp3',
+    tutorial_madness: '/sounds/bgm/Funk Game Loop.mp3',
+    tutorial_iberian: '/sounds/bgm/Spanish Summer- Audionautix.mp3',
+    tutorial_european: '/sounds/bgm/Backed Clean.mp3',
+    tutorial_uk: '/sounds/bgm/Airport Lounge.mp3',
 };
 
 const FADE_DURATION = 1500; // ms
@@ -93,6 +101,14 @@ export function useBGM(roomId: string) {
     const musicTrackOverride = useGameStore((state) => state.musicTrackOverride);
     const setMusicTrackOverride = useGameStore((state) => state.setMusicTrackOverride);
     const hasInteracted = useRef(false);
+
+    // When changing rooms, clear manual overrides so each room's default track can take over.
+    useEffect(() => {
+        if (musicTrackOverride) {
+            setMusicTrackOverride(null);
+        }
+        currentTrackPath = null;
+    }, [roomId, musicTrackOverride, setMusicTrackOverride]);
 
     // Handle user interaction to unlock autoplay
     useEffect(() => {

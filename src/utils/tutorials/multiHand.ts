@@ -27,7 +27,7 @@ export const MULTI_HAND_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 1,
-                message: "First, click on Seat 2 (left of center) to unlock it.",
+                message: "First, tap on Seat 2 (left of center) to unlock it.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue === 100 && !s.seats[1].isActive,
                 targetElementId: 'seat-2',
                 position: 'bottom'
@@ -41,7 +41,7 @@ export const MULTI_HAND_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 3,
-                message: "Click on Seat 4 (right of center) to unlock it.",
+                message: "Tap on Seat 4 (right of center) to unlock it.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[1].hands[0].betAmount > 0 && !s.seats[3].isActive,  
                 targetElementId: 'seat-4',
                 position: 'bottom'
@@ -57,7 +57,7 @@ export const MULTI_HAND_TUTORIAL_LESSONS: TutorialLesson[] = [
                 id: 5,
                 message: "Great! Let's deal.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[1].hands[0].betAmount > 0 && s.seats[3].hands[0].betAmount > 0,    
-                targetElementId: 'deal-button',
+                targetElementId: 'action-button-deal',
                 position: 'bottom'
             },
             {

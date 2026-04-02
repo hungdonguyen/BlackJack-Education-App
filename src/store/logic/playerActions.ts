@@ -346,7 +346,7 @@ export const zapLogic = (set: any, get: () => GameStore) => {
     const state = get();
     set({ actionCounter: state.actionCounter + 1 });
     if (state.gamePhase !== GamePhase.PLAYER_TURN) return;
-    if (!checkTutorialAction(state, 'action-zap')) return;
+    if (!checkTutorialAction(state, 'action-zapout')) return;
 
     const seat = state.seats[state.currentSeatIndex];
     if (!seat) return;
@@ -359,12 +359,15 @@ export const zapLogic = (set: any, get: () => GameStore) => {
     if (!allowed) return;
 
     let shoe = [...state.shoe];
-    if (shoe.length < 2) {
+    let forcedShoe = state.forcedShoe ? [...state.forcedShoe] : null;
+
+    if (!forcedShoe && shoe.length < 2) {
       const roomCfg = getRoomConfig(state.currentRoom);
       shoe = [...shoe, ...shuffleShoe(createShoe(roomCfg.gameRules.numberOfDecks, roomCfg.gameRules.omitTens))];
     }
 
-    const newCards = [dealCard(shoe), dealCard(shoe)];
+    const drawCard = () => (forcedShoe && forcedShoe.length > 0 ? dealForcedCard(shoe, forcedShoe) : dealCard(shoe));
+    const newCards = [drawCard(), drawCard()];
     const busted = isBust(newCards);
     const is21 = !busted && calculateHandValue(newCards).total === 21;
 
@@ -382,7 +385,7 @@ export const zapLogic = (set: any, get: () => GameStore) => {
       return { ...s, hands: newHands };
     });
 
-    set({ shoe, seats: updatedSeats });
+    set({ shoe, seats: updatedSeats, forcedShoe: forcedShoe ? [...forcedShoe] : null });
 
     const updatedHand = updatedSeats[state.currentSeatIndex].hands[seat.currentHandIndex];
     if (updatedHand.status !== HandStatus.PLAYING) {
@@ -407,13 +410,16 @@ export const burnLogic = (set: any, get: () => GameStore) => {
     if (!allowed || !state.canAfford(cost)) return;
 
     let shoe = [...state.shoe];
-    if (shoe.length < 2) {
+    let forcedShoe = state.forcedShoe ? [...state.forcedShoe] : null;
+
+    if (!forcedShoe && shoe.length < 2) {
       const roomCfg = getRoomConfig(state.currentRoom);
       shoe = [...shoe, ...shuffleShoe(createShoe(roomCfg.gameRules.numberOfDecks, roomCfg.gameRules.omitTens))];
     }
 
     const discardedCard = currentHand.cards[1];
-    const newCards = [currentHand.cards[0], dealCard(shoe)];
+    const replacementCard = (forcedShoe && forcedShoe.length > 0) ? dealForcedCard(shoe, forcedShoe) : dealCard(shoe);
+    const newCards = [currentHand.cards[0], replacementCard];
 
     let bankrollDelta = -cost;
     let burnBonusPayout = 0;
@@ -445,7 +451,8 @@ export const burnLogic = (set: any, get: () => GameStore) => {
       bankroll: isTutorial ? state.bankroll : state.bankroll + bankrollDelta, 
       tutorialBalance: isTutorial ? state.tutorialBalance + bankrollDelta : state.tutorialBalance,
       shoe, 
-      seats: updatedSeats 
+      seats: updatedSeats,
+      forcedShoe: forcedShoe ? [...forcedShoe] : null,
     });
 
     const updatedHand = updatedSeats[state.currentSeatIndex].hands[seat.currentHandIndex];

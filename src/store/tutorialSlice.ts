@@ -11,6 +11,14 @@ import {
   COUNTING_TUTORIAL_LESSONS,
   PAIR_SPLITTING_TUTORIAL_LESSONS,
   MULTI_HAND_TUTORIAL_LESSONS,
+  FREE_ACTION_TUTORIAL_LESSONS,
+  ZAPOUT_TUTORIAL_LESSONS,
+  EXCHANGE_TUTORIAL_LESSONS,
+  FIRECARD_TUTORIAL_LESSONS,
+  MADNESS_TUTORIAL_LESSONS,
+  IBERIAN_TUTORIAL_LESSONS,
+  EUROPEAN_TUTORIAL_LESSONS,
+  UK_TUTORIAL_LESSONS,
   TutorialLesson
 } from '@/utils/tutorials';
 import { createEmptyHand } from './bettingSlice';
@@ -23,6 +31,14 @@ export const getLessons = (roomId: string): TutorialLesson[] => {
     case 'tutorial_counting':  return COUNTING_TUTORIAL_LESSONS;
     case 'tutorial_splitting': return PAIR_SPLITTING_TUTORIAL_LESSONS;
     case 'tutorial_multihand': return MULTI_HAND_TUTORIAL_LESSONS;
+    case 'tutorial_free_action': return FREE_ACTION_TUTORIAL_LESSONS;
+    case 'tutorial_zapout':      return ZAPOUT_TUTORIAL_LESSONS;
+    case 'tutorial_exchange':    return EXCHANGE_TUTORIAL_LESSONS;
+    case 'tutorial_firecard':    return FIRECARD_TUTORIAL_LESSONS;
+    case 'tutorial_madness':     return MADNESS_TUTORIAL_LESSONS;
+    case 'tutorial_iberian':     return IBERIAN_TUTORIAL_LESSONS;
+    case 'tutorial_european':    return EUROPEAN_TUTORIAL_LESSONS;
+    case 'tutorial_uk':          return UK_TUTORIAL_LESSONS;
     default:                   return BEGINNER_TUTORIAL_LESSONS;
   }
 };
@@ -65,9 +81,15 @@ export const createTutorialSlice: StateCreator<GameStore, [], [], TutorialSlice>
     const isInsuranceTutorial = roomToUse === 'tutorial_multihand';
     const isTutorial = roomToUse && roomToUse.startsWith('tutorial_');
     
+    const isSpecialTutorial = [
+        'tutorial_free_action', 'tutorial_zapout', 'tutorial_exchange',
+        'tutorial_firecard', 'tutorial_madness', 'tutorial_iberian',
+        'tutorial_european', 'tutorial_uk'
+    ].includes(roomToUse || '');
+
     const settingsOverrides = isTutorial ? {
-        showHandAdvisor:  isStrategyTutorial || isCountingTutorial || isSplittingTutorial || isInsuranceTutorial,
-        showCardCounting: isCountingTutorial || isSplittingTutorial || isInsuranceTutorial,
+        showHandAdvisor:  isStrategyTutorial || isCountingTutorial || isSplittingTutorial || isInsuranceTutorial || isSpecialTutorial,
+        showCardCounting: isCountingTutorial || isSplittingTutorial || isInsuranceTutorial || isSpecialTutorial,
         showSpecialCases: isCountingTutorial,
     } : {};
 

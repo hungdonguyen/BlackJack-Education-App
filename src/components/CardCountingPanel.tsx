@@ -260,10 +260,10 @@ export default function CardCountingPanel({
                             </div>
 
                             {/* More Details Link */}
-                            <div className="flex items-center justify-center mt-4 pt-3 border-t border-white/5 font-sans" onClick={roomId === 'iberian_21' ? onOpenSettings : onOpenStrategy}>
+                            <div className="flex items-center justify-center mt-4 pt-3 border-t border-white/5 font-sans" onClick={roomId.includes('iberian') ? onOpenSettings : onOpenStrategy}>
                                 <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold flex items-center gap-1.5 cursor-pointer hover:text-white/70 transition-colors">
                                     <Info size={11} />
-                                    {roomId === 'iberian_21' ? 'Change counting system in Settings' : 'Find out more details in Strategy'}
+                                    {roomId.includes('iberian') ? 'Change counting system in Settings' : 'Find out more details in Strategy'}
                                 </span>
                             </div>
                         </div>

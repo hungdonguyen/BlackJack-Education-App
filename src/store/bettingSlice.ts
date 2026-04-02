@@ -16,9 +16,10 @@ export interface BetRecord {
 }
 
 const EXCHANGE_ROOM_ID = 'exchange_21';
+const isExchangeRoomId = (id: string) => id === EXCHANGE_ROOM_ID || id === 'tutorial_exchange';
 
 function getBettingHandsForRoom(roomId: string, seatId: number): GameStore['seats'][0]['hands'] {
-  if (roomId === EXCHANGE_ROOM_ID) {
+  if (isExchangeRoomId(roomId)) {
     return [createEmptyHand(seatId, 0), createEmptyHand(seatId, 1)];
   }
   return [createEmptyHand(seatId, 0)];
@@ -72,7 +73,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
     if (!checkTutorialAction(state, `seat-${seatId}`)) return;
-    const isExchangeRoom = state.currentRoom === EXCHANGE_ROOM_ID;
+    const isExchangeRoom = isExchangeRoomId(state.currentRoom);
     const multiplier = isExchangeRoom ? 2 : 1;
     const totalAmount = amount * multiplier;
     
@@ -80,19 +81,20 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     const balance = roomCfg.isTutorial ? state.tutorialBalance : state.bankroll;
 
     // In tutorial mode, only seat 3 is allowed EXCEPT for tutorial_multihand
-    if (roomCfg.isTutorial && seatId !== 3 && state.currentRoom !== 'tutorial_multihand') return;
+    if (roomCfg.isTutorial && seatId !== 3 && state.currentRoom !== 'tutorial_multihand' && state.currentRoom !== 'tutorial_exchange') return;
 
     if (totalAmount > balance) {
       get().triggerInsufficientFunds();
       return;
     }
 
-    // In tutorial mode, cap each seat's bet at $100 to ensure the player can afford splits
+// In tutorial mode, cap each seat's bet at $100 (or $200 for exchange) to ensure the player can afford splits
     if (roomCfg.isTutorial) {
       const seat = state.seats.find(s => s.id === seatId);
       if (seat) {
-        const currentBet = seat.hands.reduce((sum, h) => sum + h.betAmount, 0);
-        if (currentBet + totalAmount > 100) return;
+        const currentBet = seat.hands.reduce((sum, h) => sum + h.betAmount, 0); 
+        const cap = isExchangeRoom ? 200 : 100;
+        if (currentBet + totalAmount > cap) return;
       }
     }
 
@@ -138,7 +140,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
     if (sideRefund > 0) delete newSideBets[lastBet.seatId];
 
     const isTutorial = getRoomConfig(state.currentRoom).isTutorial;
-    const perHandRollback = state.currentRoom === EXCHANGE_ROOM_ID ? lastBet.amount / 2 : lastBet.amount;
+    const perHandRollback = isExchangeRoomId(state.currentRoom) ? lastBet.amount / 2 : lastBet.amount;
     set((s) => ({
       bankroll: isTutorial ? s.bankroll : s.bankroll + lastBet.amount + sideRefund,
       tutorialBalance: isTutorial ? s.tutorialBalance + lastBet.amount + sideRefund : s.tutorialBalance,
@@ -276,7 +278,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
       seats: s.seats.map((seat) => {
         const prevBet = state.previousBets.find((b) => b.seatId === seat.id);
         if (!prevBet) return seat;
-        const isExchangeRoom = state.currentRoom === EXCHANGE_ROOM_ID;
+        const isExchangeRoom = isExchangeRoomId(state.currentRoom);
         const baseHands = isExchangeRoom ? getBettingHandsForRoom(state.currentRoom, seat.id) : seat.hands;
         const perHandBet = isExchangeRoom ? prevBet.amount / 2 : prevBet.amount;
         
@@ -362,7 +364,7 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
 
     const currentShoe = state.shoe;
     const savedShoes = state.savedShoes || {};
-    const isExchangeRoom = roomId === EXCHANGE_ROOM_ID;
+    const isExchangeRoom = isExchangeRoomId(roomId);
 
     set({ 
       currentRoom: roomId,

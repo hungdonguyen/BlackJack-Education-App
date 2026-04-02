@@ -40,7 +40,7 @@ export const initializeShoeLogic = (set: any, get: () => GameStore) => {
 export const startDealLogic = async (set: any, get: () => GameStore) => {
     const state = get();
     if (state.gamePhase !== GamePhase.BETTING) return;
-    if (!checkTutorialAction(state, 'deal-button')) return;
+    if (!checkTutorialAction(state, 'action-button-deal')) return;
 
     const currentRoomCfg = getRoomConfig(state.currentRoom);
     const minBet = currentRoomCfg.betRange[0];
@@ -199,7 +199,7 @@ export const startDealLogic = async (set: any, get: () => GameStore) => {
       return seat;
     });
 
-    const isIberian = get().currentRoom === 'iberian_21';
+    const isIberian = (get().currentRoom === 'iberian_21' || get().currentRoom === 'tutorial_iberian');
     const insurableSeats = finalSeats.filter(
       (s) =>
         s.isActive &&
@@ -321,3 +321,4 @@ export const resetRoundLogic = (set: any, get: () => GameStore) => {
       })),
     });
 };
+

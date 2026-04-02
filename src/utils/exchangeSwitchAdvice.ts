@@ -87,7 +87,7 @@ function buildBasicSwitchAdvice(
     if (isRedundant) {
         return {
             shouldSwitch: false,
-            reasoning: 'STAND PAT: Switching results in the exact same hand structure.',
+            reasoning: 'STAND: Switching results in the exact same hand totals.',
             originalEV: totalOrigEV,
             switchedEV: totalSwtchEV,
             engine,
@@ -113,7 +113,7 @@ function buildBasicSwitchAdvice(
         (switchStrongest < origStrongest && switchWeakest <= origWeakest)) {
         return {
             shouldSwitch: true,
-            reasoning: 'SWITCH (Free Upgrade): At least one hand improves its Power Rank without hurting the other.',
+            reasoning: 'SWITCH: At least one hand becomes much stronger (like an 11 or 20) without ruining the other.',
             originalEV: totalOrigEV,
             switchedEV: totalSwtchEV,
             engine,
@@ -129,7 +129,7 @@ function buildBasicSwitchAdvice(
         if (switchTrashMax > origTrashMax) {
             return {
                 shouldSwitch: true,
-                reasoning: 'SWITCH (Trash Bailout): Both configurations are unranked, but switching builds a prioritized survival hand (17, Split, 12, or 13).',
+                reasoning: 'SWITCH: Both configurations have weak cards, but switching gives you a slightly better chance to survive.',
                 originalEV: totalOrigEV,
                 switchedEV: totalSwtchEV,
                 engine,
@@ -138,7 +138,7 @@ function buildBasicSwitchAdvice(
         } else {
             return {
                 shouldSwitch: false,
-                reasoning: 'STAND PAT (Trash Bailout): Switched hands do not offer a better survival priority than your current unranked hands.',
+                reasoning: 'STAND: Switching your weak hands won\'t give you any better chance of surviving.',
                 originalEV: totalOrigEV,
                 switchedEV: totalSwtchEV,
                 engine,
@@ -154,7 +154,7 @@ function buildBasicSwitchAdvice(
         if (switchWeakest < origWeakest) {
             return {
                 shouldSwitch: true,
-                reasoning: 'SWITCH to BALANCE: Against a dealer 7 or 8, you successfully elevated your WEAKEST hand to a better Power Rank.',
+                reasoning: 'SWITCH: Against a weak dealer card, we balance both hands so neither is too weak.',
                 originalEV: totalOrigEV,
                 switchedEV: totalSwtchEV,
                 engine,
@@ -165,7 +165,7 @@ function buildBasicSwitchAdvice(
         if (switchStrongest < origStrongest) {
             return {
                 shouldSwitch: true,
-                reasoning: `SWITCH to MAXIMIZE: Against a dealer ${dealerNorm}, you sacrificed to build one stronger Power Rank hand.`,
+                reasoning: `SWITCH: Against a strong dealer card (${dealerNorm}), it's safer to build ONE very strong hand to push for a win.`,
                 originalEV: totalOrigEV,
                 switchedEV: totalSwtchEV,
                 engine,
@@ -176,7 +176,7 @@ function buildBasicSwitchAdvice(
 
     return {
         shouldSwitch: false,
-        reasoning: 'STAND PAT: Switching violates the strict Power Ranking mechanics for this dealer upcard.',
+        reasoning: 'STAND: Keep your current cards. Switching would weaken your overall position.',
         originalEV: totalOrigEV,
         switchedEV: totalSwtchEV,
         engine,
@@ -198,7 +198,7 @@ function buildAdvancedSwitchAdvice(
     if (isRedundant) {
         return {
             shouldSwitch: false,
-            reasoning: 'STAND PAT: Switching results in the same hand combination.',
+            reasoning: 'STAND: Switching results in the exact same hand totals.',
             originalEV: totalOrigEV,
             switchedEV: totalSwtchEV,
             engine,
@@ -225,15 +225,15 @@ function buildAdvancedSwitchAdvice(
     const rawEvDelta = totalSwtchEV - totalOrigEV;
     const shouldSwitch = evDelta >= requiredMargin;
 
-    let reasoning = `STAND PAT: EV margin (${rawEvDelta > 0 ? '+' : ''}${rawEvDelta.toFixed(2)}) doesn't clear the required mathematical safety threshold.`;
+    let reasoning = `STAND: The mathematical advantage is too small (${rawEvDelta > 0 ? '+' : ''}${rawEvDelta.toFixed(2)}) to justify the risk of switching.`;
     
     if (shouldSwitch) {
         if (isStrongDealer) {
-            reasoning = `SWITCH: Clears the strict +0.10 EV requirement vs strong dealer, ensuring survival (+${rawEvDelta.toFixed(2)} EV).`;
+            reasoning = `SWITCH: Mathematically safer against a strong dealer (+${rawEvDelta.toFixed(2)} EV).`;
         } else {
-            reasoning = `SWITCH: Mathematically validated Expected Value edge (+${rawEvDelta.toFixed(2)} EV).`;
+            reasoning = `SWITCH: Mathematically gives you a better expected value overall (+${rawEvDelta.toFixed(2)} EV).`;
             if (sV1 === 11 || sV2 === 11 || isSplittablePair(switchH1, dealerNorm) || isSplittablePair(switchH2, dealerNorm)) {
-                reasoning = `SWITCH: Math dictates aggressively breaking hands to create high-value offensive equity (+${rawEvDelta.toFixed(2)} EV).`;
+                reasoning = `SWITCH: Creates an offensive hand (like an 11 or a pair) allowing you to Double Down or Split for a bigger win (+${rawEvDelta.toFixed(2)} EV).`;
             }
         }
     }
@@ -262,7 +262,7 @@ function buildSnyderSwitchAdvice(
     if (isRedundant) {
         return {
             shouldSwitch: false,
-            reasoning: 'STAND PAT: No structural difference.',
+            reasoning: 'STAND: Switching results in the exact same hand totals.',
             originalEV: totalOrigEV,
             switchedEV: totalSwtchEV,
             engine,
@@ -281,7 +281,7 @@ function buildSnyderSwitchAdvice(
     if (hasExistingPremium) {
         return {
             shouldSwitch: false,
-            reasoning: 'STAND PAT (Protect the Fortress): Snyder strictly refuses to risk dismantling a made hand of 18 or higher.',
+            reasoning: 'STAND: You already have a hand of 18 or higher. Never risk breaking a strong made hand.',
             originalEV: totalOrigEV,
             switchedEV: totalSwtchEV,
             engine,
@@ -296,7 +296,7 @@ function buildSnyderSwitchAdvice(
     if (createsSplit && isStrongDealer) {
         return {
             shouldSwitch: false,
-            reasoning: 'STAND PAT: Variance Mitigation rejects creating a split against a severe dealer 9, 10, or Ace.',
+            reasoning: 'STAND: Splitting against a dealer 9, 10, or Ace is too risky. Keep your current hands.',
             originalEV: totalOrigEV,
             switchedEV: totalSwtchEV,
             engine,
@@ -310,7 +310,7 @@ function buildSnyderSwitchAdvice(
     if (twoStiffsS && isDealer7orHigher) {
         return {
             shouldSwitch: false,
-            reasoning: 'STAND PAT: Pessimistic evaluation avoids switching into doublestiff hands against a dealer 7+.',
+            reasoning: 'STAND: Avoid switching into two weak hands (12-16) when the dealer shows a 7 or higher.',
             originalEV: totalOrigEV,
             switchedEV: totalSwtchEV,
             engine,
@@ -322,7 +322,7 @@ function buildSnyderSwitchAdvice(
     if (evDelta > 0.08) {
         return {
             shouldSwitch: true,
-            reasoning: `SWITCH: Solid situational edge (+${evDelta.toFixed(2)} EV) that passes all low-variance baseline prohibitions.`,
+            reasoning: `SWITCH: Mathematically solid advantage (+${evDelta.toFixed(2)} EV) with low overall risk.`,
             originalEV: totalOrigEV,
             switchedEV: totalSwtchEV,
             engine,
@@ -332,7 +332,7 @@ function buildSnyderSwitchAdvice(
 
     return {
         shouldSwitch: false,
-        reasoning: 'STAND PAT: Snyder enforces low-variance survival; the mathematical advantage is not undeniably strong enough.',
+        reasoning: 'STAND: The mathematical advantage isn\'t strong enough to justify taking the risk.',
         originalEV: totalOrigEV,
         switchedEV: totalSwtchEV,
         engine,

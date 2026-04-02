@@ -186,6 +186,7 @@ export interface GameState {
 
   // History
   matchHistory: MatchRecord[];
+  lastCompletedMatch: MatchRecord | null;
 
 
 // UI states

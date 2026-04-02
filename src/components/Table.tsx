@@ -70,7 +70,12 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     
 
     const showHandAdvisorState = useGameStore((s) => s.showHandAdvisor);
-    const showHandAdvisor = showHandAdvisorState || roomId === 'tutorial_splitting' || roomId === 'tutorial_strategy';
+    const variantTutorials = [
+        'tutorial_free_action', 'tutorial_zapout', 'tutorial_exchange',
+        'tutorial_firecard', 'tutorial_madness', 'tutorial_iberian',
+        'tutorial_european', 'tutorial_uk'
+    ];
+    const showHandAdvisor = showHandAdvisorState || roomId === 'tutorial_splitting' || roomId === 'tutorial_strategy' || variantTutorials.includes(roomId || '');
     const showCardCounting = useGameStore((s) => s.showCardCounting);
     const showStrategy = useGameStore((s) => s.isStrategyModalOpen);
     const setShowStrategy = useGameStore((s) => s.setStrategyModalOpen);

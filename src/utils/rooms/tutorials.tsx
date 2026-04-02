@@ -1,15 +1,39 @@
 import React from 'react';
-import { BookOpen, Ticket, Brain } from 'lucide-react';
+import { BookOpen, Ticket, Brain, Zap, ArrowLeftRight, Flame, Sparkles, Globe, ShieldAlert } from 'lucide-react';
 import { ClassicRules } from '@/rules/ClassicRules';
 import { VegasDowntownRules } from '@/rules/VegasDowntownRules';
+import { FreeActionRules } from '@/rules/FreeActionRules';
+import { ZapOut21Rules } from '@/rules/ZapOut21Rules';
+import { Exchange21Rules } from '@/rules/Exchange21Rules';
+import { FireCardRules } from '@/rules/FireCardRules';
+import { Madness21Rules } from '@/rules/Madness21Rules';
+import { Iberian21Rules } from '@/rules/Iberian21Rules';
+import { EuropeanRules } from '@/rules/EuropeanRules';
+import { UKRules } from '@/rules/UKRules';
 import { RoomConfig } from './types';
+import { freeAction as roomFreeAction } from './freeAction';
+import { zapout as roomZapout } from './zapout';
+import { exchange as roomExchange } from './exchange';
+import { firecard as roomFirecard } from './firecard';
+import { madness as roomMadness } from './madness';
+import { iberian21 as roomIberian21 } from './iberian21';
+import { european as roomEuropean } from './european';
+import { uk as roomUk } from './uk';
 import { 
     BEGINNER_TUTORIAL_LESSONS, 
     DOUBLE_TUTORIAL_LESSONS, 
     STRATEGY_TUTORIAL_LESSONS,
     COUNTING_TUTORIAL_LESSONS,
     PAIR_SPLITTING_TUTORIAL_LESSONS,
-    MULTI_HAND_TUTORIAL_LESSONS
+    MULTI_HAND_TUTORIAL_LESSONS,
+    FREE_ACTION_TUTORIAL_LESSONS,
+    ZAPOUT_TUTORIAL_LESSONS,
+    EXCHANGE_TUTORIAL_LESSONS,
+    FIRECARD_TUTORIAL_LESSONS,
+    MADNESS_TUTORIAL_LESSONS,
+    IBERIAN_TUTORIAL_LESSONS,
+    EUROPEAN_TUTORIAL_LESSONS,
+    UK_TUTORIAL_LESSONS
 } from '../tutorials';
 
 export const tutorialBeginner: RoomConfig = {
@@ -286,4 +310,204 @@ export const tutorialMultiHand: RoomConfig = {
         soft: { title: "Soft", summary: "Tutorial Soft Strategy", bullets: ["Follow instructions"] },
         pairs: { title: "Pairs", summary: "Tutorial Pairs Strategy", bullets: ["Follow instructions"] }
     }
+};
+
+export const tutorialFreeAction: RoomConfig = {
+    id: 'tutorial_free_action',
+    name: 'Free Action',
+    subtitle: 'Free Bet Mechanics',
+    description: 'Learn to exploit the free double down and free split rules, and understand the Push 22 caveat.',
+    feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #064e3b 0%, #065f46 25%, #047857 50%, #065f46 80%, #022c22 100%)',
+    bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #022c22 0%, #064e3b 50%, #022c22 100%)',
+    borderColor: 'rgba(52, 211, 153, 0.4)',
+    rules: roomFreeAction.rules,
+    gameRules: roomFreeAction.gameRules,
+    blackjackMultiplier: 1.5,
+    betRange: [100, 100],
+    rtp: 'Tutorial',
+    icon: <Sparkles className="w-5 h-5 drop-shadow-md text-emerald-400" />,
+    accentColor: '#10b981',
+    isTutorial: true,
+    logoPath: '/images/logo/rooms/freeaction.png',
+    strategyType: 'free_action',
+    deviationsSet: 'free_action',
+    rulesClass: FreeActionRules,
+    tutorialLessons: FREE_ACTION_TUTORIAL_LESSONS,
+    strategyModalContent: roomFreeAction.strategyModalContent,
+    strategyTableManual: roomFreeAction.strategyTableManual
+};
+
+export const tutorialZapout: RoomConfig = {
+    id: 'tutorial_zapout',
+    name: 'Zapout 21',
+    subtitle: 'Escape Bad Hands',
+    description: 'Master the Zapout mechanic to discard dreadful hands without losing your bet.',
+    feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #1e3a8a 0%, #1e40af 25%, #1d4ed8 50%, #1e40af 80%, #172554 100%)',
+    bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #172554 0%, #1e3a8a 50%, #172554 100%)',
+    borderColor: 'rgba(59, 130, 246, 0.4)',
+    rules: roomZapout.rules,
+    gameRules: roomZapout.gameRules,
+    blackjackMultiplier: 1.5,
+    betRange: [100, 100],
+    rtp: 'Tutorial',
+    icon: <Zap className="w-5 h-5 drop-shadow-md text-blue-400" />,
+    accentColor: '#3b82f6',
+    isTutorial: true,
+    logoPath: '/images/logo/rooms/zapout21.png',
+    strategyType: 'zapout_21',
+    deviationsSet: 'zapout_21',
+    rulesClass: ZapOut21Rules,
+    tutorialLessons: ZAPOUT_TUTORIAL_LESSONS,
+    strategyModalContent: roomZapout.strategyModalContent,
+    strategyTableManual: roomZapout.strategyTableManual
+};
+
+export const tutorialExchange: RoomConfig = {
+    id: 'tutorial_exchange',
+    name: 'Exchange 21',
+    subtitle: 'Strategic Switching',
+    description: 'Learn to switch cards between hands to turn a pair of losers into powerful winning hands.',
+    feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #475569 0%, #334155 25%, #1e293b 50%, #0f172a 80%, #020617 100%)',
+    bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #020617 0%, #334155 50%, #020617 100%)',
+    borderColor: 'rgba(148, 163, 184, 0.4)',
+    rules: roomExchange.rules,
+    gameRules: roomExchange.gameRules,
+    blackjackMultiplier: 1,
+    betRange: [100, 100],
+    rtp: 'Tutorial',
+    icon: <ArrowLeftRight className="w-5 h-5 drop-shadow-md text-slate-400" />,
+    accentColor: '#94a3b8',
+    isTutorial: true,
+    logoPath: '/images/logo/rooms/exchange21.png',
+    strategyType: 'exchange_21',
+    deviationsSet: 'exchange_21',
+    rulesClass: Exchange21Rules,
+    tutorialLessons: EXCHANGE_TUTORIAL_LESSONS,
+    strategyModalContent: roomExchange.strategyModalContent,
+    strategyTableManual: roomExchange.strategyTableManual
+};
+
+export const tutorialFirecard: RoomConfig = {
+    id: 'tutorial_firecard',
+    name: 'Firecard 21',
+    subtitle: 'Burn the Upcard',
+    description: 'Learn when it is mathematically correct to burn the dealer\'s dangerous upcard.',
+    feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #7c2d12 0%, #9a3412 25%, #c2410c 50%, #9a3412 80%, #431407 100%)',
+    bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #431407 0%, #9a3412 50%, #431407 100%)',
+    borderColor: 'rgba(249, 115, 22, 0.4)',
+    rules: roomFirecard.rules,
+    gameRules: roomFirecard.gameRules,
+    blackjackMultiplier: 1.5,
+    betRange: [100, 100],
+    rtp: 'Tutorial',
+    icon: <Flame className="w-5 h-5 drop-shadow-md text-orange-400" />,
+    accentColor: '#f97316',
+    isTutorial: true,
+    logoPath: '/images/logo/rooms/firecard21.png',
+    strategyType: 'firecard_21',
+    deviationsSet: 'firecard_21',
+    rulesClass: FireCardRules,
+    tutorialLessons: FIRECARD_TUTORIAL_LESSONS,
+    strategyModalContent: roomFirecard.strategyModalContent,
+    strategyTableManual: roomFirecard.strategyTableManual
+};
+
+export const tutorialMadness: RoomConfig = {
+    id: 'tutorial_madness',
+    name: 'Madness 21',
+    subtitle: 'Infinite Options',
+    description: 'Double Down on any number of cards, suited blackjacks pay 2:1, and beware the Push 22 rule.',
+    feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #831843 0%, #9d174d 25%, #be185d 50%, #9d174d 80%, #4c0519 100%)',
+    bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #4c0519 0%, #9d174d 50%, #4c0519 100%)',
+    borderColor: 'rgba(244, 63, 94, 0.4)',
+    rules: roomMadness.rules,
+    gameRules: { ...roomMadness.gameRules, playerInitialCards: 2 },
+    blackjackMultiplier: 1.5,
+    betRange: [100, 100],
+    rtp: 'Tutorial',
+    icon: <Zap className="w-5 h-5 drop-shadow-md text-rose-400" />,
+    accentColor: '#f43f5e',
+    isTutorial: true,
+    logoPath: '/images/logo/rooms/infinity_double_down.png',
+    strategyType: 'madness_21',
+    deviationsSet: 'madness_21',
+    rulesClass: Madness21Rules,
+    tutorialLessons: MADNESS_TUTORIAL_LESSONS,
+    strategyModalContent: roomMadness.strategyModalContent,
+    strategyTableManual: roomMadness.strategyTableManual
+};
+
+export const tutorialIberian: RoomConfig = {
+    id: 'tutorial_iberian',
+    name: 'Iberian 21',
+    subtitle: 'No Tens, More Bonuses',
+    description: 'Play with a 48-card deck lacking 10s, utilizing Double Descues and bonus combinations.',
+    feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #14532d 0%, #166534 25%, #15803d 50%, #166534 80%, #052e16 100%)',
+    bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #052e16 0%, #166534 50%, #052e16 100%)',
+    borderColor: 'rgba(34, 197, 94, 0.4)',
+    rules: roomIberian21.rules,
+    gameRules: roomIberian21.gameRules,
+    blackjackMultiplier: 1.5,
+    betRange: [100, 100],
+    rtp: 'Tutorial',
+    icon: <Globe className="w-5 h-5 drop-shadow-md text-green-400" />,
+    accentColor: '#22c55e',
+    isTutorial: true,
+    logoPath: '/images/logo/rooms/iberian21.png',
+    strategyType: 'iberian_21',
+    deviationsSet: 'iberian_21',
+    rulesClass: Iberian21Rules,
+    tutorialLessons: IBERIAN_TUTORIAL_LESSONS,
+    strategyModalContent: roomIberian21.strategyModalContent,
+    strategyTableManual: roomIberian21.strategyTableManual
+};
+
+export const tutorialEuropean: RoomConfig = {
+    id: 'tutorial_european',
+    name: 'European',
+    subtitle: 'No Hole Card (ENHC)',
+    description: 'Navigate the extreme rules of European Blackjack: ENHC and heavily restricted doubles.',
+    feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #1e3a8a 0%, #1e40af 25%, #2563eb 50%, #1e40af 80%, #172554 100%)',
+    bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #172554 0%, #1e40af 50%, #172554 100%)',
+    borderColor: 'rgba(96, 165, 250, 0.4)',
+    rules: roomEuropean.rules,
+    gameRules: roomEuropean.gameRules,
+    blackjackMultiplier: 1.5,
+    betRange: [100, 100],
+    rtp: 'Tutorial',
+    icon: <ShieldAlert className="w-5 h-5 drop-shadow-md text-blue-400" />,
+    accentColor: '#60a5fa',
+    isTutorial: true,
+    logoPath: '/images/logo/rooms/european.png',
+    strategyType: 'european',
+    deviationsSet: 'european',
+    rulesClass: EuropeanRules,
+    tutorialLessons: EUROPEAN_TUTORIAL_LESSONS,
+    strategyModalContent: roomEuropean.strategyModalContent,
+    strategyTableManual: roomEuropean.strategyTableManual
+};
+
+export const tutorialUk: RoomConfig = {
+    id: 'tutorial_uk',
+    name: 'UK Rules',
+    subtitle: 'OBO Protection',
+    description: 'Learn the OBO (Original Bets Only) rule, which protects your splits and doubles against a dealer blackjack.',
+    feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #451a03 0%, #78350f 25%, #92400e 50%, #78350f 80%, #2e1008 100%)',
+    bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #2e1008 0%, #78350f 50%, #2e1008 100%)',
+    borderColor: 'rgba(251, 146, 60, 0.4)',
+    rules: roomUk.rules,
+    gameRules: roomUk.gameRules,
+    blackjackMultiplier: 1.5,
+    betRange: [100, 100],
+    rtp: 'Tutorial',
+    icon: <ShieldAlert className="w-5 h-5 drop-shadow-md text-orange-400" />,
+    accentColor: '#fb923c',
+    isTutorial: true,
+    logoPath: '/images/logo/rooms/uk_logo.png',
+    strategyType: 'uk',
+    deviationsSet: 'uk',
+    rulesClass: UKRules,
+    tutorialLessons: UK_TUTORIAL_LESSONS,
+    strategyModalContent: roomUk.strategyModalContent,
+    strategyTableManual: roomUk.strategyTableManual
 };

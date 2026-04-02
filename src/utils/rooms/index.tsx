@@ -11,7 +11,22 @@ import { zapout } from './zapout';
 import { exchange } from './exchange';
 import { firecard } from './firecard';
 import { madness } from './madness';
-import { tutorialBeginner, tutorialDouble, tutorialStrategy, tutorialCounting, tutorialSplitting, tutorialMultiHand } from './tutorials';
+import {
+    tutorialBeginner,
+    tutorialDouble,
+    tutorialStrategy,
+    tutorialCounting,
+    tutorialSplitting,
+    tutorialMultiHand,
+    tutorialFreeAction,
+    tutorialZapout,
+    tutorialExchange,
+    tutorialFirecard,
+    tutorialMadness,
+    tutorialIberian,
+    tutorialEuropean,
+    tutorialUk
+} from './tutorials';
 
 export * from './types';
 
@@ -34,6 +49,14 @@ export const ROOMS: Record<string, RoomConfig> = {
     tutorial_counting: tutorialCounting,
     tutorial_splitting: tutorialSplitting,
     tutorial_multihand: tutorialMultiHand,
+    tutorial_free_action: tutorialFreeAction,
+    tutorial_zapout: tutorialZapout,
+    tutorial_exchange: tutorialExchange,
+    tutorial_firecard: tutorialFirecard,
+    tutorial_madness: tutorialMadness,
+    tutorial_iberian: tutorialIberian,
+    tutorial_european: tutorialEuropean,
+    tutorial_uk: tutorialUk,
 };
 
 const lobbyRooms = Object.values(ROOMS).filter((room) => !room.isTutorial);

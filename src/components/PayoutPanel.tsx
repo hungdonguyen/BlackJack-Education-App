@@ -29,7 +29,8 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
         { label: '7+ Card 21 / ♠♠♠ 6-7-8, 7-7-7', value: '3 : 1' },
     ];
     
-    const isFireCard = roomConfig?.id === 'firecard_21';
+    const isIberian = roomConfig?.id === 'iberian_21' || roomConfig?.id === 'tutorial_iberian';
+    const isFireCard = roomConfig?.id === 'firecard_21' || roomConfig?.id === 'tutorial_firecard';
     const fireCardBonusPayouts = [
         { label: 'Burned Spades Ace', value: '7 : 1' },
         { label: 'Burned Other Ace', value: '2 : 1' },
@@ -112,7 +113,7 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
                     </>
                 )}
 
-                {roomConfig?.id === 'iberian_21' && (
+                {isIberian && (
                     <>
                         <div className="px-3 py-2 border-t border-red-500/20 bg-red-500/10">
                             <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] flex items-center text-red-500">

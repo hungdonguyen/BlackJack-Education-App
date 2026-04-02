@@ -39,14 +39,22 @@ export function checkTutorialAction(state: GameStore, actionId: string): boolean
         } else {
             // Denied - tried wrong action
             if (state.showTutorialWarning) {
-                state.showTutorialWarning("Please perform the instructed action!");
+                // Special case for betting actions
+                const isBettingAction = actionId.startsWith('chip-') || actionId.startsWith('seat-');
+                const expectedBetting = step.targetElementId.startsWith('chip-') || step.targetElementId.startsWith('seat-');
+                
+                if (isBettingAction && expectedBetting) {
+                    state.showTutorialWarning("Please bet $100 for this tutorial!");
+                } else {
+                    state.showTutorialWarning("Please perform the instructed action!");
+                }
             }
             return false;
         }
     } else if (step.requiresClick) {
         // Enforcing reading the guide first if no target action is currently asked
         if (state.showTutorialWarning) {
-            state.showTutorialWarning("Please perform the instructed action!");
+            state.showTutorialWarning("Tap the guide bubble to continue!");
         }
         return false;
     }
