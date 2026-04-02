@@ -1,4 +1,4 @@
-import { Card, TutorialStep, GameState } from '@/types/game';
+﻿import { Card, TutorialStep, GameState } from '@/types/game';
 import { Rank, Suit, GamePhase } from '@/types/enums';
 import { TutorialLesson } from './types';
 
@@ -29,22 +29,22 @@ export const COUNTING_TUTORIAL_LESSONS: TutorialLesson[] = [
             {
                 id: 1,
                 message: "Now tap the 'COUNTING' tab at the top to review the deviation charts and count indices. Tap here when done.",
-                condition: (s: any) => s.gamePhase === GamePhase.BETTING && s.isStrategyModalOpen,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.isStrategyModalOpen,
                 targetElementId: 'tab-counting',
                 position: 'left',
                 requiresClick: true
             },
             {
                 id: 2,
-                message: "This is your Counting reference — containing Hi-Lo tags, Illustrious 18 deviations, and bet sizing guidelines. Close the modal with âœ•.",
-                condition: (s: any) => s.gamePhase === GamePhase.BETTING && s.isStrategyModalOpen,
-                targetElementId: 'strategy-close-btn',
+                message: "This is your Counting reference — containing Hi-Lo tags, Illustrious 18 deviations, and bet sizing guidelines. Close the modal with ✕.",
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.isStrategyModalOpen,
+                targetElementId: 'strategy-close-btn', // target
                 position: 'left'
             },
             {
                 id: 3,
                 message: "The panel on the RIGHT tracks your live counts. The Hand Advisor on the LEFT will highlight strategic deviations when they occur! Now, select the $100 chip to start.",
-                condition: (s: any) => s.gamePhase === GamePhase.BETTING && !s.isStrategyModalOpen && s.seats[2].hands[0].betAmount === 0,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && !s.isStrategyModalOpen && s.seats[2].hands[0].betAmount === 0,
                 targetElementId: 'chip-100',
                 position: 'bottom'
             },
@@ -94,7 +94,7 @@ export const COUNTING_TUTORIAL_LESSONS: TutorialLesson[] = [
         steps: [
             {
                 id: 0,
-                message: "The Hi-Lo system assigns values to cards: 2�6 are +1, 7�9 are 0, and 10�Ace are âˆ’1. The panel tracks this automatically for you. Select the $100 chip.",
+                message: "The Hi-Lo system assigns values to cards: 2-6 are +1, 7-9 are 0, and 10-Ace are −1. The panel tracks this automatically for you. Select the $100 chip.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue !== 100,
                 targetElementId: 'chip-100',
                 position: 'bottom'
@@ -122,7 +122,7 @@ export const COUNTING_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 4,
-                message: "You drew a 10 (âˆ’1), bringing your hand to 18. This is a strong holding, so securing your position is best. Tap 'STAND'.",
+                message: "You drew a 10 (−1), bringing your hand to 18. This is a strong holding, so securing your position is best. Tap 'STAND'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[s.currentSeatIndex].hands[0].cards.length === 3,
                 targetElementId: 'action-stand',
                 position: 'player'
@@ -292,7 +292,7 @@ export const COUNTING_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 2,
-                message: "The Hand Advisor (left panel) highlights these Illustrious 18 special cases with a â¡ deviation badge when applicable. Select the $100 chip.",
+                message: "The Hand Advisor (left panel) highlights these Illustrious 18 special cases with a ⚡ deviation badge when applicable. Select the $100 chip.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue !== 100,
                 targetElementId: 'chip-100',
                 position: 'bottom'
@@ -337,6 +337,6 @@ export const COUNTING_TUTORIAL_LESSONS: TutorialLesson[] = [
 ];
 
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // PAIR SPLITTING MASTERY
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬

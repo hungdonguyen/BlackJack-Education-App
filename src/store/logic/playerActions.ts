@@ -112,6 +112,10 @@ export const standLogic = (set: any, get: () => GameStore) => {
     const currentHand = currentSeat.hands[currentSeat.currentHandIndex];
     if (!currentHand) return;
 
+    const roomCfg = getRoomConfig(state.currentRoom);
+    const isSingleCardStart = (roomCfg.gameRules.playerInitialCards ?? 2) === 1;
+    if (isSingleCardStart && currentHand.cards.length === 1) return;
+
     const isBJ = currentHand.status === HandStatus.BLACKJACK;
     const rules = getRules(state.currentRoom);
     const canSwitch = rules.canSwitch && rules.canSwitch(currentSeat).allowed;
@@ -178,7 +182,8 @@ export const doubleDownLogic = (set: any, get: () => GameStore) => {
           const isImmediateWin = isIberian && is21;
 
           const stayPlaying = roomCfg.gameRules.allowDoubleDownRescue || roomCfg.gameRules.allowInfiniteDouble;
-          const isMadnessAceDouble = state.currentRoom === 'madness_21' && hand.cards.length === 1 && hand.cards[0].rank === Rank.ACE;
+          const isSingleCardStart = (roomCfg.gameRules.playerInitialCards ?? 2) === 1;
+          const isMadnessAceDouble = isSingleCardStart && hand.cards.length === 1 && hand.cards[0].rank === Rank.ACE;
           
           return {
             ...hand,

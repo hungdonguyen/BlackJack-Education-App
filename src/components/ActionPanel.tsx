@@ -72,12 +72,13 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
 
     const currentBalance = (roomConfig.isTutorial ? tutorialBalance : bankroll) ?? 0;
 
-    const isMadness = currentRoom === 'madness_21';
+    const isSingleCardStart = (roomConfig.gameRules.playerInitialCards ?? 2) === 1;
+    const allowInfiniteDouble = !!roomConfig.gameRules.allowInfiniteDouble;
 
 
     const canHit = useMemo(() => {
-        return isPlayerTurn && isPlaying && (!currentHand?.isDoubleDown || isMadness);
-    }, [isPlayerTurn, isPlaying, currentHand?.isDoubleDown, isMadness]);
+        return isPlayerTurn && isPlaying && (!currentHand?.isDoubleDown || allowInfiniteDouble);
+    }, [isPlayerTurn, isPlaying, currentHand?.isDoubleDown, allowInfiniteDouble]);
 
     const canSwitchHand = useMemo(() => {
         if (isPlayerTurn && currentSeat && rules.canSwitch) {
@@ -87,8 +88,8 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
     }, [isPlayerTurn, currentSeat, rules]);
 
     const canStand = useMemo(() => {
-        return isPlayerTurn && (isPlaying || (isBJ && canSwitchHand)) && !(isMadness && currentHand?.cards.length === 1);
-    }, [isPlayerTurn, isPlaying, isBJ, canSwitchHand, isMadness, currentHand?.cards.length]);
+        return isPlayerTurn && (isPlaying || (isBJ && canSwitchHand)) && !(isSingleCardStart && currentHand?.cards.length === 1);
+    }, [isPlayerTurn, isPlaying, isBJ, canSwitchHand, isSingleCardStart, currentHand?.cards.length]);
 
     const { canDbl, isDblFree } = useMemo(() => {
         if (isPlayerTurn && isPlaying && currentHand) {

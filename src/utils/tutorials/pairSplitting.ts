@@ -54,21 +54,14 @@ export const PAIR_SPLITTING_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 5,
-                message: "Hand 1 got a King — that's 21! Perfect. Hand 1 complete.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[s.currentSeatIndex].hands.length === 2 && s.seats[s.currentSeatIndex].currentHandIndex === 0,
+                message: "Both hands received exactly one card. Hand 1 got 21 and Hand 2 got 20! Notice the auto-stand. The Dealer busted! This is why you always split Aces.",
+                condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 position: 'center',
                 requiresClick: true
             },
             {
                 id: 6,
-                message: "Hand 2 got a 9 — that's 20! Also excellent. Both hands are very strong. Tap 'STAND'.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[s.currentSeatIndex].hands.length === 2 && s.seats[s.currentSeatIndex].currentHandIndex === 1,
-                targetElementId: 'action-stand',
-                position: 'player'
-            },
-            {
-                id: 7,
-                message: "The Dealer busted! Two strong hands from two weak Aces. This is why you always split them. Tap 'NEW ROUND'.",
+                message: "Two strong hands from two weak Aces. Tap 'NEW ROUND'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'new-round-button',
                 position: 'player'
@@ -400,6 +393,8 @@ export const PAIR_SPLITTING_TUTORIAL_LESSONS: TutorialLesson[] = [
                 id: 7,
                 message: "Both hands busted. You lost twice as much money! This happens sometimes, but in the long run, splitting 8s loses less than standing on 16 or hitting 16. Tap 'FINISH TUTORIAL'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
+                targetElementId: 'finish-tutorial-button',
+                position: 'center'
             }
         ]
     }

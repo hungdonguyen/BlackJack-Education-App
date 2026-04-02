@@ -7,7 +7,6 @@ export const FIRECARD_TUTORIAL_LESSONS: TutorialLesson[] = [
         round: 0,
         title: 'Burning Bad Cards',
         forcedCards: [
-             { rank: Rank.TEN, suit: Suit.HEARTS, value: 10, isHidden: false }, // Dealer Hit -> 18
              { rank: Rank.TEN, suit: Suit.CLUBS, value: 10, isHidden: false }, // Player replacement -> 20
              { rank: Rank.EIGHT, suit: Suit.DIAMONDS, value: 8, isHidden: true }, // Dealer hole -> 18
              { rank: Rank.SIX, suit: Suit.CLUBS, value: 6, isHidden: false }, // Player 2nd -> 16

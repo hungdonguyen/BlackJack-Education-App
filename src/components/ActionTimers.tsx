@@ -35,11 +35,12 @@ export function TurnTimer() {
                             expired = true;
                             // Safe Zustand mutation bypassing React batching context
                             const state = useGameStoreBase.getState();
-                            const isMadness = state.currentRoom === 'madness_21';
+                            const roomCfg = getRoomConfig(state.currentRoom);
+                            const isSingleCardStart = (roomCfg.gameRules.playerInitialCards ?? 2) === 1;
                             const cSeat = state.seats[state.currentSeatIndex];
                             const cHand = cSeat?.hands[cSeat.currentHandIndex];
                             
-                            if (isMadness && cHand && cHand.cards.length === 1) {
+                            if (isSingleCardStart && cHand && cHand.cards.length === 1) {
                                 state.hit();
                             } else {
                                 state.stand();

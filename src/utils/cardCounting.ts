@@ -120,18 +120,28 @@ export async function calculateTrueCountFromShoe(
     system: CountingSystem,
     omitTens: boolean,
 ): Promise<TrueCountResult> {
+    const hasTauri =
+        typeof window !== 'undefined' &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        !!(window as any).__TAURI_INTERNALS__;
+
     try {
-        const result = await invoke<TrueCountResult>('calculate_true_count_rust', {
-            shoe,
-            dealerCards,
-            seats,
-            numDecks,
-            system,
-            omitTens
-        });
-        return result;
+        if (hasTauri) {
+            const result = await invoke<TrueCountResult>('calculate_true_count_rust', {
+                shoe,
+                dealerCards,
+                seats,
+                numDecks,
+                system,
+                omitTens
+            });
+            return result;
+        }
     } catch (err) {
         console.error('Failed to invoke Rust calculate_true_count. Falling back to JS.', err);
+    }
+
+    try {
         const runningCount = calculateRunningCountFromShoe(
             shoe,
             dealerCards,
@@ -150,6 +160,14 @@ export async function calculateTrueCountFromShoe(
             decksRemaining,
             trueCountRaw,
             trueCount,
+        };
+    } catch (err) {
+        console.error('Failed JS true count calculation.', err);
+        return {
+            runningCount: 0,
+            decksRemaining: 0.5,
+            trueCountRaw: 0,
+            trueCount: 0,
         };
     }
 }

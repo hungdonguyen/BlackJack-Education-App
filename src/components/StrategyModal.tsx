@@ -67,7 +67,7 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
     const strategyTables = getStrategyTables(room.strategyType);
     const strategyType = room.id;
 
-    const isMadnessRoom = room.id === 'madness_21';
+    const isMadnessRoom = room.strategyType === 'madness_21';
 
     // Row definitions
     const HARD_ROWS = isMadnessRoom 

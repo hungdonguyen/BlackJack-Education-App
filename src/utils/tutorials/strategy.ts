@@ -40,7 +40,7 @@ export const STRATEGY_TUTORIAL_LESSONS: TutorialLesson[] = [
             {
                 id: 3,
                 message: "This is the Soft Totals section, for hands containing an Ace. These are very important for flexible plays. Tap the SOFT tab.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.isStrategyModalOpen,
                 targetElementId: 'tab-soft',
                 position: 'center',
                 requiresClick: true
@@ -48,22 +48,22 @@ export const STRATEGY_TUTORIAL_LESSONS: TutorialLesson[] = [
             {
                 id: 4,
                 message: "This is the Pairs section. It tells you when to Split (like 8s and Aces). Tap the PAIRS tab.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.isStrategyModalOpen,
                 targetElementId: 'tab-pairs',
                 position: 'center',
                 requiresClick: true
             },
             {
                 id: 5,
-                message: "Great! You can always reopen this chart during the game. Now close the modal — tap the âœ• button.",
-                condition: (s: any) => s.gamePhase === GamePhase.BETTING,
+                message: "Great! You can always reopen this chart during the game. Now close the modal - tap the close button.",
+                condition: (s: any) => s.gamePhase === GamePhase.BETTING && s.isStrategyModalOpen,
                 targetElementId: 'strategy-close-btn',
                 position: 'center'
             },
             {
                 id: 6,
                 message: "Now, select the $100 chip.",
-                condition: (s: any) => s.gamePhase === GamePhase.BETTING && !s.isStrategyModalOpen && s.seats[2].hands[0].betAmount === 0,
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && !s.isStrategyModalOpen && s.seats[2].hands[0].betAmount === 0,
                 targetElementId: 'chip-100',
                 position: 'bottom'
             },
@@ -232,9 +232,9 @@ export const STRATEGY_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 7,
-                message: "Master Basic Strategy to minimize losses and maximize wins over time! Tap 'FINISH TUTORIAL'.",
+                message: "Master Basic Strategy to minimize losses and maximize wins over time! Tap 'NEW ROUND'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
-                targetElementId: 'finish-tutorial-button',
+                targetElementId: 'new-round-button',
                 position: 'player'
             }
         ]

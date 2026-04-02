@@ -421,12 +421,14 @@ export const tutorialMadness: RoomConfig = {
     bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #4c0519 0%, #9d174d 50%, #4c0519 100%)',
     borderColor: 'rgba(244, 63, 94, 0.4)',
     rules: roomMadness.rules,
-    gameRules: { ...roomMadness.gameRules, playerInitialCards: 2 },
-    blackjackMultiplier: 1.5,
+    gameRules: roomMadness.gameRules,
+    blackjackMultiplier: roomMadness.blackjackMultiplier,
     betRange: [100, 100],
     rtp: 'Tutorial',
     icon: <Zap className="w-5 h-5 drop-shadow-md text-rose-400" />,
     accentColor: '#f43f5e',
+    hasSideBet: roomMadness.hasSideBet,
+    sideBetType: roomMadness.sideBetType,
     isTutorial: true,
     logoPath: '/images/logo/rooms/infinity_double_down.png',
     strategyType: 'madness_21',
@@ -434,7 +436,8 @@ export const tutorialMadness: RoomConfig = {
     rulesClass: Madness21Rules,
     tutorialLessons: MADNESS_TUTORIAL_LESSONS,
     strategyModalContent: roomMadness.strategyModalContent,
-    strategyTableManual: roomMadness.strategyTableManual
+    strategyTableManual: roomMadness.strategyTableManual,
+    strategySource: roomMadness.strategySource
 };
 
 export const tutorialIberian: RoomConfig = {

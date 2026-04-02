@@ -52,6 +52,7 @@ const BASE_VOLUME = 0.3; // Increased from 0.15 to allow more range in settings
 let currentAudio: HTMLAudioElement | null = null;
 let currentTrackPath: string | null = null;
 let fadeInterval: ReturnType<typeof setInterval> | null = null;
+let playbackToken = 0;
 
 function resolveTrackPath(roomId: string, musicTrackOverride: string | null): string {
     if (musicTrackOverride) return musicTrackOverride;
@@ -107,7 +108,6 @@ export function useBGM(roomId: string) {
         if (musicTrackOverride) {
             setMusicTrackOverride(null);
         }
-        currentTrackPath = null;
     }, [roomId, musicTrackOverride, setMusicTrackOverride]);
 
     // Handle user interaction to unlock autoplay
@@ -128,6 +128,7 @@ export function useBGM(roomId: string) {
     // Main BGM effect
     useEffect(() => {
         if (typeof window === 'undefined') return;
+        const token = ++playbackToken;
 
         // Use override if set, otherwise use room default
         const trackPath = resolveTrackPath(roomId, musicTrackOverride);
@@ -155,15 +156,26 @@ export function useBGM(roomId: string) {
                 await fadeOut(currentAudio, FADE_DURATION);
             }
 
+            if (token !== playbackToken) return;
+
             const audio = new Audio(trackPath);
             audio.loop = true;
             audio.volume = 0;
+
+            if (token !== playbackToken) {
+                audio.pause();
+                return;
+            }
 
             currentAudio = audio;
             currentTrackPath = trackPath;
 
             try {
                 await audio.play();
+                if (token !== playbackToken) {
+                    audio.pause();
+                    return;
+                }
                 fadeIn(audio, targetVol, FADE_DURATION);
             } catch (err) {
                 const e = err as Error;
