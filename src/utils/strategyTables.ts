@@ -619,7 +619,8 @@ export const ACTION_META: Record<AdviceAction, ActionMeta> = {
         label: 'BURN CARD', shortLabel: 'B', color: '#f97316',
         glow: 'rgba(249,115,22,0.35)', border: 'rgba(249,115,22,0.4)', bg: 'rgba(194,65,12,0.2)',
         desc: 'Burn 2nd card for a new one',
-        reasoning: (total) => `Hard ${total} — This gives you the best chance to improve this weak hand in Fire Card Blackjack!`,
+        reasoning: (total, isSoft) =>
+            `${isSoft ? 'Soft' : 'Hard'} ${total} — Burn gives a strong chance to improve weak structures in Fire Card Blackjack.`,
     },
 };
 

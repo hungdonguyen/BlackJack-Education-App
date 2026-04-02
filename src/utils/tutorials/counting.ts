@@ -1,4 +1,4 @@
-﻿import { Card, TutorialStep, GameState } from '@/types/game';
+﻿import { GameState } from '@/types/game';
 import { Rank, Suit, GamePhase } from '@/types/enums';
 import { TutorialLesson } from './types';
 
@@ -180,14 +180,14 @@ export const COUNTING_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 4,
-                message: "You have a 12 against the Dealer's 4. A positive count means the Dealer is more likely to draw 10s and bust. The Hand Advisor highlights this tactical change.",
+                message: "You have a 12 against the Dealer's 4. Base strategy already says STAND here, and a positive count further supports waiting for dealer bust cards.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN,
                 position: 'center',
                 requiresClick: true
             },
             {
                 id: 5,
-                message: "Given the high probability of a Dealer bust, the correct strategic deviation is to hold your hand. Tap 'STAND'.",
+                message: "Hold your hand and let dealer take the risk. Tap 'STAND'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN,
                 targetElementId: 'action-stand',
                 position: 'player'

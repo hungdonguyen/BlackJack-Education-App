@@ -1,4 +1,4 @@
-import { Card, TutorialStep, GameState } from '@/types/game';
+import { GameState } from '@/types/game';
 import { Rank, Suit, GamePhase } from '@/types/enums';
 import { TutorialLesson } from './types';
 
@@ -107,14 +107,14 @@ export const EUROPEAN_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 5,
-                message: "You have 11 vs Dealer Ace. Double is allowed here, but ENHC means the dealer can still reveal Blackjack after you commit x2. Tap DOUBLE.",
+                message: "You have 11 vs Dealer Ace. In European basic strategy this is a HIT, not a Double, because ENHC risk is high. Tap HIT.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 2,
-                targetElementId: 'action-double',
+                targetElementId: 'action-hit',
                 position: 'player'
             },
             {
                 id: 6,
-                message: "Dealer's second card is a 10 — Blackjack revealed late. Because you doubled, you lose the x2 wager you just put at risk. Tap 'NEW ROUND'.",
+                message: "Dealer's second card is a 10 - Blackjack revealed late under ENHC. This hand still loses, which is why this spot is played as HIT in the table. Tap 'NEW ROUND'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'new-round-button',
                 position: 'player'

@@ -21,25 +21,26 @@ import {
   UK_TUTORIAL_LESSONS,
   TutorialLesson
 } from '@/utils/tutorials';
+import { normalizeTutorialLessons } from '@/utils/tutorials/normalizeLessons';
 import { createEmptyHand } from './bettingSlice';
 import { GamePhase } from '@/types/enums';
 
 export const getLessons = (roomId: string): TutorialLesson[] => {
   switch (roomId) {
-    case 'tutorial_double':    return DOUBLE_TUTORIAL_LESSONS;
-    case 'tutorial_strategy':  return STRATEGY_TUTORIAL_LESSONS;
-    case 'tutorial_counting':  return COUNTING_TUTORIAL_LESSONS;
-    case 'tutorial_splitting': return PAIR_SPLITTING_TUTORIAL_LESSONS;
-    case 'tutorial_multihand': return MULTI_HAND_TUTORIAL_LESSONS;
-    case 'tutorial_free_action': return FREE_ACTION_TUTORIAL_LESSONS;
-    case 'tutorial_zapout':      return ZAPOUT_TUTORIAL_LESSONS;
-    case 'tutorial_exchange':    return EXCHANGE_TUTORIAL_LESSONS;
-    case 'tutorial_firecard':    return FIRECARD_TUTORIAL_LESSONS;
-    case 'tutorial_madness':     return MADNESS_TUTORIAL_LESSONS;
-    case 'tutorial_iberian':     return IBERIAN_TUTORIAL_LESSONS;
-    case 'tutorial_european':    return EUROPEAN_TUTORIAL_LESSONS;
-    case 'tutorial_uk':          return UK_TUTORIAL_LESSONS;
-    default:                   return BEGINNER_TUTORIAL_LESSONS;
+    case 'tutorial_double':    return normalizeTutorialLessons(roomId, DOUBLE_TUTORIAL_LESSONS);
+    case 'tutorial_strategy':  return normalizeTutorialLessons(roomId, STRATEGY_TUTORIAL_LESSONS);
+    case 'tutorial_counting':  return normalizeTutorialLessons(roomId, COUNTING_TUTORIAL_LESSONS);
+    case 'tutorial_splitting': return normalizeTutorialLessons(roomId, PAIR_SPLITTING_TUTORIAL_LESSONS);
+    case 'tutorial_multihand': return normalizeTutorialLessons(roomId, MULTI_HAND_TUTORIAL_LESSONS);
+    case 'tutorial_free_action': return normalizeTutorialLessons(roomId, FREE_ACTION_TUTORIAL_LESSONS);
+    case 'tutorial_zapout':      return normalizeTutorialLessons(roomId, ZAPOUT_TUTORIAL_LESSONS);
+    case 'tutorial_exchange':    return normalizeTutorialLessons(roomId, EXCHANGE_TUTORIAL_LESSONS);
+    case 'tutorial_firecard':    return normalizeTutorialLessons(roomId, FIRECARD_TUTORIAL_LESSONS);
+    case 'tutorial_madness':     return normalizeTutorialLessons(roomId, MADNESS_TUTORIAL_LESSONS);
+    case 'tutorial_iberian':     return normalizeTutorialLessons(roomId, IBERIAN_TUTORIAL_LESSONS);
+    case 'tutorial_european':    return normalizeTutorialLessons(roomId, EUROPEAN_TUTORIAL_LESSONS);
+    case 'tutorial_uk':          return normalizeTutorialLessons(roomId, UK_TUTORIAL_LESSONS);
+    default:                   return normalizeTutorialLessons('tutorial_beginner', BEGINNER_TUTORIAL_LESSONS);
   }
 };
 
@@ -49,12 +50,14 @@ export interface TutorialSlice {
   tutorialRound: number;
   forcedShoe: Card[] | null;
   tutorialCompleted: boolean;
+  completedTutorials: Record<string, boolean>;
   tutorialBalance: number;
   tutorialWarning: string | null;
 
   // Actions
   resetTutorialProgress: (roomId?: string) => void;
   advanceTutorialRound: () => void;
+  markTutorialCompleted: (roomId?: string) => void;
   setTutorialStep: (step: number) => void;
   showTutorialWarning: (message: string) => void;
   hideTutorialWarning: () => void;
@@ -65,6 +68,7 @@ export const createTutorialSlice: StateCreator<GameStore, [], [], TutorialSlice>
   tutorialRound: 0,
   forcedShoe: null,
   tutorialCompleted: false,
+  completedTutorials: {},
   tutorialBalance: 1000,
   tutorialWarning: null as string | null,
 
@@ -140,6 +144,19 @@ export const createTutorialSlice: StateCreator<GameStore, [], [], TutorialSlice>
       forcedShoe: nextForcedShoe,
       tutorialStep: 0,
     });
+  },
+
+  markTutorialCompleted: (roomOverride?: string) => {
+    const state = get();
+    const roomToMark = roomOverride || state.currentRoom;
+    if (!roomToMark || !roomToMark.startsWith('tutorial_')) return;
+
+    set((prev) => ({
+      completedTutorials: {
+        ...prev.completedTutorials,
+        [roomToMark]: true,
+      },
+    }));
   },
 
   setTutorialStep: (step: number) => {

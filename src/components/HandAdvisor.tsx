@@ -23,6 +23,7 @@ import {
     ACTION_META,
     getCompositionDependentOverride,
     computeBustStats,
+    getFirecardBurnPreference,
     getStrategyAction,
     normRank,
     type AdviceAction as Action,
@@ -154,6 +155,12 @@ export default function HandAdvisor({
         const canDoubleNow = rules.canDoubleDown(currentHand).allowed;
         const canZapNow = rules.canZap ? rules.canZap(currentHand).allowed : false;
         const canBurnNow = rules.canBurn ? rules.canBurn(currentHand).allowed : false;
+        const burnPreference = getFirecardBurnPreference(
+            cards,
+            room.strategyType,
+            canBurnNow,
+            room.strategyType !== 'iberian_21',
+        );
 
         const tableAction = getStrategyAction(
             cards,
@@ -238,16 +245,37 @@ export default function HandAdvisor({
             compositionOverride = null;
         }
 
+        const actionMeta = ACTION_META[action];
+        const showOptionalBurnOverlay = burnPreference === 'optional' && action !== 'B';
+        const showForcedBurnOverlay = burnPreference === 'forced';
+        const actionShortLabel = showOptionalBurnOverlay ? `${actionMeta.shortLabel}/B` : actionMeta.shortLabel;
+        const actionLabel = showOptionalBurnOverlay ? `${actionMeta.label} / BURN` : actionMeta.label;
+        const actionDesc = showOptionalBurnOverlay
+            ? `${actionMeta.desc} or burn the 2nd Ace for bonus EV.`
+            : showForcedBurnOverlay
+                ? 'Always burn 2nd card Ace of Spades for premium payout'
+            : actionMeta.desc;
+        const actionReasoningOverride = showOptionalBurnOverlay
+            ? 'Second card is an Ace. Follow base chart action or take optional BURN for the bonus line.'
+            : showForcedBurnOverlay
+                ? 'Second card is Ace of Spades. This is a forced premium burn case, so always take BURN payout.'
+                : null;
+
         return {
             total,
             isSoft,
             cards,
             bust,
             action,
-            meta: ACTION_META[action],
+            meta: actionMeta,
             dealerNorm,
             showBustRisk,
             cardCount: cards.length,
+            burnPreference,
+            actionShortLabel,
+            actionLabel,
+            actionDesc,
+            actionReasoningOverride,
             specialCaseChangesAdvice: Boolean(compositionOverride) && action !== tableAction,
             deviation,
             basicAction,
@@ -268,7 +296,7 @@ export default function HandAdvisor({
             : analysis?.deviation
                 ? 'Count Deviation'
                 : 'Strategy Advice';
-    const actionBadgeLabel = analysis?.meta.shortLabel ?? '';
+    const actionBadgeLabel = analysis?.actionShortLabel ?? analysis?.meta.shortLabel ?? '';
     const isLongActionBadge = actionBadgeLabel.length > 3;
 
     return (
@@ -527,10 +555,10 @@ export default function HandAdvisor({
 
                             <div className="flex flex-col gap-0.5 min-w-0">
                                 <span className="font-black uppercase tracking-[0.12em] text-[13px] leading-tight whitespace-normal wrap-break-word font-sans" style={{ color: analysis.deviation ? '#fcd34d' : analysis.meta.color }}>
-                                    {analysis.meta.label}
+                                    {analysis.actionLabel ?? analysis.meta.label}
                                 </span>
                                 <span className="text-[10.5px] font-bold leading-tight font-sans" style={{ color: 'rgba(200,180,150,0.8)' }}>
-                                    {analysis.meta.desc}
+                                    {analysis.actionDesc ?? analysis.meta.desc}
                                 </span>
                             </div>
                         </motion.div>
@@ -552,9 +580,9 @@ export default function HandAdvisor({
                                     ? analysis.topOverride
                                         ? analysis.specialCaseChangesAdvice
                                             ? 'Top Walker override applied for this exact hand pattern.'
-                                            : analysis.meta.reasoning(analysis.total, analysis.isSoft, analysis.dealerNorm)
-                                        : analysis.meta.reasoning(analysis.total, analysis.isSoft, analysis.dealerNorm)
-                                    : analysis.meta.reasoning(analysis.total, analysis.isSoft, analysis.dealerNorm)
+                                            : (analysis.actionReasoningOverride ?? analysis.meta.reasoning(analysis.total, analysis.isSoft, analysis.dealerNorm))
+                                        : (analysis.actionReasoningOverride ?? analysis.meta.reasoning(analysis.total, analysis.isSoft, analysis.dealerNorm))
+                                    : (analysis.actionReasoningOverride ?? analysis.meta.reasoning(analysis.total, analysis.isSoft, analysis.dealerNorm))
                             }
                         </p>
 

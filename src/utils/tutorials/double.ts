@@ -103,21 +103,21 @@ export const DOUBLE_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 3,
-                message: "You have 10 against the Dealer's 9. Dealer is strong, but you are likely to get a 20.",
+                message: "You have 10 against the Dealer's 9. In this chart, this is a pressure-double spot.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN,
                 position: 'center',
                 requiresClick: true
             },
             {
                 id: 4,
-                message: "Be aggressive! Tap 'DOUBLE' (Get 1 card & Stand).",
+                message: "Tap 'DOUBLE' to maximize value with one final card.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN,
                 targetElementId: 'action-double',
                 position: 'player'
             },
             {
                 id: 5,
-                message: "You nailed it with a 20. The Dealer had 17. Big win!",
+                message: "Nice result. This is why hard 10 vs 9 is a double in this tutorial chart. Tap 'NEW ROUND'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'new-round-button',
                 position: 'player'

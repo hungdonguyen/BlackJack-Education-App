@@ -256,7 +256,7 @@ export default function HomePage() {
                       <div className="flex items-center gap-2 mb-1">
                         <BookOpen size={15} className="text-white/85 group-hover:scale-110 transition-transform" />
                         <span className="text-[10px] font-black uppercase tracking-[0.24em] text-white/80 bg-white/10 px-2 py-1 rounded-md">
-                          Academy
+                          Skill Tracks
                         </span>
                       </div>
                       <h2 className="text-xl font-black text-white tracking-tight leading-none uppercase">

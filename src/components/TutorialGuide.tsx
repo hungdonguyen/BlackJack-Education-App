@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase } from '@/types/enums';
 import { getRoomConfig } from '@/utils/rooms';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { AlertCircle } from 'lucide-react';
 
 import { createPortal } from 'react-dom';
@@ -40,17 +40,36 @@ export default function TutorialGuide({ show = true }: { show?: boolean }) {
         return lesson ? lesson.steps : [];
     }, [currentRoom, tutorialRound]);
 
+    const stepsRef = useRef<TutorialStep[]>([]);
+    useEffect(() => {
+        stepsRef.current = steps;
+    }, [steps]);
+
     useEffect(() => {
         if (!roomCfg.isTutorial) return;
 
-        const currentStep = steps[stepIndex];
-        const nextStep = steps[stepIndex + 1];
+        const lessonSteps = stepsRef.current;
+        const currentStep = lessonSteps[stepIndex];
+        const nextStep = lessonSteps[stepIndex + 1];
+        if (!currentStep) return;
+        if (currentStep.requiresClick) return;
 
-        if (nextStep && nextStep.condition(state) && !currentStep?.requiresClick) {
+        if (nextStep && nextStep.condition(state)) {
             playSound('click'); // Sound for step progression
             setStepIndex(stepIndex + 1);
+            return;
         }
-    }, [state, stepIndex, steps, roomCfg.isTutorial, playSound]);
+
+        // If state already moved ahead (e.g. chip already selected / bet already placed),
+        // jump to the nearest reachable step to avoid tutorial deadlocks.
+        for (let index = stepIndex + 2; index < lessonSteps.length; index += 1) {
+            if (lessonSteps[index]?.condition(state)) {
+                playSound('click');
+                setStepIndex(index);
+                return;
+            }
+        }
+    }, [state, stepIndex, steps.length, roomCfg.isTutorial, playSound, setStepIndex]);
 
     if (!roomCfg.isTutorial || stepIndex >= steps.length) return null;
 

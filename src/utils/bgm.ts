@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useGameStore } from '@/hooks/useGameStore';
 
 export const PLAYLIST = [
@@ -102,6 +102,7 @@ export function useBGM(roomId: string) {
     const musicTrackOverride = useGameStore((state) => state.musicTrackOverride);
     const setMusicTrackOverride = useGameStore((state) => state.setMusicTrackOverride);
     const hasInteracted = useRef(false);
+    const [activationTick, setActivationTick] = useState(0);
 
     // When changing rooms, clear manual overrides so each room's default track can take over.
     useEffect(() => {
@@ -113,15 +114,28 @@ export function useBGM(roomId: string) {
     // Handle user interaction to unlock autoplay
     useEffect(() => {
         const unlock = () => {
+            if (hasInteracted.current) return;
             hasInteracted.current = true;
+            setActivationTick((v) => v + 1);
             window.removeEventListener('click', unlock);
             window.removeEventListener('keydown', unlock);
+            window.removeEventListener('pointerdown', unlock);
         };
+
+        // If user already interacted before this hook mounts, allow immediate playback.
+        const alreadyActivated = typeof navigator !== 'undefined' && (navigator as Navigator & { userActivation?: { hasBeenActive?: boolean } }).userActivation?.hasBeenActive;
+        if (alreadyActivated) {
+            hasInteracted.current = true;
+            setActivationTick((v) => v + 1);
+        }
+
         window.addEventListener('click', unlock);
         window.addEventListener('keydown', unlock);
+        window.addEventListener('pointerdown', unlock);
         return () => {
             window.removeEventListener('click', unlock);
             window.removeEventListener('keydown', unlock);
+            window.removeEventListener('pointerdown', unlock);
         };
     }, []);
 
@@ -141,6 +155,10 @@ export function useBGM(roomId: string) {
                 fadeOut(currentAudio, 500);
             }
             currentTrackPath = null;
+            return;
+        }
+
+        if (!hasInteracted.current) {
             return;
         }
 
@@ -186,7 +204,7 @@ export function useBGM(roomId: string) {
         };
 
         startNewTrack();
-    }, [roomId, musicEnabled, musicVolume, musicTrackOverride]);
+    }, [roomId, musicEnabled, musicVolume, musicTrackOverride, activationTick]);
 
     // Volume change effect
     useEffect(() => {

@@ -96,6 +96,8 @@ export function useStoreHydration(): boolean {
                   patch.unlockedAchievements = parsed.state.unlockedAchievements;
                 if (parsed.state.achievementProgress)
                   patch.achievementProgress = parsed.state.achievementProgress;
+                if (parsed.state.completedTutorials && typeof parsed.state.completedTutorials === 'object')
+                  patch.completedTutorials = parsed.state.completedTutorials;
               }
             } catch (err) {
               console.warn('[useStoreHydration] Failed to parse save.json:', err);
@@ -144,6 +146,7 @@ export function useStoreHydration(): boolean {
             countSystem: state.countSystem,
             unlockedAchievements: state.unlockedAchievements,
             achievementProgress: state.achievementProgress,
+            completedTutorials: state.completedTutorials,
           };
           base.version = 0;
           await writeSaveFile(JSON.stringify(base));
@@ -166,6 +169,7 @@ export function useStoreHydration(): boolean {
                 countSystem: state.countSystem,
                 unlockedAchievements: state.unlockedAchievements,
                 achievementProgress: state.achievementProgress,
+                completedTutorials: state.completedTutorials,
               },
               version: 0,
             })
@@ -193,7 +197,8 @@ export function useStoreHydration(): boolean {
           state.showCardCounting !== prevState.showCardCounting ||
           state.countSystem !== prevState.countSystem ||
           state.unlockedAchievements !== prevState.unlockedAchievements ||
-          state.achievementProgress !== prevState.achievementProgress
+          state.achievementProgress !== prevState.achievementProgress ||
+          state.completedTutorials !== prevState.completedTutorials
         ) {
           debouncedSave(state);
         }

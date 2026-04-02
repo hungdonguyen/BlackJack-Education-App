@@ -49,6 +49,7 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
     const isLastTutorialLesson = tutorialRound >= lessons.length - 1;
 
     const resetTutorialProgress = useGameStore((s) => s.resetTutorialProgress);
+    const markTutorialCompleted = useGameStore((s) => s.markTutorialCompleted);
     const setTutorialStep = useGameStore((s) => s.setTutorialStep);
     const { playSound } = useAudio();
 
@@ -384,7 +385,7 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
                         <motion.button
                             key="payout"
                             id="finish-tutorial-button"
-                            onClick={() => { resetTutorialProgress(); router.push('/tutorial-lobby'); }}
+                            onClick={() => { markTutorialCompleted(currentRoom); resetTutorialProgress(); router.push('/tutorial-lobby'); }}
                             className="px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
                                 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white
                                 shadow-[0_0_30px_rgba(139,92,246,0.4),0_8px_20px_rgba(0,0,0,0.3)]

@@ -1,4 +1,4 @@
-import { Card, TutorialStep, GameState } from '@/types/game';
+import { GameState } from '@/types/game';
 import { Rank, Suit, GamePhase } from '@/types/enums';
 import { TutorialLesson } from './types';
 
@@ -21,10 +21,9 @@ export const MADNESS_TUTORIAL_LESSONS: TutorialLesson[] = [
             { id: 2, message: "Place your bet on Seat 3.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue === 100 && s.seats[2].hands[0].betAmount === 0, targetElementId: 'seat-3', position: 'bottom' },
             { id: 3, message: "Tap DEAL to start.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0, targetElementId: 'action-button-deal', position: 'bottom' },
             { id: 4, message: "You only start with 1 card in Madness. Your 11 vs Dealer's 6 is a perfect spot to begin: tap DOUBLE DOWN. (Cost: $100)", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 1, targetElementId: 'action-double', position: 'player' },
-            { id: 5, message: "You drew a 3 (Total 14). Keep scaling the pot: tap DOUBLE DOWN again. (Cost: $200)", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 2, targetElementId: 'action-double', position: 'player' },
-            { id: 6, message: "Now you're on 16. A bit risky but let's push it. Tap DOUBLE DOWN one more time. (Cost: $400)", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 3, targetElementId: 'action-double', position: 'player' },
-            { id: 7, message: "You caught a 5 for a perfect 21! Notice your bet grew exponentially. And the Dealer busts!", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, position: 'center', requiresClick: true },
-            { id: 8, message: "You turned a $100 original bet into a massive $1,600 payout! Tap NEW ROUND.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, targetElementId: 'new-round-button', position: 'player' }
+            { id: 5, message: "You drew a 3 (Total 14). In Madness strategy, 14 vs dealer 6 is a STAND. Tap STAND.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 2, targetElementId: 'action-stand', position: 'player' },
+            { id: 6, message: "Dealer busts on 26. This hand shows the table line: start with an aggressive double, then lock a weak total against a weak dealer.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, position: 'center', requiresClick: true },
+            { id: 7, message: "Madness allows repeated doubles, but this exact spot is not a chain-double in the strategy table. Tap NEW ROUND.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, targetElementId: 'new-round-button', position: 'player' }
         ]
     },
     {
@@ -44,9 +43,9 @@ export const MADNESS_TUTORIAL_LESSONS: TutorialLesson[] = [
             { id: 1, message: "Tap DEAL.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0, targetElementId: 'action-button-deal', position: 'bottom' },
             { id: 2, message: "You start on a single 10. Hand Advisor says DOUBLE.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 1, targetElementId: 'action-double', position: 'player' },
             { id: 3, message: "You got an Ace (Total 11). Keep building the pot! Tap DOUBLE DOWN.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 2, targetElementId: 'action-double', position: 'player' },
-            { id: 4, message: "You got a 3 (Total 14). Let's do it one more time! Tap DOUBLE DOWN.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 3, targetElementId: 'action-double', position: 'player' },
-            { id: 5, message: "You pushed it too far and caught a 10, busting out!", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, position: 'center', requiresClick: true },
-            { id: 6, message: "Ouch. Continuous doubling comes with the high risk of busting your massive bet! Tap NEW ROUND.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, targetElementId: 'new-round-button', position: 'player' }
+            { id: 4, message: "You got a 3 (Total 14). Strategy now switches to STAND vs dealer 6. Tap STAND.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 3, targetElementId: 'action-stand', position: 'player' },
+            { id: 5, message: "Dealer reaches 21 and beats your stacked hand. This is the downside of building a bigger wager before the stand point.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, position: 'center', requiresClick: true },
+            { id: 6, message: "Madness is high variance: follow the table cutoffs even when the pot feels exciting. Tap NEW ROUND.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, targetElementId: 'new-round-button', position: 'player' }
         ]
     },
     {
@@ -62,7 +61,7 @@ export const MADNESS_TUTORIAL_LESSONS: TutorialLesson[] = [
         steps: [
             { id: 0, message: "There's a catch to these crazy rules: The Dealer doesn't bust on 22! Place your $100 bet on Seat 3.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount === 0, targetElementId: 'seat-3', position: 'bottom' },
             { id: 1, message: "Tap DEAL.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0, targetElementId: 'action-button-deal', position: 'bottom' },
-            { id: 2, message: "In Madness, you cannot stand on one card. Tap HIT to make your hand 20.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 1, targetElementId: 'action-hit', position: 'player' },
+            { id: 2, message: "With a single-card 10 vs dealer 6, Madness strategy is DOUBLE. Tap DOUBLE DOWN to draw your second card.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 1, targetElementId: 'action-double', position: 'player' },
             { id: 3, message: "Now you have 20. Tap STAND.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 2, targetElementId: 'action-stand', position: 'player' },
             { id: 4, message: "Watch the Dealer... they drew to 22. Normally that's a bust.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, position: 'center', requiresClick: true },
             { id: 5, message: "But in Madness 21, Dealer 22 forces a PUSH for all non-busted hands. You only get your bet back! Tap NEW ROUND.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, targetElementId: 'new-round-button', position: 'player' }

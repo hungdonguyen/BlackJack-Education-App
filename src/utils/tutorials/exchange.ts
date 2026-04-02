@@ -1,4 +1,4 @@
-import { Card, TutorialStep, GameState } from '@/types/game';
+import { GameState } from '@/types/game';
 import { Rank, Suit, GamePhase } from '@/types/enums';
 import { TutorialLesson } from './types';
 
@@ -139,9 +139,9 @@ export const EXCHANGE_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 6,
-                message: "Hand 2 is now a flexible 10 — perfect for a Double Down. Tap DOUBLE DOWN.",
+                message: "Hand 2 is now 10 vs dealer 10. Exchange strategy plays this as HIT, not double. Tap HIT.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.currentSeatIndex === 2 && s.seats[2].currentHandIndex === 1,
-                targetElementId: 'action-double',
+                targetElementId: 'action-hit',
                 position: 'player'
             },
             {
@@ -219,9 +219,9 @@ export const EXCHANGE_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 6,
-                message: "Hand 2 sits at 10 — perfect to press. Tap DOUBLE DOWN.",
+                message: "Hand 2 sits at 10 against dealer 10. Table action is HIT. Tap HIT.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.currentSeatIndex === 2 && s.seats[2].currentHandIndex === 1,
-                targetElementId: 'action-double',
+                targetElementId: 'action-hit',
                 position: 'player'
             },
             {

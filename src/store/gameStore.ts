@@ -55,6 +55,8 @@ export const useGameStoreBase = create<GameStore>()(
         // Achievements
         unlockedAchievements: state.unlockedAchievements,
         achievementProgress: state.achievementProgress,
+        // Tutorial progress
+        completedTutorials: state.completedTutorials,
         // Simulator config
         simulatorConfig: state.simulatorConfig,
         simulatorPresets: state.simulatorPresets,

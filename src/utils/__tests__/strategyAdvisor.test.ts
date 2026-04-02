@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getStrategyAction, getStrategyTables, getHandEV, getExchange21Advice, computeBustStats, getCompositionDependentOverride } from '../strategyAdvisor';
+import { getStrategyAction, getStrategyTables, getHandEV, getExchange21Advice, computeBustStats, getCompositionDependentOverride, getFirecardBurnPreference } from '../strategyAdvisor';
 import { Card } from '@/types/game';
 import { Rank, Suit } from '@/types/enums';
 
@@ -92,6 +92,31 @@ describe('Strategy Advisor (Basic Strategy)', () => {
     });
 
     describe('Action Resolution Fallbacks', () => {
+        it('should mark optional burn for non-spade second-card Ace in Fire Card', () => {
+            const cards: Card[] = [
+                { rank: '9' as Rank, value: 9, suit: Suit.HEARTS, isHidden: false },
+                { rank: 'ACE' as Rank, value: 11, suit: Suit.HEARTS, isHidden: false },
+            ];
+            const pref = getFirecardBurnPreference(cards, 'firecard_21', true, true);
+            expect(pref).toBe('optional');
+
+            // Keep base table action for non-spade Ace; display layer can show action/BURN.
+            const act = getStrategyAction(cards, 20, true, '9', 'firecard_21', true, true, true, { resolveConditions: true, canBurn: true });
+            expect(act).toBe('S');
+        });
+
+        it('should force burn for second-card Ace of Spades in Fire Card', () => {
+            const cards: Card[] = [
+                { rank: '9' as Rank, value: 9, suit: Suit.HEARTS, isHidden: false },
+                { rank: 'ACE' as Rank, value: 11, suit: Suit.SPADES, isHidden: false },
+            ];
+            const pref = getFirecardBurnPreference(cards, 'firecard_21', true, true);
+            expect(pref).toBe('forced');
+
+            const act = getStrategyAction(cards, 20, true, '9', 'firecard_21', true, true, true, { resolveConditions: true, canBurn: true });
+            expect(act).toBe('B');
+        });
+
         it('should fallback to H if action is SP but canSplit is false', () => {
             // Pair of 2s vs 5 is typically Split
             const cards = [c('2',2), c('2',2)];

@@ -1,7 +1,7 @@
 'use client';
 
 import { useGameStore } from '@/hooks/useGameStore';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 type SoundVariant =
     | 'card-slide'
@@ -32,10 +32,32 @@ const SOUND_MAP: Record<SoundVariant, string[]> = {
 export function useAudio() {
     const soundEnabled = useGameStore((state) => state.soundEnabled);
     const soundVolume = useGameStore((state) => state.soundVolume);
+    const userActivated = useRef(false);
     
     // Cache audio objects to reuse and avoid re-downloading/re-parsing
     const audioCache = useRef<Record<string, HTMLAudioElement>>({});
     const activeOutcomeAudio = useRef<HTMLAudioElement | null>(null);
+
+    useEffect(() => {
+        const unlock = () => {
+            userActivated.current = true;
+            window.removeEventListener('click', unlock);
+            window.removeEventListener('keydown', unlock);
+            window.removeEventListener('pointerdown', unlock);
+        };
+
+        const alreadyActivated = typeof navigator !== 'undefined' && (navigator as Navigator & { userActivation?: { hasBeenActive?: boolean } }).userActivation?.hasBeenActive;
+        if (alreadyActivated) userActivated.current = true;
+
+        window.addEventListener('click', unlock);
+        window.addEventListener('keydown', unlock);
+        window.addEventListener('pointerdown', unlock);
+        return () => {
+            window.removeEventListener('click', unlock);
+            window.removeEventListener('keydown', unlock);
+            window.removeEventListener('pointerdown', unlock);
+        };
+    }, []);
 
     const playSound = useCallback((variant: SoundVariant, volume: number = 0.5, options?: { shortShuffle?: boolean }) => {
         if (!soundEnabled) return;
@@ -52,6 +74,8 @@ export function useAudio() {
             let audioNode = audioCache.current[file];
             if (!audioNode) {
                 audioNode = new Audio(file);
+                audioNode.preload = 'auto';
+                audioNode.load();
                 audioCache.current[file] = audioNode;
             }
 
@@ -63,9 +87,14 @@ export function useAudio() {
                 activeOutcomeAudio.current = null;
             }
 
-            // Clone node if we want overlapping sounds (e.g. multiple cards dealt fast)
-            // Native Audio has issues playing the same object overlappingly.
-            const playNode = audioNode.cloneNode() as HTMLAudioElement;
+            // Use the preloaded base node for outcomes to avoid occasional decode misses.
+            // Keep clone-based overlap for rapid non-outcome SFX.
+            const playNode = isOutcomeSound
+                ? audioNode
+                : (audioNode.cloneNode(true) as HTMLAudioElement);
+
+            playNode.pause();
+            playNode.currentTime = 0;
             if (isOutcomeSound) {
                 activeOutcomeAudio.current = playNode;
             }
@@ -79,6 +108,9 @@ export function useAudio() {
                 }
             }).catch(e => {
                 // Ignore DOMException regarding user gesture interaction
+                if (e.name === 'NotAllowedError' && !userActivated.current) {
+                    return;
+                }
                 if (e.name !== 'NotAllowedError') {
                     console.warn('Audio play failed:', e);
                 }

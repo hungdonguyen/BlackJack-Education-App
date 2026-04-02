@@ -1,4 +1,4 @@
-import { Card, TutorialStep, GameState } from '@/types/game';
+import { GameState } from '@/types/game';
 import { Rank, Suit, GamePhase } from '@/types/enums';
 import { TutorialLesson } from './types';
 
@@ -74,18 +74,19 @@ export const FIRECARD_TUTORIAL_LESSONS: TutorialLesson[] = [
     },
     {
         round: 1,
-        title: 'Burning an Ace for Bonus',
+        title: 'Burn Timing vs High Upcard',
            forcedCards: [
-               { rank: Rank.KING, suit: Suit.SPADES, value: 10, isHidden: false },  // Replacement -> 19
-               { rank: Rank.NINE, suit: Suit.CLUBS, value: 9, isHidden: true },     // Dealer Hole -> 18
-               { rank: Rank.ACE, suit: Suit.HEARTS, value: 11, isHidden: false },   // Player 2nd (burned Ace)
-               { rank: Rank.NINE, suit: Suit.DIAMONDS, value: 9, isHidden: false }, // Dealer Face -> 9
-               { rank: Rank.NINE, suit: Suit.SPADES, value: 9, isHidden: false },   // Player 1st -> 9
+               { rank: Rank.EIGHT, suit: Suit.CLUBS, value: 8, isHidden: false },   // Dealer Hit -> 22 (bust)
+               { rank: Rank.NINE, suit: Suit.SPADES, value: 9, isHidden: false },   // Replacement after burn -> 19
+               { rank: Rank.SEVEN, suit: Suit.CLUBS, value: 7, isHidden: true },    // Dealer Hole -> 17
+               { rank: Rank.SIX, suit: Suit.HEARTS, value: 6, isHidden: false },    // Player 2nd -> 16
+               { rank: Rank.TEN, suit: Suit.DIAMONDS, value: 10, isHidden: false }, // Dealer Face -> 10
+               { rank: Rank.TEN, suit: Suit.SPADES, value: 10, isHidden: false },   // Player 1st -> 10
            ],
         steps: [
             {
                 id: 0,
-                message: "Burning an Ace pays a BONUS. Non-spade Aces pay 3x the burn cost. Let's grab that payout.",
+                message: "Ace policy update: if your second card is an Ace, advisor can show base action/BURN; if it is Ace of Spades, BURN is always priority.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue !== 100,
                 position: 'center',
                 requiresClick: true
@@ -113,28 +114,28 @@ export const FIRECARD_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 4,
-                message: "Your second card is an Ace. Burning it triggers a bonus! Tap BURN to cash in and redraw.",
+                message: "Hard 16 vs dealer 10 is a BURN spot in Fire Card strategy. Tap BURN.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && !s.seats[2].hands[0].isBurned,
                 targetElementId: 'action-burn',
                 position: 'player'
             },
             {
                 id: 5,
-                message: "New card gives you 19. Lock it — tap STAND.",
+                message: "Replacement card gives you 19. Lock it - tap STAND.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && !!s.seats[2].hands[0].isBurned,
                 targetElementId: 'action-stand',
                 position: 'player'
             },
             {
                 id: 6,
-                message: "Dealer stops at 18. You win the hand AND collected the 3x burn-bonus for tossing that Ace.",
+                message: "Dealer busts on 22. The BURN action turned a losing stiff into a strong stand hand.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 position: 'center',
                 requiresClick: true
             },
             {
                 id: 7,
-                message: "Ace burns can be profitable. Tap 'NEW ROUND'.",
+                message: "BURN is tactical by chart, and Ace cards add bonus-driven value lines. Tap 'NEW ROUND'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'new-round-button',
                 position: 'player'
@@ -143,18 +144,18 @@ export const FIRECARD_TUTORIAL_LESSONS: TutorialLesson[] = [
     },
     {
         round: 2,
-        title: 'Ace of Spades Jackpot',
+        title: 'Ace of Spades Burn Bonus',
         forcedCards: [
-             { rank: Rank.QUEEN, suit: Suit.HEARTS, value: 10, isHidden: false }, // Replacement -> 19
-             { rank: Rank.EIGHT, suit: Suit.CLUBS, value: 8, isHidden: true },    // Dealer Hole -> 17
-             { rank: Rank.ACE, suit: Suit.SPADES, value: 11, isHidden: false },   // Player 2nd (burned Ace of Spades)
+             { rank: Rank.KING, suit: Suit.CLUBS, value: 10, isHidden: false },   // Replacement after burn -> 19
+             { rank: Rank.NINE, suit: Suit.CLUBS, value: 9, isHidden: true },     // Dealer Hole -> 18
+             { rank: Rank.ACE, suit: Suit.SPADES, value: 11, isHidden: false },   // Player 2nd (burn target)
              { rank: Rank.NINE, suit: Suit.HEARTS, value: 9, isHidden: false },   // Dealer Face -> 9
              { rank: Rank.NINE, suit: Suit.DIAMONDS, value: 9, isHidden: false }, // Player 1st -> 9
         ],
         steps: [
             {
                 id: 0,
-                message: "Burning the ACE OF SPADES pays a huge 8x bonus on the burn fee. Let's trigger it.",
+                message: "When the second card is any Ace, advisor can show base action/BURN. If it is Ace of Spades, always BURN for premium payout.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue !== 100,
                 position: 'center',
                 requiresClick: true
@@ -182,28 +183,28 @@ export const FIRECARD_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 4,
-                message: "Ace of Spades in the 2nd slot — burn it to trigger the 8x bonus! Tap BURN.",
+                message: "Your second card is A♠. Burn it now to trigger the premium burn bonus. Tap BURN.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && !s.seats[2].hands[0].isBurned,
                 targetElementId: 'action-burn',
                 position: 'player'
             },
             {
                 id: 5,
-                message: "Replacement card sets you up with 19. Tap STAND.",
+                message: "Replacement card gives you 19. Tap STAND.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && !!s.seats[2].hands[0].isBurned,
                 targetElementId: 'action-stand',
                 position: 'player'
             },
             {
                 id: 6,
-                message: "Dealer lands on 17. You win plus the massive 8x burn bonus from tossing the Ace of Spades.",
+                message: "Dealer lands on 18. You win the hand and collect the Ace of Spades burn bonus.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 position: 'center',
                 requiresClick: true
             },
             {
                 id: 7,
-                message: "Ace of Spades burns are premium. Tap 'FINISH TUTORIAL'.",
+                message: "Remember: A-spade second card is always-burn; other Aces can be played as base action/BURN. Tap 'FINISH TUTORIAL'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'finish-tutorial-button',
                 position: 'player'

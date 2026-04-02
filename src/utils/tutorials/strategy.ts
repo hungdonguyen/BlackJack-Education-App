@@ -140,7 +140,7 @@ export const STRATEGY_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 4,
-                message: "But the math says HIT! Why? Because a Dealer showing a 7 will likely make a 17. You need to improve your hand.",
+                message: "The chart says HIT here. Dealer 7 is strong enough that staying on 16 is usually not enough over time.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN,
                 targetElementId: 'strategy-module',
                 position: 'player'
@@ -154,7 +154,7 @@ export const STRATEGY_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 6,
-                message: "You got a 5 for a total of 21! If you had chosen to STAND, the Dealer would have beaten you with their 17. Tap 'STAND' now.",
+                message: "Great draw - you reached 21",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[s.currentSeatIndex].hands[0].cards.length === 3,
                 targetElementId: 'action-stand',
                 position: 'player'
@@ -259,47 +259,54 @@ export const STRATEGY_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 1,
-                message: "Place a bet of $100 to continue.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[1].hands[0].betAmount === 0,
-                targetElementId: 'seat-2',
+                message: "Select the $100 chip.",
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue !== 100,
+                targetElementId: 'chip-100',
                 position: 'bottom'
             },
             {
                 id: 2,
-                message: "Tap 'DEAL'.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[1].hands[0].betAmount > 0,
-                targetElementId: 'action-button-deal',
+                message: "Place a bet of $100 on Seat 3 to continue.",
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue === 100 && s.seats[2].hands[0].betAmount === 0,
+                targetElementId: 'seat-3',
                 position: 'bottom'
             },
             {
                 id: 3,
-                message: "You have a Soft 18 (Ace and 7). The Dealer shows a 9. Many players would STAND here.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[1].hands[0].cards.length === 2,
-                position: 'player'
+                message: "Tap 'DEAL'.",
+                condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0,
+                targetElementId: 'action-button-deal',
+                position: 'bottom'
             },
             {
                 id: 4,
-                message: "However, Basic Strategy says to HIT! Your 18 isn't strong enough against a Dealer's 9, and the Ace gives you a free shot without busting. Tap 'HIT'.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[1].hands[0].cards.length === 2,
-                targetElementId: 'action-hit',
+                message: "You have a Soft 18 (Ace and 7). The Dealer shows a 9. Many players would STAND here.",
+                condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 2,
                 position: 'player'
             },
             {
                 id: 5,
-                message: "You hit a 10. You still have an 18 (1 + 7 + 10), but now it's a Hard 18. Tap 'STAND'.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[1].hands[0].cards.length === 3,
-                targetElementId: 'action-stand',
+                message: "However, Basic Strategy says to HIT! Your 18 isn't strong enough against a Dealer's 9, and the Ace gives you a free shot without busting. Tap 'HIT'.",
+                condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 2,
+                targetElementId: 'action-hit',
                 position: 'player'
             },
             {
                 id: 6,
+                message: "You hit a 10. You still have an 18 (1 + 7 + 10), but now it's a Hard 18. Tap 'STAND'.",
+                condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 3,
+                targetElementId: 'action-stand',
+                position: 'player'
+            },
+            {
+                id: 7,
                 message: "Great! You maximized your odds. The Dealer made an 18. It's a PUSH, and your bet is returned.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'new-round-button',
                 position: 'player'
             },
             {
-                id: 7,
+                id: 8,
                 message: "Master Basic Strategy to minimize losses and maximize wins over time! Tap 'FINISH TUTORIAL'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'finish-tutorial-button',

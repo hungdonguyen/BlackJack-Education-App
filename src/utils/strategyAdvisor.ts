@@ -181,6 +181,17 @@ export function getStrategyAction(
     const dealerIndex = getDealerIdx(dealerUpRank);
     if (dealerIndex < 0) return 'H';
 
+    const burnPreference = getFirecardBurnPreference(
+        cards,
+        strategyType,
+        Boolean(resolveOptions.canBurn),
+        resolveOptions.resolveConditions !== false,
+    );
+
+    if (burnPreference === 'forced') {
+        return 'B';
+    }
+
     const tables = getStrategyTables(strategyType);
     let action: StrategyAction;
 
@@ -372,4 +383,23 @@ export function computeBustStats(cards: Card[], shoe: Card[]) {
         safeCount,
         total: shoe.length,
     };
+}
+
+export type FirecardBurnPreference = 'forced' | 'optional' | null;
+
+export function getFirecardBurnPreference(
+    cards: Card[],
+    strategyType: string,
+    canBurn: boolean,
+    resolveConditions = true,
+): FirecardBurnPreference {
+    if (strategyType !== 'firecard_21' || !resolveConditions || !canBurn || cards.length !== 2) {
+        return null;
+    }
+
+    if (normRank(cards[1].rank) !== 'A') {
+        return null;
+    }
+
+    return cards[1].suit === 'SPADES' ? 'forced' : 'optional';
 }

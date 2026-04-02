@@ -2,11 +2,13 @@
 
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, BookOpen, Star, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Star, Play, CheckCircle2 } from 'lucide-react';
 import { ROOMS, RoomConfig } from '@/utils/rooms';
 import { useAudio } from '@/utils/audio';
 import Image from 'next/image';
 import { useMemo } from 'react';
+import { useGameStore } from '@/hooks/useGameStore';
+import { getLevelRank, getTutorialProfile } from '@/utils/tutorials/profiles';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Keyboard } from 'swiper/modules';
 import { FloatingLogosBackdrop, ROOM_LOGO_PATHS } from '@/components/FloatingLogosBackdrop';
@@ -19,8 +21,19 @@ const ITEMS_PER_PAGE = 3;
 export default function TutorialLobby() {
   const router = useRouter();
   const { playSound } = useAudio();
+  const completedTutorials = useGameStore((s) => s.completedTutorials);
 
-  const tutorialRooms = Object.values(ROOMS).filter(r => r.isTutorial);
+  const tutorialRooms = useMemo(() => {
+    return Object.values(ROOMS)
+      .filter((r) => r.isTutorial)
+      .sort((a, b) => {
+        const pa = getTutorialProfile(a.id);
+        const pb = getTutorialProfile(b.id);
+        const levelDelta = getLevelRank(pa.level) - getLevelRank(pb.level);
+        if (levelDelta !== 0) return levelDelta;
+        return a.name.localeCompare(b.name);
+      });
+  }, []);
 
   const chunkedRooms = useMemo(() => {
     const chunks: RoomConfig[][] = [];
@@ -66,9 +79,9 @@ export default function TutorialLobby() {
             <h1 className="text-2xl font-black tracking-tight flex items-center gap-3">
               <span className="bg-linear-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Tutorial</span>
               <span className="text-white/20 font-light">/</span>
-              <span className="text-white/90">Academy</span>
+              <span className="text-white/90">Paths</span>
             </h1>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-white/30 font-bold mt-1">Master the art of Blackjack</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-white/30 font-bold mt-1">Beginner to Advanced Learning Tracks</p>
           </div>
         </div>
       </header>
@@ -96,6 +109,7 @@ export default function TutorialLobby() {
                     <TutorialCard
                       key={room.id}
                       room={room}
+                      completed={Boolean(completedTutorials?.[room.id])}
                       onStart={() => { playSound('chip-lay'); router.push(`/game/${room.id}`); }}
                     />
                   ))}
@@ -122,12 +136,16 @@ export default function TutorialLobby() {
       <footer className="relative z-10 px-8 py-6 border-t border-white/5">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 opacity-40 max-w-7xl mx-auto">
           <p className="text-xs font-medium text-white/60 text-center md:text-left">
-            The Blackjack Academy tutorials are designed for educational purposes only.
+            Tutorial tracks are designed for educational practice only and progress from fundamentals to advanced play.
           </p>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500" />
               <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-0.5">Free Access</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-indigo-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-0.5">Skill Tags</span>
             </div>
           </div>
         </div>
@@ -136,7 +154,15 @@ export default function TutorialLobby() {
   );
 }
 
-function TutorialCard({ room, onStart }: { room: RoomConfig; onStart: () => void }) {
+function TutorialCard({ room, onStart, completed }: { room: RoomConfig; onStart: () => void; completed: boolean }) {
+  const profile = getTutorialProfile(room.id);
+
+  const levelStyle = profile.level === 'Beginner'
+    ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200'
+    : profile.level === 'Intermediate'
+      ? 'bg-amber-500/20 border-amber-400/40 text-amber-200'
+      : 'bg-fuchsia-500/20 border-fuchsia-400/40 text-fuchsia-200';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -165,9 +191,17 @@ function TutorialCard({ room, onStart }: { room: RoomConfig; onStart: () => void
             </div>
           </div>
           {/* Badge */}
-          <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center gap-1.5">
-            <Star size={10} className="text-yellow-400 fill-yellow-400" />
-            <span className="text-[10px] font-black uppercase tracking-wider text-white/90">Academy</span>
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            {completed && (
+              <div className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-300/40 flex items-center gap-1.5">
+                <CheckCircle2 size={10} className="text-emerald-300" />
+                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-200">Completed</span>
+              </div>
+            )}
+            <div className={`px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${levelStyle}`}>
+              <Star size={10} className="fill-current" />
+              <span className="text-[9px] font-black uppercase tracking-wider">{profile.level}</span>
+            </div>
           </div>
         </div>
 
@@ -178,6 +212,13 @@ function TutorialCard({ room, onStart }: { room: RoomConfig; onStart: () => void
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: room.accentColor }}>
               <BookOpen size={12} />
               {room.subtitle}
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {profile.tags.slice(0, 2).map((tag) => (
+                <span key={tag} className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border border-white/15 text-white/75 bg-black/20">
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -195,7 +236,7 @@ function TutorialCard({ room, onStart }: { room: RoomConfig; onStart: () => void
           >
             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
             <Play size={14} fill="white" className="relative transition-transform group-hover/btn:scale-110" />
-            <span className="relative">Start Tutorial</span>
+            <span className="relative">{completed ? 'Review Tutorial' : 'Start Tutorial'}</span>
           </button>
         </div>
       </div>

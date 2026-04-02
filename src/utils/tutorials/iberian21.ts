@@ -1,4 +1,4 @@
-﻿import { Card, TutorialStep, GameState } from '@/types/game';
+﻿import { GameState } from '@/types/game';
 import { Rank, Suit, GamePhase } from '@/types/enums';
 import { TutorialLesson } from './types';
 
@@ -16,7 +16,7 @@ export const IBERIAN_TUTORIAL_LESSONS: TutorialLesson[] = [
         steps: [
             {
                 id: 0,
-                message: "48 cards instead of 52! Iberian 21 removes ALL four 10-spot cards from the deck â€” only J, Q, K remain as face cards. This completely changes the math!",
+                message: "48 cards instead of 52. Iberian 21 removes all four 10-spot cards, so only J/Q/K remain as 10-value faces. This changes basic odds and chart decisions.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue !== 100,
                 position: 'center',
                 requiresClick: true
@@ -51,7 +51,7 @@ export const IBERIAN_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 5,
-                message: "Ouch, you drew a 2 â€” now 13 vs a dealer 10. Use Double Down Rescue to drop the double.",
+                message: "Ouch, you drew a 2 - now 13 vs dealer 10. Iberian allows Rescue after a double in this spot.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 3,
                 position: 'center',
                 requiresClick: true
