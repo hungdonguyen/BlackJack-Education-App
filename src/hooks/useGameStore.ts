@@ -71,6 +71,16 @@ export function useStoreHydration(): boolean {
                   patch.lastDailyClaim = parsed.state.lastDailyClaim;
                 if (typeof parsed.state.dailyClaimCount === 'number')
                   patch.dailyClaimCount = parsed.state.dailyClaimCount;
+                if (typeof parsed.state.dailyClaimStreak === 'number')
+                  patch.dailyClaimStreak = parsed.state.dailyClaimStreak;
+                if (typeof parsed.state.mysteryClaimCount === 'number')
+                  patch.mysteryClaimCount = parsed.state.mysteryClaimCount;
+                if (typeof parsed.state.lastMysteryClaimAt === 'number')
+                  patch.lastMysteryClaimAt = parsed.state.lastMysteryClaimAt;
+                if (typeof parsed.state.lastMysteryReward === 'number')
+                  patch.lastMysteryReward = parsed.state.lastMysteryReward;
+                if (parsed.state.claimedTutorialRewards && typeof parsed.state.claimedTutorialRewards === 'object')
+                  patch.claimedTutorialRewards = parsed.state.claimedTutorialRewards;
                 // Settings
                 if (parsed.state.dealerSpeed === 'normal' || parsed.state.dealerSpeed === 'fast')
                   patch.dealerSpeed = parsed.state.dealerSpeed as DealerSpeed;
@@ -134,7 +144,12 @@ export function useStoreHydration(): boolean {
             ...(base.state || {}),
             bankroll: state.bankroll,
             lastDailyClaim: state.lastDailyClaim,
+            dailyClaimStreak: state.dailyClaimStreak,
             dailyClaimCount: state.dailyClaimCount,
+            mysteryClaimCount: state.mysteryClaimCount,
+            lastMysteryClaimAt: state.lastMysteryClaimAt,
+            lastMysteryReward: state.lastMysteryReward,
+            claimedTutorialRewards: state.claimedTutorialRewards,
             dealerSpeed: state.dealerSpeed,
             soundEnabled: state.soundEnabled,
             musicEnabled: state.musicEnabled,
@@ -157,7 +172,12 @@ export function useStoreHydration(): boolean {
               state: {
                 bankroll: state.bankroll,
                 lastDailyClaim: state.lastDailyClaim,
+                dailyClaimStreak: state.dailyClaimStreak,
                 dailyClaimCount: state.dailyClaimCount,
+                mysteryClaimCount: state.mysteryClaimCount,
+                lastMysteryClaimAt: state.lastMysteryClaimAt,
+                lastMysteryReward: state.lastMysteryReward,
+                claimedTutorialRewards: state.claimedTutorialRewards,
                 dealerSpeed: state.dealerSpeed,
                 soundEnabled: state.soundEnabled,
                 musicEnabled: state.musicEnabled,
@@ -186,7 +206,12 @@ export function useStoreHydration(): boolean {
         if (
           state.bankroll !== prevState.bankroll ||
           state.lastDailyClaim !== prevState.lastDailyClaim ||
+          state.dailyClaimStreak !== prevState.dailyClaimStreak ||
           state.dailyClaimCount !== prevState.dailyClaimCount ||
+          state.mysteryClaimCount !== prevState.mysteryClaimCount ||
+          state.lastMysteryClaimAt !== prevState.lastMysteryClaimAt ||
+          state.lastMysteryReward !== prevState.lastMysteryReward ||
+          state.claimedTutorialRewards !== prevState.claimedTutorialRewards ||
           state.dealerSpeed !== prevState.dealerSpeed ||
           state.soundEnabled !== prevState.soundEnabled ||
           state.musicEnabled !== prevState.musicEnabled ||

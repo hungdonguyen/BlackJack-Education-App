@@ -4,7 +4,7 @@
 // Home Page — Premium Landing
 // ============================================
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -45,7 +45,7 @@ export default function HomePage() {
 
   return (
     <div
-      className="relative w-full min-h-full flex flex-col items-center overflow-x-hidden overflow-y-auto select-none"
+      className="relative w-full h-full min-h-full flex flex-col items-center overflow-hidden select-none"
       style={{
         background: 'radial-gradient(ellipse 120% 100% at 50% 30%, #301a10 0%, #1a0e0a 40%, #0d0705 100%)',
       }}
@@ -127,9 +127,9 @@ export default function HomePage() {
 
 
           {/* Main content wrapper */}
-          <div className="flex-1 flex flex-col items-center justify-center w-full max-w-3xl px-4 pt-24 pb-8 relative z-10 min-h-[max-content]">
+          <div className="flex-1 flex flex-col items-center justify-start w-full max-w-3xl px-4 pt-16 md:pt-20 pb-3 relative z-10 min-h-0">
             <motion.div
-              className="flex flex-col items-center gap-4 w-full my-auto"
+              className="flex flex-col items-center gap-3 w-full mt-2 md:mt-3"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
@@ -137,8 +137,8 @@ export default function HomePage() {
             {/* Logo / Title */}
             <div className="text-center">
               <motion.div
-                className="mb-4 mx-auto relative"
-                style={{ width: 140, height: 140 }}
+                className="mb-2 mx-auto relative"
+                style={{ width: 124, height: 124 }}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -169,7 +169,7 @@ export default function HomePage() {
                 </div>
               </motion.div>
               <h1
-                className="text-4xl md:text-5xl font-black text-transparent bg-clip-text"
+                className="text-4xl md:text-[2.8rem] font-black text-transparent bg-clip-text"
                 style={{
                   backgroundImage: 'linear-gradient(135deg, #d4a843 0%, #f0d78c 50%, #d4a843 100%)',
                 }}
@@ -182,13 +182,13 @@ export default function HomePage() {
             </div>
 
             {/* Subtitle */}
-            <p className="text-white/40 text-center max-w-lg text-xs leading-relaxed px-4">
+            <p className="text-white/40 text-center max-w-lg text-[11px] leading-relaxed px-4">
               A premium Blackjack simulator with realistic casino logic and diverse rulesets.
               Practice optimal strategies, track your progress, and master the game in a risk-free environment.
             </p>
 
             {/* Action Cards (Bento Grid) */}
-            <div className="w-full max-w-2xl px-4 mt-2">
+            <div className="w-full max-w-2xl px-4 mt-1">
               {/* Top Row: Main Actions */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3 items-stretch">
                 
@@ -276,69 +276,75 @@ export default function HomePage() {
                 </motion.div>
               </div>
 
-              {/* Bottom Row: 5 Feature Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 items-stretch">
-                
-                {/* Quick Play */}
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }}
-                  onClick={() => { playSound('click'); router.push('/game/classic'); }}
-                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(255,255,255,0.05)] text-white/70">
-                    <Zap size={18} className="group-hover:fill-white/20" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/70 group-hover:text-white transition-colors text-center w-full">Quick Play</span>
-                </motion.button>
+              {/* Second Row: Progress Tools */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2 items-stretch">
 
                 {/* Strategy Guide */}
                 <motion.button
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }}
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }}
                   onClick={() => { playSound('click'); setShowStrategy(true); }}
-                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
+                  className="group relative flex min-h-28 items-center justify-between gap-4 px-5 py-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.97] overflow-hidden"
                   style={{
-                    background: 'linear-gradient(180deg, rgba(212,168,67,0.05) 0%, rgba(30,20,10,0.5) 100%)',
-                    border: '1px solid rgba(212,168,67,0.15)',
+                    background: 'linear-gradient(135deg, rgba(212,168,67,0.13) 0%, rgba(48,34,14,0.62) 45%, rgba(20,14,7,0.82) 100%)',
+                    border: '1px solid rgba(212,168,67,0.25)',
+                    boxShadow: '0 12px 30px -18px rgba(212,168,67,0.7), inset 0 1px 0 rgba(255,255,255,0.15)',
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-[rgba(212,168,67,0.1)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="w-10 h-10 rounded-2xl bg-[rgba(212,168,67,0.1)] flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(212,168,67,0.15)] text-[#d4a843]">
-                    <BookOpen size={18} />
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="w-11 h-11 rounded-2xl bg-[rgba(212,168,67,0.14)] flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_16px_rgba(212,168,67,0.2)] text-[#e3bf66]">
+                      <BookOpen size={19} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#d4a843]/65">Learning Hub</p>
+                      <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#e5c46c]">Strategy</span>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#d4a843]/80 group-hover:text-[#d4a843] transition-colors text-center w-full">Strategy</span>
+                  <div className="w-9 h-9 rounded-full bg-black/15 backdrop-blur-sm flex items-center justify-center border border-[#d4a843]/25 group-hover:bg-black/25 group-hover:translate-x-1 transition-all">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#e6c46b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
                 </motion.button>
 
-                {/* Daily Claim */}
+                {/* Simulator */}
                 <motion.button
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
-                  onClick={() => { playSound('click'); setShowDailyClaim(true); }}
-                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, duration: 0.5 }}
+                  onClick={() => { playSound('click'); router.push('/simulator'); }}
+                  className="group relative flex min-h-28 items-center justify-between gap-4 px-5 py-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.97] overflow-hidden"
                   style={{
-                    background: 'linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.01) 100%)',
-                    border: '1px solid rgba(245,158,11,0.2)',
+                    background: 'linear-gradient(135deg, rgba(27,169,201,0.14) 0%, rgba(8,49,70,0.65) 45%, rgba(6,24,35,0.85) 100%)',
+                    border: '1px solid rgba(34,211,238,0.3)',
+                    boxShadow: '0 12px 30px -18px rgba(34,211,238,0.75), inset 0 1px 0 rgba(255,255,255,0.12)',
                   }}
                 >
-                  <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.2),transparent_60%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                  
-                  {/* Notification Dot */}
-                  <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#facc15] animate-ping" />
-                  
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_20px_rgba(245,158,11,0.15)] text-amber-500">
-                    <Gift size={18} className="group-hover:fill-amber-500/20" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[rgba(34,211,238,0.16)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="w-11 h-11 rounded-2xl bg-cyan-500/12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_16px_rgba(34,211,238,0.24)] text-cyan-300">
+                      <BarChart3 size={19} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-300/65">Analytics Lab</p>
+                      <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-cyan-200">Simulator</span>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-500/80 group-hover:text-amber-500 transition-colors text-center w-full">Claim</span>
+                  <div className="w-9 h-9 rounded-full bg-black/15 backdrop-blur-sm flex items-center justify-center border border-cyan-300/25 group-hover:bg-black/25 group-hover:translate-x-1 transition-all">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#7dd3fc" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
                 </motion.button>
+
+              </div>
+
+              {/* Third Row: Utility & Quick Access */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
 
                 {/* Achievements */}
                 <motion.button
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.5 }}
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }}
                   onClick={() => { playSound('click'); setShowAchievements(true); }}
-                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
+                  className="group relative flex min-h-20 flex-col items-center justify-center gap-2 p-3 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
                   style={{
                     background: 'linear-gradient(180deg, rgba(168,85,247,0.05) 0%, rgba(168,85,247,0.01) 100%)',
                     border: '1px solid rgba(168,85,247,0.2)',
@@ -351,28 +357,32 @@ export default function HomePage() {
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-purple-400/80 group-hover:text-purple-400 transition-colors text-center w-full">Trophies</span>
                 </motion.button>
 
-                {/* Simulator */}
+                {/* Daily Claim */}
                 <motion.button
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85, duration: 0.5 }}
-                  onClick={() => { playSound('click'); router.push('/simulator'); }}
-                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65, duration: 0.5 }}
+                  onClick={() => { playSound('click'); setShowDailyClaim(true); }}
+                  className="group relative flex min-h-20 flex-col items-center justify-center gap-2 p-3 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
                   style={{
-                    background: 'linear-gradient(180deg, rgba(6,182,212,0.08) 0%, rgba(2,132,199,0.04) 100%)',
-                    border: '1px solid rgba(34,211,238,0.25)',
+                    background: 'linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.01) 100%)',
+                    border: '1px solid rgba(245,158,11,0.2)',
                   }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-t from-[rgba(34,211,238,0.16)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(34,211,238,0.2)] text-cyan-300">
-                    <BarChart3 size={18} />
+                  <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.2),transparent_60%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+                  {/* Notification Dot */}
+                  <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#facc15] animate-ping" />
+
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_20px_rgba(245,158,11,0.15)] text-amber-500">
+                    <Gift size={18} className="group-hover:fill-amber-500/20" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-cyan-300/85 group-hover:text-cyan-200 transition-colors text-center w-full">Simulator</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-500/80 group-hover:text-amber-500 transition-colors text-center w-full">Claim</span>
                 </motion.button>
 
                 {/* Settings */}
                 <motion.button
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.5 }}
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
                   onClick={() => { playSound('click'); setShowSettings(true); }}
-                  className="group relative flex min-h-[96px] flex-col items-center justify-center gap-2 p-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden col-span-2 lg:col-span-1"
+                  className="group relative flex min-h-20 flex-col items-center justify-center gap-2 p-3 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
                   style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.08)',
@@ -386,6 +396,23 @@ export default function HomePage() {
                     </svg>
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/70 group-hover:text-white transition-colors text-center w-full">Settings</span>
+                </motion.button>
+
+                {/* Quick Play */}
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75, duration: 0.5 }}
+                  onClick={() => { playSound('click'); router.push('/game/classic'); }}
+                  className="group relative flex min-h-20 flex-col items-center justify-center gap-2 p-3 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(255,255,255,0.05)] text-white/70">
+                    <Zap size={18} className="group-hover:fill-white/20" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/70 group-hover:text-white transition-colors text-center w-full">Quick Play</span>
                 </motion.button>
 
               </div>
@@ -458,11 +485,11 @@ export default function HomePage() {
           </AnimatePresence>
 
           {/* Bottom decoration */}
-          <div className="mt-8 pt-4 pb-2 text-center w-full max-w-4xl relative z-10 shrink-0">
-            <p className="text-white/30 text-[10px] uppercase tracking-[0.3em] mb-2">
+          <div className="mt-auto pt-2 pb-1 text-center w-full max-w-4xl relative z-10 shrink-0">
+            <p className="text-white/30 text-[10px] uppercase tracking-[0.3em] mb-1">
               18+ Simulated Gambling • Offline • No Real Money • For Entertainment &amp; Education Only
             </p>
-            <div className="text-[8px] text-white/10 leading-tight uppercase tracking-widest mb-3">
+            <div className="text-[8px] text-white/10 leading-tight uppercase tracking-widest mb-2">
               Audio Credits: Music by Kevin MacLeod & Audionautix.com · SFX by Kenney.nl
             </div>
             <div className="flex items-center justify-center gap-4">

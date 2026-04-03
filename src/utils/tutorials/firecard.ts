@@ -74,19 +74,17 @@ export const FIRECARD_TUTORIAL_LESSONS: TutorialLesson[] = [
     },
     {
         round: 1,
-        title: 'Burn Timing vs High Upcard',
+        title: 'Non-Spade Ace: Optional Burn',
            forcedCards: [
-               { rank: Rank.EIGHT, suit: Suit.CLUBS, value: 8, isHidden: false },   // Dealer Hit -> 22 (bust)
-               { rank: Rank.NINE, suit: Suit.SPADES, value: 9, isHidden: false },   // Replacement after burn -> 19
-               { rank: Rank.SEVEN, suit: Suit.CLUBS, value: 7, isHidden: true },    // Dealer Hole -> 17
-               { rank: Rank.SIX, suit: Suit.HEARTS, value: 6, isHidden: false },    // Player 2nd -> 16
-               { rank: Rank.TEN, suit: Suit.DIAMONDS, value: 10, isHidden: false }, // Dealer Face -> 10
-               { rank: Rank.TEN, suit: Suit.SPADES, value: 10, isHidden: false },   // Player 1st -> 10
+               { rank: Rank.EIGHT, suit: Suit.CLUBS, value: 8, isHidden: true },     // Dealer Hole -> 17
+               { rank: Rank.ACE, suit: Suit.HEARTS, value: 11, isHidden: false },    // Player 2nd -> Soft 20
+               { rank: Rank.NINE, suit: Suit.DIAMONDS, value: 9, isHidden: false },  // Dealer Face -> 9
+               { rank: Rank.NINE, suit: Suit.SPADES, value: 9, isHidden: false },    // Player 1st -> 9
            ],
         steps: [
             {
                 id: 0,
-                message: "Ace policy update: if your second card is an Ace, advisor can show base action/BURN; if it is Ace of Spades, BURN is always priority.",
+                message: "Ace policy update: with a non-spade Ace as 2nd card, advisor can show base action/BURN. A-spade remains always-burn.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue !== 100,
                 position: 'center',
                 requiresClick: true
@@ -114,32 +112,25 @@ export const FIRECARD_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 4,
-                message: "Hard 16 vs dealer 10 is a BURN spot in Fire Card strategy. Tap BURN.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && !s.seats[2].hands[0].isBurned,
-                targetElementId: 'action-burn',
-                position: 'player'
-            },
-            {
-                id: 5,
-                message: "Replacement card gives you 19. Lock it - tap STAND.",
-                condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && !!s.seats[2].hands[0].isBurned,
+                message: "You have Soft 20 vs dealer 9. Base chart says STAND, and advisor may show STAND/BURN because your 2nd card is a non-spade Ace. Tap STAND.",
+                condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && !s.seats[2].hands[0].isBurned && s.seats[2].hands[0].cards.length === 2,
                 targetElementId: 'action-stand',
                 position: 'player'
             },
             {
-                id: 6,
-                message: "Dealer busts on 22. The BURN action turned a losing stiff into a strong stand hand.",
+                id: 5,
+                message: "Dealer finishes at 17. Your Soft 20 wins without using BURN.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 position: 'center',
                 requiresClick: true
             },
             {
-                id: 7,
-                message: "BURN is tactical by chart, and Ace cards add bonus-driven value lines. Tap 'NEW ROUND'.",
+                id: 6,
+                message: "This round follows base action first. Non-spade Ace can still be played as optional STAND/BURN depending on your line.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'new-round-button',
                 position: 'player'
-            }
+            },
         ]
     },
     {

@@ -275,16 +275,26 @@ export interface GameActions {
 
 export interface DailyClaimSlice {
   lastDailyClaim: number;
+  dailyClaimStreak: number;
   dailyClaimCount: number;
   totalBetSinceLastClaim: number;
   insuranceClaimsToday: number;
   lastInsuranceReset: number;
   totalClaimedAmount: number;
+  mysteryClaimCount: number;
+  lastMysteryClaimAt: number;
+  lastMysteryReward: number;
+  claimPopupAmount: number;
+  claimPopupNonce: number;
+  claimedTutorialRewards: Record<string, boolean>;
 
   claimDaily: () => number;
   claimTimedReward: () => number;
+  claimMysteryReward: () => number;
   claimRebate: () => number;
   claimInsurance: () => number;
+  claimTutorialProgressReward: () => number;
+  clearClaimPopup: () => void;
 }
 
 import { DevToolsSlice } from '@/store/devToolsSlice';

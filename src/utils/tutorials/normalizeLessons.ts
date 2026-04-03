@@ -34,11 +34,11 @@ function buildIntroMessage(roomId: string, lessonTitle: string): string {
     const roomIntro = INTRO_BY_ROOM[roomId] || 'Core rule: follow the room rules and strategy tables for every action.';
     const roomRuleSummary = normalizeRuleSummary(roomIntro);
     const toneLead = profile.tone === 'gentle'
-        ? 'We will go step by step and keep it easy to follow.'
+        ? 'One decision at a time, with clear reasons.'
         : profile.tone === 'coach'
-            ? 'We will move with game pace and focus on clean habits.'
-            : 'We will focus on precision, edge cases, and discipline.';
-    return `Welcome to "${lessonTitle}" (${profile.level}). ${toneLead} Rule focus: ${roomRuleSummary}`;
+            ? 'Execute the exact action sequence for this spot.'
+            : 'Validate precision and edge-case discipline.';
+    return `Round focus: ${lessonTitle}. ${toneLead} Key rule in play: ${roomRuleSummary}`;
 }
 
 export function normalizeTutorialLessons(roomId: string, lessons: TutorialLesson[]): TutorialLesson[] {
@@ -56,15 +56,7 @@ export function normalizeTutorialLessons(roomId: string, lessons: TutorialLesson
         };
 
         const nextSteps = shouldInjectIntro
-            ? (hasIntro
-                ? lesson.steps.map((step, index) => {
-                    if (index !== 0) return step;
-                    return {
-                        ...step,
-                        message: introMessage,
-                    };
-                })
-                : [introStep, ...lesson.steps])
+            ? (hasIntro ? lesson.steps : [introStep, ...lesson.steps])
             : lesson.steps;
 
         return {

@@ -30,6 +30,30 @@ const PROFILE_BY_ROOM: Record<string, TutorialProfile> = {
     tutorial_uk: { level: 'Intermediate', tone: 'coach', tags: ['OBO', 'DAS'] },
 };
 
+const TUTORIAL_SEQUENCE_BY_ROOM: Record<string, number> = {
+    // Beginner - Classic fundamentals
+    tutorial_beginner: 10,
+    tutorial_double: 20,
+    tutorial_strategy: 30,
+
+    // Intermediate - Classic/standard variants
+    tutorial_splitting: 40,
+    tutorial_multihand: 50,
+    tutorial_european: 60,
+    tutorial_uk: 70,
+
+    // Intermediate - Special rules
+    tutorial_free_action: 80,
+    tutorial_zapout: 90,
+    tutorial_firecard: 100,
+
+    // Advanced - Classic to special
+    tutorial_counting: 110,
+    tutorial_exchange: 120,
+    tutorial_madness: 130,
+    tutorial_iberian: 140,
+};
+
 export function getTutorialProfile(roomId: string): TutorialProfile {
     return PROFILE_BY_ROOM[roomId] ?? DEFAULT_PROFILE;
 }
@@ -38,4 +62,8 @@ export function getLevelRank(level: TutorialSkillLevel): number {
     if (level === 'Beginner') return 0;
     if (level === 'Intermediate') return 1;
     return 2;
+}
+
+export function getTutorialSequenceRank(roomId: string): number {
+    return TUTORIAL_SEQUENCE_BY_ROOM[roomId] ?? Number.MAX_SAFE_INTEGER;
 }

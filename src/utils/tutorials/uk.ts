@@ -140,14 +140,14 @@ export const UK_TUTORIAL_LESSONS: TutorialLesson[] = [
         round: 2,
         title: 'Double After Split',
         forcedCards: [
-            { rank: Rank.TEN, suit: Suit.HEARTS, value: 10, isHidden: false },     // Dealer Hit -> 25 bust
-            { rank: Rank.TEN, suit: Suit.CLUBS, value: 10, isHidden: false },      // Hand 2 Double Card -> 21
-            { rank: Rank.TEN, suit: Suit.DIAMONDS, value: 10, isHidden: false },   // Hand 1 Double Card -> 20
-            { rank: Rank.NINE, suit: Suit.SPADES, value: 9, isHidden: true },      // Dealer Hole -> 15
-            { rank: Rank.THREE, suit: Suit.CLUBS, value: 3, isHidden: false },     // Hand 2 Split Card -> 11
-            { rank: Rank.TWO, suit: Suit.HEARTS, value: 2, isHidden: false },      // Hand 1 Split Card -> 10
-            { rank: Rank.SIX, suit: Suit.DIAMONDS, value: 6, isHidden: false },    // Dealer Face -> 6
+            { rank: Rank.TEN, suit: Suit.HEARTS, value: 10, isHidden: false },     // Dealer hit -> 25 bust
+            { rank: Rank.NINE, suit: Suit.SPADES, value: 9, isHidden: true },      // Dealer hole -> 15
+            { rank: Rank.TEN, suit: Suit.CLUBS, value: 10, isHidden: false },      // Hand 2 double card -> 21
+            { rank: Rank.TEN, suit: Suit.DIAMONDS, value: 10, isHidden: false },   // Hand 1 double card -> 20
+            { rank: Rank.THREE, suit: Suit.CLUBS, value: 3, isHidden: false },     // Hand 2 split card -> 11
+            { rank: Rank.TWO, suit: Suit.HEARTS, value: 2, isHidden: false },      // Hand 1 split card -> 10
             { rank: Rank.EIGHT, suit: Suit.CLUBS, value: 8, isHidden: false },     // Player 2nd -> pair
+            { rank: Rank.SIX, suit: Suit.DIAMONDS, value: 6, isHidden: false },    // Dealer face -> 6
             { rank: Rank.EIGHT, suit: Suit.SPADES, value: 8, isHidden: false },    // Player 1st -> pair
         ],
         steps: [

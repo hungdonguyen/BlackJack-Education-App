@@ -394,7 +394,7 @@ export const PAIR_SPLITTING_TUTORIAL_LESSONS: TutorialLesson[] = [
                 message: "Both hands busted. You lost twice as much money! This happens sometimes, but in the long run, splitting 8s loses less than standing on 16 or hitting 16. Tap 'FINISH TUTORIAL'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'finish-tutorial-button',
-                position: 'center'
+                position: 'player'
             }
         ]
     }

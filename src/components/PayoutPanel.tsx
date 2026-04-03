@@ -12,11 +12,34 @@ interface PayoutPanelProps {
     roomConfig?: RoomConfig;
 }
 
+function formatBlackjackMultiplier(multiplier?: number): string {
+    if (typeof multiplier !== 'number' || Number.isNaN(multiplier)) {
+        return '3 : 2';
+    }
+    if (Math.abs(multiplier - 1) < 0.001) return '1 : 1';
+    if (Math.abs(multiplier - 1.5) < 0.001) return '3 : 2';
+    if (Math.abs(multiplier - 2) < 0.001) return '2 : 1';
+    return `${multiplier.toFixed(2)} : 1`;
+}
+
 export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
-    const isFreeBet = roomConfig?.id === 'freebet';
+    const isMadness = roomConfig?.id === 'madness_21' || roomConfig?.id === 'tutorial_madness';
+    const isZapout = roomConfig?.id === 'zapout_21' || roomConfig?.id === 'tutorial_zapout';
+
+    const blackjackPayoutRows = isMadness
+        ? [
+            { label: 'Suited Blackjack', value: '2 : 1' },
+            { label: 'Unsuited Blackjack', value: '3 : 2' },
+        ]
+        : isZapout
+            ? [
+                { label: 'Natural Blackjack', value: '3 : 2' },
+                { label: 'Zapped Blackjack', value: '1 : 1' },
+            ]
+            : [{ label: 'Blackjack', value: formatBlackjackMultiplier(roomConfig?.blackjackMultiplier) }];
 
     const payouts = [
-        { label: 'Blackjack', value: '3 : 2' },
+        ...blackjackPayoutRows,
         { label: 'Insurance', value: '2 : 1' },
         { label: 'Regular Win', value: '1 : 1' },
         { label: 'Push', value: 'Tie' },
@@ -42,6 +65,19 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
             { label: 'Free Action Split', value: 'Non-10 pairs' },
             { label: 'Dealer 22', value: 'Push' },
         );
+    }
+
+    const hasDealer22PushRule =
+        roomConfig?.id === 'madness_21' ||
+        roomConfig?.id === 'tutorial_madness' ||
+        roomConfig?.id === 'exchange_21' ||
+        roomConfig?.id === 'tutorial_exchange' ||
+        roomConfig?.id === 'zapout_21' ||
+        roomConfig?.id === 'tutorial_zapout' ||
+        roomConfig?.sideBetType === 'push_22';
+
+    if (!isFreeAction && hasDealer22PushRule) {
+        payouts.push({ label: 'Dealer 22', value: 'Push' });
     }
 
     return (
@@ -160,7 +196,7 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
                         </div>
                     </>
                 )}
-                {roomConfig?.sideBetType === 'push_22' && (
+                {roomConfig?.sideBetType === 'push_22' && !roomConfig?.isTutorial && (
                     <>
                         <div className="px-3 py-2 border-t border-purple-500/20 bg-purple-500/10">
                             <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] flex items-center text-purple-400">

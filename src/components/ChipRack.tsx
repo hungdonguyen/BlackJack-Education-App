@@ -23,13 +23,16 @@ export default function ChipRack() {
     const isBettingPhase = gamePhase === GamePhase.BETTING;
     const roomConfig = getRoomConfig(currentRoom);
     const currentBalance = (roomConfig.isTutorial ? tutorialBalance : bankroll) ?? 0;
+    const visibleChipValues = roomConfig.isTutorial
+        ? [100]
+        : CHIP_VALUES.filter((value) => value >= 1);
 
     return (
         <div className="flex items-end gap-1.5">
-            {CHIP_VALUES.filter(v => v >= 1).map((value) => {
+            {visibleChipValues.map((value) => {
                 const isSelected = selectedChipValue === value;
                 const canAfford = currentBalance >= value;
-                const isDisabled = !isBettingPhase || !canAfford || (currentRoom === 'tutorial_double' && value !== 100);
+                const isDisabled = !isBettingPhase || !canAfford;
                 const handleSelect = () => {
                     if (!isDisabled) selectChip(value);
                 };

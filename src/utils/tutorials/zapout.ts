@@ -59,14 +59,14 @@ export const ZAPOUT_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 6,
-                message: "You zapped into a 20! Dealer reveals 19. A clean win from what should have been a disaster!",
+                message: "That round shows the upside of a good Zap: weak start, strong finish.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 position: 'center',
                 requiresClick: true
             },
             {
                 id: 7,
-                message: "ZAP OUT turns certain losses into wins. Save it for hard 15, 16, or 17. Tap NEW ROUND.",
+                message: "Use ZAP on the right totals, not every hand. Tap NEW ROUND.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'new-round-button',
                 position: 'player'
@@ -130,14 +130,14 @@ export const ZAPOUT_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 6,
-                message: "Busted! ZAP OUT drops bad cards, but the new ones are random. Accept the variance.",
+                message: "This time the redraw did not help. Zap changes the hand, but variance still decides the result.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 position: 'center',
                 requiresClick: true
             },
             {
                 id: 7,
-                message: "Blackjack is brutal. Play the long game. Tap 'NEW ROUND'.",
+                message: "Focus on long-run decision quality, not one outcome. Tap 'NEW ROUND'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'new-round-button',
                 position: 'player'
@@ -201,7 +201,7 @@ export const ZAPOUT_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 6,
-                message: "Dealer draws to 22. In Zap Out 21, a dealer 22 PUSHES all non-natural Blackjacks — your 20 is returned, not paid.",
+                message: "Dealer reaches 22. In Zap Out 21, that means a push for non-natural blackjacks.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 position: 'center',
                 requiresClick: true

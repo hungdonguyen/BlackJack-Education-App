@@ -8,7 +8,7 @@ import { useAudio } from '@/utils/audio';
 import Image from 'next/image';
 import { useMemo } from 'react';
 import { useGameStore } from '@/hooks/useGameStore';
-import { getLevelRank, getTutorialProfile } from '@/utils/tutorials/profiles';
+import { getLevelRank, getTutorialProfile, getTutorialSequenceRank } from '@/utils/tutorials/profiles';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Keyboard } from 'swiper/modules';
 import { FloatingLogosBackdrop, ROOM_LOGO_PATHS } from '@/components/FloatingLogosBackdrop';
@@ -27,10 +27,14 @@ export default function TutorialLobby() {
     return Object.values(ROOMS)
       .filter((r) => r.isTutorial)
       .sort((a, b) => {
+        const sequenceDelta = getTutorialSequenceRank(a.id) - getTutorialSequenceRank(b.id);
+        if (sequenceDelta !== 0) return sequenceDelta;
+
         const pa = getTutorialProfile(a.id);
         const pb = getTutorialProfile(b.id);
         const levelDelta = getLevelRank(pa.level) - getLevelRank(pb.level);
         if (levelDelta !== 0) return levelDelta;
+
         return a.name.localeCompare(b.name);
       });
   }, []);

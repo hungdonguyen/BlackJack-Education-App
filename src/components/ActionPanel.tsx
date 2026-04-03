@@ -14,7 +14,7 @@ import { getRoomConfig } from '@/utils/rooms';
 import { TurnTimer, InsuranceTimer } from './ActionTimers';
 import React, { useMemo } from 'react';
 import { useAudio } from '@/utils/audio';
-import { getExchange21Advice, ExchangeAdvice } from '@/utils/strategyAdvisor';
+import { getExchange21Advice, ExchangeAdvice, SwitchAdviceEngine } from '@/utils/strategyAdvisor';
 import { useRouter } from 'next/navigation';
 import { getLessons } from '@/store/tutorialSlice';
 
@@ -132,17 +132,20 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
 
     const isExchangeRoom = currentRoom === 'exchange_21' || currentRoom === 'tutorial_exchange';
 
+    const effectiveSwitchAdviceEngine: SwitchAdviceEngine =
+        currentRoom === 'tutorial_exchange' ? 'cindy_advanced' : switchAdviceEngine;
+
     const exchangeAdvice = useMemo(() => {
         if (canSwitchHand && currentSeat && showSwitchAdvice && isExchangeRoom && currentSeat.hands.length === 2) {
             return getExchange21Advice(
                 currentSeat.hands[0].cards,
                 currentSeat.hands[1].cards,
                 dealerHandCards[0]?.rank || '2',
-                switchAdviceEngine,
+                effectiveSwitchAdviceEngine,
             );
         }
         return null;
-    }, [canSwitchHand, currentSeat, showSwitchAdvice, isExchangeRoom, dealerHandCards, switchAdviceEngine]);
+    }, [canSwitchHand, currentSeat, showSwitchAdvice, isExchangeRoom, dealerHandCards, effectiveSwitchAdviceEngine]);
 
     const { canBurnHand, burnCost } = useMemo(() => {
         if (isPlayerTurn && isPlaying && currentHand && rules.canBurn) {

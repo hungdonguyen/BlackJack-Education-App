@@ -7,8 +7,8 @@ export const EXCHANGE_TUTORIAL_LESSONS: TutorialLesson[] = [
         round: 0,
         title: 'The Art of the Switch',
         forcedCards: [
-             { rank: Rank.TEN, suit: Suit.SPADES, value: 10, isHidden: false },    // Player 2 Double Hit -> 21
-             { rank: Rank.TEN, suit: Suit.DIAMONDS, value: 10, isHidden: true },   // Dealer Hole -> 18
+             { rank: Rank.TEN, suit: Suit.DIAMONDS, value: 10, isHidden: true },   // Dealer hole -> 18
+             { rank: Rank.TEN, suit: Suit.SPADES, value: 10, isHidden: false },    // Player 2 double hit -> 21
              { rank: Rank.TEN, suit: Suit.CLUBS, value: 10, isHidden: false },     // Player 2 2nd -> 10
              { rank: Rank.SIX, suit: Suit.CLUBS, value: 6, isHidden: false },      // Player 1 2nd -> 6
              { rank: Rank.EIGHT, suit: Suit.SPADES, value: 8, isHidden: false },   // Dealer Face -> 8
@@ -86,8 +86,8 @@ export const EXCHANGE_TUTORIAL_LESSONS: TutorialLesson[] = [
         title: 'Cruel Variance',
         forcedCards: [
              { rank: Rank.SIX, suit: Suit.HEARTS, value: 6, isHidden: false },     // Dealer hit -> 21
-             { rank: Rank.TEN, suit: Suit.SPADES, value: 10, isHidden: false },    // Player 2 Double Hit -> 20
              { rank: Rank.FIVE, suit: Suit.DIAMONDS, value: 5, isHidden: true },   // Dealer Hole -> 15
+             { rank: Rank.TEN, suit: Suit.SPADES, value: 10, isHidden: false },    // Player 2 hit -> 20
              { rank: Rank.TEN, suit: Suit.CLUBS, value: 10, isHidden: false },     // Player 2 2nd -> 10
              { rank: Rank.SIX, suit: Suit.CLUBS, value: 6, isHidden: false },      // Player 1 2nd -> 6
              { rank: Rank.TEN, suit: Suit.SPADES, value: 10, isHidden: false },    // Dealer Face -> 10
@@ -166,8 +166,8 @@ export const EXCHANGE_TUTORIAL_LESSONS: TutorialLesson[] = [
         title: 'Push 22 Tax',
         forcedCards: [
              { rank: Rank.SIX, suit: Suit.DIAMONDS, value: 6, isHidden: false },   // Dealer hit -> 22 push
-             { rank: Rank.JACK, suit: Suit.CLUBS, value: 10, isHidden: false },   // Player Hand 2 Double -> 20
              { rank: Rank.SIX, suit: Suit.HEARTS, value: 6, isHidden: true },     // Dealer Hole -> 16
+               { rank: Rank.JACK, suit: Suit.CLUBS, value: 10, isHidden: false },   // Player Hand 2 hit -> 20
              { rank: Rank.TEN, suit: Suit.DIAMONDS, value: 10, isHidden: false }, // Player Hand 2 2nd -> 10
              { rank: Rank.TWO, suit: Suit.DIAMONDS, value: 2, isHidden: false },  // Player Hand 1 2nd -> 2
              { rank: Rank.QUEEN, suit: Suit.CLUBS, value: 10, isHidden: false },  // Dealer Face -> 10
@@ -226,7 +226,7 @@ export const EXCHANGE_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 7,
-                message: "Dealer climbs to 22 — every non-Blackjack hand PUSHES. Even your 20 and 20 (after the double) get returned.",
+                message: "Dealer climbs to 22 — every non-Blackjack hand PUSHES. Even your strong totals get returned.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 position: 'center',
                 requiresClick: true

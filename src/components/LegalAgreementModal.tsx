@@ -42,27 +42,27 @@ async function persistAcceptance(): Promise<void> {
 const PRIVACY_CONTENT = [
     {
         title: '1. Introduction',
-        body: 'Educational Blackjack ("the App") is a free, offline educational card game application. We are committed to protecting your privacy. This Privacy Policy explains what data the App does — and does not — collect.',
+        body: 'Educational Blackjack ("the App") is a free educational card game application. Core gameplay runs locally and can be played offline. This Privacy Policy explains what data the App does — and does not — collect.',
     },
     {
         title: '2. Data Collection',
-        body: 'We collect absolutely no personal data. The App operates 100% offline — it makes no network requests whatsoever. No analytics, tracking, or telemetry of any kind. No cookies or web beacons. No user accounts, registration, or authentication. No advertising or ad-related data collection.',
+        body: 'We collect absolutely no personal data. The App does not send personal account or gameplay data to developer-operated servers. No active analytics, behavioral tracking, cookies, web beacons, or advertising data collection by the App.',
     },
     {
-        title: '3. Local Storage',
-        body: 'The App stores data locally on your device only: virtual bankroll balance (no real monetary value), game history records for educational review, and daily claim status. This data is stored in your OS application data directory and never leaves your device. You can delete it at any time by uninstalling the app.',
+        title: '3. Storage by Platform',
+        body: 'Data is stored locally: Web build uses localStorage (blackjack-storage). Tauri desktop uses local files such as save.json, history.json, and simulator_history.json. Stored data includes virtual bankroll, history, and claim status.',
     },
     {
-        title: '4. Third-Party Services',
-        body: 'The App uses no third-party services, APIs, SDKs, or external libraries that collect, process, or transmit user data.',
+        title: '4. Third-Party Assets & Platform Services',
+        body: 'The App may load limited static visual assets (icons/textures) from third-party CDNs and is currently distributed on Steam. These providers may process technical network metadata under their own policies.',
     },
     {
         title: '5. GDPR Compliance (EU)',
-        body: 'Since the App collects no personal data and processes no information about identifiable individuals, the provisions of the GDPR do not impose specific obligations. No consent mechanism is required because there is nothing to consent to.',
+        body: 'We do not collect or profile personal data for analytics or advertising. Any technical metadata processed by Steam or third-party asset hosts is governed by those providers\' own policies.',
     },
     {
         title: '6. CCPA Compliance (California, US)',
-        body: 'The App does not collect, sell, or share any personal information as defined by the CCPA. There is no personal information to disclose, delete, or opt out from selling.',
+        body: 'The App does not collect, sell, or share personal information for our own analytics or advertising purposes.',
     },
     {
         title: '7. Children\'s Privacy',
@@ -81,38 +81,42 @@ const TERMS_CONTENT = [
     },
     {
         title: '2. Nature of the Application',
-        body: 'This App is strictly for educational and entertainment purposes. No real money is involved at any stage — all currency within the App is virtual and has absolutely no monetary value. The App cannot be used for real-money gambling. Virtual chips cannot be exchanged, transferred, or redeemed for real currency, goods, or services. The strategies, advice, and card counting features provided by the App are for educational simulations only. The developer does not guarantee any success or financial gain in real-life casino environments. Users are solely responsible for their own decisions if they choose to apply these concepts in real-world settings.',
+        body: 'This App is strictly for educational and entertainment purposes. No real money is involved at any stage — all currency within the App is virtual and has absolutely no monetary value. The App cannot be used for real-money gambling. Virtual chips cannot be exchanged, transferred, or redeemed for real currency, goods, or services. The App may load limited static visual assets from third-party CDNs. The App does not send bankroll, gameplay history, or personal account information to developer-operated servers and does not run active behavioral tracking.',
     },
     {
         title: '3. Age Restriction — 18+',
         body: 'This App contains simulated gambling content (18+). By using this App, you confirm that you are at least 18 years of age or the age of majority in your jurisdiction, whichever is higher. The App is not intended for use by minors.',
     },
     {
-        title: '4. Fair Play & Randomness',
+        title: '4. Platform, Network Use & Steam Distribution',
+        body: 'At this time, the game is distributed on Steam. Steam account/platform/payment data are handled by Valve under Steam\'s own terms and privacy policy. Third-party static asset hosts may receive technical network metadata as part of normal asset delivery.',
+    },
+    {
+        title: '5. Fair Play & Randomness',
         body: 'The App uses a Cryptographically Secure Pseudo-Random Number Generator (CSPRNG) via the Web Crypto API (crypto.getRandomValues()) for all card shuffling operations. This ensures that card outcomes are statistically unbiased and cannot be predicted or manipulated.',
     },
     {
-        title: '5. Intellectual Property',
+        title: '6. Intellectual Property',
         body: 'The App\'s source code, design, and original assets are the intellectual property of the developer. Standard playing card designs and Blackjack game rules are in the public domain. Any resemblance of in-game features or room names to specific proprietary casino table games or trademarks is purely coincidental and used solely for the purpose of generalized mathematical simulation.',
     },
     {
-        title: '6. Disclaimer of Warranties',
+        title: '7. Disclaimer of Warranties',
         body: 'The App is provided "AS IS" without warranty of any kind, express or implied. The developer does not warrant that the App will be error-free or uninterrupted.',
     },
     {
-        title: '7. Limitation of Liability',
+        title: '8. Limitation of Liability',
         body: 'In no event shall the developer be liable for any direct, indirect, incidental, special, consequential, or punitive damages arising out of use of the App. Since the App involves no real money, no financial damages can result from its use.',
     },
     {
-        title: '8. Responsible Gaming',
+        title: '9. Responsible Gaming',
         body: 'While this App does not involve real money, it simulates gambling mechanics. If you or someone you know has a gambling problem: US: 1-800-522-4700 | UK: 0808-802-0133 | AU: 1800-858-858',
     },
     {
-        title: '9. Modifications',
+        title: '10. Modifications',
         body: 'The developer reserves the right to modify these Terms at any time. Continued use of the App after changes constitutes acceptance of the modified Terms.',
     },
     {
-        title: '10. Audio Credits',
+        title: '11. Audio Credits',
         body: 'Sound effects are sourced from Kenney.nl (CC0 Public Domain). Background music is provided by Kevin MacLeod (incompetech.com) and Audionautix (audionautix.com), licensed under Creative Commons: By Attribution 4.0 License (creativecommons.org/licenses/by/4.0). Tracks used: "Airport Lounge", "Bossa Antigua", "CoolVibes", "Faster Does It", "Funk Game Loop", "Whiskey on the Mississippi" by Kevin MacLeod. "Spanish Summer" by Audionautix.',
     },
 ];

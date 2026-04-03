@@ -6,7 +6,7 @@ import { ArrowLeft, FileText } from 'lucide-react';
 
 export default function TermsPage() {
     const router = useRouter();
-    const lastUpdated = '2026-03-08';
+    const lastUpdated = '2026-04-03';
 
     return (
         <div
@@ -73,13 +73,16 @@ export default function TermsPage() {
                             </li>
                             <li>The App cannot be used for real-money gambling.</li>
                             <li>Virtual chips cannot be exchanged, transferred, or redeemed for real currency, goods, or services.</li>
+                            <li>The App may load limited static visual assets (for example, icons or texture patterns) from third-party CDNs.</li>
                         </ul>
                         <p className="mt-3">
                             The strategies, advice, and card counting features provided by the App are for
                             educational simulations only. The developer does not guarantee any success or
                             financial gain in real-life casino environments. Users are solely responsible
                             for their own decisions if they choose to apply these concepts in real-world
-                            settings.
+                            settings. The App does not send bankroll, gameplay history, or personal account
+                            information to developer-operated servers, and does not run active analytics or
+                            behavioral tracking.
                         </p>
                     </section>
 
@@ -94,7 +97,22 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">4. Fair Play &amp; Randomness</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">4. Platform, Network Use &amp; Steam Distribution</h2>
+                        <p>
+                            At this time, the game is distributed on <strong className="text-white/80">Steam</strong>.
+                            Steam account, platform, and payment-related data are handled by Valve under
+                            Steam&apos;s own terms and privacy policy. The App does not request your Steam
+                            credentials.
+                        </p>
+                        <p className="mt-3">
+                            Third-party static asset hosts may receive technical network metadata (such as
+                            IP address and user-agent) as part of normal asset delivery. This App does not
+                            use those requests for active analytics or advertising profiling.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">5. Fair Play &amp; Randomness</h2>
                         <p>
                             The App uses a <strong className="text-white/80">Cryptographically Secure Pseudo-Random Number Generator
                                 (CSPRNG)</strong> via the Web Crypto API (<code className="text-amber-400/80 bg-white/5 px-1 rounded">crypto.getRandomValues()</code>)
@@ -104,7 +122,7 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">5. Intellectual Property</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">6. Intellectual Property</h2>
                         <p>
                             The App&apos;s source code, design, and original assets are the intellectual
                             property of the developer. Standard playing card designs and Blackjack game
@@ -118,7 +136,7 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">6. Disclaimer of Warranties</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">7. Disclaimer of Warranties</h2>
                         <p>
                             The App is provided <strong className="text-white/80">&quot;AS IS&quot;</strong> without warranty of any kind,
                             express or implied, including but not limited to the warranties of
@@ -129,7 +147,7 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">7. Limitation of Liability</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">8. Limitation of Liability</h2>
                         <p>
                             In no event shall the developer be liable for any direct, indirect,
                             incidental, special, consequential, or punitive damages arising out of
@@ -139,7 +157,7 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">8. Responsible Gaming Notice</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">9. Responsible Gaming Notice</h2>
                         <p>
                             While this App does not involve real money, it simulates gambling mechanics.
                             If you or someone you know has a gambling problem, please contact a gambling
@@ -153,7 +171,7 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">9. Modifications</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">10. Modifications</h2>
                         <p>
                             The developer reserves the right to modify these Terms at any time. Continued
                             use of the App after changes constitutes acceptance of the modified Terms.
@@ -161,7 +179,7 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">10. Audio Credits</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">11. Audio Credits</h2>
                         <p>
                             Sound effects are sourced from Kenney.nl (CC0 Public Domain). Background
                             music is provided by Kevin MacLeod (incompetech.com) and Audionautix
@@ -173,7 +191,7 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">11. Contact</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">12. Contact</h2>
                         <p>
                             For questions about these Terms of Service, please open an issue on the
                             project&apos;s repository or contact the developer.
@@ -183,7 +201,7 @@ export default function TermsPage() {
                     {/* Footer */}
                     <div className="pt-8 border-t border-white/10 text-center text-white/20 text-xs">
                         <p>Educational Blackjack — For Entertainment &amp; Education Only</p>
-                        <p className="mt-1">No real money • No data collection • 18+ Simulated Gambling</p>
+                        <p className="mt-1">No real money • No in-app tracking • 18+ Simulated Gambling</p>
                     </div>
                 </motion.div>
             </div>

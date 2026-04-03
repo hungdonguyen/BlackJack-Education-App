@@ -47,6 +47,8 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
     const { playSound } = useAudio();
 
     const roomHasSpecialCases = COMPOSITION_DEPENDENT_OVERRIDES.some(o => o.strategyType === roomId);
+    const isTutorialExchange = roomId === 'tutorial_exchange';
+    const effectiveSwitchAdviceEngine = isTutorialExchange ? 'cindy_advanced' : switchAdviceEngine;
 
     return (
         <motion.div className="absolute inset-0 z-[200] flex items-center justify-center"
@@ -197,13 +199,13 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
                                   </>
                               )}
 
-                            {roomId === 'exchange_21' && (
+                            {(roomId === 'exchange_21' || roomId === 'tutorial_exchange') && (
                                 <>
                                     <Divider />
                                     <SettingRow
                                         icon={showSwitchAdvice ? <ArrowLeftRight size={18} className="text-cyan-400" /> : <ArrowLeftRight size={18} className="text-white/30" />}
                                         label="Exchange Switch Advice"
-                                        description="Choose one of 3 switch coaching systems"
+                                        description={isTutorialExchange ? 'Tutorial mode locks Cindy Liu Advanced for consistent guidance' : 'Choose one of 3 switch coaching systems'}
                                     >
                                         <ToggleSwitch
                                             enabled={showSwitchAdvice}
@@ -216,27 +218,47 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
                                         <div className="pl-12">
                                             <div className="grid grid-cols-1 gap-1.5 rounded-lg border border-white/10 p-1.5 bg-white/[0.02]">
                                                 <button
-                                                    onClick={() => { playSound('switch'); setSwitchAdviceEngine('cindy_basic'); }}
-                                                    className={`text-left px-2.5 py-2 rounded-md text-[10px] font-bold uppercase tracking-[0.12em] transition-all cursor-pointer ${switchAdviceEngine === 'cindy_basic' ? 'text-black' : 'text-white/55 hover:text-white/85 bg-white/5 hover:bg-white/10'}`}
-                                                    style={switchAdviceEngine === 'cindy_basic' ? { background: accentColor } : undefined}
+                                                    onClick={() => {
+                                                        if (isTutorialExchange) return;
+                                                        playSound('switch');
+                                                        setSwitchAdviceEngine('cindy_basic');
+                                                    }}
+                                                    disabled={isTutorialExchange}
+                                                    className={`text-left px-2.5 py-2 rounded-md text-[10px] font-bold uppercase tracking-[0.12em] transition-all ${isTutorialExchange ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${effectiveSwitchAdviceEngine === 'cindy_basic' ? 'text-black' : 'text-white/55 hover:text-white/85 bg-white/5 hover:bg-white/10'}`}
+                                                    style={effectiveSwitchAdviceEngine === 'cindy_basic' ? { background: accentColor } : undefined}
                                                 >
                                                     Cindy Liu Basic
                                                 </button>
                                                 <button
-                                                    onClick={() => { playSound('switch'); setSwitchAdviceEngine('cindy_advanced'); }}
-                                                    className={`text-left px-2.5 py-2 rounded-md text-[10px] font-bold uppercase tracking-[0.12em] transition-all cursor-pointer ${switchAdviceEngine === 'cindy_advanced' ? 'text-black' : 'text-white/55 hover:text-white/85 bg-white/5 hover:bg-white/10'}`}
-                                                    style={switchAdviceEngine === 'cindy_advanced' ? { background: accentColor } : undefined}
+                                                    onClick={() => {
+                                                        if (isTutorialExchange) return;
+                                                        playSound('switch');
+                                                        setSwitchAdviceEngine('cindy_advanced');
+                                                    }}
+                                                    disabled={isTutorialExchange}
+                                                    className={`text-left px-2.5 py-2 rounded-md text-[10px] font-bold uppercase tracking-[0.12em] transition-all ${isTutorialExchange ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${effectiveSwitchAdviceEngine === 'cindy_advanced' ? 'text-black' : 'text-white/55 hover:text-white/85 bg-white/5 hover:bg-white/10'}`}
+                                                    style={effectiveSwitchAdviceEngine === 'cindy_advanced' ? { background: accentColor } : undefined}
                                                 >
                                                     Cindy Liu Advanced
                                                 </button>
                                                 <button
-                                                    onClick={() => { playSound('switch'); setSwitchAdviceEngine('arnold_snyder'); }}
-                                                    className={`text-left px-2.5 py-2 rounded-md text-[10px] font-bold uppercase tracking-[0.12em] transition-all cursor-pointer ${switchAdviceEngine === 'arnold_snyder' ? 'text-black' : 'text-white/55 hover:text-white/85 bg-white/5 hover:bg-white/10'}`}
-                                                    style={switchAdviceEngine === 'arnold_snyder' ? { background: accentColor } : undefined}
+                                                    onClick={() => {
+                                                        if (isTutorialExchange) return;
+                                                        playSound('switch');
+                                                        setSwitchAdviceEngine('arnold_snyder');
+                                                    }}
+                                                    disabled={isTutorialExchange}
+                                                    className={`text-left px-2.5 py-2 rounded-md text-[10px] font-bold uppercase tracking-[0.12em] transition-all ${isTutorialExchange ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${effectiveSwitchAdviceEngine === 'arnold_snyder' ? 'text-black' : 'text-white/55 hover:text-white/85 bg-white/5 hover:bg-white/10'}`}
+                                                    style={effectiveSwitchAdviceEngine === 'arnold_snyder' ? { background: accentColor } : undefined}
                                                 >
                                                     Arnold Snyder
                                                 </button>
                                             </div>
+                                            {isTutorialExchange && (
+                                                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-300/80">
+                                                    Tutorial lock: Cindy Liu Advanced
+                                                </p>
+                                            )}
                                         </div>
                                     )}
                                 </>
