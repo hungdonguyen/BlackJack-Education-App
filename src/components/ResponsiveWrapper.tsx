@@ -24,6 +24,14 @@ export default function ResponsiveWrapper({ children }: { children: React.ReactN
 
     useEffect(() => {
         setMounted(true);
+
+        // Block right-click (Context Menu) for Native Feel (Applies to Dev & Prod)
+        const handleContextMenu = (e: MouseEvent) => {
+            e.preventDefault();
+        };
+
+        window.addEventListener('contextmenu', handleContextMenu);
+        return () => window.removeEventListener('contextmenu', handleContextMenu);
     }, []);
 
     // Provide a solid background prior to client hydration to avoid flash

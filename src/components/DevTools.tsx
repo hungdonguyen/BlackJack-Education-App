@@ -28,6 +28,8 @@ function cardStr(c: { rank: string; suit: string }): string {
 }
 
 export default function DevTools() {
+    // Disabled entirely for native testing
+    return null;
     const router = useRouter();
 
     // ─── Store selectors ───

@@ -389,10 +389,10 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
             <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-linear-to-b from-emerald-500/5 to-black/40 p-5 flex flex-col min-h-50">
                <div className="flex items-center gap-2 mb-3 z-10">
                   <img src={EXTERNAL_ICONS.rebate} alt="Rebate" className="w-7 h-7 filter drop-shadow-lg" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">2% Cash Rebate</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">2% Chip Rebate</span>
               </div>
               <div className="flex-1 flex flex-col justify-center mb-4 z-10">
-                <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">Available Cashback</p>
+                <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">Available Chip Rebate</p>
                 <div className="text-3xl font-black text-emerald-400">${currentRebateAmount.toLocaleString()}</div>
                 <div className="mt-3 relative w-full h-2 bg-black rounded-full overflow-hidden border border-white/5">
                   <div 
@@ -410,7 +410,7 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                 disabled={!canClaimRebate}
                 className={`mt-auto z-10 w-full py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all ${canClaimRebate ? 'bg-emerald-500 hover:bg-emerald-400 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)] cursor-pointer' : 'bg-black/50 text-white/30 cursor-not-allowed border border-white/5'}`}
               >
-                Claim Cash
+                Claim Chips
               </button>
 
               {/* Rebate Flash */}

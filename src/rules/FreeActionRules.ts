@@ -11,8 +11,8 @@ import { isBlackjack, calculateHandValue } from '@/utils/hand';
  * - Blackjack pays 3:2
  * 
  * Free Action Rules:
- * - Free Action Double: Only on hard 9, 10, or 11 (no cost). Other doubles cost real money.
- * - Free Action Split: All pairs EXCEPT 10-value cards (10, J, Q, K). 10-value splits cost real money.
+ * - Free Action Double: Only on hard 9, 10, or 11 (no cost). Other doubles cost normal chips.
+ * - Free Action Split: All pairs EXCEPT 10-value cards (10, J, Q, K). 10-value splits cost normal chips.
  * - Free Action Double after Free Action Split allowed.
  * - Max 4 hands. Split Aces get 1 card then auto-stand.
  * 

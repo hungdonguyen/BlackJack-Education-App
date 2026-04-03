@@ -28,6 +28,7 @@ import StrategyModal from './StrategyModal';
 import HandAdvisor from './HandAdvisor';
 import CardCountingPanel from './CardCountingPanel';
 import MatchDetailModal from './MatchDetailModal';
+import { useGamepad } from '@/hooks/useGamepad';
 import SettingsModal from './SettingsModal';
 import { MusicPlayer } from './MusicPlayer';
 import { calculateMatchNetPnl, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
@@ -48,6 +49,7 @@ const compactClaimNumber = (value: number) => {
 };
 
 export default function Table({ roomId = 'classic' }: { roomId?: string }) {
+    useGamepad(); // Mount Gamepad Listener
     const room = getRoomConfig(roomId);
     const router = useRouter();
 
