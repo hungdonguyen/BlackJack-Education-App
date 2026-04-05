@@ -46,96 +46,156 @@ const BGM_MAP: Record<string, string> = {
 };
 
 const FADE_DURATION = 1500; // ms
-const BASE_VOLUME = 0.3; // Increased from 0.15 to allow more range in settings
+const BASE_VOLUME = 0.3; // Increased to allow more range
 
-// Singleton audio element to prevent multiple tracks playing
-let currentAudio: HTMLAudioElement | null = null;
-let currentTrackPath: string | null = null;
-let fadeInterval: ReturnType<typeof setInterval> | null = null;
-let fadeOutResolve: (() => void) | null = null;
-let playbackToken = 0;
-let globalHasInteracted = false;
-let globalLastRoomId: string | null = null;
-const AUDIO_UNLOCKED_EVENT = 'bgm_audio_unlocked';
+// Singleton audio engine to prevent race conditions during Next.js navigation
+class BGMEngine {
+    private static instance: BGMEngine;
+    private audio: HTMLAudioElement | null = null;
+    public currentPath: string | null = null;
+    private fadeInterval: ReturnType<typeof setInterval> | null = null;
+    public hasInteracted = false;
+    private playId = 0;
 
-function getGlobalAudio(): HTMLAudioElement | null {
-    if (typeof window === 'undefined') return null;
-    if (!currentAudio) {
-        currentAudio = new Audio();
-        currentAudio.loop = true;
-    }
-    return currentAudio;
-}
+    private constructor() {
+        if (typeof window !== 'undefined') {
+            this.audio = new Audio();
+            this.audio.loop = true;
 
-if (typeof window !== 'undefined') {
-    const unlockGlobalAudio = () => {
-        globalHasInteracted = true;
-        const audio = getGlobalAudio();
-        if (audio && !currentTrackPath) {
-            audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-            audio.volume = 0;
-            audio.play().catch(() => {});
+            const unlock = () => {
+                this.hasInteracted = true;
+                if (this.audio && !this.currentPath) {
+                    this.audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+                    this.audio.volume = 0;
+                    this.audio.play().catch(() => {});
+                }
+                window.removeEventListener('click', unlock, { capture: true });
+                window.removeEventListener('keydown', unlock, { capture: true });
+                window.removeEventListener('pointerdown', unlock, { capture: true });
+                window.dispatchEvent(new Event('bgm_audio_unlocked'));
+            };
+
+            window.addEventListener('click', unlock, { capture: true });
+            window.addEventListener('keydown', unlock, { capture: true });
+            window.addEventListener('pointerdown', unlock, { capture: true });
         }
-        window.removeEventListener('click', unlockGlobalAudio);
-        window.removeEventListener('keydown', unlockGlobalAudio);
-        window.removeEventListener('pointerdown', unlockGlobalAudio);
-        window.dispatchEvent(new Event(AUDIO_UNLOCKED_EVENT));
-    };
+    }
 
-    window.addEventListener('click', unlockGlobalAudio, { capture: true });
-    window.addEventListener('keydown', unlockGlobalAudio, { capture: true });
-    window.addEventListener('pointerdown', unlockGlobalAudio, { capture: true });
+    public static getInstance() {
+        if (!BGMEngine.instance) {
+            BGMEngine.instance = new BGMEngine();
+        }
+        return BGMEngine.instance;
+    }
+
+    private clearFade() {
+        if (this.fadeInterval) {
+            clearInterval(this.fadeInterval);
+            this.fadeInterval = null;
+        }
+    }
+
+    private fadeToVolume(targetVol: number, duration: number): Promise<void> {
+        return new Promise((resolve) => {
+            this.clearFade();
+            if (!this.audio) return resolve();
+            
+            const startVol = this.audio.volume;
+            const diff = targetVol - startVol;
+            const steps = duration / 50;
+            const step = diff / steps;
+            
+            if (Math.abs(diff) < 0.01) {
+                this.audio.volume = targetVol;
+                return resolve();
+            }
+
+            this.fadeInterval = setInterval(() => {
+                if (!this.audio) {
+                    this.clearFade();
+                    return resolve();
+                }
+                
+                const newVol = this.audio.volume + step;
+                if ((step > 0 && newVol >= targetVol) || (step < 0 && newVol <= targetVol)) {
+                    this.audio.volume = Math.max(0, Math.min(1, targetVol));
+                    this.clearFade();
+                    resolve();
+                } else {
+                    this.audio.volume = Math.max(0, Math.min(1, newVol));
+                }
+            }, 50);
+        });
+    }
+
+    public async stop(duration = FADE_DURATION) {
+        this.playId++; // Cancel pending plays
+        if (!this.audio || this.audio.paused || this.audio.volume === 0) {
+            this.currentPath = null;
+            return;
+        }
+        await this.fadeToVolume(0, duration);
+        this.audio.pause();
+        this.currentPath = null;
+    }
+
+    public async playTrack(path: string, targetVolume: number) {
+        if (!this.audio || !this.hasInteracted) return;
+
+        const currentToken = ++this.playId;
+
+        // If playing the same track, just match volume
+        if (this.currentPath === path && !this.audio.paused) {
+            this.clearFade();
+            this.audio.volume = targetVolume;
+            return;
+        }
+
+        // Fade out current track if something else is playing
+        if (!this.audio.paused && this.currentPath !== path) {
+            await this.fadeToVolume(0, FADE_DURATION / 2);
+            if (currentToken !== this.playId) return; // Abort if another play was requested
+            this.audio.pause();
+        }
+
+        // Setup new track
+        if (this.currentPath !== path || this.audio.src.indexOf(path) === -1) {
+            this.audio.src = path;
+        }
+        
+        this.audio.volume = 0;
+        this.currentPath = path;
+
+        try {
+            await this.audio.play();
+            if (currentToken !== this.playId) {
+                this.audio.pause();
+                return;
+            }
+            this.fadeToVolume(targetVolume, FADE_DURATION / 2);
+        } catch (err) {
+            const e = err as Error;
+            if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') {
+                console.warn('BGM play failed:', e);
+            }
+        }
+    }
+
+    public setLiveVolume(volume: number) {
+        if (!this.audio || this.audio.paused || this.fadeInterval) return;
+        this.audio.volume = Math.max(0, Math.min(1, volume));
+    }
 }
+
+
+let globalLastRoomId: string | null = null;
 
 function resolveTrackPath(roomId: string, musicTrackOverride: string | null): string {
     if (musicTrackOverride) return musicTrackOverride;
     if (BGM_MAP[roomId]) return BGM_MAP[roomId];
-    // Keep current track when entering rooms without dedicated BGM.
-    if (currentTrackPath) return currentTrackPath;
+    const engine = BGMEngine.getInstance();
+    if (engine.currentPath) return engine.currentPath;
     return BGM_MAP.lobby;
-}
-
-function fadeOut(audio: HTMLAudioElement, duration: number): Promise<void> {
-    return new Promise((resolve) => {
-        if (fadeInterval) {
-            clearInterval(fadeInterval);
-            if (fadeOutResolve) fadeOutResolve();
-        }
-        fadeOutResolve = resolve;
-
-        const startVolume = audio.volume;
-        const step = startVolume / (duration / 50);
-        fadeInterval = setInterval(() => {
-            if (audio.volume - step <= 0) {
-                audio.volume = 0;
-                audio.pause();
-                if (fadeInterval) clearInterval(fadeInterval);
-                fadeInterval = null;
-                fadeOutResolve = null;
-                resolve();
-            } else {
-                audio.volume -= step;
-            }
-        }, 50);
-    });
-}
-
-function fadeIn(audio: HTMLAudioElement, targetVolume: number, duration: number) {
-    if (fadeInterval) {
-        clearInterval(fadeInterval);
-        if (fadeOutResolve) fadeOutResolve();
-    }
-    audio.volume = 0;
-    const step = targetVolume / (duration / 50);
-    fadeInterval = setInterval(() => {
-        if (audio.volume + step >= targetVolume) {
-            audio.volume = targetVolume;
-            if (fadeInterval) clearInterval(fadeInterval);
-            fadeInterval = null;
-        } else {
-            audio.volume += step;
-        }
-    }, 50);
 }
 
 export function useBGM(roomId: string) {
@@ -143,10 +203,11 @@ export function useBGM(roomId: string) {
     const musicVolume = useGameStore((state) => state.musicVolume);
     const musicTrackOverride = useGameStore((state) => state.musicTrackOverride);
     const setMusicTrackOverride = useGameStore((state) => state.setMusicTrackOverride);
-    const hasInteracted = useRef(globalHasInteracted);
+    
+    const engine = BGMEngine.getInstance();
     const [activationTick, setActivationTick] = useState(0);
 
-    // When changing rooms (even across component remounts), clear manual overrides so each room's default track can take over.
+    // Clear override when leaving a room to allow default BGM
     useEffect(() => {
         if (globalLastRoomId !== roomId) {
             if (musicTrackOverride) {
@@ -156,101 +217,48 @@ export function useBGM(roomId: string) {
         }
     }, [roomId, musicTrackOverride, setMusicTrackOverride]);
 
-    // Handle user interaction to unlock autoplay
+    // Force hook to evaluate when audio unlocks
     useEffect(() => {
-        const handleUnlock = () => {
-            if (!hasInteracted.current) {
-                hasInteracted.current = true;
-                setActivationTick((v) => v + 1);
-            }
-        };
-
-        // If user already interacted before this hook mounts, allow immediate playback.
-        const alreadyActivated = typeof navigator !== 'undefined' && (navigator as Navigator & { userActivation?: { hasBeenActive?: boolean } }).userActivation?.hasBeenActive;
-        if (globalHasInteracted || alreadyActivated) {
-            globalHasInteracted = true;
+        const handleUnlock = () => setActivationTick((t) => t + 1);
+        window.addEventListener('bgm_audio_unlocked', handleUnlock);
+        
+        // Ensure browser gives us early manual check, occasionally useful
+        if (typeof navigator !== 'undefined' && (navigator as any).userActivation?.hasBeenActive) {
+            engine.hasInteracted = true;
             handleUnlock();
         }
 
-        window.addEventListener(AUDIO_UNLOCKED_EVENT, handleUnlock);
-        return () => {
-            window.removeEventListener(AUDIO_UNLOCKED_EVENT, handleUnlock);
-        };
-    }, []);
+        return () => window.removeEventListener('bgm_audio_unlocked', handleUnlock);
+    }, [engine]);
 
-    // Main BGM effect
+    // Handle BGM Playback Logic
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        const token = ++playbackToken;
+        
+        if (!musicEnabled) {
+            engine.stop(500);
+            return;
+        }
 
-        // Use override if set, otherwise use room default
+        if (!engine.hasInteracted) return;
+
         const trackPath = resolveTrackPath(roomId, musicTrackOverride);
         const trackInfo = PLAYLIST.find(t => t.path === trackPath);
         const trackMultiplier = trackInfo?.vol ?? 1.0;
         const targetVol = Math.min(BASE_VOLUME * musicVolume * trackMultiplier, 1.0);
 
-        if (!musicEnabled) {
-            if (currentAudio && !currentAudio.paused) {
-                fadeOut(currentAudio, 500);
-            }
-            currentTrackPath = null;
-            return;
-        }
+        engine.playTrack(trackPath, targetVol);
+    }, [roomId, musicEnabled, musicVolume, musicTrackOverride, activationTick, engine]);
 
-        if (!hasInteracted.current) {
-            return;
-        }
-
-        // Same track already playing?
-        if (currentTrackPath === trackPath && currentAudio && !currentAudio.paused) {
-            currentAudio.volume = targetVol;
-            return;
-        }
-
-        const startNewTrack = async () => {
-            const audio = getGlobalAudio();
-            if (!audio) return;
-
-            // Fade out old track
-            if (!audio.paused && audio.volume > 0 && currentTrackPath !== trackPath) {
-                await fadeOut(audio, FADE_DURATION);
-            }
-
-            if (token !== playbackToken) return;
-
-            if (currentTrackPath !== trackPath || audio.src.indexOf(trackPath) === -1) {
-                audio.src = trackPath;
-            }
-            audio.volume = 0;
-            currentTrackPath = trackPath;
-
-            try {
-                await audio.play();
-                if (token !== playbackToken) {
-                    audio.pause();
-                    return;
-                }
-                fadeIn(audio, targetVol, FADE_DURATION);
-            } catch (err) {
-                const e = err as Error;
-                if (e.name !== 'NotAllowedError') {
-                    console.warn('BGM play failed:', e);
-                }
-            }
-        };
-
-        startNewTrack();
-    }, [roomId, musicEnabled, musicVolume, musicTrackOverride, activationTick]);
-
-    // Volume change effect
+    // Live volume adjustments
     useEffect(() => {
-        if (currentAudio && !currentAudio.paused && musicEnabled) {
+        if (musicEnabled) {
             const trackPath = resolveTrackPath(roomId, musicTrackOverride);
             const trackInfo = PLAYLIST.find(t => t.path === trackPath);
             const trackMultiplier = trackInfo?.vol ?? 1.0;
-            currentAudio.volume = Math.min(BASE_VOLUME * musicVolume * trackMultiplier, 1.0);
+            engine.setLiveVolume(Math.min(BASE_VOLUME * musicVolume * trackMultiplier, 1.0));
         }
-    }, [musicVolume, musicEnabled, roomId, musicTrackOverride]);
+    }, [musicVolume, musicEnabled, roomId, musicTrackOverride, engine]);
 
 
     const changeTrack = useCallback((offset: number) => {

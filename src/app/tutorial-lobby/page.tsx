@@ -215,10 +215,10 @@ function TutorialCard({ room, onStart, completed, isFocused }: { room: RoomConfi
   const profile = getTutorialProfile(room.id);
 
   const levelStyle = profile.level === 'Beginner'
-    ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200'
+    ? 'bg-black/60 border-emerald-400/30 text-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.15)] ring-1 ring-inset ring-emerald-400/20'
     : profile.level === 'Intermediate'
-      ? 'bg-amber-500/20 border-amber-400/40 text-amber-200'
-      : 'bg-fuchsia-500/20 border-fuchsia-400/40 text-fuchsia-200';
+      ? 'bg-black/60 border-amber-400/30 text-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.15)] ring-1 ring-inset ring-amber-400/20'
+      : 'bg-black/60 border-fuchsia-400/30 text-fuchsia-300 shadow-[0_0_15px_rgba(192,38,211,0.15)] ring-1 ring-inset ring-fuchsia-400/20';
 
   return (
     <motion.div
@@ -258,14 +258,14 @@ function TutorialCard({ room, onStart, completed, isFocused }: { room: RoomConfi
           {/* Badge */}
           <div className="absolute top-4 right-4 flex items-center gap-2">
             {completed && (
-              <div className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-300/40 flex items-center gap-1.5">
-                <CheckCircle2 size={10} className="text-emerald-300" />
-                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-200">Completed</span>
+              <div className="px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-emerald-400/30 flex items-center gap-1.5 shadow-[0_0_15px_rgba(52,211,153,0.15)] ring-1 ring-inset ring-emerald-400/20">
+                <CheckCircle2 size={12} className="text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.5)]" />
+                <span className="text-[10px] font-black uppercase tracking-[0.15em] text-emerald-300">Completed</span>
               </div>
             )}
-            <div className={`px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${levelStyle}`}>
-              <Star size={10} className="fill-current" />
-              <span className="text-[9px] font-black uppercase tracking-wider">{profile.level}</span>
+            <div className={`px-3 py-1.5 rounded-full backdrop-blur-md border flex items-center gap-1.5 transition-all ${levelStyle}`}>
+              <Star size={12} className="fill-current drop-shadow-[0_0_4px_currentColor]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.15em]">{profile.level}</span>
             </div>
           </div>
         </div>

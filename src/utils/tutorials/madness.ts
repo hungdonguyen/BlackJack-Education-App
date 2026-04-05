@@ -8,19 +8,19 @@ export const MADNESS_TUTORIAL_LESSONS: TutorialLesson[] = [
         title: 'Continuous Double Chain',
         forcedCards: [
              { rank: Rank.TEN, suit: Suit.HEARTS, value: 10, isHidden: false }, // Dealer hit -> 26 bust
-             { rank: Rank.SEVEN, suit: Suit.CLUBS, value: 7, isHidden: false }, // 3rd double -> 21
-             { rank: Rank.THREE, suit: Suit.DIAMONDS, value: 3, isHidden: false }, // 2nd double -> 14
-             { rank: Rank.ACE, suit: Suit.SPADES, value: 1, isHidden: false }, // 1st double -> 11
+             { rank: Rank.TEN, suit: Suit.CLUBS, value: 10, isHidden: false }, // 3rd double -> 21
+             { rank: Rank.THREE, suit: Suit.DIAMONDS, value: 3, isHidden: false }, // 2nd double -> 11
+             { rank: Rank.SIX, suit: Suit.SPADES, value: 6, isHidden: false }, // 1st double -> 8
              { rank: Rank.TEN, suit: Suit.DIAMONDS, value: 10, isHidden: true }, // Dealer hole -> 16
              { rank: Rank.SIX, suit: Suit.SPADES, value: 6, isHidden: false }, // Dealer face -> 6
-             { rank: Rank.TEN, suit: Suit.CLUBS, value: 10, isHidden: false }, // Player 1st -> 10
+             { rank: Rank.TWO, suit: Suit.CLUBS, value: 2, isHidden: false }, // Player 1st -> 2
         ],
         steps: [
             { id: 0, message: "Ready for Madness? You can DOUBLE DOWN repeatedly on the same hand. Let's learn the chain flow first (without starting on an Ace).", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue !== 100, position: 'center' },
             { id: 1, message: "Select the $100 chip.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue !== 100, targetElementId: 'chip-100', position: 'bottom' },
             { id: 2, message: "Place your bet on Seat 3.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue === 100 && s.seats[2].hands[0].betAmount === 0, targetElementId: 'seat-3', position: 'bottom' },
             { id: 3, message: "Tap DEAL to start.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0, targetElementId: 'action-button-deal', position: 'bottom' },
-            { id: 4, message: "Single-card 10 vs dealer 6. Start the pressure: tap DOUBLE DOWN.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 1, targetElementId: 'action-double', position: 'player' },
+            { id: 4, message: "Single-card 2 vs dealer 6. Start the pressure: tap DOUBLE DOWN.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 1, targetElementId: 'action-double', position: 'player' },
             { id: 5, message: "Hand still has momentum. Stack one more time: tap DOUBLE DOWN again.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 2, targetElementId: 'action-double', position: 'player' },
             { id: 6, message: "One more build before lock-in. Tap DOUBLE DOWN.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 3, targetElementId: 'action-double', position: 'player' },
             { id: 7, message: "That is the Madness identity: repeat doubles can snowball fast. This time the chain reached 21 and the dealer busted.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, position: 'center', requiresClick: true },
@@ -32,19 +32,18 @@ export const MADNESS_TUTORIAL_LESSONS: TutorialLesson[] = [
         title: 'Continuous Double (Risk)',
         forcedCards: [
              { rank: Rank.FIVE, suit: Suit.HEARTS, value: 5, isHidden: false }, // Dealer Hit -> 21
-             { rank: Rank.TEN, suit: Suit.CLUBS, value: 10, isHidden: false }, // 3rd Double -> 25 BUST
-             { rank: Rank.THREE, suit: Suit.DIAMONDS, value: 3, isHidden: false }, // 2nd Double -> 15
-             { rank: Rank.ACE, suit: Suit.SPADES, value: 1, isHidden: false }, // 1st Double -> 11
+             { rank: Rank.FIVE, suit: Suit.DIAMONDS, value: 5, isHidden: false }, // 2nd Double -> 14
+             { rank: Rank.SEVEN, suit: Suit.SPADES, value: 7, isHidden: false }, // 1st Double -> 9
              { rank: Rank.TEN, suit: Suit.DIAMONDS, value: 10, isHidden: true }, // Dealer Hole -> 16
              { rank: Rank.SIX, suit: Suit.SPADES, value: 6, isHidden: false }, // Dealer Face -> 6
-             { rank: Rank.TEN, suit: Suit.DIAMONDS, value: 10, isHidden: false }, // Player 1st -> 10
+             { rank: Rank.TWO, suit: Suit.DIAMONDS, value: 2, isHidden: false }, // Player 1st -> 2
         ],
         steps: [
             { id: 0, message: "Place a $100 bet on Seat 3.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount === 0, targetElementId: 'seat-3', position: 'bottom' },
             { id: 1, message: "Tap DEAL.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0, targetElementId: 'action-button-deal', position: 'bottom' },
-            { id: 2, message: "You start on a single 10. Hand Advisor says DOUBLE.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 1, targetElementId: 'action-double', position: 'player' },
-            { id: 3, message: "You got an Ace (Total 11). Keep building the pot! Tap DOUBLE DOWN.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 2, targetElementId: 'action-double', position: 'player' },
-            { id: 4, message: "You got a 3 (Total 14). Strategy now switches to STAND vs dealer 6. Tap STAND.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 3, targetElementId: 'action-stand', position: 'player' },
+            { id: 2, message: "You start on a single 2. Hand Advisor says DOUBLE.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 1, targetElementId: 'action-double', position: 'player' },
+            { id: 3, message: "You got a 7 (Total 9). Keep building the pot! Tap DOUBLE DOWN.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 2, targetElementId: 'action-double', position: 'player' },
+            { id: 4, message: "You got a 5 (Total 14). Strategy now switches to STAND vs dealer 6. Tap STAND.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 3, targetElementId: 'action-stand', position: 'player' },
             { id: 5, message: "Dealer reaches 21 and beats your stacked hand. This is the downside of building a bigger wager before the stand point.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, position: 'center', requiresClick: true },
             { id: 6, message: "Madness is high variance: follow the table cutoffs even when the pot feels exciting. Tap NEW ROUND.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, targetElementId: 'new-round-button', position: 'player' }
         ]
@@ -84,9 +83,10 @@ export const MADNESS_TUTORIAL_LESSONS: TutorialLesson[] = [
             { id: 2, message: "Place your $100 bet on Seat 3 for the final lesson.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount === 0, targetElementId: 'seat-3', position: 'bottom' },
             { id: 3, message: "Tap DEAL.", condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0, targetElementId: 'action-button-deal', position: 'bottom' },
             { id: 4, message: "You start with an Ace of Hearts. This is your one allowed double from an Ace-start hand, so tap DOUBLE DOWN now.", condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && s.seats[2].hands[0].cards.length === 1, targetElementId: 'action-double', position: 'player' },
-            { id: 5, message: "Perfect: King of Hearts. You reached a suited 2-card Blackjack, and the Ace-start double is now locked (no chain double here).", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, position: 'center', requiresClick: true },
+            { id: 5, message: "Perfect: King of Hearts. You reached a suited 2-card Blackjack, and you will win 2:1 because suited blackjack pays 2:1.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, position: 'center', requiresClick: true },
             { id: 6, message: "Dealer still hits 22, but natural 2-card Blackjacks bypass Push 22 and get paid.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, position: 'center', requiresClick: true },
             { id: 7, message: "Ace-start rule remembered: one double only. Tap FINISH TUTORIAL.", condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT, targetElementId: 'finish-tutorial-button', position: 'player' }
         ]
     }
 ];
+

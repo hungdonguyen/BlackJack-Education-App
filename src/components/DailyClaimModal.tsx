@@ -4,6 +4,7 @@ import { X, Sparkles, Wallet, Timer, Coins, Gift, Unlock } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
 import { useMenuNavigation } from '@/hooks/useMenuNavigation';
+import { ROOMS } from '@/utils/rooms';
 import {
   DAILY_CLAIM_BASE_REWARD,
   DAILY_CLAIM_MILESTONE_BONUS,
@@ -147,9 +148,11 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
   const actualInsuranceClaims = isInsuranceWindowActive ? insuranceClaimsToday : 0;
   const canClaimInsurance = bankroll < 10 && actualInsuranceClaims < 5;
 
+  const totalTutorialsCount = Object.values(ROOMS).filter(r => r.isTutorial).length;
   const completedTutorialIds = Object.entries(completedTutorials || {})
     .filter(([roomId, completed]) => completed && roomId.startsWith('tutorial_'))
     .map(([roomId]) => roomId);
+  const totalCompletedCount = completedTutorialIds.length;
   const pendingTutorialIds = completedTutorialIds.filter((id) => !claimedTutorialRewards?.[id]);
   const tutorialRewardAmount = pendingTutorialIds.length * 10000;
   const canClaimTutorial = tutorialRewardAmount > 0;
@@ -535,10 +538,15 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                   <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Training Bonus</span>
               </div>
               <div className="flex-1 flex flex-col justify-center mb-4 z-10">
-                <p className="text-[10px] text-white/40 uppercase tracking-widest font-black mb-1">Pending Balance</p>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[10px] text-white/40 uppercase tracking-widest font-black">Pending Balance</p>
+                  <div className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[9px] font-black text-indigo-300 tracking-wider">
+                    {totalCompletedCount}/{totalTutorialsCount} COMPLETED
+                  </div>
+                </div>
                 <div className="text-3xl font-black text-indigo-400">${tutorialRewardAmount.toLocaleString()}</div>
                 <p className="text-[9px] text-indigo-300/40 uppercase tracking-widest font-bold leading-relaxed mt-3 pt-3 border-t border-white/5">
-                  Earn $10,000 for each completed tutorial module
+                  Earn a one-time $10,000 bonus for each uniquely completed tutorial module.
                 </p>
               </div>
               <button
