@@ -30,7 +30,7 @@ export interface GameFlowSlice {
   shoe: Card[];
   savedShoes: Record<string, Card[]>;
   gamePhase: GamePhase;
-  hoveredAction: 'switch' | 'burn' | 'zap' | null;
+  hoveredAction: 'hit' | 'stand' | 'double' | 'split' | 'surrender' | 'zap' | 'switch' | 'burn' | 'rebet' | 'deal' | 'clear' | 'undo' | 'insurance-accept' | 'insurance-decline' | 'new-round' | 'finish-tutorial' | null;
   seats: GameStore['seats'];
   dealerHand: GameStore['dealerHand'];
   currentSeatIndex: number;
@@ -42,7 +42,7 @@ export interface GameFlowSlice {
   isSettingsModalOpen: boolean;
 
   // Actions
-  setHoveredAction: (action: 'switch' | 'burn' | 'zap' | null) => void;
+  setHoveredAction: (action: 'hit' | 'stand' | 'double' | 'split' | 'surrender' | 'zap' | 'switch' | 'burn' | 'rebet' | 'deal' | 'clear' | 'undo' | 'insurance-accept' | 'insurance-decline' | 'new-round' | 'finish-tutorial' | null) => void;
   initializeShoe: () => void;
   startDeal: () => void;
   hit: () => void;

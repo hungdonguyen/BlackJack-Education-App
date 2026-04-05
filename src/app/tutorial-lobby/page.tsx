@@ -6,12 +6,14 @@ import { ChevronLeft, ChevronRight, BookOpen, Star, Play, CheckCircle2 } from 'l
 import { ROOMS, RoomConfig } from '@/utils/rooms';
 import { useAudio } from '@/utils/audio';
 import Image from 'next/image';
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { getLevelRank, getTutorialProfile, getTutorialSequenceRank } from '@/utils/tutorials/profiles';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Keyboard } from 'swiper/modules';
+import { Navigation } from 'swiper/modules';
+import type { SwiperClass } from 'swiper/react';
 import { FloatingLogosBackdrop, ROOM_LOGO_PATHS } from '@/components/FloatingLogosBackdrop';
+import { useMenuNavigation } from '@/hooks/useMenuNavigation';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -22,6 +24,7 @@ export default function TutorialLobby() {
   const router = useRouter();
   const { playSound } = useAudio();
   const completedTutorials = useGameStore((s) => s.completedTutorials);
+  const [activePage, setActivePage] = useState(0);
 
   const tutorialRooms = useMemo(() => {
     return Object.values(ROOMS)
@@ -46,6 +49,54 @@ export default function TutorialLobby() {
     }
     return chunks;
   }, [tutorialRooms]);
+
+  // Current page room IDs for arrow/gamepad navigation
+  const currentPageRoomIds = useMemo(
+    () => (chunkedRooms[activePage] ?? []).map(r => r.id),
+    [chunkedRooms, activePage]
+  );
+
+  const [swiperRef, setSwiperRef] = useState<SwiperClass | null>(null);
+
+  const handleTutorialSelect = useCallback((id: string) => {
+    playSound('chip-lay');
+    router.push(`/game/${id}`);
+  }, [playSound, router]);
+
+  const handleGoHome = useCallback(() => {
+    playSound('click');
+    router.push('/');
+  }, [playSound, router]);
+
+  const handleBoundary = useCallback((direction: 'prev' | 'next') => {
+    if (!swiperRef) return;
+    if (direction === 'next' && activePage < chunkedRooms.length - 1) {
+      playSound('click');
+      swiperRef.slideNext();
+    } else if (direction === 'prev' && activePage > 0) {
+      playSound('click');
+      swiperRef.slidePrev();
+    }
+  }, [swiperRef, activePage, chunkedRooms.length, playSound]);
+
+  const { focusedId, setFocusedIndex } = useMenuNavigation({
+    items: currentPageRoomIds,
+    columns: 3,
+    wrap: false,
+    onSelect: handleTutorialSelect,
+    onBack: handleGoHome,
+    onBoundary: handleBoundary,
+  });
+
+  // When page changes, reset focus to first item (next page) or last item (prev page)
+  const prevPageRef = useRef(activePage);
+  useEffect(() => {
+      if (activePage !== prevPageRef.current) {
+          const wentForward = activePage > prevPageRef.current;
+          setFocusedIndex(wentForward ? 0 : (chunkedRooms[activePage]?.length ?? 1) - 1);
+          prevPageRef.current = activePage;
+      }
+  }, [activePage, chunkedRooms, setFocusedIndex]);
 
   return (
     <div className="min-h-full h-full bg-[#02020a] text-white font-sans selection:bg-indigo-500/30 flex flex-col">
@@ -94,17 +145,18 @@ export default function TutorialLobby() {
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 md:px-8 py-10">
         <div className="w-full max-w-[1100px] relative px-12">
           <Swiper
-            modules={[Navigation, Keyboard]}
+            modules={[Navigation]}
             spaceBetween={32}
             slidesPerView={1}
-            keyboard={{ enabled: true }}
+            allowTouchMove={true}
             speed={500}
             navigation={{
               prevEl: '.tutorial-prev',
               nextEl: '.tutorial-next',
             }}
             className="w-full"
-            onSlideChange={() => playSound('click')}
+            onSwiper={setSwiperRef}
+            onSlideChange={(s) => { playSound('click'); setActivePage(s.activeIndex); }}
           >
             {chunkedRooms.map((chunk, pageIndex) => (
               <SwiperSlide key={pageIndex}>
@@ -115,6 +167,7 @@ export default function TutorialLobby() {
                       room={room}
                       completed={Boolean(completedTutorials?.[room.id])}
                       onStart={() => { playSound('chip-lay'); router.push(`/game/${room.id}`); }}
+                      isFocused={focusedId === room.id}
                     />
                   ))}
                 </div>
@@ -158,7 +211,7 @@ export default function TutorialLobby() {
   );
 }
 
-function TutorialCard({ room, onStart, completed }: { room: RoomConfig; onStart: () => void; completed: boolean }) {
+function TutorialCard({ room, onStart, completed, isFocused }: { room: RoomConfig; onStart: () => void; completed: boolean; isFocused?: boolean }) {
   const profile = getTutorialProfile(room.id);
 
   const levelStyle = profile.level === 'Beginner'
@@ -172,6 +225,14 @@ function TutorialCard({ room, onStart, completed }: { room: RoomConfig; onStart:
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="group relative flex flex-col"
+      style={{
+        ...(isFocused ? {
+          boxShadow: '0 0 0 3px rgba(99,102,241,0.7), 0 0 30px rgba(99,102,241,0.3)',
+          borderRadius: '1rem',
+          transform: 'scale(1.03)',
+          transition: 'all 0.15s ease',
+        } : {}),
+      }}
     >
       {/* Glow border */}
       <div className="absolute -inset-[1px] rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm"

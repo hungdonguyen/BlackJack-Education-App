@@ -4,7 +4,7 @@
 // Home Page — Premium Landing
 // ============================================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -21,6 +21,7 @@ import { AchievementToast } from '@/components/AchievementToast';
 import { DailyClaimModal } from '@/components/DailyClaimModal';
 import SettingsModal from '@/components/SettingsModal';
 import { FloatingLogosBackdrop, ROOM_LOGO_PATHS } from '@/components/FloatingLogosBackdrop';
+import { useMenuNavigation } from '@/hooks/useMenuNavigation';
 
 export default function HomePage() {
   const router = useRouter();
@@ -35,6 +36,41 @@ export default function HomePage() {
   const isHydrated = useStoreHydration();
   const bankroll = useGameStore((s) => s.bankroll);
   const { playSound } = useAudio();
+
+  // ─── Menu Navigation (keyboard + gamepad) ───
+  const MENU_ITEMS = useMemo(() => [
+    'lobby', 'tutorial',
+    'strategy', 'simulator',
+    'trophies', 'claim', 'settings', 'quickplay',
+  ], []);
+
+  const anyModalOpen = showStrategy || showAchievements || showDailyClaim || showSettings;
+
+  const handleMenuSelect = useCallback((id: string) => {
+    playSound('click');
+    switch (id) {
+      case 'lobby': router.push('/lobby'); break;
+      case 'tutorial': router.push('/tutorial-lobby'); break;
+      case 'strategy': setShowStrategy(true); break;
+      case 'simulator': router.push('/simulator'); break;
+      case 'trophies': setShowAchievements(true); break;
+      case 'claim': setShowDailyClaim(true); break;
+      case 'settings': setShowSettings(true); break;
+      case 'quickplay': router.push('/game/classic'); break;
+    }
+  }, [playSound, router]);
+
+  const { focusedId } = useMenuNavigation({
+    items: MENU_ITEMS,
+    columns: 2,
+    onSelect: handleMenuSelect,
+    disabled: !accepted || anyModalOpen,
+  });
+
+  const focusRingStyle = (id: string) =>
+    focusedId === id && !anyModalOpen
+      ? { boxShadow: '0 0 0 3px rgba(212,168,67,0.7), 0 0 24px rgba(212,168,67,0.3)', transform: 'scale(1.03)', transition: 'all 0.15s ease' }
+      : {};
 
   const formatMoney = (v: number) =>
     v >= 1_000_000
@@ -203,9 +239,13 @@ export default function HomePage() {
                     onClick={() => { playSound('click'); router.push('/lobby'); }}
                     className="group relative w-full h-full min-h-[108px] rounded-3xl overflow-hidden cursor-pointer flex items-center justify-between px-6 py-5 text-left transition-all duration-500 hover:scale-[1.02] active:scale-[0.98]"
                     style={{
-                      background: 'linear-gradient(135deg, #d4a843 0%, #f0d78c 50%, #b38b34 100%)',
-                      boxShadow: '0 10px 40px -10px rgba(212,168,67,0.5), inset 0 2px 0 rgba(255,255,255,0.4)',
+                      ...{
+                        background: 'linear-gradient(135deg, #d4a843 0%, #f0d78c 50%, #b38b34 100%)',
+                        boxShadow: '0 10px 40px -10px rgba(212,168,67,0.5), inset 0 2px 0 rgba(255,255,255,0.4)',
+                      },
+                      ...focusRingStyle('lobby'),
                     }}
+
                   >
                     {/* Dark overlay pattern */}
                     <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
@@ -247,6 +287,7 @@ export default function HomePage() {
                       background: 'linear-gradient(140deg, rgba(80,110,255,0.92) 0%, rgba(125,162,255,0.95) 55%, rgba(61,86,220,0.96) 100%)',
                       border: '1px solid rgba(151,182,255,0.4)',
                       boxShadow: '0 12px 36px -12px rgba(86,114,255,0.72), inset 0 2px 0 rgba(255,255,255,0.28)',
+                      ...focusRingStyle('tutorial'),
                     }}
                   >
                     <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
@@ -288,6 +329,7 @@ export default function HomePage() {
                     background: 'linear-gradient(135deg, rgba(212,168,67,0.13) 0%, rgba(48,34,14,0.62) 45%, rgba(20,14,7,0.82) 100%)',
                     border: '1px solid rgba(212,168,67,0.25)',
                     boxShadow: '0 12px 30px -18px rgba(212,168,67,0.7), inset 0 1px 0 rgba(255,255,255,0.15)',
+                    ...focusRingStyle('strategy'),
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-[rgba(212,168,67,0.1)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -316,6 +358,7 @@ export default function HomePage() {
                     background: 'linear-gradient(135deg, rgba(27,169,201,0.14) 0%, rgba(8,49,70,0.65) 45%, rgba(6,24,35,0.85) 100%)',
                     border: '1px solid rgba(34,211,238,0.3)',
                     boxShadow: '0 12px 30px -18px rgba(34,211,238,0.75), inset 0 1px 0 rgba(255,255,255,0.12)',
+                    ...focusRingStyle('simulator'),
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-[rgba(34,211,238,0.16)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -348,6 +391,7 @@ export default function HomePage() {
                   style={{
                     background: 'linear-gradient(180deg, rgba(168,85,247,0.05) 0%, rgba(168,85,247,0.01) 100%)',
                     border: '1px solid rgba(168,85,247,0.2)',
+                    ...focusRingStyle('trophies'),
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-[rgba(168,85,247,0.1)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -365,6 +409,7 @@ export default function HomePage() {
                   style={{
                     background: 'linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.01) 100%)',
                     border: '1px solid rgba(245,158,11,0.2)',
+                    ...focusRingStyle('claim'),
                   }}
                 >
                   <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.2),transparent_60%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
@@ -386,6 +431,7 @@ export default function HomePage() {
                   style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.08)',
+                    ...focusRingStyle('settings'),
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-[rgba(255,255,255,0.05)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
@@ -406,6 +452,7 @@ export default function HomePage() {
                   style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.08)',
+                    ...focusRingStyle('quickplay'),
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

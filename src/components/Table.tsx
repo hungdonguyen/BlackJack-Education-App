@@ -35,6 +35,7 @@ import { calculateMatchNetPnl, getRoomBadgeConfig, getMatchOverallStatus } from 
 import { useAudio } from '@/utils/audio';
 import { useViewportScale } from '@/hooks/useViewportScale';
 import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys';
+import { useKeyboardHotkeys } from '@/hooks/useKeyboardHotkeys';
 
 const DESIGN_WIDTH = 1920;
 const DESIGN_HEIGHT = 1080;
@@ -49,7 +50,6 @@ const compactClaimNumber = (value: number) => {
 };
 
 export default function Table({ roomId = 'classic' }: { roomId?: string }) {
-    useGamepad(); // Mount Gamepad Listener
     const room = getRoomConfig(roomId);
     const router = useRouter();
 
@@ -67,6 +67,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const sideBets = useGameStore(useShallow((s) => s.sideBets));
     const resetRound = useGameStore((s) => s.resetRound);
     const resetTutorialProgress = useGameStore((s) => s.resetTutorialProgress);
+    const markTutorialCompleted = useGameStore((s) => s.markTutorialCompleted);
     const isHydrated = useStoreHydration();
 
     
@@ -148,6 +149,16 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         resetRound();
         router.push('/');
     };
+
+    const finishTutorialFromHotkey = () => {
+        markTutorialCompleted(roomId);
+        resetTutorialProgress();
+        closeTransientLayers();
+        router.push('/tutorial-lobby');
+    };
+
+    useGamepad({ onLobby: () => returnToLobby(), onHome: () => returnHome(), onFinishTutorial: () => finishTutorialFromHotkey() }); // Mount Gamepad Listener
+    useKeyboardHotkeys({ onLobby: () => returnToLobby(), onHome: () => returnHome(), onFinishTutorial: () => finishTutorialFromHotkey() }); // Mount Keyboard Hotkeys
 
     const confirmExit = () => {
         const target = showExitConfirmation.target;

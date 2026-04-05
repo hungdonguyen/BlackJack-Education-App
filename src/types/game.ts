@@ -190,7 +190,7 @@ export interface GameState {
 
 
 // UI states
-    hoveredAction: 'switch' | 'burn' | 'zap' | null;
+    hoveredAction: 'hit' | 'stand' | 'double' | 'split' | 'surrender' | 'zap' | 'switch' | 'burn' | 'rebet' | 'deal' | 'clear' | 'undo' | 'insurance-accept' | 'insurance-decline' | 'new-round' | 'finish-tutorial' | null;
 
     // UI Warnings
   insufficientFundsWarning: boolean;
@@ -209,7 +209,7 @@ export interface GameState {
 /** All actions available on the game store */
 export interface GameActions {
   // General UI
-  setHoveredAction: (action: 'switch' | 'burn' | 'zap' | null) => void;
+  setHoveredAction: (action: 'hit' | 'stand' | 'double' | 'split' | 'surrender' | 'zap' | 'switch' | 'burn' | 'rebet' | 'deal' | 'clear' | 'undo' | 'insurance-accept' | 'insurance-decline' | 'new-round' | 'finish-tutorial' | null) => void;
 
   // Shoe
   initializeShoe: () => void;

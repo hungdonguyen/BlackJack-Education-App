@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, X, Lock, CheckCircle2, Star, Zap, Flame, Repeat, Info } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { ACHIEVEMENTS, TIER_CONFIG, AchievementDefinition } from '@/types/achievements';
+import { useModalNavigation } from '@/hooks/useMenuNavigation';
 
 const ACHIEVEMENT_QUOTES: Record<string, string> = {
     first_hand: "The journey of a thousand miles begins with a single hand. — Unknown Dealer",
@@ -63,6 +64,23 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
   const progressPercent = (unlockedCount / totalCount) * 100;
 
   if (!isOpen) return null;
+
+  const categories = ['all', 'general', 'mastery', 'daily', 'variant'] as const;
+
+  // Keyboard/gamepad: ←→ cycle categories, Escape close
+  useModalNavigation({
+    onClose: selectedAchievement ? () => setSelectedAchievement(null) : onClose,
+    onPrev: () => {
+      const idx = categories.indexOf(activeCategory);
+      const prev = idx <= 0 ? categories.length - 1 : idx - 1;
+      setActiveCategory(categories[prev]);
+    },
+    onNext: () => {
+      const idx = categories.indexOf(activeCategory);
+      const next = idx >= categories.length - 1 ? 0 : idx + 1;
+      setActiveCategory(categories[next]);
+    },
+  });
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">

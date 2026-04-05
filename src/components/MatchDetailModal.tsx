@@ -14,6 +14,7 @@ import { MatchRecord } from '@/types/game';
 import { HandStatus, Rank, Suit } from '@/types/enums';
 import { calculateMatchStats, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
 import { useAudio } from '@/utils/audio';
+import { useModalNavigation } from '@/hooks/useMenuNavigation';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -119,6 +120,12 @@ export default function MatchDetailModal({
 
     const canPrev = currentIndex > 0;
     const canNext = currentIndex < allMatches.length - 1;
+
+    useModalNavigation({
+        onClose,
+        onPrev: () => { if (canPrev) { playSound('click'); onNavigate(currentIndex - 1); } },
+        onNext: () => { if (canNext) { playSound('click'); onNavigate(currentIndex + 1); } },
+    });
 
     return (
         <motion.div

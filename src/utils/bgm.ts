@@ -11,7 +11,7 @@ export const PLAYLIST = [
     { name: 'Whiskey on MS', path: '/sounds/bgm/Whiskey on the Mississippi.mp3', vol: 1.0 },
     { name: 'Bossa Antigua', path: '/sounds/bgm/Bossa Antigua.mp3', vol: 1.0 },
     { name: 'Spanish Summer', path: '/sounds/bgm/Spanish Summer- Audionautix.mp3', vol: 1.0 },
-    { name: 'Backed Clean', path: '/sounds/bgm/Backed Clean.mp3', vol: 1.3 },
+    { name: 'Backed Clean', path: '/sounds/bgm/Backed Clean.mp3', vol: 7 },
 ];
 
 // BGM mapping: roomId → file path
@@ -105,9 +105,13 @@ export function useBGM(roomId: string) {
     const [activationTick, setActivationTick] = useState(0);
 
     // When changing rooms, clear manual overrides so each room's default track can take over.
+    const lastRoomIdRef = useRef(roomId);
     useEffect(() => {
-        if (musicTrackOverride) {
-            setMusicTrackOverride(null);
+        if (lastRoomIdRef.current !== roomId) {
+            if (musicTrackOverride) {
+                setMusicTrackOverride(null);
+            }
+            lastRoomIdRef.current = roomId;
         }
     }, [roomId, musicTrackOverride, setMusicTrackOverride]);
 

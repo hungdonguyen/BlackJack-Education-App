@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/hooks/useGameStore';
 import { ArrowLeft, ChevronLeft, ChevronRight, History } from 'lucide-react';
 import { HandStatus, Suit } from '@/types/enums';
 import { calculateMatchNetPnl, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
 import { useAudio } from '@/utils/audio';
+import { useModalNavigation } from '@/hooks/useMenuNavigation';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -27,6 +28,17 @@ export default function HistoryPage() {
 
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const currentMatches = sortedHistory.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    const handleGoBack = useCallback(() => {
+        playSound('click');
+        router.back();
+    }, [playSound, router]);
+
+    useModalNavigation({
+        onClose: handleGoBack,
+        onPrev: () => setPage(p => Math.max(1, p - 1)),
+        onNext: () => setPage(p => Math.min(totalPages, p + 1)),
+    });
 
     return (
         <div className="min-h-full h-full bg-linear-to-br from-[#0a0604] to-[#140b08] text-white p-6 md:p-12 font-sans select-none overflow-y-auto">

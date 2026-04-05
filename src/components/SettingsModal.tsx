@@ -9,6 +9,7 @@ import { X, Gauge, Zap, Volume2, VolumeX, Eye, EyeOff, Settings, Music, Expand, 
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
 import { COMPOSITION_DEPENDENT_OVERRIDES } from '@/utils/strategyAdvisor';
+import { useModalNavigation } from '@/hooks/useMenuNavigation';
 
 interface SettingsModalProps {
     roomId: string;
@@ -49,6 +50,10 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
     const roomHasSpecialCases = COMPOSITION_DEPENDENT_OVERRIDES.some(o => o.strategyType === roomId);
     const isTutorialExchange = roomId === 'tutorial_exchange';
     const effectiveSwitchAdviceEngine = isTutorialExchange ? 'cindy_advanced' : switchAdviceEngine;
+
+    useModalNavigation({
+        onClose: () => { playSound('click'); onClose(); },
+    });
 
     return (
         <motion.div className="absolute inset-0 z-[200] flex items-center justify-center"

@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Hash, Layers, Layout, Target, Zap, ArrowLeftRight } from 'lucide-react';
+import { useModalNavigation } from '@/hooks/useMenuNavigation';
 
 import { RoomConfig } from '@/utils/rooms';
 import { useGameStore } from '@/hooks/useGameStore';
@@ -110,6 +111,29 @@ export default function StrategyModal({ room, onClose }: StrategyModalProps) {
         playSound('click');
         setTab(newTab);
     };
+
+    const roomTabs: Tab[] = [
+        'rules', 'hard', 'soft',
+        ...(!isMadnessRoom ? ['pairs' as Tab] : []),
+        ...(room.id === 'iberian_21' ? ['special' as Tab] : []),
+        ...(room.id === 'free_action' ? ['free_hand' as Tab] : []),
+        ...(room.id === 'exchange_21' ? ['switch_advice' as Tab] : []),
+        'counting',
+    ];
+
+    useModalNavigation({
+        onClose,
+        onPrev: () => {
+            const idx = roomTabs.indexOf(tab);
+            const prev = idx <= 0 ? roomTabs.length - 1 : idx - 1;
+            handleTabChange(roomTabs[prev]);
+        },
+        onNext: () => {
+            const idx = roomTabs.indexOf(tab);
+            const next = idx >= roomTabs.length - 1 ? 0 : idx + 1;
+            handleTabChange(roomTabs[next]);
+        },
+    });
 
     const tabs = [
         { id: 'rules', label: 'Rules', icon: <BookOpen size={14} /> },

@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Wallet, Timer, Shield, Coins, Gift, Unlock } from 'lucide-react';
+import { X, Sparkles, Wallet, Timer, Coins, Gift, Unlock } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
+import { useMenuNavigation } from '@/hooks/useMenuNavigation';
+import {
+  DAILY_CLAIM_BASE_REWARD,
+  DAILY_CLAIM_MILESTONE_BONUS,
+  DAILY_CLAIM_STREAK_MILESTONES,
+  getDailyClaimMilestoneBonus,
+} from '@/utils/dailyClaimConfig';
 
 interface DailyClaimModalProps {
   isOpen: boolean;
@@ -12,15 +19,11 @@ interface DailyClaimModalProps {
 const INS_RESET_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 const MYSTERY_COOLDOWN_MS = 30 * 60 * 1000;
-const HOURLY_BASE_REWARD = 3000;
-const STREAK_MILESTONES = [1, 5, 10, 24, 50];
-const STREAK_BONUS_MAP: Record<number, number> = {
-  1: 2000,
-  5: 10000,
-  10: 30000,
-  24: 80000,
-  50: 250000,
-};
+const HOURLY_BASE_REWARD = DAILY_CLAIM_BASE_REWARD;
+const STREAK_MILESTONES = DAILY_CLAIM_STREAK_MILESTONES;
+const STREAK_BONUS_MAP = DAILY_CLAIM_MILESTONE_BONUS;
+
+const CLAIM_ITEMS = ['hourly', 'mystery', 'rebate', 'insurance', 'tutorial'];
 
 const EXTERNAL_ICONS = {
   hourly: 'https://img.icons8.com/fluency/96/time-machine.png',
@@ -28,21 +31,12 @@ const EXTERNAL_ICONS = {
   rebate: 'https://img.icons8.com/fluency/96/cash-in-hand.png',
   insurance: 'https://img.icons8.com/fluency/96/shield.png',
   learning: 'https://img.icons8.com/fluency/96/training.png',
-  gift: 'https://img.icons8.com/3d-fluency/94/gift--v2.png',
 };
 
 const toHourStart = (ts: number): number => {
   const d = new Date(ts);
   d.setMinutes(0, 0, 0);
   return d.getTime();
-};
-
-const compactClaimNumber = (value: number) => {
-  if (Math.abs(value) < 1_000_000) return value.toLocaleString();
-  return new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value);
 };
 
 export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClose }) => {
@@ -54,7 +48,6 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
   const insuranceClaimsToday = useGameStore(s => s.insuranceClaimsToday);
   const lastInsuranceReset = useGameStore(s => s.lastInsuranceReset);
   const totalClaimedAmount = useGameStore(s => s.totalClaimedAmount);
-  const mysteryClaimCount = useGameStore(s => s.mysteryClaimCount);
   const lastMysteryClaimAt = useGameStore(s => s.lastMysteryClaimAt);
   const lastMysteryReward = useGameStore(s => s.lastMysteryReward);
   const claimedTutorialRewards = useGameStore(s => s.claimedTutorialRewards);
@@ -68,9 +61,11 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
 
   const [hourlyCountdown, setHourlyCountdown] = useState('');
   const [mysteryCountdown, setMysteryCountdown] = useState('');
-  const [hourlyMs, setHourlyMs] = useState(0);
   const [mysteryMs, setMysteryMs] = useState(0);
   const [insCountdown, setInsCountdown] = useState('');
+  const [hasClaimedCurrentHour, setHasClaimedCurrentHour] = useState(false);
+  const [isHourlyContinuingStreak, setIsHourlyContinuingStreak] = useState(false);
+  const [isInsuranceWindowActive, setIsInsuranceWindowActive] = useState(false);
 
   const [flashMystery, setFlashMystery] = useState<number | null>(null);
   const [flashHourly, setFlashHourly] = useState<number | null>(null);
@@ -87,14 +82,16 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
       const currentHourStart = toHourStart(now);
       const lastClaimHour = lastDailyClaim > 0 ? toHourStart(lastDailyClaim) : 0;
       if (lastClaimHour !== currentHourStart) {
+        setHasClaimedCurrentHour(false);
+        setIsHourlyContinuingStreak(lastClaimHour > 0 && currentHourStart - lastClaimHour === HOUR_MS);
         setHourlyCountdown('');
-        setHourlyMs(0);
       } else {
+        setHasClaimedCurrentHour(true);
+        setIsHourlyContinuingStreak(true);
         const remaining = HOUR_MS - (now - lastClaimHour);
         const m = Math.floor(remaining / 60000);
         const s = Math.floor((remaining % 60000) / 1000);
         setHourlyCountdown(`${m}m ${s}s`);
-        setHourlyMs(remaining);
       }
 
       // Mystery Claim
@@ -113,11 +110,13 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
       // Insurance
       const elapsedIns = now - lastInsuranceReset;
       if (insuranceClaimsToday > 0 && elapsedIns < INS_RESET_MS) {
+        setIsInsuranceWindowActive(true);
         const remaining = INS_RESET_MS - elapsedIns;
         const h = Math.floor(remaining / (60 * 60 * 1000));
         const m = Math.floor((remaining % (60 * 60 * 1000)) / 60000);
         setInsCountdown(`${h}h ${m}m left`);
       } else {
+        setIsInsuranceWindowActive(false);
         setInsCountdown('');
       }
     };
@@ -127,20 +126,28 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
     return () => clearInterval(interval);
   }, [isOpen, lastDailyClaim, lastMysteryClaimAt, lastInsuranceReset, insuranceClaimsToday]);
 
-  if (!isOpen) return null;
-
-  const hourlyReady = hourlyMs === 0;
   const mysteryReady = mysteryMs === 0;
-  const nextStreak = hourlyReady ? dailyClaimStreak + 1 : dailyClaimStreak;
-  const nextStreakMilestone = STREAK_MILESTONES.find((m) => m >= nextStreak) ?? 50;
-  const nextMilestoneBonus = STREAK_BONUS_MAP[nextStreakMilestone] ?? 0;
-  const hourlyPreview = HOURLY_BASE_REWARD + nextMilestoneBonus;
+  const hourlyReady = !hasClaimedCurrentHour;
+
+  // Mirror slice logic to avoid preview/payout mismatch.
+  const projectedNextStreak = hasClaimedCurrentHour
+    ? dailyClaimStreak + 1
+    : isHourlyContinuingStreak
+      ? dailyClaimStreak + 1
+      : 1;
+  const milestoneBonus = getDailyClaimMilestoneBonus(projectedNextStreak);
+  const hourlyPreview = HOURLY_BASE_REWARD + milestoneBonus;
+
+  const maxStreakMilestone = STREAK_MILESTONES[STREAK_MILESTONES.length - 1] ?? 50;
+  const cappedCurrentStreak = Math.min(Math.max(dailyClaimStreak, 0), maxStreakMilestone);
+  const nextVisualMilestone = STREAK_MILESTONES.find((m) => m > cappedCurrentStreak) ?? maxStreakMilestone;
+  const streakProgressPct = maxStreakMilestone > 0 ? (cappedCurrentStreak / maxStreakMilestone) * 100 : 0;
 
   const currentRebateAmount = Math.floor((totalBetSinceLastClaim || 0) * 0.02);
   const canClaimRebate = currentRebateAmount >= 10;
 
-  const canClaimInsurance = bankroll < 10 && insuranceClaimsToday < 5;
-  const actualInsuranceClaims = (Date.now() - lastInsuranceReset > INS_RESET_MS) ? 0 : insuranceClaimsToday;
+  const actualInsuranceClaims = isInsuranceWindowActive ? insuranceClaimsToday : 0;
+  const canClaimInsurance = bankroll < 10 && actualInsuranceClaims < 5;
 
   const completedTutorialIds = Object.entries(completedTutorials || {})
     .filter(([roomId, completed]) => completed && roomId.startsWith('tutorial_'))
@@ -196,9 +203,51 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
   };
 
   const accountCards = [
-    { label: "Bankroll", value: `$${bankroll.toLocaleString()}`, accent: "text-emerald-400" },
-    { label: "Total Claimed", value: `$${(totalClaimedAmount || 0).toLocaleString()}`, accent: "text-amber-400" },
+    {
+      label: 'Bankroll',
+      value: `$${bankroll.toLocaleString()}`,
+      icon: Wallet,
+      iconWrap: 'bg-[#16382f] text-[#8ef5d0] border-[#2f8266]',
+      accent: 'text-[#9ff6d7]',
+      cardBorder: 'border-[#1f5d4a]',
+      cardGlow: 'shadow-[0_8px_28px_rgba(16,185,129,0.16)]',
+    },
+    {
+      label: 'Total Claimed',
+      value: `$${(totalClaimedAmount || 0).toLocaleString()}`,
+      icon: Coins,
+      iconWrap: 'bg-[#3b2c10] text-[#ffd57a] border-[#8f6b24]',
+      accent: 'text-[#ffd57a]',
+      cardBorder: 'border-[#6b5220]',
+      cardGlow: 'shadow-[0_8px_28px_rgba(245,158,11,0.16)]',
+    },
   ];
+
+  // Keyboard/gamepad navigation for claim buttons
+  const handleClaimSelect = (id: string) => {
+    switch (id) {
+      case 'hourly': handleClaimHourly(); break;
+      case 'mystery': handleClaimMystery(); break;
+      case 'rebate': handleClaimRebate(); break;
+      case 'insurance': handleClaimInsurance(); break;
+      case 'tutorial': handleClaimTutorial(); break;
+    }
+  };
+
+  const { focusedId } = useMenuNavigation({
+    items: CLAIM_ITEMS,
+    columns: 1,
+    onSelect: handleClaimSelect,
+    onBack: onClose,
+    disabled: !isOpen,
+  });
+
+  const claimFocusStyle = (id: string) =>
+    focusedId === id
+      ? { boxShadow: '0 0 0 2px rgba(212,168,67,0.6), 0 0 20px rgba(212,168,67,0.2)', transition: 'box-shadow 0.15s ease' }
+      : {};
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-3 md:p-6 select-none">
@@ -222,16 +271,23 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
         {/* Header */}
         <div className="py-4 px-6 border-b border-white/10 flex items-center justify-between bg-white/2 shrink-0">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-linear-to-tr from-amber-600 to-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-              <img src={EXTERNAL_ICONS.gift} alt="Rewards" className="w-8 h-8 drop-shadow-md" />
+            <div className="relative group/header">
+              <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full scale-150 animate-pulse" />
+              <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center bg-linear-to-b from-amber-300 via-amber-500 to-amber-700 shadow-[0_10px_20px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.4)] border border-amber-400/30 overflow-hidden transform group-hover/header:rotate-6 transition-transform">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent)]" />
+                <Gift size={28} className="text-[#2a1804] drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)] z-10" />
+                <div className="absolute inset-0 bg-linear-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover/header:translate-x-[100%] transition-transform duration-1000" />
+              </div>
             </div>
             <div>
-              <h2 className="text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-white to-white/60 tracking-tight">
-                VIP REWARDS
+              <h2 className="text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-linear-to-b from-white via-white to-white/40 leading-none">
+                CASINO <span className="text-amber-500">REWARDS</span>
               </h2>
-              <p className="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
-                <Sparkles size={10} /> Exclusive Casino Hub
-              </p>
+              <div className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.3em] flex items-center gap-2 mt-1.5 drop-shadow-md">
+                <div className="h-1 w-8 bg-amber-500/30 rounded-full" />
+                Exclusive VIP Member Benefits
+                <div className="h-1 w-8 bg-amber-500/30 rounded-full" />
+              </div>
             </div>
           </div>
           <button 
@@ -243,13 +299,23 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Global Stats */}
-        <div className="px-6 py-3 border-b border-white/5 bg-black/40 flex gap-4 shrink-0">
-          {accountCards.map((card) => (
-            <div key={card.label} className="flex flex-col rounded-lg border border-white/5 bg-white/5 px-4 py-2 shrink-0 min-w-35">
-              <p className="text-[9px] uppercase tracking-widest text-white/40 font-bold">{card.label}</p>
-              <p className={`text-xl font-black mt-0.5 ${card.accent}`}>{card.value}</p>
+        <div className="px-6 py-4 border-b border-white/5 bg-linear-to-r from-black/80 via-white/[0.03] to-black/80 flex gap-4 shrink-0 overflow-x-auto no-scrollbar">
+          {accountCards.map((card) => {
+            const CardIcon = card.icon;
+            return (
+            <div 
+              key={card.label} 
+              className={`flex items-center gap-4 px-5 py-3 rounded-2xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] backdrop-blur-xl min-w-[248px] ${card.cardBorder} ${card.cardGlow}`}
+            >
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${card.iconWrap}`}>
+                <CardIcon size={18} />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-black">{card.label}</p>
+                <p className={`text-[1.6rem] leading-none font-black tracking-tight tabular-nums ${card.accent} drop-shadow-sm truncate`}>{card.value}</p>
+              </div>
             </div>
-          ))}
+          )})}
         </div>
 
         {/* Bento Grid */}
@@ -257,8 +323,9 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
             {/* HOURLY BONUS (col-span-2) */}
-            <div className="md:col-span-2 relative overflow-hidden rounded-2xl border border-amber-500/20 bg-linear-to-b from-amber-500/10 to-black/40 p-5 group flex flex-col justify-between min-h-55">
-              <div className="absolute -right-4 -top-4 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full" />
+            <div className="md:col-span-2 relative overflow-hidden rounded-3xl border border-amber-500/30 bg-linear-to-b from-amber-500/15 via-black/40 to-black/60 p-6 group flex flex-col justify-between min-h-60 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]" style={claimFocusStyle('hourly')}>
+              <div className="absolute -right-4 -top-4 w-40 h-40 bg-amber-500/10 blur-[80px] rounded-full" />
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 pointer-events-none" />
 
               <div className="flex justify-between items-start z-10">
                 <div>
@@ -267,9 +334,9 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                     <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Hourly Bonus</span>
                   </div>
                   <h3 className="text-3xl font-black text-white mt-1">
-                    ${compactClaimNumber(hourlyPreview)}
+                    ${hourlyPreview.toLocaleString()}
                   </h3>
-                  <p className="text-[11px] text-amber-300/60 font-semibold uppercase tracking-wider">Base ${compactClaimNumber(HOURLY_BASE_REWARD)} <span className="text-amber-500/50 px-1">+</span> Streak Bonus</p>
+                  <p className="text-[11px] text-amber-300/60 font-semibold uppercase tracking-wider">Base ${HOURLY_BASE_REWARD.toLocaleString()} <span className="text-amber-500/50 px-1">+</span> Milestone Bonus</p>
                 </div>
 
                 <button
@@ -288,10 +355,10 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                   <span className="text-amber-400">Current: {dailyClaimStreak}</span>
                 </div>
                 <div className="relative w-full h-2 bg-white/10 rounded-full mt-4 mb-2">
-                  {STREAK_MILESTONES.map((m, idx) => {
-                    const reached = dailyClaimStreak >= m;
-                    const next = !reached && m === nextStreakMilestone;
-                    const leftPos = `${(idx / (STREAK_MILESTONES.length - 1)) * 100}%`;
+                  {STREAK_MILESTONES.map((m) => {
+                    const reached = cappedCurrentStreak >= m;
+                    const next = !reached && m === nextVisualMilestone;
+                    const leftPos = `${(m / maxStreakMilestone) * 100}%`;
                     return (
                       <div key={m} className="absolute -translate-x-1/2 flex flex-col items-center" style={{ left: leftPos, top: '-7px' }}>
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center text-[8px] font-bold z-10 transition-colors ${reached ? 'bg-amber-500 border-amber-500 text-black shadow-[0_0_10px_rgba(245,158,11,0.5)]' : next ? 'bg-black border-amber-500 text-amber-500' : 'bg-black border-white/20 text-white/30'}`}>
@@ -299,7 +366,7 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                         </div>
                         <div className="mt-1.5 whitespace-nowrap absolute top-full">
                           <span className={`text-[9px] font-black uppercase tracking-wider ${reached ? 'text-amber-500' : 'text-white/30'}`}>
-                            +${compactClaimNumber(STREAK_BONUS_MAP[m])}
+                            +${(STREAK_BONUS_MAP[m] ?? 0).toLocaleString()}
                           </span>
                         </div>
                       </div>
@@ -308,7 +375,7 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                   <div 
                     className="absolute top-0 left-0 h-full bg-linear-to-r from-amber-600 to-amber-400 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
                     style={{
-                      width: `${Math.min(100, Math.max(0, (STREAK_MILESTONES.indexOf(nextStreakMilestone) / (STREAK_MILESTONES.length - 1)) * 100))}%`
+                      width: `${Math.min(100, Math.max(0, streakProgressPct))}%`
                     }}
                   />
                 </div>
@@ -334,15 +401,15 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
             </div>
 
             {/* MYSTERY BONUS (col-span-1) */}
-            <div className="relative overflow-hidden rounded-2xl border border-fuchsia-500/20 bg-linear-to-b from-fuchsia-500/10 to-black/40 flex flex-col min-h-55">
-              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-fuchsia-500/20 blur-3xl rounded-full" />
-              <div className="p-5 flex-1 flex flex-col z-10">
+            <div className="relative overflow-hidden rounded-3xl border border-fuchsia-500/30 bg-linear-to-b from-fuchsia-500/15 via-black/40 to-black/60 flex flex-col min-h-60 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]" style={claimFocusStyle('mystery')}>
+              <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-fuchsia-500/15 blur-[80px] rounded-full" />
+              <div className="p-6 flex-1 flex flex-col z-10">
                 <div className="flex items-center gap-2 mb-3">
                   <img src={EXTERNAL_ICONS.mystery} alt="Mystery" className="w-7 h-7 filter drop-shadow-lg" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-fuchsia-400">Mystery Box</span>
                 </div>
 
-                <h3 className="text-2xl font-black text-white">${compactClaimNumber(1)} - ${compactClaimNumber(200000)}</h3>
+                <h3 className="text-2xl font-black text-white">$1 - $200,000</h3>
                 <p className="text-[10px] text-fuchsia-300/60 font-bold mt-1 leading-snug uppercase tracking-widest border-b border-fuchsia-500/20 pb-3">Epic random rewards</p>
 
                 <div className="mt-auto pt-3">
@@ -386,8 +453,8 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
             </div>
 
             {/* REBATE (col-span-1) */}
-            <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-linear-to-b from-emerald-500/5 to-black/40 p-5 flex flex-col min-h-50">
-               <div className="flex items-center gap-2 mb-3 z-10">
+            <div className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-linear-to-b from-emerald-500/10 via-black/40 to-black/60 p-6 flex flex-col min-h-55 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]" style={claimFocusStyle('rebate')}>
+               <div className="flex items-center gap-2 mb-4 z-10">
                   <img src={EXTERNAL_ICONS.rebate} alt="Rebate" className="w-7 h-7 filter drop-shadow-lg" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">2% Chip Rebate</span>
               </div>
@@ -433,13 +500,14 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
             </div>
 
             {/* INSURANCE (col-span-1) */}
-            <div className="relative overflow-hidden rounded-2xl border border-blue-500/20 bg-linear-to-b from-blue-500/5 to-black/40 p-5 flex flex-col group min-h-50">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="relative overflow-hidden rounded-3xl border border-blue-500/30 bg-linear-to-b from-blue-500/10 via-black/40 to-black/60 p-6 flex flex-col group min-h-55 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]" style={claimFocusStyle('insurance')}>
+               <div className="absolute -left-10 -top-10 w-40 h-40 bg-blue-500/10 blur-[60px] rounded-full" />
+              <div className="flex items-center gap-2 mb-4 z-10">
                   <img src={EXTERNAL_ICONS.insurance} alt="Insurance" className="w-7 h-7 filter drop-shadow-lg" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Emergency Rescue</span>
               </div>
-              <div className="flex-1 flex flex-col justify-center mb-4">
-                <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">Rescue Credit</p>
+              <div className="flex-1 flex flex-col justify-center mb-4 z-10">
+                <p className="text-[10px] text-white/40 uppercase tracking-widest font-black mb-1">Rescue Credit</p>
                 <div className="flex items-center gap-2">
                   <div className="text-3xl font-black text-white">$1,000</div>
                 </div>
@@ -462,15 +530,16 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
             </div>
 
             {/* LEARNING / TUTORIALS (col-span-1) */}
-            <div className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-linear-to-b from-indigo-500/5 to-black/40 p-5 flex flex-col min-h-50">
-               <div className="flex items-center gap-2 mb-3">
+            <div className="relative overflow-hidden rounded-3xl border border-indigo-500/30 bg-linear-to-b from-indigo-500/10 via-black/40 to-black/60 p-6 flex flex-col min-h-55 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]" style={claimFocusStyle('tutorial')}>
+               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/10 blur-[60px] rounded-full" />
+               <div className="flex items-center gap-2 mb-4 z-10">
                   <img src={EXTERNAL_ICONS.learning} alt="Learning" className="w-7 h-7 filter drop-shadow-lg" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Training Bonus</span>
               </div>
-              <div className="flex-1 flex flex-col justify-center mb-4">
-                <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">Pending Balance</p>
+              <div className="flex-1 flex flex-col justify-center mb-4 z-10">
+                <p className="text-[10px] text-white/40 uppercase tracking-widest font-black mb-1">Pending Balance</p>
                 <div className="text-3xl font-black text-indigo-400">${tutorialRewardAmount.toLocaleString()}</div>
-                <p className="text-[9px] text-indigo-300/40 uppercase tracking-widest font-bold leading-relaxed mt-2 pt-2 border-t border-white/5">
+                <p className="text-[9px] text-indigo-300/40 uppercase tracking-widest font-bold leading-relaxed mt-3 pt-3 border-t border-white/5">
                   Earn $10,000 for each completed tutorial module
                 </p>
               </div>

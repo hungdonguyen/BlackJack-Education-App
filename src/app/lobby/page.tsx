@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { getLobbyRooms, RoomConfig } from '@/utils/rooms';
 import Image from 'next/image';
 import { ArrowLeft, Home, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useAudio } from '@/utils/audio';
 import { MusicPlayer } from '@/components/MusicPlayer';
 import { useGameStore } from '@/hooks/useGameStore';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Keyboard } from 'swiper/modules';
+import type { SwiperClass } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
+import { useMenuNavigation } from '@/hooks/useMenuNavigation';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -20,6 +22,8 @@ export default function LobbyPage() {
     const rooms = useMemo(() => getLobbyRooms(), []);
     const { playSound } = useAudio();
     const bankroll = useGameStore((s) => s.bankroll);
+    const [swiperRef, setSwiperRef] = useState<SwiperClass | null>(null);
+    const [activePage, setActivePage] = useState(0);
 
     const formatMoney = (v: number) =>
         v >= 1_000_000
@@ -38,17 +42,52 @@ export default function LobbyPage() {
         return chunks;
     }, [rooms]);
 
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                router.push('/');
-            }
-        };
+    // Current page room IDs as navigation items
+    const currentPageRoomIds = useMemo(
+        () => (chunkedRooms[activePage] ?? []).map(r => r.id),
+        [chunkedRooms, activePage]
+    );
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [router]);
+    const handleRoomSelect = useCallback((id: string) => {
+        playSound('click');
+        router.push(`/game/${id}`);
+    }, [playSound, router]);
+
+    const handleGoHome = useCallback(() => {
+        playSound('click');
+        router.push('/');
+    }, [playSound, router]);
+
+    const handleBoundary = useCallback((direction: 'prev' | 'next') => {
+        if (!swiperRef) return;
+        if (direction === 'next' && activePage < chunkedRooms.length - 1) {
+            playSound('click');
+            swiperRef.slideNext();
+            // Focus will reset to 0 because items change triggers clamp
+        } else if (direction === 'prev' && activePage > 0) {
+            playSound('click');
+            swiperRef.slidePrev();
+        }
+    }, [swiperRef, activePage, chunkedRooms.length, playSound]);
+
+    const { focusedId, setFocusedIndex } = useMenuNavigation({
+        items: currentPageRoomIds,
+        columns: 3,
+        wrap: false,
+        onSelect: handleRoomSelect,
+        onBack: handleGoHome,
+        onBoundary: handleBoundary,
+    });
+
+    // When page changes, reset focus to first item (next page) or last item (prev page)
+    const prevPageRef = useRef(activePage);
+    useEffect(() => {
+        if (activePage !== prevPageRef.current) {
+            const wentForward = activePage > prevPageRef.current;
+            setFocusedIndex(wentForward ? 0 : (chunkedRooms[activePage]?.length ?? 1) - 1);
+            prevPageRef.current = activePage;
+        }
+    }, [activePage, chunkedRooms, setFocusedIndex]);
 
     // Animation Variants
     const containerVariants = {
@@ -169,23 +208,24 @@ export default function LobbyPage() {
                     }}
                 >
                     <Swiper
-                        modules={[Navigation, Keyboard]}
+                        modules={[Navigation]}
                         spaceBetween={40}
                         slidesPerView={1}
-                        keyboard={{ enabled: true }}
+                        allowTouchMove={true}
                         speed={600}
                         navigation={{
                             prevEl: '.lobby-prev',
                             nextEl: '.lobby-next',
                         }}
                         className="w-full h-full"
-                        onSlideChange={() => playSound('click')}
+                        onSwiper={(s) => setSwiperRef(s)}
+                        onSlideChange={(s) => { playSound('click'); setActivePage(s.activeIndex); }}
                     >
                         {chunkedRooms.map((chunk, pageIndex) => (
                             <SwiperSlide key={pageIndex}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 xl:gap-5 w-full max-w-[1100px] mx-auto py-2">
                                     {chunk.map((room, index) => (
-                                        <RoomCard key={room.id} room={room} index={index} onClick={() => { playSound('click'); router.push(`/game/${room.id}`); }} variants={itemVariants} />
+                                        <RoomCard key={room.id} room={room} index={index} onClick={() => { playSound('click'); router.push(`/game/${room.id}`); }} variants={itemVariants} isFocused={focusedId === room.id} />
                                     ))}
                                 </div>
                             </SwiperSlide>
@@ -225,7 +265,7 @@ export default function LobbyPage() {
     );
 }
 
-function RoomCard({ room, index, onClick, variants }: { room: RoomConfig; index: number; onClick: () => void; variants: any }) {
+function RoomCard({ room, index, onClick, variants, isFocused }: { room: RoomConfig; index: number; onClick: () => void; variants: any; isFocused?: boolean }) {
     const formattedMaxBet = useMemo(() => {
         if (room.betRange[1] >= 1000000) return 'Unlimited';
         return `$${room.betRange[1].toLocaleString('en-US')}`;
@@ -236,7 +276,11 @@ function RoomCard({ room, index, onClick, variants }: { room: RoomConfig; index:
             className="relative w-full h-full flex flex-col rounded-2xl overflow-hidden cursor-pointer group"
             style={{
                 border: `1px solid ${room.borderColor}`,
-                boxShadow: `0 0 40px ${room.borderColor}`,
+                boxShadow: isFocused
+                    ? `0 0 0 3px ${room.accentColor}, 0 0 30px ${room.accentColor}60`
+                    : `0 0 40px ${room.borderColor}`,
+                transform: isFocused ? 'scale(1.03)' : undefined,
+                transition: 'box-shadow 0.15s ease, transform 0.15s ease',
             }}
             variants={variants}
             whileHover={{ scale: 1.03, y: -8, boxShadow: `0 0 60px ${room.accentColor}44` }}

@@ -35,6 +35,7 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
     const zap = useGameStore((s) => s.zap);
     const switchCards = useGameStore((s) => s.switchCards);
     const burn = useGameStore((s) => s.burn);
+    const hoveredAction = useGameStore((s) => s.hoveredAction);
     const setHoveredAction = useGameStore((s) => s.setHoveredAction);
     const startDeal = useGameStore((s) => s.startDeal);
     const resetRound = useGameStore((s) => s.resetRound);
@@ -172,7 +173,6 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
     const hasPreviousBets = previousBets && previousBets.length > 0;
 
     // Calculate total insurance cost for display
-    // Calculate total insurance cost for display (per seat)
     const totalInsuranceCost = isInsurance && currentSeat
         ? (currentSeat.hands[0]?.betAmount ?? 0) / 2
         : 0;
@@ -192,7 +192,6 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
                         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     >
                         <TurnTimer />
-                        
                         
                         {/* Switch Advisor Tip */}
                         {showSwitchAdvice && exchangeAdvice && (
@@ -216,52 +215,63 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
                         <div className="flex items-center gap-3">
                             {isDblFree ? (
                                 <FreeCircleButton id="action-double" label="FREE ACTION DOUBLE" icon={<Zap className="w-4 h-4" />}
-                                    onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={50} ariaLabel="Double Down (Free)" />
+                                    onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={50} ariaLabel="Double Down (Free)"
+                                    isFocused={hoveredAction === 'double'} />
                             ) : (
                                 <CircleButton id="action-double" label={`DOUBLE DOWN ($${currentHand?.betAmount})`} icon="2x" color="#f39c12" hoverColor="#f1c40f"
-                                    onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={45} ariaLabel="Double Down (2x Bet)" />
+                                    onClick={() => { playSound('click'); doubleDown(); }} disabled={!canDbl} size={45} ariaLabel="Double Down (2x Bet)"
+                                    isFocused={hoveredAction === 'double'} />
                             )}
 
                             <CircleButton id="action-hit" label="HIT" icon="+" color="#2ecc71" hoverColor="#27ae60"
-                                onClick={() => { playSound('click'); hit(); }} disabled={!canHit} size={53} ariaLabel="Hit (Draw Card)" />
+                                onClick={() => { playSound('click'); hit(); }} disabled={!canHit} size={53} ariaLabel="Hit (Draw Card)"
+                                isFocused={hoveredAction === 'hit'} />
                             <CircleButton id="action-stand" label="STAND" icon="−" color="#e74c3c" hoverColor="#c0392b"
-                                onClick={() => { playSound('click'); stand(); }} disabled={!canStand} size={53} ariaLabel="Stand (End Turn)" />
+                                onClick={() => { playSound('click'); stand(); }} disabled={!canStand} size={53} ariaLabel="Stand (End Turn)"
+                                isFocused={hoveredAction === 'stand'} />
 
                             {isSplFree ? (
                                 <FreeCircleButton id="action-split" label="FREE ACTION SPLIT" icon={<Zap className="w-4 h-4" />}
-                                    onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={50} ariaLabel="Split Hand (Free)" />
+                                    onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={50} ariaLabel="Split Hand (Free)"
+                                    isFocused={hoveredAction === 'split'} />
                             ) : (
                                 <CircleButton id="action-split" label="SPLIT" icon="⟺" color="#3498db" hoverColor="#2980b9"
-                                    onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={45} ariaLabel="Split Hand" />
+                                    onClick={() => { playSound('click'); split(); }} disabled={!canSpl} size={45} ariaLabel="Split Hand"
+                                    isFocused={hoveredAction === 'split'} />
                             )}
 
                             {roomConfig.gameRules.allowSurrender && (
                                 <CircleButton id="action-surrender" label="SURRENDER" icon={<Flag className="w-4 h-4" />} color="#9b59b6" hoverColor="#8e44ad"
-                                    onClick={() => { playSound('click'); surrender(); }} disabled={!canSur} size={45} ariaLabel="Surrender Hand" />
+                                    onClick={() => { playSound('click'); surrender(); }} disabled={!canSur} size={45} ariaLabel="Surrender Hand"
+                                    isFocused={hoveredAction === 'surrender'} />
                             )}
 
                             {rules.canZap && (
                                 <CircleButton id="action-zapout" label="ZAP OUT" icon={<Zap className="w-5 h-5 text-white animate-pulse" />} color="#3b82f6" hoverColor="#2563eb"
                                     onClick={() => { playSound('card-slide'); setHoveredAction(null); zap(); }} disabled={!canZapHand} size={45} ariaLabel="Zap Out"
-                                    onMouseEnter={() => setHoveredAction('zap')} onMouseLeave={() => setHoveredAction(null)} />
+                                    onMouseEnter={() => setHoveredAction('zap')} onMouseLeave={() => setHoveredAction(null)}
+                                    isFocused={hoveredAction === 'zap'} />
                             )}
 
                             {rules.canSwitch && (
                                 showSwitchAdvice && exchangeAdvice?.shouldSwitch ? (
                                     <FreeCircleButton id="action-switch" label="ADVISED" icon={<ArrowLeftRight className="w-5 h-5 text-black" />} 
                                         onClick={() => { playSound('card-slide'); setHoveredAction(null); switchCards(); }} disabled={!canSwitchHand} size={50} ariaLabel="Switch Cards (Advised)"
-                                        onMouseEnter={() => setHoveredAction('switch')} onMouseLeave={() => setHoveredAction(null)} />
+                                        onMouseEnter={() => setHoveredAction('switch')} onMouseLeave={() => setHoveredAction(null)}
+                                        isFocused={hoveredAction === 'switch'} />
                                 ) : (
                                     <CircleButton id="action-switch" label="SWITCH" icon={<ArrowLeftRight className="w-5 h-5 text-white" />} color="#64748b" hoverColor="#475569"
                                         onClick={() => { playSound('card-slide'); setHoveredAction(null); switchCards(); }} disabled={!canSwitchHand} size={45} ariaLabel="Switch Cards"
-                                        onMouseEnter={() => setHoveredAction('switch')} onMouseLeave={() => setHoveredAction(null)} />
+                                        onMouseEnter={() => setHoveredAction('switch')} onMouseLeave={() => setHoveredAction(null)}
+                                        isFocused={hoveredAction === 'switch'} />
                                 )
                             )}
 
                             {rules.canBurn && (
                                 <CircleButton id="action-burn" label={`BURN ($${burnCost})`} icon={<Flame className="w-5 h-5 text-white" />} color="#f97316" hoverColor="#ea580c"
                                     onClick={() => { playSound('card-slide'); setHoveredAction(null); burn(); }} disabled={!canBurnHand} size={45} ariaLabel="Burn Card"
-                                    onMouseEnter={() => setHoveredAction('burn')} onMouseLeave={() => setHoveredAction(null)} />
+                                    onMouseEnter={() => setHoveredAction('burn')} onMouseLeave={() => setHoveredAction(null)}
+                                    isFocused={hoveredAction === 'burn'} />
                             )}
                         </div>
                     </motion.div>
@@ -277,10 +287,7 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
                         exit={{ opacity: 0, scale: 0.8 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     >
-                        {/* Insurance timer */}
                         <InsuranceTimer />
-                        
-
                         <div className="px-6 py-3 rounded-xl bg-black/60 backdrop-blur-md border border-yellow-400/20 text-center"
                             style={{ boxShadow: '0 0 30px rgba(250, 204, 21, 0.15)' }}
                         >
@@ -299,29 +306,24 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
                                 Cost: ${totalInsuranceCost} (half your bet)
                             </p>
                             <div className="flex items-center gap-3 justify-center">
-                                <motion.button
-                                    id="insurance-accept"
-                                    onClick={() => { playSound('click'); acceptInsurance(); }}
-                                    disabled={!canInsurance}
-                                    className={`px-6 py-2.5 rounded-full font-extrabold text-xs uppercase tracking-wider transition-all
-                                        ${canInsurance
-                                            ? 'bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 cursor-pointer'
-                                            : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
-                                        }`}
-                                    whileHover={canInsurance ? { scale: 1.05 } : {}}
-                                    whileTap={canInsurance ? { scale: 0.95 } : {}}
-                                >
-                                    <Check className="w-3.5 h-3.5 mr-1" /> Accept
-                                </motion.button>
-                                <motion.button
-                                    id="insurance-decline"
-                                    onClick={() => { playSound('click'); declineInsurance(); }}
-                                    className="px-6 py-2.5 rounded-full font-extrabold text-xs uppercase tracking-wider cursor-pointer
-                                        bg-white/5 border border-white/15 text-white/60 hover:bg-white/10 hover:text-white/80 transition-all"
-                                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                >
-                                    <X className="w-3.5 h-3.5 mr-1" /> No Thanks
-                                </motion.button>
+                                <SmallButton 
+                                    id="insurance-accept" 
+                                    label="Accept" 
+                                    icon={<Check className="w-3.5 h-3.5" />} 
+                                    onClick={() => { playSound('click'); acceptInsurance(); }} 
+                                    disabled={!canInsurance} 
+                                    variant="confirm" 
+                                    isFocused={hoveredAction === 'insurance-accept'} 
+                                />
+                                <SmallButton 
+                                    id="insurance-decline" 
+                                    label="No Thanks" 
+                                    icon={<X className="w-3.5 h-3.5" />} 
+                                    onClick={() => { playSound('click'); declineInsurance(); }} 
+                                    disabled={false} 
+                                    variant="ghost" 
+                                    isFocused={hoveredAction === 'insurance-decline'} 
+                                />
                             </div>
                         </div>
                     </motion.div>
@@ -338,26 +340,32 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
                     >
                         {hasBets ? (
                             <>
-                                <SmallButton id="action-undo" label="UNDO" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); undoBet(); }} disabled={!hasUndo} variant="ghost" />
-                                <SmallButton id="action-clear" label="CLEAR" icon={<X className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); clearAllBets(); }} disabled={!hasBets} variant="danger" />
-                                { !roomConfig.isTutorial && <SmallButton id="action-rebet-x2" label="x2" icon={<span className="text-sm">2x</span>} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={false} variant="ghost" /> }
+                                <SmallButton id="action-undo" label="UNDO" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); undoBet(); }} disabled={!hasUndo} variant="ghost" isFocused={hoveredAction === 'undo'} />
+                                <SmallButton id="action-clear" label="CLEAR" icon={<X className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); clearAllBets(); }} disabled={!hasBets} variant="danger" isFocused={hoveredAction === 'clear'} />
+                                { !roomConfig.isTutorial && <SmallButton id="action-rebet-x2" label="x2" icon={<span className="text-sm">2x</span>} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={false} variant="ghost" isFocused={hoveredAction === 'rebet'} /> }
                                 <motion.button
-                                    id="action-button-deal"
+                                    id="action-deal"
                                     onClick={() => { playSound('card-slide'); startDeal(); }}
                                     disabled={!hasBets}
-                                    className="px-8 py-3 rounded-full font-extrabold text-sm uppercase tracking-[0.2em] cursor-pointer
-                                        bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30
-                                        hover:shadow-emerald-500/50 hover:from-emerald-400 hover:to-emerald-500
-                                        transition-all duration-300"
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
+                                    className={`px-8 py-3 rounded-full font-extrabold text-sm uppercase tracking-[0.2em] transition-all duration-300
+                                        ${!hasBets 
+                                            ? 'bg-zinc-800/50 text-zinc-600 border border-zinc-700/50 cursor-not-allowed' 
+                                            : 'bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:from-emerald-400 hover:to-emerald-500 cursor-pointer'
+                                        }`}
+                                    style={{
+                                        boxShadow: hoveredAction === 'deal' && hasBets ? '0 0 25px white' : '',
+                                        scale: hoveredAction === 'deal' && hasBets ? 1.05 : 1,
+                                        border: hoveredAction === 'deal' && hasBets ? '2px solid white' : ''
+                                    }}
+                                    whileHover={hasBets ? { scale: 1.05 } : {}}
+                                    whileTap={hasBets ? { scale: 0.95 } : {}}
                                 >
                                     <div className="flex items-center justify-center"><Spade className="w-4 h-4 fill-current mr-1.5" /> DEAL</div>
                                 </motion.button>
                             </>
                         ) : (
                             <div className="flex items-center" style={{ minHeight: '48px', marginTop: '10px' }}>
-                                { !roomConfig.isTutorial && <SmallButton id="action-rebet" label="REBET" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={!hasPreviousBets} variant="ghost" /> }
+                                { !roomConfig.isTutorial && <SmallButton id="action-rebet" label="REBET" icon={<Undo2 className="w-3.5 h-3.5" />} onClick={() => { playSound('chip-lay'); rebet(); }} disabled={!hasPreviousBets} variant="ghost" isFocused={hoveredAction === 'rebet'} /> }
                             </div>
                         )}
                     </motion.div>
@@ -389,13 +397,18 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
                             key="payout"
                             id="finish-tutorial-button"
                             onClick={() => { markTutorialCompleted(currentRoom); resetTutorialProgress(); router.push('/tutorial-lobby'); }}
-                            className="px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
+                            className={`px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
                                 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white
                                 shadow-[0_0_30px_rgba(139,92,246,0.4),0_8px_20px_rgba(0,0,0,0.3)]
                                 hover:shadow-[0_0_50px_rgba(139,92,246,0.6),0_12px_30px_rgba(0,0,0,0.4)]
                                 hover:from-indigo-400 hover:via-purple-400 hover:to-pink-400
                                 border-2 border-indigo-300/30
-                                transition-all duration-300 relative overflow-hidden"
+                                transition-all duration-300 relative overflow-hidden`}
+                            style={{
+                                boxShadow: hoveredAction === 'finish-tutorial' ? '0 0 25px white' : '',
+                                scale: hoveredAction === 'finish-tutorial' ? 1.05 : 1,
+                                borderColor: hoveredAction === 'finish-tutorial' ? 'white' : ''
+                            }}
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.8 }}
@@ -419,13 +432,18 @@ const ActionPanel = React.memo(function ActionPanel({ currentInsuranceSeat }: { 
                             key="payout"
                             id="new-round-button"
                             onClick={resetRound}
-                            className="px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
+                            className={`px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
                                 bg-linear-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white
                                 shadow-[0_0_30px_rgba(16,185,129,0.4),0_8px_20px_rgba(0,0,0,0.3)]
                                 hover:shadow-[0_0_50px_rgba(16,185,129,0.6),0_12px_30px_rgba(0,0,0,0.4)]
                                 hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400
                                 border-2 border-emerald-300/30
-                                transition-all duration-300 relative overflow-hidden"
+                                transition-all duration-300 relative overflow-hidden`}
+                            style={{
+                                boxShadow: hoveredAction === 'new-round' ? '0 0 25px white' : '',
+                                scale: hoveredAction === 'new-round' ? 1.05 : 1,
+                                borderColor: hoveredAction === 'new-round' ? 'white' : ''
+                            }}
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.8 }}
@@ -460,9 +478,10 @@ interface CircleButtonProps {
     ariaLabel?: string;
     onMouseEnter?: () => void;
     onMouseLeave?: () => void;
+    isFocused?: boolean;
 }
 
-function CircleButton({ id, label, icon, color, hoverColor, onClick, disabled, size, ariaLabel, onMouseEnter, onMouseLeave }: CircleButtonProps) {
+function CircleButton({ id, label, icon, color, hoverColor, onClick, disabled, size, ariaLabel, onMouseEnter, onMouseLeave, isFocused }: CircleButtonProps) {
     return (
         <motion.button
             id={id}
@@ -480,8 +499,9 @@ function CircleButton({ id, label, icon, color, hoverColor, onClick, disabled, s
                 style={{
                     width: size, height: size,
                     background: disabled ? 'rgba(100,100,100,0.3)' : `radial-gradient(circle at 35% 35%, ${hoverColor}, ${color})`,
-                    boxShadow: disabled ? 'none' : `0 4px 20px ${color}66, 0 0 40px ${color}22, inset 0 1px 0 rgba(255,255,255,0.3)`,
-                    border: `2px solid ${disabled ? 'rgba(100,100,100,0.2)' : color}`,
+                    boxShadow: isFocused ? '0 0 20px white, 0 4px 20px rgba(0,0,0,0.4)' : (disabled ? 'none' : `0 4px 20px ${color}66, 0 0 40px ${color}22, inset 0 1px 0 rgba(255,255,255,0.3)`),
+                    border: isFocused ? '3px solid white' : `2px solid ${disabled ? 'rgba(100,100,100,0.2)' : color}`,
+                    scale: isFocused ? 1.1 : 1
                 }}
             >
                 <span className="text-white font-black drop-shadow-md" style={{ fontSize: size * 0.35 }}>{icon}</span>
@@ -492,12 +512,17 @@ function CircleButton({ id, label, icon, color, hoverColor, onClick, disabled, s
 }
 
 // ── SmallButton ──
-function SmallButton({ id, label, icon, onClick, disabled, variant }: {
-    id?: string; label: string; icon: React.ReactNode; onClick: () => void; disabled: boolean; variant: 'ghost' | 'danger';
+function SmallButton({ id, label, icon, onClick, disabled, variant, isFocused }: {
+    id?: string; label: string; icon: React.ReactNode; onClick: () => void; disabled: boolean; variant: 'ghost' | 'danger' | 'confirm'; isFocused?: boolean;
 }) {
-    const styles = variant === 'danger'
-        ? 'border-red-500/30 text-red-400/70 hover:bg-red-500/10 hover:text-red-400'
-        : 'border-white/10 text-white/40 hover:bg-white/10 hover:text-white/60';
+    let styles = '';
+    if (variant === 'danger') {
+        styles = 'border-red-500/30 text-red-400/70 hover:bg-red-500/10 hover:text-red-400';
+    } else if (variant === 'confirm') {
+        styles = 'border-emerald-500/30 text-emerald-400/80 hover:bg-emerald-500/10 hover:text-emerald-400';
+    } else {
+        styles = 'border-white/10 text-white/40 hover:bg-white/10 hover:text-white/60';
+    }
 
     return (
         <motion.button
@@ -505,11 +530,15 @@ function SmallButton({ id, label, icon, onClick, disabled, variant }: {
             onClick={onClick} disabled={disabled}
             className={`px-4 py-2 rounded-full border text-[11px] font-bold uppercase tracking-wider
                 transition-all duration-200 cursor-pointer
+                ${isFocused ? 'shadow-[0_0_15px_white] scale-105 border-white text-white bg-white/10' : ''}
                 ${disabled ? 'opacity-20 cursor-not-allowed' : styles}`}
             whileHover={disabled ? {} : { scale: 1.05 }}
             whileTap={disabled ? {} : { scale: 0.95 }}
         >
-            <span className="mr-1 flex items-center justify-center">{icon}</span>{label}
+            <div className="flex items-center gap-1">
+                <span className="flex items-center justify-center">{icon}</span>
+                {label}
+            </div>
         </motion.button>
     );
 }
@@ -522,9 +551,10 @@ interface FreeCircleButtonProps {
     ariaLabel?: string;
     onMouseEnter?: () => void;
     onMouseLeave?: () => void;
+    isFocused?: boolean;
 }
 
-function FreeCircleButton({ id, label, icon, onClick, disabled, size, ariaLabel, onMouseEnter, onMouseLeave }: FreeCircleButtonProps) {
+function FreeCircleButton({ id, label, icon, onClick, disabled, size, ariaLabel, onMouseEnter, onMouseLeave, isFocused }: FreeCircleButtonProps) {
     return (
         <motion.button
             id={id}
@@ -544,13 +574,14 @@ function FreeCircleButton({ id, label, icon, onClick, disabled, size, ariaLabel,
                     background: disabled
                         ? 'rgba(100,100,100,0.3)'
                         : 'linear-gradient(135deg, #fcd34d 0%, #f59e0b 30%, #d97706 60%, #fbbf24 100%)',
-                    boxShadow: disabled
+                    boxShadow: isFocused ? '0 0 25px white' : (disabled
                         ? 'none'
-                        : '0 4px 25px rgba(251, 191, 36, 0.6), 0 0 50px rgba(234, 179, 8, 0.3), inset 0 1px 0 rgba(255,255,255,0.5)',
-                    border: `2px solid ${disabled ? 'rgba(100,100,100,0.2)' : '#fcd34d'}`,
+                        : '0 4px 25px rgba(251, 191, 36, 0.6), 0 0 50px rgba(234, 179, 8, 0.3), inset 0 1px 0 rgba(255,255,255,0.5)'),
+                    border: isFocused ? '3px solid white' : `2px solid ${disabled ? 'rgba(100,100,100,0.2)' : '#fcd34d'}`,
+                    scale: isFocused ? 1.15 : 1
                 }}
                 animate={disabled ? {} : {
-                    boxShadow: [
+                    boxShadow: isFocused ? ['0 0 25px white'] : [
                         '0 4px 25px rgba(251, 191, 36, 0.6), 0 0 50px rgba(234, 179, 8, 0.3)',
                         '0 4px 35px rgba(251, 191, 36, 0.9), 0 0 70px rgba(234, 179, 8, 0.5)',
                         '0 4px 25px rgba(251, 191, 36, 0.6), 0 0 50px rgba(234, 179, 8, 0.3)',
@@ -575,4 +606,3 @@ function FreeCircleButton({ id, label, icon, onClick, disabled, size, ariaLabel,
         </motion.button>
     );
 }
-

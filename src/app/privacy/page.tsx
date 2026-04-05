@@ -3,10 +3,15 @@
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Shield } from 'lucide-react';
+import { useModalNavigation } from '@/hooks/useMenuNavigation';
 
 export default function PrivacyPage() {
     const router = useRouter();
     const lastUpdated = '2026-04-03';
+
+    useModalNavigation({
+        onClose: () => router.back(),
+    });
 
     return (
         <div

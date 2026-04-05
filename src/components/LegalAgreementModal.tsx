@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
 import { isTauriEnv, writeSaveFile, readSaveFile } from '@/utils/saveFile';
 import { useAudio } from '@/utils/audio';
+import { useModalNavigation } from '@/hooks/useMenuNavigation';
 
 const AGREEMENT_KEY = 'legal-agreed-v1';
 
@@ -217,6 +218,14 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
     }, []);
 
     const bothRead = privacyRead && termsRead;
+
+    // Keyboard navigation: ←→ to switch tabs, Enter to accept
+    useModalNavigation({
+        onPrev: () => { playSound('click'); setTab(tab === 'terms' ? 'privacy' : 'terms'); },
+        onNext: () => { playSound('click'); setTab(tab === 'privacy' ? 'terms' : 'privacy'); },
+        onConfirm: () => { if (bothRead) { playSound('click'); handleAccept(); } },
+        disabled: !visible,
+    });
 
     const handleAccept = async () => {
         if (!bothRead) return;

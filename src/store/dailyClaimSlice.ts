@@ -1,17 +1,13 @@
 import { StateCreator } from 'zustand';
 import { GameStore, DailyClaimSlice } from '@/types/game';
+import {
+  DAILY_CLAIM_BASE_REWARD,
+  DAILY_CLAIM_STREAK_MILESTONES,
+  getDailyClaimMilestoneBonus,
+} from '@/utils/dailyClaimConfig';
 
 const HOUR_MS = 60 * 60 * 1000;
 const MYSTERY_COOLDOWN_MS = 30 * 60 * 1000;
-const BASE_DAILY_CLAIM = 3000;
-
-const STREAK_MILESTONE_BONUS: Record<number, number> = {
-  1: 2000,
-  5: 10000,
-  10: 30000,
-  24: 80000,
-  50: 250000,
-};
 
 const toHourStart = (ts: number): number => {
   const d = new Date(ts);
@@ -114,26 +110,27 @@ export const createDailyClaimSlice: StateCreator<
     const now = Date.now();
     const currentHourStart = toHourStart(now);
     const lastClaimHour = state.lastDailyClaim > 0 ? toHourStart(state.lastDailyClaim) : 0;
+    const maxStreakMilestone = DAILY_CLAIM_STREAK_MILESTONES[DAILY_CLAIM_STREAK_MILESTONES.length - 1] ?? 50;
 
     if (lastClaimHour === currentHourStart) return 0;
 
     const isPrevHour = lastClaimHour > 0 && currentHourStart - lastClaimHour === HOUR_MS;
-    const nextStreak = isPrevHour ? state.dailyClaimStreak + 1 : 1;
-    const milestoneBonus = STREAK_MILESTONE_BONUS[nextStreak] ?? 0;
-    const claimAmount = BASE_DAILY_CLAIM + milestoneBonus;
+    const effectiveCurrentStreak = state.dailyClaimStreak >= maxStreakMilestone ? 0 : Math.max(0, state.dailyClaimStreak);
+    const nextStreak = isPrevHour ? effectiveCurrentStreak + 1 : 1;
+    const milestoneBonus = getDailyClaimMilestoneBonus(nextStreak);
+    const claimAmount = DAILY_CLAIM_BASE_REWARD + milestoneBonus;
+    const shouldResetStreak = nextStreak >= maxStreakMilestone;
 
     set((s) => ({
       bankroll: s.bankroll + claimAmount,
       totalClaimedAmount: s.totalClaimedAmount + claimAmount,
       lastDailyClaim: now,
-      dailyClaimStreak: nextStreak,
+      dailyClaimStreak: shouldResetStreak ? 0 : nextStreak,
       dailyClaimCount: s.dailyClaimCount + 1,
       ...withClaimPopup(claimAmount),
     }));
     
-    if ('syncAchievements' in get()) {
-      (get() as any).syncAchievements();
-    }
+    get().syncAchievements();
     return claimAmount;
   },
 
@@ -176,7 +173,7 @@ export const createDailyClaimSlice: StateCreator<
     const now = Date.now();
 
     let insuranceClaimsToday = state.insuranceClaimsToday;
-    let lastInsuranceReset = state.lastInsuranceReset;
+    const lastInsuranceReset = state.lastInsuranceReset;
 
     if (now - lastInsuranceReset > 24 * 60 * 60 * 1000) {
       insuranceClaimsToday = 0;
