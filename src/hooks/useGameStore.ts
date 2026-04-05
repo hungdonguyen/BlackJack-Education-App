@@ -51,8 +51,17 @@ export function useStoreHydration(): boolean {
             ? simulatorHistoryFromFile
             : simulatorHistoryFromLegacy;
 
-          patch.matchHistory = normalHistory;
-          patch.simulatorHistory = simulatorHistory;
+          if (normalHistory.length > 0) {
+            patch.matchHistory = normalHistory;
+          } else if (useGameStoreBase.getState().matchHistory.length > 0) {
+            writeHistoryFile(useGameStoreBase.getState().matchHistory);
+          }
+
+          if (simulatorHistory.length > 0) {
+            patch.simulatorHistory = simulatorHistory;
+          } else if (useGameStoreBase.getState().simulatorHistory.length > 0) {
+            writeSimulatorHistoryFile(useGameStoreBase.getState().simulatorHistory);
+          }
 
           // One-time migration: if simulator history still lives in old history.json, split files.
           if (simulatorHistoryFromLegacy.length > 0 && simulatorHistoryFromFile.length === 0) {
@@ -198,8 +207,6 @@ export function useStoreHydration(): boolean {
       };
 
       const debouncedSave = debounce(saveState, 500);
-      const debouncedHistorySave = debounce(writeHistoryFile, 1500); // 1.5s debounce for history to avoid rapid writes
-      const debouncedSimulatorHistorySave = debounce(writeSimulatorHistoryFile, 1500);
 
       // Subscribe: write to save.json whenever bankroll/claims change
       const unsubState = useGameStoreBase.subscribe((state, prevState) => {
@@ -230,11 +237,11 @@ export function useStoreHydration(): boolean {
 
         // Check if history changed
         if (state.matchHistory !== prevState.matchHistory) {
-          debouncedHistorySave(state.matchHistory);
+          writeHistoryFile(state.matchHistory);
         }
 
         if (state.simulatorHistory !== prevState.simulatorHistory) {
-          debouncedSimulatorHistorySave(state.simulatorHistory);
+          writeSimulatorHistoryFile(state.simulatorHistory);
         }
       });
 

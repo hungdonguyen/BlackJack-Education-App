@@ -55,8 +55,8 @@ function calcScore(cards: { suit: Suit; rank: Rank }[]): number {
 
 function formatDate(ts: number) {
     const d = new Date(ts);
-    const date = d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
-    const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const date = d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
     return `${date}  ${time}`;
 }
 
@@ -188,13 +188,13 @@ export default function MatchDetailModal({
                     {/* Hands Table */}
                     <div className="px-5 py-3">
                         {/* Table header */}
-                        <div className="grid text-[9px] font-bold uppercase tracking-[0.15em] text-white/30 mb-2 px-1"
+                        <div className="grid gap-x-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white/30 mb-2 px-2"
                             style={{ gridTemplateColumns: '80px 1fr 56px 90px 100px' }}>
                             <span>Seat</span>
                             <span>Cards</span>
                             <span className="text-center">Score</span>
                             <span className="text-right">Bet</span>
-                            <span className="text-right">Win / Loss</span>
+                            <span className="text-right">Net P&L</span>
                         </div>
 
                         {/* Rows */}
@@ -338,21 +338,32 @@ export default function MatchDetailModal({
                                                         }}>
                                                         <div className="flex items-center gap-1">
                                                             <Flame size={11} className="text-orange-400" />
-                                                            <span className="text-[9px] font-bold text-orange-400/80 uppercase">Burn Bonus</span>
+                                                            <span className="text-[9px] font-bold text-orange-400/80 uppercase">
+                                                                {hand.burnWagerPayout && hand.burnWagerPayout > 0 ? 'Burn Bonus' : 'Burn Cost'}
+                                                            </span>
                                                         </div>
                                                         <div className="text-[9px] text-orange-300/60 font-bold">
-                                                            ✓ Discarded {hand.burnedCard?.rank} of {hand.burnedCard?.suit} — Bonus Paid
+                                                            {hand.burnWagerPayout && hand.burnWagerPayout > 0 
+                                                                ? `✓ Discarded ${hand.burnedCard?.rank} of ${hand.burnedCard?.suit} — Bonus Paid`
+                                                                : `✗ Discarded ${hand.burnedCard?.rank} of ${hand.burnedCard?.suit}`
+                                                            }
                                                         </div>
                                                         <div />
                                                         <div className="text-right">
-                                                            <span className="text-[10px] font-bold text-orange-400/60 tabular-nums">
+                                                            <span className="text-[10px] font-bold text-orange-400/90 tabular-nums">
                                                                 -{hand.burnWagerAmount?.toLocaleString()}
                                                             </span>
                                                         </div>
                                                         <div className="text-right">
-                                                            <span className="text-[12px] font-black text-emerald-400 tabular-nums">
-                                                                +{hand.burnWagerPayout?.toLocaleString()}
-                                                            </span>
+                                                            {hand.burnWagerPayout && hand.burnWagerPayout > 0 ? (
+                                                                <span className="text-[12px] font-black text-emerald-400 tabular-nums">
+                                                                    +{(hand.burnWagerPayout - (hand.burnWagerAmount ?? 0)).toLocaleString()}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-[12px] font-black text-red-400 tabular-nums">
+                                                                    -{(hand.burnWagerAmount ?? 0).toLocaleString()}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}

@@ -23,7 +23,6 @@ export function TurnTimer() {
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
-        let expired = false;
 
         if (isPlayerTurn && !room.isTutorial) {
             setTimer(TURN_TIMER_SECONDS);
@@ -31,21 +30,6 @@ export function TurnTimer() {
                 setTimer((prev) => {
                     if (prev <= 1) {
                         clearInterval(interval);
-                        if (!expired) {
-                            expired = true;
-                            // Safe Zustand mutation bypassing React batching context
-                            const state = useGameStoreBase.getState();
-                            const roomCfg = getRoomConfig(state.currentRoom);
-                            const isSingleCardStart = (roomCfg.gameRules.playerInitialCards ?? 2) === 1;
-                            const cSeat = state.seats[state.currentSeatIndex];
-                            const cHand = cSeat?.hands[cSeat.currentHandIndex];
-                            
-                            if (isSingleCardStart && cHand && cHand.cards.length === 1) {
-                                state.hit();
-                            } else {
-                                state.stand();
-                            }
-                        }
                         return 0;
                     }
                     return prev - 1;
@@ -55,10 +39,27 @@ export function TurnTimer() {
             setTimer(TURN_TIMER_SECONDS);
         }
 
-        return () => {
-            clearInterval(interval);
-        };
+        return () => clearInterval(interval);
     }, [isPlayerTurn, currentSeatIndex, currentHandIndex, actionCounter, room.isTutorial]);
+
+    useEffect(() => {
+        if (timer === 0 && isPlayerTurn && !room.isTutorial) {
+            const timeout = setTimeout(() => {
+                const state = useGameStoreBase.getState();
+                const roomCfg = getRoomConfig(state.currentRoom);
+                const isSingleCardStart = (roomCfg.gameRules.playerInitialCards ?? 2) === 1;
+                const cSeat = state.seats[state.currentSeatIndex];
+                const cHand = cSeat?.hands[cSeat.currentHandIndex];
+                
+                if (isSingleCardStart && cHand && cHand.cards.length === 1) {
+                    state.hit();
+                } else {
+                    state.stand();
+                }
+            }, 0);
+            return () => clearTimeout(timeout);
+        }
+    }, [timer, isPlayerTurn, room.isTutorial]);
 
     if (!isPlayerTurn || room.isTutorial || timer === undefined) return null;
 
@@ -87,7 +88,6 @@ export function InsuranceTimer() {
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
-        let expired = false;
 
         if (isInsurance && !room.isTutorial) {
             setTimer(INSURANCE_TIMER_SECONDS);
@@ -95,10 +95,6 @@ export function InsuranceTimer() {
                 setTimer((prev) => {
                     if (prev <= 1) {
                         clearInterval(interval);
-                        if (!expired) {
-                            expired = true;
-                            useGameStoreBase.getState().declineInsurance();
-                        }
                         return 0;
                     }
                     return prev - 1;
@@ -108,10 +104,17 @@ export function InsuranceTimer() {
             setTimer(INSURANCE_TIMER_SECONDS);
         }
 
-        return () => {
-            clearInterval(interval);
-        };
+        return () => clearInterval(interval);
     }, [isInsurance, currentSeatIndex, room.isTutorial]);
+
+    useEffect(() => {
+        if (timer === 0 && isInsurance && !room.isTutorial) {
+            const timeout = setTimeout(() => {
+                useGameStoreBase.getState().declineInsurance();
+            }, 0);
+            return () => clearTimeout(timeout);
+        }
+    }, [timer, isInsurance, room.isTutorial]);
 
     if (!isInsurance || room.isTutorial || timer === undefined) return null;
 

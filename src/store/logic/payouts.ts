@@ -109,7 +109,7 @@ export const calculatePayoutsLogic = (set: any, get: () => GameStore) => {
                 ? null
                 : rules.evaluateHand(hand, playerValue, state.dealerHand.cards, dealerValue, handIdx, seat.hands.length);
               return {
-                betAmount: (hand.betAmount - freeAmt) + (hand.burnWagerAmount || 0),
+                betAmount: (hand.betAmount - freeAmt),
                 freeActionBetAmount: freeAmt,
                 result: hand.status,
                 payout:
