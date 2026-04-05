@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
@@ -14,6 +14,14 @@ export const AchievementToast: React.FC = () => {
   const achievementToastQueue = useGameStore(s => s.achievementToastQueue);
   const dismissAchievementToast = useGameStore(s => s.dismissAchievementToast);
   const [currentId, setCurrentId] = useState<string | null>(null);
+
+  const handleDismiss = useCallback(() => {
+    setCurrentId(null);
+    // Use a small timeout to let the exit animation finish before removing from queue
+    setTimeout(() => {
+      dismissAchievementToast();
+    }, 300);
+  }, [dismissAchievementToast]);
 
   // Effect 1: Handle picking the next item from the queue
   useEffect(() => {
@@ -31,15 +39,7 @@ export const AchievementToast: React.FC = () => {
     }, 4000);
 
     return () => clearTimeout(timer);
-  }, [currentId]);
-
-  const handleDismiss = () => {
-    setCurrentId(null);
-    // Use a small timeout to let the exit animation finish before removing from queue
-    setTimeout(() => {
-      dismissAchievementToast();
-    }, 300);
-  };
+  }, [currentId, handleDismiss]);
 
   const achievement = currentId ? ACHIEVEMENT_MAP[currentId] : null;
   const tier = achievement ? TIER_CONFIG[achievement.tier] : null;

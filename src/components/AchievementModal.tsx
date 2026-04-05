@@ -63,12 +63,11 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
   const totalCount = ACHIEVEMENTS.length;
   const progressPercent = (unlockedCount / totalCount) * 100;
 
-  if (!isOpen) return null;
-
   const categories = ['all', 'general', 'mastery', 'daily', 'variant'] as const;
 
   // Keyboard/gamepad: ←→ cycle categories, Escape close
   useModalNavigation({
+    disabled: !isOpen,
     onClose: selectedAchievement ? () => setSelectedAchievement(null) : onClose,
     onPrev: () => {
       const idx = categories.indexOf(activeCategory);
@@ -81,6 +80,8 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
       setActiveCategory(categories[next]);
     },
   });
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">

@@ -115,7 +115,7 @@ export default function DevTools() {
                                         ))}
                                     </div>
                                     {dealerValue && (
-                                        <span className="text-[9px] text-white/40">{dealerValue.isSoft ? 'Soft ' : ''}{dealerValue.total}</span>
+                                        <span className="text-[9px] text-white/40">{dealerValue?.isSoft ? 'Soft ' : ''}{dealerValue?.total}</span>
                                     )}
                                 </div>
                             )}
