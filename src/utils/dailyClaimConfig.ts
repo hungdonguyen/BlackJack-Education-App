@@ -1,11 +1,11 @@
 export const DAILY_CLAIM_BASE_REWARD = 1000;
 
 export const DAILY_CLAIM_MILESTONE_BONUS: Record<number, number> = {
-  1: 2000,
-  5: 5000,
+  3: 2000,
   10: 10000,
-  24: 20000,
+  25: 25000,
   50: 50000,
+  65: 100000,
 };
 
 export const DAILY_CLAIM_STREAK_MILESTONES = Object.keys(DAILY_CLAIM_MILESTONE_BONUS)

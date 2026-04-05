@@ -129,17 +129,15 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
   const mysteryReady = mysteryMs === 0;
   const hourlyReady = !hasClaimedCurrentHour;
 
+  const currentDisplayStreak = dailyClaimStreak;
+
   // Mirror slice logic to avoid preview/payout mismatch.
-  const projectedNextStreak = hasClaimedCurrentHour
-    ? dailyClaimStreak + 1
-    : isHourlyContinuingStreak
-      ? dailyClaimStreak + 1
-      : 1;
+  const projectedNextStreak = currentDisplayStreak + 1;
   const milestoneBonus = getDailyClaimMilestoneBonus(projectedNextStreak);
   const hourlyPreview = HOURLY_BASE_REWARD + milestoneBonus;
 
   const maxStreakMilestone = STREAK_MILESTONES[STREAK_MILESTONES.length - 1] ?? 50;
-  const cappedCurrentStreak = Math.min(Math.max(dailyClaimStreak, 0), maxStreakMilestone);
+  const cappedCurrentStreak = Math.min(Math.max(currentDisplayStreak, 0), maxStreakMilestone);
   const nextVisualMilestone = STREAK_MILESTONES.find((m) => m > cappedCurrentStreak) ?? maxStreakMilestone;
   const streakProgressPct = maxStreakMilestone > 0 ? (cappedCurrentStreak / maxStreakMilestone) * 100 : 0;
 
@@ -170,7 +168,7 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
     if (!mysteryReady) return;
     const amount = claimMysteryReward();
     if (amount > 0) {
-      playSound('chip-lay');
+      playSound('win');
       setFlashMystery(amount);
       setTimeout(() => setFlashMystery(null), 3000);
     }
@@ -180,7 +178,7 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
     if (!canClaimRebate) return;
     const amount = claimRebate();
     if (amount > 0) {
-      playSound('chip-lay');
+      playSound('win');
       setFlashRebate(amount);
       setTimeout(() => setFlashRebate(null), 2500);
     }
@@ -351,8 +349,8 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
               {/* Progress milestones */}
               <div className="mt-6 bg-black/40 rounded-xl p-4 border border-white/5 relative z-10">
                 <div className="flex justify-between text-[10px] uppercase font-bold text-white/50 mb-5">
-                  <span className="tracking-widest">Active Streak</span>
-                  <span className="text-amber-400">Current: {dailyClaimStreak}</span>
+                  <span className="tracking-widest">Claim Progress</span>
+                  <span className="text-amber-400">Current: {currentDisplayStreak}</span>
                 </div>
                 <div className="relative w-full h-2 bg-white/10 rounded-full mt-4 mb-2">
                   {STREAK_MILESTONES.map((m) => {

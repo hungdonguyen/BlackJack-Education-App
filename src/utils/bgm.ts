@@ -52,7 +52,40 @@ const BASE_VOLUME = 0.3; // Increased from 0.15 to allow more range in settings
 let currentAudio: HTMLAudioElement | null = null;
 let currentTrackPath: string | null = null;
 let fadeInterval: ReturnType<typeof setInterval> | null = null;
+let fadeOutResolve: (() => void) | null = null;
 let playbackToken = 0;
+let globalHasInteracted = false;
+let globalLastRoomId: string | null = null;
+const AUDIO_UNLOCKED_EVENT = 'bgm_audio_unlocked';
+
+function getGlobalAudio(): HTMLAudioElement | null {
+    if (typeof window === 'undefined') return null;
+    if (!currentAudio) {
+        currentAudio = new Audio();
+        currentAudio.loop = true;
+    }
+    return currentAudio;
+}
+
+if (typeof window !== 'undefined') {
+    const unlockGlobalAudio = () => {
+        globalHasInteracted = true;
+        const audio = getGlobalAudio();
+        if (audio && !currentTrackPath) {
+            audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+            audio.volume = 0;
+            audio.play().catch(() => {});
+        }
+        window.removeEventListener('click', unlockGlobalAudio);
+        window.removeEventListener('keydown', unlockGlobalAudio);
+        window.removeEventListener('pointerdown', unlockGlobalAudio);
+        window.dispatchEvent(new Event(AUDIO_UNLOCKED_EVENT));
+    };
+
+    window.addEventListener('click', unlockGlobalAudio, { capture: true });
+    window.addEventListener('keydown', unlockGlobalAudio, { capture: true });
+    window.addEventListener('pointerdown', unlockGlobalAudio, { capture: true });
+}
 
 function resolveTrackPath(roomId: string, musicTrackOverride: string | null): string {
     if (musicTrackOverride) return musicTrackOverride;
@@ -64,7 +97,12 @@ function resolveTrackPath(roomId: string, musicTrackOverride: string | null): st
 
 function fadeOut(audio: HTMLAudioElement, duration: number): Promise<void> {
     return new Promise((resolve) => {
-        if (fadeInterval) clearInterval(fadeInterval);
+        if (fadeInterval) {
+            clearInterval(fadeInterval);
+            if (fadeOutResolve) fadeOutResolve();
+        }
+        fadeOutResolve = resolve;
+
         const startVolume = audio.volume;
         const step = startVolume / (duration / 50);
         fadeInterval = setInterval(() => {
@@ -73,6 +111,7 @@ function fadeOut(audio: HTMLAudioElement, duration: number): Promise<void> {
                 audio.pause();
                 if (fadeInterval) clearInterval(fadeInterval);
                 fadeInterval = null;
+                fadeOutResolve = null;
                 resolve();
             } else {
                 audio.volume -= step;
@@ -82,7 +121,10 @@ function fadeOut(audio: HTMLAudioElement, duration: number): Promise<void> {
 }
 
 function fadeIn(audio: HTMLAudioElement, targetVolume: number, duration: number) {
-    if (fadeInterval) clearInterval(fadeInterval);
+    if (fadeInterval) {
+        clearInterval(fadeInterval);
+        if (fadeOutResolve) fadeOutResolve();
+    }
     audio.volume = 0;
     const step = targetVolume / (duration / 50);
     fadeInterval = setInterval(() => {
@@ -101,45 +143,38 @@ export function useBGM(roomId: string) {
     const musicVolume = useGameStore((state) => state.musicVolume);
     const musicTrackOverride = useGameStore((state) => state.musicTrackOverride);
     const setMusicTrackOverride = useGameStore((state) => state.setMusicTrackOverride);
-    const hasInteracted = useRef(false);
+    const hasInteracted = useRef(globalHasInteracted);
     const [activationTick, setActivationTick] = useState(0);
 
-    // When changing rooms, clear manual overrides so each room's default track can take over.
-    const lastRoomIdRef = useRef(roomId);
+    // When changing rooms (even across component remounts), clear manual overrides so each room's default track can take over.
     useEffect(() => {
-        if (lastRoomIdRef.current !== roomId) {
+        if (globalLastRoomId !== roomId) {
             if (musicTrackOverride) {
                 setMusicTrackOverride(null);
             }
-            lastRoomIdRef.current = roomId;
+            globalLastRoomId = roomId;
         }
     }, [roomId, musicTrackOverride, setMusicTrackOverride]);
 
     // Handle user interaction to unlock autoplay
     useEffect(() => {
-        const unlock = () => {
-            if (hasInteracted.current) return;
-            hasInteracted.current = true;
-            setActivationTick((v) => v + 1);
-            window.removeEventListener('click', unlock);
-            window.removeEventListener('keydown', unlock);
-            window.removeEventListener('pointerdown', unlock);
+        const handleUnlock = () => {
+            if (!hasInteracted.current) {
+                hasInteracted.current = true;
+                setActivationTick((v) => v + 1);
+            }
         };
 
         // If user already interacted before this hook mounts, allow immediate playback.
         const alreadyActivated = typeof navigator !== 'undefined' && (navigator as Navigator & { userActivation?: { hasBeenActive?: boolean } }).userActivation?.hasBeenActive;
-        if (alreadyActivated) {
-            hasInteracted.current = true;
-            setActivationTick((v) => v + 1);
+        if (globalHasInteracted || alreadyActivated) {
+            globalHasInteracted = true;
+            handleUnlock();
         }
 
-        window.addEventListener('click', unlock);
-        window.addEventListener('keydown', unlock);
-        window.addEventListener('pointerdown', unlock);
+        window.addEventListener(AUDIO_UNLOCKED_EVENT, handleUnlock);
         return () => {
-            window.removeEventListener('click', unlock);
-            window.removeEventListener('keydown', unlock);
-            window.removeEventListener('pointerdown', unlock);
+            window.removeEventListener(AUDIO_UNLOCKED_EVENT, handleUnlock);
         };
     }, []);
 
@@ -173,23 +208,20 @@ export function useBGM(roomId: string) {
         }
 
         const startNewTrack = async () => {
+            const audio = getGlobalAudio();
+            if (!audio) return;
+
             // Fade out old track
-            if (currentAudio && !currentAudio.paused) {
-                await fadeOut(currentAudio, FADE_DURATION);
+            if (!audio.paused && audio.volume > 0 && currentTrackPath !== trackPath) {
+                await fadeOut(audio, FADE_DURATION);
             }
 
             if (token !== playbackToken) return;
 
-            const audio = new Audio(trackPath);
-            audio.loop = true;
-            audio.volume = 0;
-
-            if (token !== playbackToken) {
-                audio.pause();
-                return;
+            if (currentTrackPath !== trackPath || audio.src.indexOf(trackPath) === -1) {
+                audio.src = trackPath;
             }
-
-            currentAudio = audio;
+            audio.volume = 0;
             currentTrackPath = trackPath;
 
             try {

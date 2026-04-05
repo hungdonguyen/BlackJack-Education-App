@@ -114,9 +114,8 @@ export const createDailyClaimSlice: StateCreator<
 
     if (lastClaimHour === currentHourStart) return 0;
 
-    const isPrevHour = lastClaimHour > 0 && currentHourStart - lastClaimHour === HOUR_MS;
     const effectiveCurrentStreak = state.dailyClaimStreak >= maxStreakMilestone ? 0 : Math.max(0, state.dailyClaimStreak);
-    const nextStreak = isPrevHour ? effectiveCurrentStreak + 1 : 1;
+    const nextStreak = effectiveCurrentStreak + 1;
     const milestoneBonus = getDailyClaimMilestoneBonus(nextStreak);
     const claimAmount = DAILY_CLAIM_BASE_REWARD + milestoneBonus;
     const shouldResetStreak = nextStreak >= maxStreakMilestone;
