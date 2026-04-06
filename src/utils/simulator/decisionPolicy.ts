@@ -1,11 +1,11 @@
 import type { Card } from '@/types/game';
-import type { SimulatorConfig, SimulatorPlayDecisionSource } from '@/types/simulator';
+import type { SimulatorPlayDecisionSource } from '@/types/simulator';
 import { calculateHandValue } from '@/utils/hand';
 import { getDeviation, type Deviation } from '@/utils/countingDeviations';
 import { getRoomConfig } from '@/utils/rooms';
 import { getStrategyAction, normRank, type StrategyAction } from '@/utils/strategyAdvisor';
 
-export type SimulatorAction = 'H' | 'S' | 'D' | 'SP' | 'SU' | 'B';
+export type SimulatorAction = 'H' | 'S' | 'D' | 'SP' | 'SU' | 'B' | 'Z';
 
 export interface DecisionContext {
   cards: Card[];
@@ -16,6 +16,7 @@ export interface DecisionContext {
   canSplit: boolean;
   canSurrender: boolean;
   canBurn: boolean;
+  canZap: boolean;
 }
 
 export interface DecisionPolicy {
@@ -54,12 +55,7 @@ function normalizeToSimulatorAction(
   }
 
   if (action === 'Z') {
-    if (!enableSpecialCases) return 'H';
-    if (total === 15 || total === 16) {
-      const dealerRank = normRank(ctx.dealerUpcard.rank);
-      return ['2', '3', '4', '5', '6'].includes(dealerRank) ? 'S' : 'H';
-    }
-    if (total === 17 || total === 18) return 'S';
+    if (enableSpecialCases && ctx.canZap) return 'Z';
     return 'H';
   }
 
@@ -133,7 +129,7 @@ class StrategyAdvicePolicy implements DecisionPolicy {
       ctx.canDouble,
       ctx.canSplit,
       ctx.canSurrender,
-      { resolveConditions: true, canZap: false, canBurn: ctx.canBurn },
+      { resolveConditions: true, canZap: ctx.canZap, canBurn: ctx.canBurn },
     );
 
     const strategyAction = applyDeviationIfAny(baseStrategyAction, ctx);
@@ -141,34 +137,11 @@ class StrategyAdvicePolicy implements DecisionPolicy {
   }
 }
 
-class CustomProfilePolicy implements DecisionPolicy {
-  constructor(private readonly customRiskLevel: SimulatorConfig['customRiskLevel']) {}
-
-  decideAction(ctx: DecisionContext): SimulatorAction {
-    const { total } = calculateHandValue(ctx.cards);
-    if (this.customRiskLevel === 'aggressive') {
-      if (total <= 11 && ctx.canDouble) return 'D';
-      if (total <= 16) return 'H';
-      return 'S';
-    }
-    if (this.customRiskLevel === 'conservative') {
-      if (total >= 13) return 'S';
-      return 'H';
-    }
-    if (total <= 11 && ctx.canDouble) return 'D';
-    return total >= 17 ? 'S' : 'H';
-  }
-}
-
 export function createDecisionPolicy(
-  source: SimulatorPlayDecisionSource,
-  customRiskLevel: SimulatorConfig['customRiskLevel'],
+  source: SimulatorPlayDecisionSource
 ): DecisionPolicy {
   if (source === 'strategy_advice') {
     return new StrategyAdvicePolicy();
   }
-  if (source === 'basic_strategy') {
-    return new BasicStrategyPolicy();
-  }
-  return new CustomProfilePolicy(customRiskLevel);
+  return new BasicStrategyPolicy();
 }

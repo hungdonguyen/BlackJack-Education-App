@@ -15,7 +15,10 @@ const MAX_HISTORY = 10_000;
 
 /** True when running inside Tauri desktop app */
 export function isTauriEnv(): boolean {
-    return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+    if (typeof window === 'undefined') return false;
+    const hasTauriGlobals = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+    const hasTauriUserAgent = typeof navigator !== 'undefined' && navigator.userAgent.includes('Tauri');
+    return hasTauriGlobals || hasTauriUserAgent;
 }
 
 /** Lazily import Tauri FS to avoid crashes in Next.js SSR / browser dev */
@@ -80,6 +83,16 @@ export async function loadHistory(): Promise<MatchRecord[]> {
     }
 }
 
+export async function hasHistoryFile(): Promise<boolean> {
+    if (!isTauriEnv()) return false;
+    try {
+        const { exists, BaseDirectory } = await getFs();
+        return await exists(HISTORY_FILE, { baseDir: BaseDirectory.AppConfig });
+    } catch {
+        return false;
+    }
+}
+
 export async function writeHistoryFile(records: MatchRecord[]): Promise<void> {
     if (!isTauriEnv()) return;
     try {
@@ -115,6 +128,16 @@ export async function loadSimulatorHistory(): Promise<MatchRecord[]> {
     } catch (err) {
         console.warn('[SaveFile] loadSimulatorHistory failed:', err);
         return [];
+    }
+}
+
+export async function hasSimulatorHistoryFile(): Promise<boolean> {
+    if (!isTauriEnv()) return false;
+    try {
+        const { exists, BaseDirectory } = await getFs();
+        return await exists(SIMULATOR_HISTORY_FILE, { baseDir: BaseDirectory.AppConfig });
+    } catch {
+        return false;
     }
 }
 

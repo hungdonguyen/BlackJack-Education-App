@@ -15,11 +15,11 @@ import { SettingsSlice } from '@/store/settingsSlice';
 export interface TutorialStep {
   id: number;
   message: string;
-  condition: (state: any) => boolean; // Relaxed to any to allow accessing all slices
+  condition: (state: GameStore) => boolean;
   targetElementId?: string;
   position?: 'top' | 'bottom' | 'center' | 'dealer' | 'player' | 'left' | 'right';
   requiresClick?: boolean;
-  hideOn?: (state: any) => boolean;
+  hideOn?: (state: GameStore) => boolean;
 }
 
 /** A single playing card */
@@ -91,10 +91,16 @@ export interface MatchRecord {
     roi: number;
     winRate: number;
     maxDrawdown: number;
+    bankrollStart?: number;
+    bankrollEnd?: number;
     bettingSystem: string;
     playDecisionSource?: string;
     roomName?: string;
     seatCount?: number;
+  };
+  simulatorChart?: {
+    equityCurve: number[];
+    drawdownCurve: number[];
   };
   simulatorHandHistory?: {
     handNumber: number;
@@ -106,13 +112,34 @@ export interface MatchRecord {
     playerTotals: number[];
     blackjacks: number;
     actions: string[];
-    dealerCards?: { suit: Suit; rank: Rank; value: number }[];
+    dealerCards?: { suit: Suit; rank: Rank; value: number; isHidden?: boolean; }[];
     playerHands?: {
       seatNumber: number;
       handNumber: number;
       total: number;
       surrendered: boolean;
-      cards: { suit: Suit; rank: Rank; value: number }[];
+      cards: { suit: Suit; rank: Rank; value: number; isHidden?: boolean; }[];
+      outcome?: 'win' | 'loss' | 'push' | 'playing';
+      profit?: number;
+      bet?: number;
+      paidBet?: number;
+      freeBet?: number;
+      advisorNotes?: string[];
+      specialEvents?: {
+        code:
+          | 'DOUBLE_COST'
+          | 'FREE_DOUBLE_GRANT'
+          | 'SPLIT_COST'
+          | 'FREE_SPLIT_GRANT'
+          | 'BURN_COST'
+          | 'ZAP_COST'
+          | 'FREE_ZAP_GRANT';
+        amount: number;
+      }[];
+      discardedCards?: Array<{
+        card: { suit: Suit; rank: Rank; value: number; isHidden?: boolean; };
+        reason: 'BURN' | 'ZAP';
+      }>;
     }[];
   }[];
   seats: {

@@ -6,6 +6,7 @@ mod logic;
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
         .setup(|_app| {
             // initialization
             Ok(())

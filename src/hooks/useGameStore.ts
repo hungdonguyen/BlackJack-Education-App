@@ -16,6 +16,8 @@ import {
   writeHistoryFile,
   loadSimulatorHistory,
   writeSimulatorHistoryFile,
+  hasHistoryFile,
+  hasSimulatorHistoryFile,
 } from '@/utils/saveFile';
 
 export function useGameStore<T>(selector: (state: GameStore) => T): T {
@@ -32,15 +34,22 @@ export function useGameStore<T>(selector: (state: GameStore) => T): T {
  * save.json in Tauri is managed exclusively here — no conflict.
  */
 export function useStoreHydration(): boolean {
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(() => !isTauriEnv());
 
   useEffect(() => {
     let cancelled = false;
+    let readyForFileSync = false;
 
     // ── Tauri mode: read save.json directly, no dependency on Zustand hydration ──
     if (isTauriEnv()) {
-      Promise.all([readSaveFile(), loadHistory(), loadSimulatorHistory()])
-        .then(([content, history, simulatorHistoryFromFile]) => {
+      Promise.all([
+        readSaveFile(),
+        loadHistory(),
+        loadSimulatorHistory(),
+        hasHistoryFile(),
+        hasSimulatorHistoryFile(),
+      ])
+        .then(([content, history, simulatorHistoryFromFile, hasHistoryOnDisk, hasSimulatorHistoryOnDisk]) => {
           if (cancelled) return;
           const patch: Partial<GameStore> = {};
 
@@ -53,13 +62,13 @@ export function useStoreHydration(): boolean {
 
           if (normalHistory.length > 0) {
             patch.matchHistory = normalHistory;
-          } else if (useGameStoreBase.getState().matchHistory.length > 0) {
+          } else if (!hasHistoryOnDisk && useGameStoreBase.getState().matchHistory.length > 0) {
             writeHistoryFile(useGameStoreBase.getState().matchHistory);
           }
 
           if (simulatorHistory.length > 0) {
             patch.simulatorHistory = simulatorHistory;
-          } else if (useGameStoreBase.getState().simulatorHistory.length > 0) {
+          } else if (!hasSimulatorHistoryOnDisk && useGameStoreBase.getState().simulatorHistory.length > 0) {
             writeSimulatorHistoryFile(useGameStoreBase.getState().simulatorHistory);
           }
 
@@ -131,6 +140,7 @@ export function useStoreHydration(): boolean {
           console.warn('[useStoreHydration] Failed to read save.json:', err);
         })
         .finally(() => {
+          readyForFileSync = true;
           if (!cancelled) setIsHydrated(true);
         });
 
@@ -174,7 +184,7 @@ export function useStoreHydration(): boolean {
           };
           base.version = 0;
           await writeSaveFile(JSON.stringify(base));
-        } catch (err) {
+        } catch {
           // fallback: write without merge
           await writeSaveFile(
             JSON.stringify({
@@ -235,7 +245,12 @@ export function useStoreHydration(): boolean {
           debouncedSave(state);
         }
 
-        // Check if history changed
+        // Delay history sync until initial Tauri file load completes,
+        // so persisted browser snapshots cannot overwrite local desktop files.
+        if (!readyForFileSync) {
+          return;
+        }
+
         if (state.matchHistory !== prevState.matchHistory) {
           writeHistoryFile(state.matchHistory);
         }
@@ -249,9 +264,6 @@ export function useStoreHydration(): boolean {
         cancelled = true;
         unsubState();
       };
-    } else {
-      // Not a Tauri Env, just load app instantly in browser
-      setIsHydrated(true);
     }
   }, []);
 

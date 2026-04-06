@@ -53,7 +53,7 @@ export const madness: RoomConfig = {
             items: [
                 "Double Down: On ANY number of cards",
                 "Infinite Doubling: You can Double Down multiple times on the same hand",
-                "Surrender: Allowed"
+                "Surrender: Not allowed"
             ]
         },
         payouts: {

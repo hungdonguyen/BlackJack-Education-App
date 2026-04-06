@@ -1,9 +1,6 @@
 import { StateCreator } from 'zustand';
 import { GameStore } from '@/types/game';
-import type { SimulatorConfig, SimulatorRunState, SimulatorSlice } from '@/types/simulator';
-import { createSimulatorEngine, type SimulatorEngine } from '@/utils/simulator/engine';
-
-const FIXED_SIMULATION_SPEED = 30;
+import type { SimulatorConfig, SimulatorRunState, SimulatorSlice, SimulatorWorkerOutput } from '@/types/simulator';
 
 const DEFAULT_CONFIG: SimulatorConfig = {
   roomId: 'classic',
@@ -18,9 +15,13 @@ const DEFAULT_CONFIG: SimulatorConfig = {
     martingaleMaxSteps: 6,
     parlayMaxSteps: 4,
     parlayMultiplier: 2,
+    fibonacciMaxSteps: 10,
+    dAlembertUnit: 1,
+    regressionTargetSteps: 3,
   },
   playDecisionSource: 'strategy_advice',
-  customRiskLevel: 'balanced',
+  exchangeSwitchEngine: 'cindy_advanced',
+  delayMs: 0,
 };
 
 const EMPTY_SUMMARY = {
@@ -46,12 +47,11 @@ const DEFAULT_RUN_STATE: SimulatorRunState = {
   summary: EMPTY_SUMMARY,
 };
 
-let engineRef: SimulatorEngine | null = null;
-let timerRef: ReturnType<typeof setTimeout> | null = null;
+let workerRef: Worker | null = null;
 
 function clampMaxHands(value: number): number {
   const safe = Number.isFinite(value) ? value : DEFAULT_CONFIG.maxHands;
-  return Math.min(5000, Math.max(1, safe));
+  return Math.min(100000, Math.max(1, safe));
 }
 
 function clampSeatCount(value: number): number {
@@ -59,50 +59,14 @@ function clampSeatCount(value: number): number {
   return Math.min(5, Math.max(1, safe));
 }
 
-function clearTick() {
-  if (timerRef) {
-    clearTimeout(timerRef);
-    timerRef = null;
+function clearWorker() {
+  if (workerRef) {
+    workerRef.terminate();
+    workerRef = null;
   }
 }
 
 export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlice> = (set, get) => {
-  const scheduleTick = () => {
-    const state = get();
-    if (!engineRef || state.simulatorRunState.status !== 'running') return;
-
-    const delayMs = Math.max(0, Math.round(1000 / Math.max(1, FIXED_SIMULATION_SPEED)));
-    timerRef = setTimeout(() => {
-      const currentState = get();
-      if (!engineRef || currentState.simulatorRunState.status !== 'running') return;
-
-      const { runState, done } = engineRef.step();
-      set({
-        simulatorRunState: runState,
-        simulatorEquityCurve: [...engineRef.getState().equityCurve],
-        simulatorEventLog: [...engineRef.getState().eventLog].slice(-200),
-      });
-
-      if (done) {
-        const result = engineRef.finish();
-        const history = result.simulatorHistoryRecord
-          ? [...currentState.simulatorHistory, result.simulatorHistoryRecord].slice(-500)
-          : currentState.simulatorHistory;
-        set({
-          simulatorRunState: { ...runState, status: 'done' },
-          simulatorResult: result,
-          simulatorEquityCurve: result.equityCurve,
-          simulatorEventLog: result.eventLog.slice(-300),
-          simulatorHistory: history,
-        });
-        clearTick();
-        return;
-      }
-
-      scheduleTick();
-    }, delayMs);
-  };
-
   return {
     simulatorConfig: DEFAULT_CONFIG,
     simulatorRunState: DEFAULT_RUN_STATE,
@@ -139,14 +103,13 @@ export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlic
     },
 
     startSimulatorRun: () => {
-      clearTick();
+      clearWorker();
       const cfg = {
         ...get().simulatorConfig,
         maxHands: clampMaxHands(get().simulatorConfig.maxHands),
         seatCount: clampSeatCount(get().simulatorConfig.seatCount),
       };
       set({ simulatorConfig: cfg });
-      engineRef = createSimulatorEngine(cfg);
 
       const initialRunState: SimulatorRunState = {
         status: 'running',
@@ -163,16 +126,62 @@ export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlic
         simulatorRunState: initialRunState,
         simulatorResult: null,
         simulatorEquityCurve: [cfg.initialBankroll],
-        simulatorEventLog: ['Simulation queued...'],
+        simulatorEventLog: ['Simulation queued in Web Worker...'],
       });
 
-      scheduleTick();
+      workerRef = new Worker(new URL('@/utils/simulator/simulator.worker.ts', import.meta.url));
+      workerRef.onmessage = (e: MessageEvent<SimulatorWorkerOutput>) => {
+        const payload = e.data;
+        const currentState = get();
+
+        if (payload.type === 'PROGRESS') {
+           const prog = payload.payload;
+           set({
+               simulatorRunState: {
+                   ...currentState.simulatorRunState,
+                   status: prog.status,
+                   currentHandIndex: prog.currentHandIndex,
+                   bankrollCurrent: prog.bankrollCurrent,
+                   peak: prog.peak,
+                   trough: prog.trough,
+                   streakWin: prog.streakWin,
+                   streakLose: prog.streakLose,
+                   summary: prog.summary
+               },
+               // Cập nhật EquityCurve theo Real-time nếu muốn!
+               simulatorEquityCurve: [...currentState.simulatorEquityCurve, prog.equityCurveLastPoint]
+           });
+        } else if (payload.type === 'DONE') {
+           const result = payload.payload;
+           const history = result.simulatorHistoryRecord
+             ? [...currentState.simulatorHistory, result.simulatorHistoryRecord].slice(-500)
+             : currentState.simulatorHistory;
+
+           set({
+               simulatorRunState: { ...currentState.simulatorRunState, status: 'done' },
+               simulatorResult: result,
+               simulatorEquityCurve: result.equityCurve,
+               simulatorEventLog: result.eventLog.slice(-300),
+               simulatorHistory: history,
+           });
+           clearWorker();
+        } else if (payload.type === 'ERROR') {
+           console.error('Simulator Worker Error:', payload.error);
+           set({
+               simulatorRunState: { ...currentState.simulatorRunState, status: 'idle' },
+               simulatorEventLog: [...currentState.simulatorEventLog, `[ERROR] Worker crashed: ${payload.error}`]
+           });
+           clearWorker();
+        }
+      };
+      
+      workerRef.postMessage({ type: 'START', config: cfg });
     },
 
     pauseSimulatorRun: () => {
       const current = get().simulatorRunState;
       if (current.status !== 'running') return;
-      clearTick();
+      if (workerRef) workerRef.postMessage({ type: 'PAUSE' });
       set({
         simulatorRunState: {
           ...current,
@@ -183,19 +192,28 @@ export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlic
 
     resumeSimulatorRun: () => {
       const current = get().simulatorRunState;
-      if (current.status !== 'paused' || !engineRef) return;
+      if (current.status !== 'paused' || !workerRef) return;
+      workerRef.postMessage({ type: 'RESUME' });
       set({
         simulatorRunState: {
           ...current,
           status: 'running',
         },
       });
-      scheduleTick();
+    },
+
+    stopSimulatorRun: () => {
+      const current = get().simulatorRunState;
+      if ((current.status !== 'running' && current.status !== 'paused') || !workerRef) return;
+
+      workerRef.postMessage({ type: 'STOP' });
+      set({
+        simulatorEventLog: [...get().simulatorEventLog, '[STOP] Manual early-stop requested. Finalizing current run...'].slice(-300),
+      });
     },
 
     resetSimulatorRun: () => {
-      clearTick();
-      engineRef = null;
+      clearWorker();
       const cfg = get().simulatorConfig;
       set({
         simulatorRunState: {
@@ -208,6 +226,16 @@ export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlic
         simulatorEquityCurve: [cfg.initialBankroll],
         simulatorEventLog: [],
       });
+    },
+
+    clearSimulatorHistory: () => {
+      set({ simulatorHistory: [] });
+    },
+
+    deleteSimulatorHistoryRun: (runId) => {
+      if (!runId) return;
+      const state = get();
+      set({ simulatorHistory: state.simulatorHistory.filter((entry) => entry.id !== runId) });
     },
 
     saveSimulatorPreset: (name) => {

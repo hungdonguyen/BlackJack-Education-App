@@ -32,7 +32,7 @@ export const useGameStoreBase = create<GameStore>()(
       partialize: (state) => ({
         bankroll: state.bankroll,
         matchHistory: state.matchHistory,
-        simulatorHistory: state.simulatorHistory,
+        simulatorHistory: state.simulatorHistory.map(h => ({ ...h, simulatorHandHistory: [] })),
         lastDailyClaim: state.lastDailyClaim,
         dailyClaimStreak: state.dailyClaimStreak,
         dailyClaimCount: state.dailyClaimCount,

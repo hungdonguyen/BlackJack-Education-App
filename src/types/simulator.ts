@@ -1,12 +1,11 @@
 import { MatchRecord } from './game';
 import { Rank, Suit } from './enums';
 
-export type SimulatorBettingSystem = 'flat' | 'martingale' | 'parlay' | '1326';
+export type SimulatorBettingSystem = 'flat' | 'martingale' | 'parlay' | '1326' | 'fibonacci' | 'd_alembert' | 'regression';
 
 export type SimulatorPlayDecisionSource =
   | 'strategy_advice'
-  | 'basic_strategy'
-  | 'custom_profile';
+  | 'basic_strategy';
 
 export type SimulatorRunStatus = 'idle' | 'running' | 'paused' | 'done';
 
@@ -14,6 +13,9 @@ export interface SimulatorBettingParams {
   martingaleMaxSteps?: number;
   parlayMaxSteps?: number;
   parlayMultiplier?: number;
+  fibonacciMaxSteps?: number;
+  dAlembertUnit?: number;
+  regressionTargetSteps?: number;
 }
 
 export interface SimulatorConfig {
@@ -27,13 +29,27 @@ export interface SimulatorConfig {
   bettingSystem: SimulatorBettingSystem;
   bettingParams: SimulatorBettingParams;
   playDecisionSource: SimulatorPlayDecisionSource;
-  customRiskLevel: 'conservative' | 'balanced' | 'aggressive';
+  exchangeSwitchEngine?: 'cindy_basic' | 'cindy_advanced' | 'arnold_snyder';
+  delayMs?: number;
 }
 
 export interface SimulatorCardView {
   rank: Rank;
   suit: Suit;
   value: number;
+  isHidden?: boolean;
+}
+
+export interface SimulatorSpecialEventView {
+  code:
+    | 'DOUBLE_COST'
+    | 'FREE_DOUBLE_GRANT'
+    | 'SPLIT_COST'
+    | 'FREE_SPLIT_GRANT'
+    | 'BURN_COST'
+    | 'ZAP_COST'
+    | 'FREE_ZAP_GRANT';
+  amount: number;
 }
 
 export interface SimulatorHandView {
@@ -42,6 +58,17 @@ export interface SimulatorHandView {
   total: number;
   surrendered: boolean;
   cards: SimulatorCardView[];
+  outcome?: 'win' | 'loss' | 'push' | 'playing';
+  profit?: number;
+  bet?: number;
+  paidBet?: number;
+  freeBet?: number;
+  advisorNotes?: string[];
+  specialEvents?: SimulatorSpecialEventView[];
+  discardedCards?: Array<{
+    card: SimulatorCardView;
+    reason: 'BURN' | 'ZAP';
+  }>;
 }
 
 export interface SimulatorSummaryMetrics {
@@ -128,9 +155,35 @@ export interface SimulatorSlice {
   startSimulatorRun: () => void;
   pauseSimulatorRun: () => void;
   resumeSimulatorRun: () => void;
+  stopSimulatorRun: () => void;
   resetSimulatorRun: () => void;
+  clearSimulatorHistory: () => void;
+  deleteSimulatorHistoryRun: (runId: string) => void;
   saveSimulatorPreset: (name: string) => void;
   applySimulatorPreset: (presetId: string) => void;
   deleteSimulatorPreset: (presetId: string) => void;
   importSimulatorPreset: (name: string, config: SimulatorConfig) => void;
 }
+
+export interface SimulatorWorkerProgress {
+  status: SimulatorRunStatus;
+  currentHandIndex: number;
+  bankrollCurrent: number;
+  peak: number;
+  trough: number;
+  streakWin: number;
+  streakLose: number;
+  summary: SimulatorSummaryMetrics;
+  equityCurveLastPoint: number;
+}
+
+export type SimulatorWorkerInput = 
+  | { type: 'START'; config: SimulatorConfig }
+  | { type: 'PAUSE' }
+  | { type: 'RESUME' }
+  | { type: 'STOP' };
+
+export type SimulatorWorkerOutput = 
+  | { type: 'PROGRESS'; payload: SimulatorWorkerProgress }
+  | { type: 'DONE'; payload: SimulatorResult }
+  | { type: 'ERROR'; error: string };

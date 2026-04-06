@@ -10,7 +10,8 @@ import type {
 } from '@/types/simulator';
 import { getRoomConfig } from '@/utils/rooms';
 import { calculateHandValue, isBlackjack } from '@/utils/hand';
-import { getExchange21Advice } from '@/utils/strategyAdvisor';
+import { getExchange21Advice, normRank } from '@/utils/strategyAdvisor';
+import { getDeviation } from '@/utils/countingDeviations';
 import { getCardValue, getCardsPerDeck, getInitialDeckSum } from '@/utils/cardCounting';
 import { createBettingSystem, type BettingSystemState } from './bettingSystems';
 import { createDecisionPolicy, type DecisionPolicy } from './decisionPolicy';
@@ -18,12 +19,36 @@ import { createDecisionPolicy, type DecisionPolicy } from './decisionPolicy';
 interface RoundHand {
   cards: Card[];
   bet: number;
+  freeBet: number;
+  specialEvents: Array<{
+    code:
+      | 'DOUBLE_COST'
+      | 'FREE_DOUBLE_GRANT'
+      | 'SPLIT_COST'
+      | 'FREE_SPLIT_GRANT'
+      | 'BURN_COST'
+      | 'ZAP_COST'
+      | 'FREE_ZAP_GRANT';
+    amount: number;
+  }>;
+  discardedCards: Array<{
+    card: Card;
+    reason: 'BURN' | 'ZAP';
+  }>;
   surrendered: boolean;
   isSplit?: boolean;
+  isAceSplit?: boolean;
   isDoubleDown?: boolean;
   isBurned?: boolean;
+  isZapped?: boolean;
+  isSwitched?: boolean;
   isFreeDouble?: boolean;
   isFreeSplit?: boolean;
+  burnWagerAmount?: number;
+  burnWagerPayout?: number;
+  advisorNotes: string[];
+  profit?: number;
+  outcome?: 'win' | 'loss' | 'push';
 }
 
 interface RoundSeat {
@@ -67,6 +92,7 @@ interface EngineState {
     drawdown25: boolean;
     lowBankrollWarned: boolean;
   };
+  stopForced: boolean;
 }
 
 interface RoundResult {
@@ -158,6 +184,15 @@ function dealCard(state: EngineState): Card {
   return card;
 }
 
+function dealOpeningCards(state: EngineState, count: number): Card[] {
+  const cards: Card[] = [];
+  const safeCount = Math.max(1, count);
+  for (let index = 0; index < safeCount; index += 1) {
+    cards.push(dealCard(state));
+  }
+  return cards;
+}
+
 function shouldReshuffle(state: EngineState): boolean {
   const room = getRoomConfig(state.config.roomId);
   const cardsPerDeck = room.gameRules.omitTens ? 48 : 52;
@@ -195,14 +230,32 @@ function playDealer(cards: Card[], dealerHitsSoft17: boolean, draw: () => Card):
   return cards;
 }
 
-function toRuleHand(cards: Card[], bet: number): Hand {
-  const handValue = calculateHandValue(cards, true);
-  const isNaturalBlackjack = cards.length === 2 && handValue.total === 21;
+function isNaturalBlackjackHand(hand: RoundHand): boolean {
+  const handValue = calculateHandValue(hand.cards, true);
+  return (
+    hand.cards.length === 2
+    && handValue.total === 21
+    && !hand.isSplit
+    && !hand.isBurned
+    && !hand.isZapped
+    && !hand.isSwitched
+  );
+}
+
+function toRuleHand(hand: RoundHand): Hand {
+  const isNaturalBlackjack = isNaturalBlackjackHand(hand);
   return {
     id: `sim-${Math.random().toString(36).slice(2, 8)}`,
-    cards,
-    betAmount: bet,
+    cards: hand.cards,
+    betAmount: hand.bet,
     status: isNaturalBlackjack ? HandStatus.BLACKJACK : HandStatus.PLAYING,
+    isSplit: hand.isSplit,
+    isAceSplit: hand.isAceSplit,
+    isDoubleDown: hand.isDoubleDown,
+    isBurned: hand.isBurned,
+    isZapped: hand.isZapped,
+    isSwitched: hand.isSwitched,
+    isSurrendered: hand.surrendered,
   };
 }
 
@@ -211,25 +264,35 @@ function mapCardView(card: Card) {
     rank: card.rank,
     suit: card.suit,
     value: card.value,
+    isHidden: card.isHidden,
   };
 }
 
-function describeAction(code: string): string {
-  const map: Record<string, string> = {
-    H: 'HIT',
-    S: 'STAND',
-    D: 'DOUBLE',
-    SP: 'SPLIT',
-    SU: 'SURRENDER',
-    B: 'BURN',
-  };
-  return map[code] ?? code;
+function formatDeviationFamily(deviationId: string): string {
+  if (deviationId.startsWith('I18-')) return 'Illustrious 18';
+  if (deviationId.startsWith('F4-')) return 'Fab 4';
+  if (deviationId.startsWith('P22-')) return 'Push 22';
+  if (deviationId.startsWith('E18-')) return 'European ENHC';
+  if (deviationId.startsWith('I21-')) return 'Spanish 21';
+  if (deviationId.startsWith('B21-')) return 'Fire Card';
+  return 'Counting Deviation';
+}
+
+function formatDeviationNote(params: { deviationId: string; description: string; trueCount: number }): string {
+  const { deviationId, description, trueCount } = params;
+  const tcDisplay = Number.isInteger(trueCount) ? `${trueCount}` : trueCount.toFixed(2);
+  const tcPrefix = trueCount >= 0 ? '+' : '';
+  return `${formatDeviationFamily(deviationId)} ${deviationId}: ${description} (TC ${tcPrefix}${tcDisplay})`;
 }
 
 function runRound(state: EngineState): RoundResult {
   const room = getRoomConfig(state.config.roomId);
   const rules = getRules(state.config.roomId);
   const isExchange21 = room.id === 'exchange_21';
+  const isIberian21 = room.id === 'iberian_21';
+  const configuredInitialCards = Math.max(1, room.gameRules.playerInitialCards ?? 2);
+  const openingCardsPerHand = isExchange21 ? 2 : configuredInitialCards;
+  const dealerOpeningCards = room.gameRules.enhc ? 1 : 2;
   const seatCount = Math.min(5, Math.max(1, state.config.seatCount ?? 1));
   if (shouldReshuffle(state)) {
     state.shoe = createShoe(room.gameRules.numberOfDecks, room.gameRules.omitTens ?? false, state.random);
@@ -248,6 +311,7 @@ function runRound(state: EngineState): RoundResult {
 
   if (nextBet < room.betRange[0] || requiredOpeningBet > state.bankroll || nextBet <= 0) {
     state.eventLog.push(`[WARN] Hand ${state.handIndex + 1}: cannot place bet, bankroll exhausted.`);
+    state.stopForced = true;
     return {
       bankrollAfter: state.bankroll,
       roundProfit: 0,
@@ -276,14 +340,42 @@ function runRound(state: EngineState): RoundResult {
     seatNumber: index + 1,
     hands: isExchange21
       ? [
-          { cards: [dealCard(state), dealCard(state)], bet: nextBet, surrendered: false },
-          { cards: [dealCard(state), dealCard(state)], bet: nextBet, surrendered: false },
+          {
+            cards: dealOpeningCards(state, openingCardsPerHand),
+            bet: nextBet,
+            freeBet: 0,
+            specialEvents: [],
+            discardedCards: [],
+            advisorNotes: [],
+            surrendered: false,
+          },
+          {
+            cards: dealOpeningCards(state, openingCardsPerHand),
+            bet: nextBet,
+            freeBet: 0,
+            specialEvents: [],
+            discardedCards: [],
+            advisorNotes: [],
+            surrendered: false,
+          },
         ]
-      : [{ cards: [dealCard(state), dealCard(state)], bet: nextBet, surrendered: false }],
+      : [
+          {
+            cards: dealOpeningCards(state, openingCardsPerHand),
+            bet: nextBet,
+            freeBet: 0,
+            specialEvents: [],
+            discardedCards: [],
+            advisorNotes: [],
+            surrendered: false,
+          },
+        ],
     actionTrace: [],
   }));
 
   const dealerCards: Card[] = [dealCard(state), dealCard(state)];
+  dealerCards.length = 0;
+  dealerCards.push(...dealOpeningCards(state, dealerOpeningCards));
   state.bankroll -= requiredOpeningBet;
 
   let totalRoundBet = requiredOpeningBet;
@@ -313,6 +405,8 @@ function runRound(state: EngineState): RoundResult {
         if (secondCard0 && secondCard1) {
           seat.hands[0].cards = [seat.hands[0].cards[0], secondCard1];
           seat.hands[1].cards = [seat.hands[1].cards[0], secondCard0];
+          seat.hands[0].isSwitched = true;
+          seat.hands[1].isSwitched = true;
           seat.actionTrace.push(`S${seat.seatNumber}:SWITCH`);
           state.eventLog.push(
             `[INFO] Hand ${state.handIndex + 1}: Seat ${seat.seatNumber} exchange switch executed (${advice.engineLabel}).`,
@@ -333,29 +427,79 @@ function runRound(state: EngineState): RoundResult {
 
       while (!finished) {
         const handValue = calculateHandValue(hand.cards);
-        if (handValue.total >= 21) break;
+        if (isNaturalBlackjackHand(hand)) {
+          finished = true;
+          break;
+        }
+        if (hand.isAceSplit && hand.cards.length >= 2) {
+          finished = true;
+          break;
+        }
+        if (handValue.total >= 21) {
+          finished = true;
+          break;
+        }
 
-        const doubleValidity = rules.canDoubleDown(toRuleHand(hand.cards, hand.bet));
-        const canDouble = doubleValidity.allowed && hand.cards.length === 2;
-        const splitValidity = rules.canSplit(toRuleHand(hand.cards, hand.bet), seat.hands.length);
+        const ruleHandForAction: Hand = toRuleHand(hand);
+
+        const doubleValidity = rules.canDoubleDown(ruleHandForAction);
+        const canDouble = doubleValidity.allowed;
+        const splitValidity = rules.canSplit(ruleHandForAction, seat.hands.length);
         const canSplit = splitValidity.allowed && hand.cards.length === 2 && seat.hands.length < 4;
-        const surrenderValidity = rules.canSurrender(toRuleHand(hand.cards, hand.bet));
+        const surrenderValidity = rules.canSurrender(ruleHandForAction);
         const canSurrender = surrenderValidity.allowed && hand.cards.length === 2;
-        const burnValidity = rules.canBurn ? rules.canBurn(toRuleHand(hand.cards, hand.bet)) : { allowed: false, isFree: false, cost: 0 };
+        const zapValidity = rules.canZap ? rules.canZap(ruleHandForAction) : { allowed: false, isFree: false, cost: 0 };
+        const canZap = Boolean(rules.canZap) && zapValidity.allowed && hand.cards.length === 2;
+        const burnValidity = rules.canBurn ? rules.canBurn(ruleHandForAction) : { allowed: false, isFree: false, cost: 0 };
         const canBurn = Boolean(rules.canBurn) && burnValidity.allowed;
+        const currentTrueCount = getTrueCount(state, room);
+
+        if (state.config.playDecisionSource === 'strategy_advice') {
+          const deviation = getDeviation(
+            handValue.total,
+            handValue.isSoft,
+            hand.cards.length === 2 && hand.cards[0].value === hand.cards[1].value,
+            normRank(dealerCards[0].rank),
+            currentTrueCount,
+            room.gameRules.dealerHitsSoft17,
+            room.gameRules.allowSurrender,
+            room.deviationsSet,
+            'Hi-Lo',
+          );
+
+          if (deviation && deviation.deviationAction !== deviation.basicAction) {
+            const note = formatDeviationNote({
+              deviationId: deviation.id,
+              description: deviation.description,
+              trueCount: currentTrueCount,
+            });
+            if (!hand.advisorNotes.includes(note)) {
+              hand.advisorNotes.push(note);
+            }
+          }
+        }
 
         const action = state.decisionPolicy.decideAction({
           cards: hand.cards,
           dealerUpcard: dealerCards[0],
           roomId: room.id,
-          trueCount: getTrueCount(state, room),
+          trueCount: currentTrueCount,
           canDouble,
           canSplit,
           canSurrender,
           canBurn,
+          canZap,
         });
 
-        if (action === 'H') {
+        const canStandNow = !(configuredInitialCards === 1 && hand.cards.length === 1);
+        const resolvedAction = action === 'S' && !canStandNow ? 'H' : action;
+
+        if (resolvedAction === 'H') {
+          if (hand.isDoubleDown && !room.gameRules.allowInfiniteDouble) {
+            seat.actionTrace.push(`S${seat.seatNumber}H${idx + 1}:STAND`);
+            finished = true;
+            continue;
+          }
           seat.actionTrace.push(`S${seat.seatNumber}H${idx + 1}:HIT`);
           hand.cards.push(dealCard(state));
           if (calculateHandValue(hand.cards).total >= 21) {
@@ -364,25 +508,29 @@ function runRound(state: EngineState): RoundResult {
           continue;
         }
 
-        if (action === 'S') {
+        if (resolvedAction === 'S') {
           seat.actionTrace.push(`S${seat.seatNumber}H${idx + 1}:STAND`);
           finished = true;
           continue;
         }
 
-        if (action === 'SU' && canSurrender) {
+        if (resolvedAction === 'SU' && canSurrender) {
           seat.actionTrace.push(`S${seat.seatNumber}H${idx + 1}:SURRENDER`);
           hand.surrendered = true;
           finished = true;
           continue;
         }
 
-        if (action === 'SP' && canSplit && state.bankroll >= splitValidity.cost) {
+        if (resolvedAction === 'SP' && canSplit && state.bankroll >= splitValidity.cost) {
           const splitCard = hand.cards.pop();
           if (!splitCard) {
             finished = true;
             continue;
           }
+
+          const firstSplitCard = hand.cards[0];
+          const splitWasAces = Boolean(firstSplitCard && splitCard && firstSplitCard.rank === Rank.ACE && splitCard.rank === Rank.ACE);
+          const lockAfterSplit = splitWasAces && !isIberian21;
 
           if (splitValidity.cost > 0) {
             state.bankroll -= splitValidity.cost;
@@ -391,11 +539,21 @@ function runRound(state: EngineState): RoundResult {
 
           hand.isFreeSplit = splitValidity.isFree;
           hand.isSplit = true;
+          hand.isAceSplit = lockAfterSplit;
           const newHand: RoundHand = {
             cards: [splitCard, dealCard(state)],
             bet: hand.bet,
+            freeBet: splitValidity.isFree ? hand.bet : 0,
+            specialEvents: splitValidity.isFree
+              ? [{ code: 'FREE_SPLIT_GRANT', amount: hand.bet }]
+              : splitValidity.cost > 0
+              ? [{ code: 'SPLIT_COST', amount: splitValidity.cost }]
+              : [],
+            discardedCards: [],
+            advisorNotes: [],
             surrendered: false,
             isSplit: true,
+            isAceSplit: lockAfterSplit,
             isFreeSplit: splitValidity.isFree,
           };
           hand.cards.push(dealCard(state));
@@ -406,11 +564,19 @@ function runRound(state: EngineState): RoundResult {
           continue;
         }
 
-        if (action === 'D' && canDouble && state.bankroll >= doubleValidity.cost) {
+        if (resolvedAction === 'D' && canDouble && state.bankroll >= doubleValidity.cost) {
+          const previousBet = hand.bet;
+          const preDoubleCardCount = hand.cards.length;
           if (doubleValidity.cost > 0) {
             state.bankroll -= doubleValidity.cost;
             totalRoundBet += doubleValidity.cost;
-            hand.bet += doubleValidity.cost;
+          }
+          hand.bet = previousBet + (doubleValidity.isFree ? previousBet : doubleValidity.cost);
+          if (doubleValidity.isFree) {
+            hand.freeBet += previousBet;
+            hand.specialEvents.push({ code: 'FREE_DOUBLE_GRANT', amount: previousBet });
+          } else if (doubleValidity.cost > 0) {
+            hand.specialEvents.push({ code: 'DOUBLE_COST', amount: doubleValidity.cost });
           }
           hand.isDoubleDown = true;
           hand.isFreeDouble = doubleValidity.isFree;
@@ -418,11 +584,19 @@ function runRound(state: EngineState): RoundResult {
           seat.actionTrace.push(
             `S${seat.seatNumber}H${idx + 1}:${doubleValidity.isFree ? 'FREE_DOUBLE' : 'DOUBLE'}`,
           );
+
+          const doubledValue = calculateHandValue(hand.cards);
+          const isSingleCardStart = configuredInitialCards === 1;
+          const isMadnessAceDouble = isSingleCardStart && preDoubleCardCount === 1 && hand.cards[0]?.rank === Rank.ACE;
+          const canContinueAfterDouble = room.gameRules.allowInfiniteDouble && doubledValue.total < 21 && !isMadnessAceDouble;
+
+          if (canContinueAfterDouble) {
+            continue;
+          }
           
-          const postDoubleSurrender = rules.canSurrender(toRuleHand(hand.cards, hand.bet));
+          const postDoubleSurrender = rules.canSurrender(toRuleHand(hand));
           if (postDoubleSurrender.allowed) {
-            const hValue = calculateHandValue(hand.cards);
-            if (hValue.total <= 21) {
+            if (doubledValue.total <= 21) {
               const rescueAction = state.decisionPolicy.decideAction({
                 cards: hand.cards,
                 dealerUpcard: dealerCards[0],
@@ -432,6 +606,7 @@ function runRound(state: EngineState): RoundResult {
                 canSplit: false,
                 canSurrender: true,
                 canBurn: false,
+                canZap: false,
               });
               if (rescueAction === 'SU') {
                 seat.actionTrace.push(`S${seat.seatNumber}H${idx + 1}:RESCUE`);
@@ -444,13 +619,48 @@ function runRound(state: EngineState): RoundResult {
           continue;
         }
 
-        if (action === 'B' && canBurn && state.bankroll >= burnValidity.cost && hand.cards.length === 2) {
+        if (resolvedAction === 'Z' && canZap && state.bankroll >= zapValidity.cost && hand.cards.length === 2) {
+          const discarded = [...hand.cards];
+          hand.cards = [dealCard(state), dealCard(state)];
+          hand.discardedCards = [
+            ...hand.discardedCards,
+            ...discarded.map((card) => ({ card, reason: 'ZAP' as const })),
+          ];
+          hand.isZapped = true;
+
+          if (zapValidity.cost > 0) {
+            state.bankroll -= zapValidity.cost;
+            totalRoundBet += zapValidity.cost;
+            hand.specialEvents.push({ code: 'ZAP_COST', amount: zapValidity.cost });
+          } else {
+            hand.specialEvents.push({ code: 'FREE_ZAP_GRANT', amount: 0 });
+          }
+
+          seat.actionTrace.push(`S${seat.seatNumber}H${idx + 1}:ZAP`);
+          if (calculateHandValue(hand.cards).total >= 21) {
+            finished = true;
+          }
+          continue;
+        }
+
+        if (resolvedAction === 'B' && canBurn && state.bankroll >= burnValidity.cost && hand.cards.length === 2) {
+          const discardedCard = hand.cards[1];
           const replacementCard = dealCard(state);
           hand.cards[1] = replacementCard;
           hand.isBurned = true;
+          if (discardedCard) {
+            hand.discardedCards = [...hand.discardedCards, { card: discardedCard, reason: 'BURN' }];
+          }
           if (burnValidity.cost > 0) {
             state.bankroll -= burnValidity.cost;
             totalRoundBet += burnValidity.cost;
+            hand.specialEvents.push({ code: 'BURN_COST', amount: burnValidity.cost });
+            hand.burnWagerAmount = burnValidity.cost;
+            if (discardedCard?.rank === Rank.ACE) {
+              const bonusPayout = discardedCard.suit === Suit.SPADES ? burnValidity.cost * 8 : burnValidity.cost * 3;
+              state.bankroll += bonusPayout;
+              hand.burnWagerPayout = bonusPayout;
+            }
           }
           seat.actionTrace.push(`S${seat.seatNumber}H${idx + 1}:BURN`);
           continue;
@@ -463,7 +673,7 @@ function runRound(state: EngineState): RoundResult {
         }
       }
 
-      if (isBlackjack(hand.cards, true) && hand.cards.length === 2 && !hand.isBurned) {
+      if (isNaturalBlackjackHand(hand) && isBlackjack(hand.cards, true)) {
         blackjacks += 1;
         seat.actionTrace.push(`S${seat.seatNumber}H${idx + 1}:BLACKJACK`);
       }
@@ -482,30 +692,47 @@ function runRound(state: EngineState): RoundResult {
 
   const dealerValue = calculateHandValue(finalDealer, true);
 
-  for (const hand of allHands) {
-    if (hand.surrendered) {
-      state.bankroll += hand.bet / 2;
-      continue;
-    }
+  for (const seat of seats) {
+    for (let handIdx = 0; handIdx < seat.hands.length; handIdx += 1) {
+      const hand = seat.hands[handIdx];
+      const paidBet = Math.max(0, hand.bet - hand.freeBet);
 
-    const playerValue = calculateHandValue(hand.cards, true);
-    const ruleHand: Hand = {
-      ...toRuleHand(hand.cards, hand.bet),
-      isSplit: hand.isSplit,
-      isDoubleDown: hand.isDoubleDown,
-      isBurned: hand.isBurned,
-      isFreeActionDouble: hand.isFreeDouble,
-      isFreeActionSplit: hand.isFreeSplit,
-      isSurrendered: hand.surrendered,
-    };
-    const ruleResult = rules.evaluateHand(ruleHand, playerValue, finalDealer, dealerValue);
+      if (hand.surrendered) {
+        state.bankroll += paidBet / 2;
+        hand.profit = -(paidBet / 2);
+        hand.outcome = 'loss';
+        continue;
+      }
 
-    if (ruleResult.status === HandStatus.WON || ruleResult.status === HandStatus.BLACKJACK) {
-      state.bankroll += hand.bet + hand.bet * ruleResult.payoutMultiplier;
-      continue;
-    }
-    if (ruleResult.status === HandStatus.PUSH) {
-      state.bankroll += hand.bet;
+      const playerValue = calculateHandValue(hand.cards, true);
+      const ruleHand: Hand = {
+        ...toRuleHand(hand),
+        isFreeActionDouble: hand.isFreeDouble,
+        isFreeActionSplit: hand.isFreeSplit,
+      };
+      const ruleResult = rules.evaluateHand(
+        ruleHand,
+        playerValue,
+        finalDealer,
+        dealerValue,
+        handIdx,
+        seat.hands.length,
+      );
+
+      if (ruleResult.status === HandStatus.WON || ruleResult.status === HandStatus.BLACKJACK) {
+        state.bankroll += paidBet + hand.bet * ruleResult.payoutMultiplier;
+        hand.profit = hand.bet * ruleResult.payoutMultiplier;
+        hand.outcome = 'win';
+        continue;
+      }
+      if (ruleResult.status === HandStatus.PUSH) {
+        state.bankroll += paidBet;
+        hand.profit = 0;
+        hand.outcome = 'push';
+        continue;
+      }
+      hand.profit = -paidBet;
+      hand.outcome = 'loss';
     }
   }
 
@@ -526,6 +753,17 @@ function runRound(state: EngineState): RoundResult {
       total: hand.surrendered ? -1 : calculateHandValue(hand.cards, true).total,
       surrendered: hand.surrendered,
       cards: hand.cards.map(mapCardView),
+      profit: hand.profit,
+      outcome: hand.outcome,
+      bet: hand.bet,
+      paidBet: Math.max(0, hand.bet - hand.freeBet),
+      freeBet: hand.freeBet,
+      advisorNotes: hand.advisorNotes,
+      specialEvents: hand.specialEvents,
+      discardedCards: hand.discardedCards.map((entry) => ({
+        card: mapCardView(entry.card),
+        reason: entry.reason,
+      })),
     })),
   );
 
@@ -598,10 +836,16 @@ function createHistoryRecord(state: EngineState, result: SimulatorResult): Match
       roi: result.roi,
       winRate: result.winRate,
       maxDrawdown: result.maxDrawdown,
+      bankrollStart: state.initialBankroll,
+      bankrollEnd: result.endingBankroll,
       bettingSystem: state.config.bettingSystem,
       playDecisionSource: state.config.playDecisionSource,
       roomName: room.name,
       seatCount: state.config.seatCount,
+    },
+    simulatorChart: {
+      equityCurve: [...result.equityCurve],
+      drawdownCurve: [...result.drawdownCurve],
     },
     simulatorHandHistory: result.handHistory,
     seats: [
@@ -632,7 +876,7 @@ export function createSimulatorEngine(config: SimulatorConfig, seedInput?: numbe
   const room = getRoomConfig(effectiveConfig.roomId);
   const random = createRng(seedInput);
   const shoe = createShoe(room.gameRules.numberOfDecks, room.gameRules.omitTens ?? false, random);
-  const decisionPolicy = createDecisionPolicy(effectiveConfig.playDecisionSource, effectiveConfig.customRiskLevel);
+  const decisionPolicy = createDecisionPolicy(effectiveConfig.playDecisionSource);
 
   const state: EngineState = {
     config: effectiveConfig,
@@ -672,6 +916,7 @@ export function createSimulatorEngine(config: SimulatorConfig, seedInput?: numbe
       drawdown25: false,
       lowBankrollWarned: false,
     },
+    stopForced: false,
   };
 
   const updateMetrics = (round: RoundResult) => {
@@ -740,6 +985,7 @@ export function createSimulatorEngine(config: SimulatorConfig, seedInput?: numbe
   };
 
   const stopReached = (): boolean => {
+    if (state.stopForced) return true;
     if (state.bankroll <= Math.max(0, state.config.stopLoss)) {
       state.eventLog.push(`[STOP] Bankroll hit stop-loss (${state.config.stopLoss}).`);
       return true;
