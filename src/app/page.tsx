@@ -8,7 +8,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Wallet, BookOpen, Sparkles, Zap, Trophy, Gift, BarChart3 } from 'lucide-react';
+import { Wallet, BookOpen, Sparkles, Zap, Trophy, Gift, BarChart3, Gamepad2 } from 'lucide-react';
 import appIcon from '../../src-tauri/icons/icon.png';
 import { ROOMS, getLobbyRooms } from '@/utils/rooms';
 import LegalAgreementModal from '@/components/LegalAgreementModal';
@@ -20,8 +20,10 @@ import { AchievementModal } from '@/components/AchievementModal';
 import { AchievementToast } from '@/components/AchievementToast';
 import { DailyClaimModal } from '@/components/DailyClaimModal';
 import SettingsModal from '@/components/SettingsModal';
+import ControlsModal from '@/components/ControlsModal';
 import { FloatingLogosBackdrop, ROOM_LOGO_PATHS } from '@/components/FloatingLogosBackdrop';
 import { useMenuNavigation } from '@/hooks/useMenuNavigation';
+import { useHasClaimableRewards } from '@/hooks/useHasClaimableRewards';
 
 export default function HomePage() {
   const router = useRouter();
@@ -31,20 +33,22 @@ export default function HomePage() {
   const [showAchievements, setShowAchievements] = useState(false);
   const [showDailyClaim, setShowDailyClaim] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showControls, setShowControls] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState('classic');
 
   const isHydrated = useStoreHydration();
   const bankroll = useGameStore((s) => s.bankroll);
   const { playSound } = useAudio();
+  const hasClaimable = useHasClaimableRewards();
 
   // ─── Menu Navigation (keyboard + gamepad) ───
   const MENU_ITEMS = useMemo(() => [
     'lobby', 'tutorial',
     'strategy', 'simulator',
-    'trophies', 'claim', 'settings', 'quickplay',
+    'trophies', 'claim', 'settings', 'controls', 'quickplay',
   ], []);
 
-  const anyModalOpen = showStrategy || showAchievements || showDailyClaim || showSettings;
+  const anyModalOpen = showStrategy || showAchievements || showDailyClaim || showSettings || showControls;
 
   const handleMenuSelect = useCallback((id: string) => {
     playSound('click');
@@ -56,6 +60,7 @@ export default function HomePage() {
       case 'trophies': setShowAchievements(true); break;
       case 'claim': setShowDailyClaim(true); break;
       case 'settings': setShowSettings(true); break;
+      case 'controls': setShowControls(true); break;
       case 'quickplay': router.push('/game/classic'); break;
     }
   }, [playSound, router]);
@@ -132,6 +137,17 @@ export default function HomePage() {
             onClose={() => setShowSettings(false)}
             onToggleFullscreen={() => {}}
             onSaveAndExit={() => setShowSettings(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showControls && (
+          <ControlsModal
+            roomId="lobby"
+            accentColor="#d4a843"
+            borderColor="rgba(212, 168, 67, 0.3)"
+            onClose={() => setShowControls(false)}
           />
         )}
       </AnimatePresence>
@@ -381,7 +397,7 @@ export default function HomePage() {
               </div>
 
               {/* Third Row: Utility & Quick Access */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 items-stretch">
 
                 {/* Achievements */}
                 <motion.button
@@ -415,7 +431,9 @@ export default function HomePage() {
                   <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.2),transparent_60%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
                   {/* Notification Dot */}
-                  <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#facc15] animate-ping" />
+                  {hasClaimable && (
+                    <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#facc15] animate-ping" />
+                  )}
 
                   <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_20px_rgba(245,158,11,0.15)] text-amber-500">
                     <Gift size={18} className="group-hover:fill-amber-500/20" />
@@ -442,6 +460,24 @@ export default function HomePage() {
                     </svg>
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/70 group-hover:text-white transition-colors text-center w-full">Settings</span>
+                </motion.button>
+
+                {/* Controls */}
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.72, duration: 0.5 }}
+                  onClick={() => { playSound('click'); setShowControls(true); }}
+                  className="group relative flex min-h-20 flex-col items-center justify-center gap-2 p-3 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    ...focusRingStyle('controls'),
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-[rgba(255,255,255,0.05)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                  <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(255,255,255,0.05)] text-white/70">
+                    <Gamepad2 size={18} className="group-hover:fill-white/20 transition-transform duration-500" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/70 group-hover:text-white transition-colors text-center w-full">Controls</span>
                 </motion.button>
 
                 {/* Quick Play */}

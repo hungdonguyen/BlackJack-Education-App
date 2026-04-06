@@ -35,6 +35,7 @@ export interface BettingSlice {
   previousSideBets: Record<number, number>;
   insufficientFundsWarning: boolean;
   sideBets: Record<number, number>;
+  focusedSeatId: number | null;
 
   // Actions
   selectChip: (value: number) => void;
@@ -51,6 +52,7 @@ export interface BettingSlice {
   setBankroll: (amount: number) => void;
   placeSideBet: (seatId: number, amount: number) => void;
   clearSideBet: (seatId: number) => void;
+  setFocusedSeatId: (seatId: number | null) => void;
 }
 
 export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> = (set, get) => ({
@@ -62,6 +64,9 @@ export const createBettingSlice: StateCreator<GameStore, [], [], BettingSlice> =
   previousSideBets: {},
   insufficientFundsWarning: false,
   sideBets: {},
+  focusedSeatId: 3,
+
+  setFocusedSeatId: (seatId: number | null) => set({ focusedSeatId: seatId }),
 
   selectChip: (value: number) => {
     const state = get();

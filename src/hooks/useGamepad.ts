@@ -45,7 +45,6 @@ export function useGamepad(callbacks?: GamepadCallbacks) {
     const requestRef = useRef<number>(0);
     const lastButtonsRef = useRef<boolean[]>([]);
     const pulseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const focusedSeatRef = useRef<number>(3);
 
     useEffect(() => {
         callbacksRef.current = callbacks;
@@ -149,23 +148,20 @@ export function useGamepad(callbacks?: GamepadCallbacks) {
             }
         };
 
-        const getFocusedActiveSeatId = () => {
+        const getFocusedSeatId = () => {
             const state = useGameStoreBase.getState();
-            const activeSeatIds = state.seats.filter((seat) => seat.isActive).map((seat) => seat.id);
-            if (activeSeatIds.length === 0) return 3;
-            if (activeSeatIds.includes(focusedSeatRef.current)) return focusedSeatRef.current;
-            return activeSeatIds[0];
+            return state.focusedSeatId !== null ? state.focusedSeatId : 3;
         };
 
         const cycleFocusedSeat = (step: -1 | 1) => {
             const state = useGameStoreBase.getState();
             if (state.gamePhase !== GamePhase.BETTING) return;
-            const activeSeatIds = state.seats.filter((seat) => seat.isActive).map((seat) => seat.id);
-            if (activeSeatIds.length <= 1) return;
-            const current = getFocusedActiveSeatId();
-            const currentIndex = Math.max(0, activeSeatIds.indexOf(current));
-            const nextIndex = (currentIndex + step + activeSeatIds.length) % activeSeatIds.length;
-            focusedSeatRef.current = activeSeatIds[nextIndex];
+            const current = getFocusedSeatId();
+            let nextId = current + step;
+            // 1 to 5
+            if (nextId > 5) nextId = 1;
+            if (nextId < 1) nextId = 5;
+            state.setFocusedSeatId(nextId);
         };
 
         const cycleChip = (step: -1 | 1) => {
@@ -194,7 +190,17 @@ export function useGamepad(callbacks?: GamepadCallbacks) {
                 executeAction(state.hoveredAction as HoveredAction);
             } else {
                 // Default actions
-                if (state.gamePhase === GamePhase.BETTING) state.placeBet(getFocusedActiveSeatId(), state.selectedChipValue);
+                if (state.gamePhase === GamePhase.BETTING) {
+                    const focusedId = getFocusedSeatId();
+                    const seat = state.seats.find((s) => s.id === focusedId);
+                    if (seat) {
+                        if (!seat.isActive) {
+                            state.toggleSeat(focusedId);
+                        } else {
+                            state.placeBet(focusedId, state.selectedChipValue);
+                        }
+                    }
+                }
                 else if (state.gamePhase === GamePhase.PAYOUT) {
                     const available = getAvailableActions();
                     if (available[0]) executeAction(available[0]);
@@ -209,12 +215,37 @@ export function useGamepad(callbacks?: GamepadCallbacks) {
             const state = useGameStoreBase.getState();
             if (state.gamePhase === GamePhase.PLAYER_TURN) executeAction('stand');
             else if (state.gamePhase === GamePhase.INSURANCE) executeAction('insurance-decline');
+            else if (state.gamePhase === GamePhase.BETTING) {
+                const focusedId = getFocusedSeatId();
+                const seat = state.seats.find(s => s.id === focusedId);
+                if (seat && seat.isActive) {
+                    const mainBet = seat.hands.reduce((sum, h) => sum + h.betAmount, 0);
+                    if (mainBet > 0) state.clearBet(focusedId);
+                    else state.toggleSeat(focusedId);
+                }
+            }
         };
 
-        const handleDpadLeft = () => cycleHoveredAction(-1);
-        const handleDpadRight = () => cycleHoveredAction(1);
-        const handleDpadUp = () => cycleChip(1);
-        const handleDpadDown = () => cycleChip(-1);
+        const handleDpadLeft = () => {
+            const state = useGameStoreBase.getState();
+            if (state.gamePhase === GamePhase.BETTING && !state.hoveredAction) cycleFocusedSeat(-1);
+            else cycleHoveredAction(-1);
+        };
+        const handleDpadRight = () => {
+            const state = useGameStoreBase.getState();
+            if (state.gamePhase === GamePhase.BETTING && !state.hoveredAction) cycleFocusedSeat(1);
+            else cycleHoveredAction(1);
+        };
+        const handleDpadUp = () => {
+            const state = useGameStoreBase.getState();
+            state.setHoveredAction(null);
+            cycleChip(1);
+        };
+        const handleDpadDown = () => {
+            const state = useGameStoreBase.getState();
+            state.setHoveredAction(null);
+            cycleChip(-1);
+        };
 
         const updateLoop = () => {
             const gp = Array.from(navigator.getGamepads()).find((pad): pad is Gamepad => !!pad);
@@ -225,14 +256,22 @@ export function useGamepad(callbacks?: GamepadCallbacks) {
                 const state = useGameStoreBase.getState();
                 const roomConfig = getRoomConfig(state.currentRoom);
 
-                // Button Handlers
-                if (isPressed(BUTTONS.A)) handleButtonA();
-                if (isPressed(BUTTONS.B)) handleButtonB();
-                if (isPressed(BUTTONS.X) && state.gamePhase === GamePhase.PLAYER_TURN) executeAction('double');
-                if (isPressed(BUTTONS.Y) && state.gamePhase === GamePhase.PLAYER_TURN) executeAction('split');
+                const mapping = state.gamepadMapping;
+
+                // Hit / Generic Confirm
+                if (isPressed(mapping.hit)) handleButtonA();
+                // Stand / Generic Cancel
+                if (isPressed(mapping.stand)) handleButtonB();
+                
+                if (isPressed(mapping.double) && state.gamePhase === GamePhase.PLAYER_TURN) executeAction('double');
+                if (isPressed(mapping.split) && state.gamePhase === GamePhase.PLAYER_TURN) executeAction('split');
+
+                // System Actions (Fixed mapping)
                 if (isPressed(BUTTONS.START)) state.setSettingsModalOpen(!state.isSettingsModalOpen);
                 if (isPressed(BUTTONS.BACK)) callbacksRef.current?.onLobby?.();
                 if (isPressed(BUTTONS.HOME)) callbacksRef.current?.onHome?.();
+
+                // Navigation (Fixed mapping)
                 if (isPressed(BUTTONS.LEFT)) handleDpadLeft();
                 if (isPressed(BUTTONS.RIGHT)) handleDpadRight();
                 if (isPressed(BUTTONS.UP)) handleDpadUp();
@@ -240,29 +279,19 @@ export function useGamepad(callbacks?: GamepadCallbacks) {
                 if (isPressed(BUTTONS.LS)) cycleFocusedSeat(-1);
                 if (isPressed(BUTTONS.RS)) cycleFocusedSeat(1);
 
-                // Advanced Actions (LB/RB/RT/LT)
-                if (isPressed(BUTTONS.LB)) {
-                    if (state.gamePhase === GamePhase.BETTING) executeAction('undo');
-                    else {
-                        const rules = getRules(state.currentRoom);
-                        if (rules.canZap) executeAction('zap');
-                    }
+                // Betting actions
+                if (state.gamePhase === GamePhase.BETTING) {
+                    if (isPressed(mapping.undo)) executeAction('undo');
+                    if (isPressed(mapping.deal)) executeAction('deal');
+                    if (isPressed(mapping.rebet) && !roomConfig.isTutorial) executeAction('rebet');
+                    if (isPressed(mapping.clear) && mapping.clear !== undefined) executeAction('clear');
+                } else if (state.gamePhase === GamePhase.PLAYER_TURN) {
+                    const rules = getRules(state.currentRoom);
+                    if (isPressed(mapping.zap) && rules.canZap) executeAction('zap');
+                    if (isPressed(mapping.switch) && rules.canSwitch) executeAction('switch');
+                    if (isPressed(mapping.burn) && rules.canBurn) executeAction('burn');
+                    if (isPressed(mapping.surrender)) executeAction('surrender');
                 }
-                if (isPressed(BUTTONS.RB)) {
-                    if (state.gamePhase === GamePhase.BETTING) executeAction('deal');
-                    else {
-                        const rules = getRules(state.currentRoom);
-                        if (rules.canSwitch) executeAction('switch');
-                    }
-                }
-                if (isPressed(BUTTONS.RT)) {
-                    if (state.gamePhase === GamePhase.BETTING && !roomConfig.isTutorial) executeAction('rebet');
-                    else {
-                        const rules = getRules(state.currentRoom);
-                        if (rules.canBurn) executeAction('burn');
-                    }
-                }
-                if (isPressed(BUTTONS.LT) && state.gamePhase === GamePhase.PLAYER_TURN) executeAction('surrender');
 
                 // Analog Navigation
                 if (gp.axes.length >= 2) {
@@ -270,7 +299,8 @@ export function useGamepad(callbacks?: GamepadCallbacks) {
                     const ly = gp.axes[1];
                     if (Math.abs(lx) > ANALOG_DEADZONE) {
                         if (!analogAxisActiveRef.current.x || (now - analogLastActionRef.current.x > ANALOG_COOLDOWN_MS)) {
-                            cycleHoveredAction(lx > 0 ? 1 : -1);
+                            if (state.gamePhase === GamePhase.BETTING && !state.hoveredAction) cycleFocusedSeat(lx > 0 ? 1 : -1);
+                            else cycleHoveredAction(lx > 0 ? 1 : -1);
                             analogAxisActiveRef.current.x = true;
                             analogLastActionRef.current.x = now;
                         }
@@ -278,6 +308,7 @@ export function useGamepad(callbacks?: GamepadCallbacks) {
 
                     if (Math.abs(ly) > ANALOG_DEADZONE) {
                         if (!analogAxisActiveRef.current.y || (now - analogLastActionRef.current.y > ANALOG_COOLDOWN_MS)) {
+                            state.setHoveredAction(null);
                             cycleChip(ly < 0 ? 1 : -1);
                             analogAxisActiveRef.current.y = true;
                             analogLastActionRef.current.y = now;

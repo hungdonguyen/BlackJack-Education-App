@@ -30,6 +30,7 @@ import CardCountingPanel from './CardCountingPanel';
 import MatchDetailModal from './MatchDetailModal';
 import { useGamepad } from '@/hooks/useGamepad';
 import SettingsModal from './SettingsModal';
+import ControlsModal from './ControlsModal';
 import { MusicPlayer } from './MusicPlayer';
 import { calculateMatchNetPnl, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
 import { useAudio } from '@/utils/audio';
@@ -92,6 +93,8 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const setShowStrategy = useGameStore((s) => s.setStrategyModalOpen);
     const showSettings = useGameStore((s) => s.isSettingsModalOpen);
     const setShowSettings = useGameStore((s) => s.setSettingsModalOpen);
+    const showControls = useGameStore((s) => s.isControlsModalOpen);
+    const setShowControls = useGameStore((s) => s.setControlsModalOpen);
 
 
     const isInsurance = gamePhase === GamePhase.INSURANCE;
@@ -134,6 +137,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const closeTransientLayers = () => {
         setSelectedMatchIndex(null);
         setShowSettings(false);
+        setShowControls(false);
         setShowStrategy(false);
         setShowLogoInfo(false);
     };
@@ -210,6 +214,10 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
             }
             if (showSettings) {
                 setShowSettings(false);
+                return;
+            }
+            if (showControls) {
+                setShowControls(false);
                 return;
             }
             if (showStrategy) {
@@ -571,6 +579,7 @@ const logoPath = room.logoPath;
                             totalBet={totalBet} 
                             setShowStrategy={setShowStrategy} 
                             setShowSettings={setShowSettings} 
+                            setShowControls={setShowControls}
                             returnToLobby={returnToLobby} 
                             returnHome={returnHome} 
                         />
@@ -591,6 +600,18 @@ const logoPath = room.logoPath;
                                     onClose={() => setShowSettings(false)}
                                     onToggleFullscreen={toggleFullscreen}
                                     onSaveAndExit={returnToLobby}
+                                />
+                            )}
+                        </AnimatePresence>
+
+                        {/* Controls Modal */}
+                        <AnimatePresence>
+                            {showControls && (
+                                <ControlsModal
+                                    roomId={roomId}
+                                    accentColor={room.accentColor}
+                                    borderColor={room.borderColor}
+                                    onClose={() => setShowControls(false)}
                                 />
                             )}
                         </AnimatePresence>

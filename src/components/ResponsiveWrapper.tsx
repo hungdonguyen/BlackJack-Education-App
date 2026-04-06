@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useViewportScale } from '@/hooks/useViewportScale';
+import { AnimatePresence } from 'framer-motion';
+import { SplashScreen } from '@/components/SplashScreen';
 
 // Default canvas is slightly smaller so UI elements appear larger on screen
 const NORMAL_DESIGN_WIDTH = 1536; // 1920 / 1.25
@@ -21,9 +23,17 @@ export default function ResponsiveWrapper({ children }: { children: React.ReactN
 
     const viewScale = useViewportScale(designWidth, designHeight);
     const [mounted, setMounted] = useState(false);
+    const [showSplash, setShowSplash] = useState(false);
 
     useEffect(() => {
         setMounted(true);
+
+        // Only show splash screen once per session
+        const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
+        if (!hasSeenSplash) {
+            setShowSplash(true);
+            sessionStorage.setItem('hasSeenSplash', '1');
+        }
 
         // Block right-click (Context Menu) for Native Feel (Applies to Dev & Prod)
         const handleContextMenu = (e: MouseEvent) => {
@@ -43,12 +53,20 @@ export default function ResponsiveWrapper({ children }: { children: React.ReactN
     }
 
     return (
-        <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: designWidth, height: designHeight, transform: `scale(${viewScale})`, transformOrigin: 'center center', flexShrink: 0, position: 'relative' }}>
-                <div style={{ width: '100%', height: '100%', position: 'relative', overflowY: 'auto', overflowX: 'hidden' }} className="custom-scrollbar">
-                    {children}
+        <>
+            <AnimatePresence>
+                {showSplash && (
+                    <SplashScreen onComplete={() => setShowSplash(false)} />
+                )}
+            </AnimatePresence>
+        
+            <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: designWidth, height: designHeight, transform: `scale(${viewScale})`, transformOrigin: 'center center', flexShrink: 0, position: 'relative' }}>
+                    <div style={{ width: '100%', height: '100%', position: 'relative', overflowY: 'auto', overflowX: 'hidden' }} className="custom-scrollbar">
+                        {children}
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

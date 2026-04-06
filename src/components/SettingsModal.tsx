@@ -61,7 +61,7 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
         >
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
             <motion.div
-                className="relative w-[420px] max-h-[864px] rounded-2xl overflow-hidden flex flex-col"
+                className="relative w-[95vw] max-w-[420px] max-h-[85vh] md:max-h-[864px] rounded-2xl overflow-hidden flex flex-col"
                 style={{
                     background: 'rgba(20, 12, 8, 0.97)',
                     backdropFilter: 'blur(20px)',

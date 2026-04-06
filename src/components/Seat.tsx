@@ -34,6 +34,7 @@ export default function Seat({ seatId, style }: SeatProps) {
     const clearSideBet = useGameStore((s) => s.clearSideBet);
     const sideBets = useGameStore((s) => s.sideBets);
     const hoveredAction = useGameStore((s) => s.hoveredAction);
+    const focusedSeatId = useGameStore((s) => s.focusedSeatId);
     const roomConfig = getRoomConfig(currentRoom);
     const { playSound } = useAudio();
 
@@ -49,6 +50,7 @@ export default function Seat({ seatId, style }: SeatProps) {
     const mainBet = seat.hands.reduce((sum, h) => sum + h.betAmount, 0);
     const totalBet = mainBet + insuranceBet;
     const hasCards = seat.isActive && seat.hands.some(h => h.cards.length > 0);
+    const isFocusedSeat = isBetting && !hoveredAction && focusedSeatId === seatId;
 
     const handleClick = () => {
         if (!isBetting) return;
@@ -366,6 +368,15 @@ export default function Seat({ seatId, style }: SeatProps) {
                         style={{ boxShadow: '0 0 20px rgba(250,204,21,0.3)' }}
                         animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
                         transition={{ duration: 1.2, repeat: Infinity }}
+                    />
+                )}
+
+                {/* Keyboard/Gamepad Focus Ring */}
+                {isFocusedSeat && (
+                    <motion.div className="absolute inset-[-4px] rounded-full border-[3px] border-white/70 border-dashed"
+                        style={{ boxShadow: '0 0 15px rgba(255,255,255,0.2)' }}
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
                     />
                 )}
             </motion.div>

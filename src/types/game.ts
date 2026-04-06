@@ -201,9 +201,11 @@ export interface GameState {
   // Modal UI state
   isStrategyModalOpen: boolean;
   isSettingsModalOpen: boolean;
+  isControlsModalOpen: boolean;
 
   // Side bets (Free Action room)
   sideBets: Record<number, number>; // seatId -> side bet amount
+  focusedSeatId: number | null;
 }
 
 /** All actions available on the game store */
@@ -216,6 +218,7 @@ export interface GameActions {
 
   // Seat management
   toggleSeat: (seatId: number) => void;
+  setFocusedSeatId: (seatId: number | null) => void;
 
   // Betting phase
   placeBet: (seatId: number, amount: number) => void;
@@ -271,6 +274,7 @@ export interface GameActions {
   // UI Modal state
   setStrategyModalOpen: (open: boolean) => void;
   setSettingsModalOpen: (open: boolean) => void;
+  setControlsModalOpen: (open: boolean) => void;
 }
 
 export interface DailyClaimSlice {

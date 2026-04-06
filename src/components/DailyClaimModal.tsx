@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Wallet, Timer, Coins, Gift, Unlock } from 'lucide-react';
+import { X, Sparkles, Wallet, Timer, Coins, Gift, Unlock, Shield } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
 import { useMenuNavigation } from '@/hooks/useMenuNavigation';
@@ -25,14 +25,6 @@ const STREAK_MILESTONES = DAILY_CLAIM_STREAK_MILESTONES;
 const STREAK_BONUS_MAP = DAILY_CLAIM_MILESTONE_BONUS;
 
 const CLAIM_ITEMS = ['hourly', 'mystery', 'rebate', 'insurance', 'tutorial'];
-
-const EXTERNAL_ICONS = {
-  hourly: 'https://img.icons8.com/fluency/96/time-machine.png',
-  mystery: 'https://img.icons8.com/fluency/96/dice.png',
-  rebate: 'https://img.icons8.com/fluency/96/cash-in-hand.png',
-  insurance: 'https://img.icons8.com/fluency/96/shield.png',
-  learning: 'https://img.icons8.com/fluency/96/training.png',
-};
 
 const toHourStart = (ts: number): number => {
   const d = new Date(ts);
@@ -282,7 +274,7 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
             </div>
             <div>
               <h2 className="text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-linear-to-b from-white via-white to-white/40 leading-none">
-                CASINO <span className="text-amber-500">REWARDS</span>
+                DAILY <span className="text-amber-500">REWARDS</span>
               </h2>
               <div className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.3em] flex items-center gap-2 mt-1.5 drop-shadow-md">
                 <div className="h-1 w-8 bg-amber-500/30 rounded-full" />
@@ -331,7 +323,9 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
               <div className="flex justify-between items-start z-10">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <img src={EXTERNAL_ICONS.hourly} alt="Hourly" className="w-7 h-7 filter drop-shadow-lg" />
+                    <div className="w-8 h-8 rounded-lg border border-amber-500/40 bg-amber-500/15 flex items-center justify-center">
+                      <Timer size={16} className="text-amber-300" />
+                    </div>
                     <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Hourly Bonus</span>
                   </div>
                   <h3 className="text-3xl font-black text-white mt-1">
@@ -406,7 +400,9 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
               <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-fuchsia-500/15 blur-[80px] rounded-full" />
               <div className="p-6 flex-1 flex flex-col z-10">
                 <div className="flex items-center gap-2 mb-3">
-                  <img src={EXTERNAL_ICONS.mystery} alt="Mystery" className="w-7 h-7 filter drop-shadow-lg" />
+                  <div className="w-8 h-8 rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/15 flex items-center justify-center">
+                    <Gift size={16} className="text-fuchsia-300" />
+                  </div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-fuchsia-400">Mystery Box</span>
                 </div>
 
@@ -456,7 +452,9 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
             {/* REBATE (col-span-1) */}
             <div className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-linear-to-b from-emerald-500/10 via-black/40 to-black/60 p-6 flex flex-col min-h-55 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]" style={claimFocusStyle('rebate')}>
                <div className="flex items-center gap-2 mb-4 z-10">
-                  <img src={EXTERNAL_ICONS.rebate} alt="Rebate" className="w-7 h-7 filter drop-shadow-lg" />
+                  <div className="w-8 h-8 rounded-lg border border-emerald-500/40 bg-emerald-500/15 flex items-center justify-center">
+                    <Coins size={16} className="text-emerald-300" />
+                  </div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">2% Chip Rebate</span>
               </div>
               <div className="flex-1 flex flex-col justify-center mb-4 z-10">
@@ -504,7 +502,9 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
             <div className="relative overflow-hidden rounded-3xl border border-blue-500/30 bg-linear-to-b from-blue-500/10 via-black/40 to-black/60 p-6 flex flex-col group min-h-55 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]" style={claimFocusStyle('insurance')}>
                <div className="absolute -left-10 -top-10 w-40 h-40 bg-blue-500/10 blur-[60px] rounded-full" />
               <div className="flex items-center gap-2 mb-4 z-10">
-                  <img src={EXTERNAL_ICONS.insurance} alt="Insurance" className="w-7 h-7 filter drop-shadow-lg" />
+                  <div className="w-8 h-8 rounded-lg border border-blue-500/40 bg-blue-500/15 flex items-center justify-center">
+                    <Shield size={16} className="text-blue-300" />
+                  </div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Emergency Rescue</span>
               </div>
               <div className="flex-1 flex flex-col justify-center mb-4 z-10">
@@ -534,7 +534,9 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
             <div className="relative overflow-hidden rounded-3xl border border-indigo-500/30 bg-linear-to-b from-indigo-500/10 via-black/40 to-black/60 p-6 flex flex-col min-h-55 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]" style={claimFocusStyle('tutorial')}>
                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/10 blur-[60px] rounded-full" />
                <div className="flex items-center gap-2 mb-4 z-10">
-                  <img src={EXTERNAL_ICONS.learning} alt="Learning" className="w-7 h-7 filter drop-shadow-lg" />
+                  <div className="w-8 h-8 rounded-lg border border-indigo-500/40 bg-indigo-500/15 flex items-center justify-center">
+                    <Sparkles size={16} className="text-indigo-300" />
+                  </div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Training Bonus</span>
               </div>
               <div className="flex-1 flex flex-col justify-center mb-4 z-10">

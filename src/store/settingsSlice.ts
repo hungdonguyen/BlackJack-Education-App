@@ -8,6 +8,39 @@ import type { SwitchAdviceEngine } from '@/utils/exchangeSwitchAdvice';
 
 export type DealerSpeed = 'normal' | 'fast';
 
+export type GamepadMapping = Record<string, number>;
+export type KeyboardMapping = Record<string, string>;
+
+export const DEFAULT_KEYBOARD_MAPPING: KeyboardMapping = {
+  hit: 'h',
+  stand: 's',
+  double: 'd',
+  split: 'p',
+  surrender: 'r',
+  zap: 'q',
+  switch: 'q',
+  burn: 'q',
+  deal: 'Enter',
+  undo: 'Backspace',
+  clear: 'Delete',
+  rebet: 't',
+};
+
+export const DEFAULT_GAMEPAD_MAPPING: GamepadMapping = {
+  hit: 0,       // A
+  stand: 1,     // B
+  double: 2,    // X
+  split: 3,     // Y
+  surrender: 6, // LT
+  zap: 4,       // LB
+  switch: 5,    // RB
+  burn: 7,      // RT
+  deal: 5,      // RB
+  undo: 4,      // LB
+  rebet: 7,     // RT
+  clear: 8,     // BACK (adding default for clear)
+};
+
 export interface SettingsSlice {
   // State
   dealerSpeed: DealerSpeed;
@@ -23,6 +56,8 @@ export interface SettingsSlice {
   showSwitchAdvice: boolean;
   switchAdviceEngine: SwitchAdviceEngine;
   showStrategyModal: boolean;
+  keyboardMapping: KeyboardMapping;
+  gamepadMapping: GamepadMapping;
 
   // Actions
   setDealerSpeed: (speed: DealerSpeed) => void;
@@ -38,6 +73,9 @@ export interface SettingsSlice {
   setShowSwitchAdvice: (show: boolean) => void;
   setSwitchAdviceEngine: (engine: SwitchAdviceEngine) => void;
   setShowStrategyModal: (show: boolean) => void;
+  setKeyboardMapping: (action: string, key: string) => void;
+  setGamepadMapping: (action: string, button: number) => void;
+  resetControlsToDefault: () => void;
 }
 
 /** Delay maps keyed by dealer speed */
@@ -72,6 +110,8 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   showSwitchAdvice: true,
   switchAdviceEngine: 'cindy_advanced',
   showStrategyModal: false,
+  keyboardMapping: DEFAULT_KEYBOARD_MAPPING,
+  gamepadMapping: DEFAULT_GAMEPAD_MAPPING,
 
   setDealerSpeed: (speed) => set({ dealerSpeed: speed }),
   setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
@@ -86,4 +126,14 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   setShowSwitchAdvice: (show: boolean) => set({ showSwitchAdvice: show }),
   setSwitchAdviceEngine: (engine: SwitchAdviceEngine) => set({ switchAdviceEngine: engine }),
   setShowStrategyModal: (show: boolean) => set({ showStrategyModal: show }),
+  setKeyboardMapping: (action, key) => set((state) => ({
+    keyboardMapping: { ...state.keyboardMapping, [action]: key }
+  })),
+  setGamepadMapping: (action, button) => set((state) => ({
+    gamepadMapping: { ...state.gamepadMapping, [action]: button }
+  })),
+  resetControlsToDefault: () => set({
+    keyboardMapping: DEFAULT_KEYBOARD_MAPPING,
+    gamepadMapping: DEFAULT_GAMEPAD_MAPPING,
+  }),
 });

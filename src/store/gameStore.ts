@@ -57,6 +57,8 @@ export const useGameStoreBase = create<GameStore>()(
         showSpecialCases: state.showSpecialCases,
         showSwitchAdvice: state.showSwitchAdvice,
         switchAdviceEngine: state.switchAdviceEngine,
+        keyboardMapping: state.keyboardMapping,
+        gamepadMapping: state.gamepadMapping,
         // Achievements
         unlockedAchievements: state.unlockedAchievements,
         achievementProgress: state.achievementProgress,

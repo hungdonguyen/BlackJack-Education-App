@@ -306,7 +306,7 @@ function runRound(state: EngineState): RoundResult {
         }).allowed;
         if (!canSwitch) continue;
       }
-      const advice = getExchange21Advice(seat.hands[0].cards, seat.hands[1].cards, dealerCards[0].rank, 'cindy_advanced');
+      const advice = getExchange21Advice(seat.hands[0].cards, seat.hands[1].cards, dealerCards[0].rank, state.config.exchangeSwitchEngine || 'cindy_advanced');
       if (advice?.shouldSwitch) {
         const secondCard0 = seat.hands[0].cards[1];
         const secondCard1 = seat.hands[1].cards[1];
@@ -418,6 +418,28 @@ function runRound(state: EngineState): RoundResult {
           seat.actionTrace.push(
             `S${seat.seatNumber}H${idx + 1}:${doubleValidity.isFree ? 'FREE_DOUBLE' : 'DOUBLE'}`,
           );
+          
+          const postDoubleSurrender = rules.canSurrender(toRuleHand(hand.cards, hand.bet));
+          if (postDoubleSurrender.allowed) {
+            const hValue = calculateHandValue(hand.cards);
+            if (hValue.total <= 21) {
+              const rescueAction = state.decisionPolicy.decideAction({
+                cards: hand.cards,
+                dealerUpcard: dealerCards[0],
+                roomId: room.id,
+                trueCount: getTrueCount(state, room),
+                canDouble: false,
+                canSplit: false,
+                canSurrender: true,
+                canBurn: false,
+              });
+              if (rescueAction === 'SU') {
+                seat.actionTrace.push(`S${seat.seatNumber}H${idx + 1}:RESCUE`);
+                hand.surrendered = true;
+              }
+            }
+          }
+
           finished = true;
           continue;
         }

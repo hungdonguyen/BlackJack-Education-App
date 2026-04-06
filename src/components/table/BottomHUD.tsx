@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Settings, LayoutGrid, Home } from 'lucide-react';
+import { BookOpen, Settings, LayoutGrid, Home, Gamepad2 } from 'lucide-react';
 import { RoomConfig } from '@/utils/rooms/types';
 import ChipRack from '@/components/ChipRack';
 import { useAudio } from '@/utils/audio';
@@ -11,6 +11,7 @@ interface BottomHUDProps {
     totalBet: number;
     setShowStrategy: (show: boolean) => void;
     setShowSettings: (show: boolean) => void;
+    setShowControls: (show: boolean) => void;
     returnToLobby: () => void;
     returnHome: () => void;
 }
@@ -22,6 +23,7 @@ export function BottomHUD({
     totalBet,
     setShowStrategy,
     setShowSettings,
+    setShowControls,
     returnToLobby,
     returnHome
 }: BottomHUDProps) {
@@ -55,6 +57,9 @@ export function BottomHUD({
                     <button id="strategy-button" onClick={() => { playSound('click'); setShowStrategy(true); }}
                         className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
                     ><BookOpen size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Rule & Strategy</button>
+                    <button onClick={() => { playSound('click'); setShowControls(true); }}
+                        className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
+                    ><Gamepad2 size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Controls</button>
                     <button onClick={() => { playSound('click'); setShowSettings(true); }}
                         className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white/80 text-xs font-bold uppercase tracking-wider hover:bg-white/20 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
                     ><Settings size={16} className="mr-1.5 flex-shrink-0 inline -mt-0.5" /> Settings</button>

@@ -65,9 +65,6 @@ export function useKeyboardHotkeys(callbacks?: KeyboardHotkeyCallbacks) {
     useEffect(() => {
         callbacksRef.current = callbacks;
     }, [callbacks]);
-
-    const focusedSeatRef = useRef<number>(3);
-
     useEffect(() => {
         const store = useGameStoreBase.getState();
 
@@ -174,23 +171,20 @@ export function useKeyboardHotkeys(callbacks?: KeyboardHotkeyCallbacks) {
             }
         };
 
-        const getFocusedActiveSeatId = () => {
+        const getFocusedSeatId = () => {
             const state = useGameStoreBase.getState();
-            const activeSeatIds = state.seats.filter((seat) => seat.isActive).map((seat) => seat.id);
-            if (activeSeatIds.length === 0) return 3;
-            if (activeSeatIds.includes(focusedSeatRef.current)) return focusedSeatRef.current;
-            return activeSeatIds[0];
+            return state.focusedSeatId !== null ? state.focusedSeatId : 3;
         };
 
         const cycleFocusedSeat = (step: -1 | 1) => {
             const state = useGameStoreBase.getState();
             if (state.gamePhase !== GamePhase.BETTING) return;
-            const activeSeatIds = state.seats.filter((seat) => seat.isActive).map((seat) => seat.id);
-            if (activeSeatIds.length <= 1) return;
-            const current = getFocusedActiveSeatId();
-            const currentIndex = Math.max(0, activeSeatIds.indexOf(current));
-            const nextIndex = (currentIndex + step + activeSeatIds.length) % activeSeatIds.length;
-            focusedSeatRef.current = activeSeatIds[nextIndex];
+            const current = getFocusedSeatId();
+            let nextId = current + step;
+            // 1 to 5
+            if (nextId > 5) nextId = 1;
+            if (nextId < 1) nextId = 5;
+            state.setFocusedSeatId(nextId);
         };
 
         const cycleChip = (step: -1 | 1) => {
@@ -246,7 +240,15 @@ export function useKeyboardHotkeys(callbacks?: KeyboardHotkeyCallbacks) {
                 if (state.hoveredAction) {
                     executeAction(state.hoveredAction as HoveredAction);
                 } else if (phase === GamePhase.BETTING) {
-                    state.placeBet(getFocusedActiveSeatId(), state.selectedChipValue);
+                    const focusedId = getFocusedSeatId();
+                    const seat = state.seats.find((s) => s.id === focusedId);
+                    if (seat) {
+                        if (!seat.isActive) {
+                            state.toggleSeat(focusedId);
+                        } else {
+                            state.placeBet(focusedId, state.selectedChipValue);
+                        }
+                    }
                 } else if (phase === GamePhase.PAYOUT) {
                     const available = getAvailableActions();
                     if (available[0]) executeAction(available[0]);
@@ -271,21 +273,22 @@ export function useKeyboardHotkeys(callbacks?: KeyboardHotkeyCallbacks) {
                 return;
             }
 
+            const mapping = state.keyboardMapping;
+            const k = key.toLowerCase();
+
             // Direct mapping with pulse feedback
             if (phase === GamePhase.PLAYER_TURN) {
-                switch (key.toLowerCase()) {
-                    case 'h': executeAction('hit'); return;
-                    case 's': executeAction('stand'); return;
-                    case 'd': executeAction('double'); return;
-                    case 'p': executeAction('split'); return;
-                    case 'r': executeAction('surrender'); return;
-                    case 'q': {
-                        const rules = getRules(state.currentRoom);
-                        if (rules.canZap) executeAction('zap');
-                        else if (rules.canSwitch) executeAction('switch');
-                        else if (rules.canBurn) executeAction('burn');
-                        return;
-                    }
+                if (k === mapping.hit?.toLowerCase()) { executeAction('hit'); return; }
+                if (k === mapping.stand?.toLowerCase()) { executeAction('stand'); return; }
+                if (k === mapping.double?.toLowerCase()) { executeAction('double'); return; }
+                if (k === mapping.split?.toLowerCase()) { executeAction('split'); return; }
+                if (k === mapping.surrender?.toLowerCase()) { executeAction('surrender'); return; }
+                if (k === mapping.zap?.toLowerCase() || k === mapping.switch?.toLowerCase() || k === mapping.burn?.toLowerCase()) {
+                    const rules = getRules(state.currentRoom);
+                    if (rules.canZap) executeAction('zap');
+                    else if (rules.canSwitch) executeAction('switch');
+                    else if (rules.canBurn) executeAction('burn');
+                    return;
                 }
             }
 
@@ -294,14 +297,13 @@ export function useKeyboardHotkeys(callbacks?: KeyboardHotkeyCallbacks) {
                     store.selectChip(CHIP_VALUES[QUICK_CHIP_MAP[key]]);
                     return;
                 }
-                switch (key.toLowerCase()) {
-                    case 'arrowup': event.preventDefault(); cycleChip(1); return;
-                    case 'arrowdown': event.preventDefault(); cycleChip(-1); return;
-                    case 'backspace': event.preventDefault(); executeAction('undo'); return;
-                    case 'delete': executeAction('clear'); return;
-                    case 't': executeAction('rebet'); return;
-                    case 'd': executeAction('deal'); return;
-                }
+                if (k === 'arrowup') { event.preventDefault(); state.setHoveredAction(null); cycleChip(1); return; }
+                if (k === 'arrowdown') { event.preventDefault(); state.setHoveredAction(null); cycleChip(-1); return; }
+                
+                if (k === mapping.undo?.toLowerCase()) { event.preventDefault(); executeAction('undo'); return; }
+                if (k === mapping.clear?.toLowerCase()) { executeAction('clear'); return; }
+                if (k === mapping.rebet?.toLowerCase()) { executeAction('rebet'); return; }
+                if (k === mapping.deal?.toLowerCase()) { executeAction('deal'); return; }
             }
 
             if (phase === GamePhase.INSURANCE) {
