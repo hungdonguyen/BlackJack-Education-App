@@ -13,6 +13,7 @@ import { SimulatorSetup } from './components/SimulatorSetup';
 import { SimulatorMatrix } from './components/SimulatorMatrix';
 import { SimulatorInsights } from './components/SimulatorInsights';
 import { SimulatorHandHistoryModal } from './components/SimulatorHandHistoryModal';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SimulatorPage() {
   const config = useGameStore((s) => s.simulatorConfig);
@@ -39,7 +40,12 @@ export default function SimulatorPage() {
       <div className="relative flex h-full min-h-full w-full flex-col overflow-hidden">
       <SimulatorHeader onOpenStrategy={() => setShowStrategy(true)} />
 
-        <main className="mx-auto flex w-full max-w-400 flex-1 min-h-0 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3 xl:px-5 xl:pb-5">
+        <motion.main 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="mx-auto flex w-full max-w-400 flex-1 min-h-0 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3 xl:px-5 xl:pb-5"
+        >
           <div className="grid h-full min-h-0 w-full grid-cols-1 gap-3 xl:grid-cols-12 xl:gap-4">
             <div className="min-h-0 xl:col-span-3">
               <SimulatorSetup />
@@ -51,11 +57,13 @@ export default function SimulatorPage() {
               <SimulatorInsights riskBaseline={riskBaseline} onOpenHistory={setHistoryModalRun} />
             </div>
           </div>
-        </main>
+        </motion.main>
       </div>
 
-      {showStrategy ? <StrategyModal room={room} onClose={() => setShowStrategy(false)} /> : null}
-      {historyModalRun ? <SimulatorHandHistoryModal run={historyModalRun} onClose={() => setHistoryModalRun(null)} /> : null}
+      <AnimatePresence>
+        {showStrategy ? <StrategyModal room={room} onClose={() => setShowStrategy(false)} key="strategy" /> : null}
+        {historyModalRun ? <SimulatorHandHistoryModal run={historyModalRun} onClose={() => setHistoryModalRun(null)} key="history" /> : null}
+      </AnimatePresence>
 
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }

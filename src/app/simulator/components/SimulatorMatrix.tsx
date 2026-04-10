@@ -1,4 +1,6 @@
-import { Play, Pause, RotateCcw, Square } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Play, Pause, RotateCcw, Square, AlertTriangle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, useStoreHydration } from '@/hooks/useGameStore';
 import { formatMoney, percent } from '../utils/formatters';
 import { EquityAreaChart } from './EquityAreaChart';
@@ -28,19 +30,27 @@ export function SimulatorMatrix({ onIgnite }: Props) {
   const stopRun = useGameStore((s) => s.stopSimulatorRun);
   const resetRun = useGameStore((s) => s.resetSimulatorRun);
 
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toastMsg) return;
+    const timer = setTimeout(() => setToastMsg(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toastMsg]);
+
   const completionPct = Math.min(1, runState.currentHandIndex / Math.max(1, config.maxHands));
 
   const handleStart = () => {
-    if (config.initialBankroll < 100) {
-      alert('Bankroll must be at least 100.');
+    if (config.initialBankroll < 1) {
+      setToastMsg('Bankroll must be at least 1.');
       return;
     }
     if (config.baseUnit < 1) {
-      alert('Base Unit must be at least 1.');
+      setToastMsg('Base Unit must be at least 1.');
       return;
     }
     if (config.baseUnit > config.initialBankroll) {
-      alert('Base Unit cannot be greater than Bankroll.');
+      setToastMsg('Base Unit cannot be greater than Bankroll.');
       return;
     }
     onIgnite(); 
@@ -48,7 +58,35 @@ export function SimulatorMatrix({ onIgnite }: Props) {
   };
 
   return (
-    <div className="flex h-full min-w-0 min-h-0 flex-1 flex-col gap-3">
+    <div className="relative flex h-full min-w-0 min-h-0 flex-1 flex-col gap-3">
+      {/* In-game Toast Notification */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div
+            key="sim-toast"
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="absolute left-1/2 top-4 z-50 -translate-x-1/2"
+          >
+            <div
+              className="flex items-center gap-2.5 rounded-xl border border-rose-500/40 px-4 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.6),0_0_20px_rgba(244,63,94,0.2)]"
+              style={{ background: 'linear-gradient(135deg, rgba(30,10,10,0.96), rgba(50,15,15,0.96))', backdropFilter: 'blur(12px)' }}
+            >
+              <AlertTriangle size={16} className="shrink-0 text-rose-400" />
+              <span className="text-sm font-bold text-rose-200 whitespace-nowrap">{toastMsg}</span>
+              <button
+                onClick={() => setToastMsg(null)}
+                className="ml-2 text-xs font-bold uppercase tracking-wider text-rose-400/60 transition-colors hover:text-rose-300"
+              >
+                ✕
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="relative flex shrink-0 flex-col justify-between overflow-hidden rounded-2xl border border-[#d4a843]/25 bg-[linear-gradient(180deg,rgba(40,20,14,0.82)_0%,rgba(24,12,8,0.88)_100%)] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-lg">
         <div className="absolute left-0 top-0 h-px w-full bg-linear-to-r from-transparent via-[#d4a843]/55 to-transparent" />
         

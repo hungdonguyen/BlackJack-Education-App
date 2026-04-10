@@ -68,6 +68,9 @@ interface EngineMetrics {
   grossLossAbs: number;
   longestLosingStreak: number;
   currentLosingStreak: number;
+  currentLosingStreakStart: number;
+  longestLosingStreakStart: number;
+  longestLosingStreakEnd: number;
   peak: number;
   maxDrawdown: number;
   profitSquares: number;
@@ -842,6 +845,10 @@ function createHistoryRecord(state: EngineState, result: SimulatorResult): Match
       playDecisionSource: state.config.playDecisionSource,
       roomName: room.name,
       seatCount: state.config.seatCount,
+      evPerHand: result.averageProfitPerHand,
+      longestLosingStreak: result.longestLosingStreak,
+      longestLosingStreakStart: state.metrics.longestLosingStreakStart,
+      longestLosingStreakEnd: state.metrics.longestLosingStreakEnd,
     },
     simulatorChart: {
       equityCurve: [...result.equityCurve],
@@ -902,7 +909,10 @@ export function createSimulatorEngine(config: SimulatorConfig, seedInput?: numbe
       grossWinProfit: 0,
       grossLossAbs: 0,
       longestLosingStreak: 0,
+      longestLosingStreakStart: -1,
+      longestLosingStreakEnd: -1,
       currentLosingStreak: 0,
+      currentLosingStreakStart: -1,
       peak: effectiveConfig.initialBankroll,
       maxDrawdown: 0,
       profitSquares: 0,
@@ -935,16 +945,22 @@ export function createSimulatorEngine(config: SimulatorConfig, seedInput?: numbe
     if (round.outcome === 'win') {
       state.metrics.roundsWon += 1;
       state.metrics.currentLosingStreak = 0;
+      state.metrics.currentLosingStreakStart = -1;
     } else if (round.outcome === 'loss') {
       state.metrics.roundsLost += 1;
+      if (state.metrics.currentLosingStreak === 0) {
+        state.metrics.currentLosingStreakStart = state.handIndex;
+      }
       state.metrics.currentLosingStreak += 1;
-      state.metrics.longestLosingStreak = Math.max(
-        state.metrics.longestLosingStreak,
-        state.metrics.currentLosingStreak,
-      );
+      if (state.metrics.currentLosingStreak > state.metrics.longestLosingStreak) {
+        state.metrics.longestLosingStreak = state.metrics.currentLosingStreak;
+        state.metrics.longestLosingStreakStart = state.metrics.currentLosingStreakStart;
+        state.metrics.longestLosingStreakEnd = state.handIndex;
+      }
     } else {
       state.metrics.roundsPush += 1;
       state.metrics.currentLosingStreak = 0;
+      state.metrics.currentLosingStreakStart = -1;
     }
 
     const previousPeak = state.metrics.peak;

@@ -1,7 +1,85 @@
-import { Info, BrainCircuit } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Info, BrainCircuit, ChevronDown, Settings, Wallet, Route } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { getLobbyRooms, getRoomConfig } from '@/utils/rooms';
 import { getBettingSummary, getPlayLogicSummary } from '../utils/formatters';
+
+const AnimatedParamInput = ({ label, value, onChange, min, max, step = 1, helperText }: any) => (
+  <label className="animate-in fade-in zoom-in-95 duration-300 text-sm font-semibold text-[#f0e6d6]/85">
+    {label}
+    <input 
+      type="number" min={min} max={max} step={step}
+      value={value} 
+      onChange={onChange} 
+      className="mt-1.5 w-full rounded-lg border border-[#4a90e2]/30 bg-[#4a90e2]/10 px-3 py-2 text-sm text-[#f0e6d6] shadow-inner outline-none transition-all hover:bg-[#4a90e2]/20 focus:border-[#4a90e2]/60 focus:ring-2 focus:ring-[#4a90e2]/30"
+    />
+    {helperText && <span className="mt-1 block text-[10.5px] text-[#4a90e2]/60 font-normal">{helperText}</span>}
+  </label>
+);
+
+const CustomSelect = ({ label, value, onChange, options, animateIn }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const selectedOption = options.find((opt: any) => opt.value === value) || options[0];
+
+  return (
+    <div className={`block text-sm font-semibold text-[#f0e6d6]/85 ${animateIn ? 'mt-1 mb-1 animate-in fade-in zoom-in-95 duration-300' : ''}`} ref={containerRef}>
+      <span className="block mb-1.5">{label}</span>
+      <div className="relative w-full">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`flex w-full items-center justify-between rounded-lg border border-[#d4a843]/25 bg-black/40 py-2 pl-3 pr-3 text-sm font-semibold text-[#f0e6d6] shadow-inner outline-none transition-all hover:bg-black/60 focus:border-[#d4a843]/55 focus:ring-2 focus:ring-[#d4a843]/20 ${animateIn ? 'border-[#d4a843]/30 bg-[#d4a843]/10 hover:bg-[#d4a843]/20' : ''}`}
+        >
+          <span className="truncate">{selectedOption?.label}</span>
+          <ChevronDown size={16} className={`ml-2 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-[#f1d98f]' : (animateIn ? 'text-[#d4a843]' : 'text-[#d4a843]/70')}`} />
+        </button>
+
+        <AnimatePresence>
+          {isOpen && (
+            <motion.ul
+              initial={{ opacity: 0, y: -10, scaleY: 0.95 }}
+              animate={{ opacity: 1, y: 0, scaleY: 1 }}
+              exit={{ opacity: 0, y: -10, scaleY: 0.95 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              style={{ originY: 0 }}
+              className="absolute left-0 right-0 z-50 mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-[#d4a843]/30 bg-[#160b09] p-1.5 shadow-[0_10px_40px_rgba(0,0,0,0.8)] custom-scrollbar"
+            >
+              {options.map((opt: any) => (
+                <li
+                  key={opt.value}
+                  onClick={() => {
+                    onChange({ target: { value: opt.value } });
+                    setIsOpen(false);
+                  }}
+                  className={`cursor-pointer rounded-lg px-3 py-2 text-sm transition-colors ${
+                    value === opt.value
+                      ? 'bg-[#d4a843]/25 text-[#f1d98f] font-bold'
+                      : 'text-[#f0e6d6]/80 hover:bg-[#d4a843]/15 hover:text-[#f0e6d6]'
+                  }`}
+                >
+                  {opt.label}
+                </li>
+              ))}
+            </motion.ul>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
 
 export function SimulatorSetup() {
   const config = useGameStore((s) => s.simulatorConfig);
@@ -12,35 +90,33 @@ export function SimulatorSetup() {
   const rooms = getLobbyRooms();
   const panelClass = 'rounded-2xl border border-[#d4a843]/20 bg-[linear-gradient(180deg,rgba(36,20,14,0.85)_0%,rgba(24,12,9,0.85)_100%)] p-4 shadow-[inset_0_1px_0_rgba(212,168,67,0.1)] backdrop-blur-md';
   const inputClass = 'mt-1.5 w-full rounded-lg border border-[#d4a843]/25 bg-black/25 px-3 py-2 text-sm text-[#f0e6d6] shadow-inner outline-none transition-all focus:border-[#d4a843]/55 focus:ring-2 focus:ring-[#d4a843]/20';
-  const selectClass = `${inputClass} sim-select`;
 
   return (
     <aside className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
       <div className={`flex flex-col gap-3 ${panelClass}`}>
         <div className="border-b border-[#d4a843]/15 pb-2">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-[#d4a843]/75">Game Config</h2>
+          <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.22em] text-[#f1d98f]">
+            <Settings size={14} className="text-[#f1d98f]" /> Game Config
+          </h2>
         </div>
         
-        <label className="text-sm font-semibold text-[#f0e6d6]/85">
-          Room Rules
-          <select 
-            value={config.roomId} 
-            onChange={(e) => setConfig({ roomId: e.target.value })} 
-            className={selectClass}
-          >
-            {rooms.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
-          </select>
-        </label>
+        <CustomSelect 
+          label="Room Rules" 
+          value={config.roomId} 
+          onChange={(e: any) => setConfig({ roomId: e.target.value })} 
+          options={rooms.map((entry) => ({ value: entry.id, label: entry.name }))} 
+        />
 
         <div className="grid grid-cols-2 gap-3">
             <label className="text-sm font-semibold text-[#f0e6d6]/85">
             Max Hands
             <input 
-              type="number" min={1} max={100000} 
+              type="number" min={1} max={10000000} 
               value={config.maxHands} 
-              onChange={(e) => setConfig({ maxHands: Math.max(1, Math.min(100000, Number(e.target.value || 1))) })} 
+              onChange={(e) => setConfig({ maxHands: Math.max(1, Math.min(10000000, Number(e.target.value || 1))) })} 
               className={inputClass}
             />
+            <span className="mt-1 block text-[10.5px] text-[#f0e6d6]/40 font-normal tracking-wide">Range: 1 – 10,000,000</span>
             </label>
             <label className="text-sm font-semibold text-[#f0e6d6]/85">
             Seats
@@ -50,32 +126,37 @@ export function SimulatorSetup() {
               onChange={(e) => setConfig({ seatCount: Math.max(1, Math.min(5, Number(e.target.value || 1))) })} 
               className={inputClass}
             />
+            <span className="mt-1 block text-[10.5px] text-[#f0e6d6]/40 font-normal tracking-wide">Range: 1 – 5 seats</span>
             </label>
         </div>
       </div>
 
       <div className={`flex flex-col gap-3 ${panelClass}`}>
         <div className="border-b border-[#d4a843]/15 pb-2">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-[#d4a843]/75">Bankroll & Stakes</h2>
+          <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.22em] text-[#f1d98f]">
+            <Wallet size={14} className="text-[#f1d98f]" /> Bankroll & Stakes
+          </h2>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-semibold text-[#f0e6d6]/85">
             Bankroll
             <input 
-              type="number"
+              type="number" min={1}
               value={config.initialBankroll === 0 ? '' : config.initialBankroll} 
-              onChange={(e) => setConfig({ initialBankroll: Number(e.target.value) })} 
+              onChange={(e) => setConfig({ initialBankroll: Math.max(1, Number(e.target.value)) })} 
               className={inputClass}
             />
+            <span className="mt-1 block text-[10.5px] text-[#f0e6d6]/40 font-normal tracking-wide">Min: 1</span>
           </label>
           <label className="text-sm font-semibold text-[#f0e6d6]/85">
             Base Unit
             <input 
-              type="number"
+              type="number" min={1}
               value={config.baseUnit === 0 ? '' : config.baseUnit} 
-              onChange={(e) => setConfig({ baseUnit: Number(e.target.value) })} 
+              onChange={(e) => setConfig({ baseUnit: Math.max(1, Number(e.target.value)) })} 
               className={inputClass}
             />
+            <span className="mt-1 block text-[10.5px] text-[#f0e6d6]/40 font-normal tracking-wide">Min: 1</span>
           </label>
           <label className="text-sm font-semibold text-[#f0e6d6]/85">
             Target Mul
@@ -85,6 +166,7 @@ export function SimulatorSetup() {
               onChange={(e) => setConfig({ targetMultiplier: Math.max(1, Number(e.target.value || 1)) })} 
               className={inputClass}
             />
+            <span className="mt-1 block text-[10.5px] text-[#f0e6d6]/40 font-normal tracking-wide">Min: 1.0x (e.g. x1.5 = take profit at +50%)</span>
           </label>
           <label className="text-sm font-semibold text-[#f0e6d6]/85">
             Stop Loss
@@ -94,67 +176,133 @@ export function SimulatorSetup() {
               onChange={(e) => setConfig({ stopLoss: Math.max(0, Number(e.target.value || 0)) })} 
               className={inputClass}
             />
+            <span className="mt-1 block text-[10.5px] text-[#f0e6d6]/40 font-normal tracking-wide">Min: 0 (0 = no stop loss)</span>
           </label>
         </div>
       </div>
 
       <div className={`flex flex-col gap-3 ${panelClass}`}>
         <div className="border-b border-[#d4a843]/15 pb-2">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-[#d4a843]/75">Strategy Profile</h2>
+          <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.22em] text-[#f1d98f]">
+            <Route size={14} className="text-[#f1d98f]" /> Strategy Profile
+          </h2>
         </div>
         
-        <label className="text-sm font-semibold text-[#f0e6d6]/85">
-          Betting System
-          <select 
-            value={config.bettingSystem} 
-            onChange={(e) => setConfig({ bettingSystem: e.target.value as typeof config.bettingSystem })} 
-            className={selectClass}
-          >
-            <option value="flat">Flat Target</option>
-            <option value="martingale">Martingale</option>
-            <option value="parlay">Parlay</option>
-            <option value="1326">1-3-2-6 System</option>
-            <option value="fibonacci">Fibonacci Sequence</option>
-            <option value="d_alembert">D&apos;Alembert</option>
-            <option value="regression">Regression Method</option>
-          </select>
-        </label>
+        <CustomSelect 
+          label="Betting System" 
+          value={config.bettingSystem} 
+          onChange={(e: any) => setConfig({ bettingSystem: e.target.value as typeof config.bettingSystem })} 
+          options={[
+            { value: "flat", label: "Flat Target" },
+            { value: "martingale", label: "Martingale" },
+            { value: "parlay", label: "Parlay" },
+            { value: "1326", label: "1-3-2-6 System" },
+            { value: "fibonacci", label: "Fibonacci Sequence" },
+            { value: "d_alembert", label: "D'Alembert" },
+            { value: "regression", label: "Regression Method" },
+          ]} 
+        />
 
-        <label className="text-sm font-semibold text-[#f0e6d6]/85">
-          Play Action Logic
-          <select 
-            value={config.playDecisionSource} 
-            onChange={(e) => setConfig({ playDecisionSource: e.target.value as typeof config.playDecisionSource })} 
-            className={selectClass}
-          >
-            <option value="strategy_advice">Strategy Advice (Card Counting)</option>
-            <option value="basic_strategy">Mathematical Basic Strategy</option>
-          </select>
-        </label>
+        {config.bettingSystem === 'martingale' && (
+          <div className="grid grid-cols-2 gap-3">
+              <AnimatedParamInput 
+                 label="Max Steps (x2)" 
+                 value={config.bettingParams.martingaleMaxSteps ?? 6} 
+                 min={1} max={20}
+                 onChange={(e: any) => setConfig({ bettingParams: { martingaleMaxSteps: Math.max(1, Number(e.target.value)) } })}
+                 helperText="Range: 1 – 20 steps"
+              />
+          </div>
+        )}
+        
+        {config.bettingSystem === 'parlay' && (
+          <div className="grid grid-cols-2 gap-3">
+              <AnimatedParamInput 
+                 label="Target Steps" 
+                 value={config.bettingParams.parlayMaxSteps ?? 4} 
+                 min={1} max={20}
+                 onChange={(e: any) => setConfig({ bettingParams: { parlayMaxSteps: Math.max(1, Number(e.target.value)) } })}
+                 helperText="Range: 1 – 20 steps"
+              />
+              <AnimatedParamInput 
+                 label="Multiplier Base" 
+                 value={config.bettingParams.parlayMultiplier ?? 2} 
+                 min={1.1} step={0.1}
+                 onChange={(e: any) => setConfig({ bettingParams: { parlayMultiplier: Math.max(1.1, Number(e.target.value)) } })}
+                 helperText="Min: x1.1 multiplier"
+              />
+          </div>
+        )}
+
+        {config.bettingSystem === 'fibonacci' && (
+          <div className="grid grid-cols-2 gap-3">
+             <AnimatedParamInput 
+                 label="Max Fibo Steps" 
+                 value={config.bettingParams.fibonacciMaxSteps ?? 10} 
+                 min={1} max={17}
+                 onChange={(e: any) => setConfig({ bettingParams: { fibonacciMaxSteps: Math.max(1, Number(e.target.value)) } })}
+                 helperText="Range: 1 – 17 steps"
+              />
+          </div>
+        )}
+
+        {config.bettingSystem === 'd_alembert' && (
+          <div className="grid grid-cols-2 gap-3">
+             <AnimatedParamInput 
+                 label="Unit Steps +/-" 
+                 value={config.bettingParams.dAlembertUnit ?? 1} 
+                 min={0.1} step={0.1}
+                 onChange={(e: any) => setConfig({ bettingParams: { dAlembertUnit: Math.max(0.1, Number(e.target.value)) } })}
+                 helperText="Min: 0.1 unit per step"
+              />
+          </div>
+        )}
+
+        {config.bettingSystem === 'regression' && (
+          <div className="grid grid-cols-2 gap-3">
+             <AnimatedParamInput 
+                 label="Target Step Peak" 
+                 value={config.bettingParams.regressionTargetSteps ?? 3} 
+                 min={2} max={10}
+                 onChange={(e: any) => setConfig({ bettingParams: { regressionTargetSteps: Math.max(2, Number(e.target.value)) } })}
+                 helperText="Range: 2 – 10 steps"
+              />
+          </div>
+        )}
+
+        <CustomSelect 
+          label="Play Action Logic" 
+          value={config.playDecisionSource} 
+          onChange={(e: any) => setConfig({ playDecisionSource: e.target.value as typeof config.playDecisionSource })} 
+          options={[
+            { value: "strategy_advice", label: "Strategy Advice (Card Counting)" },
+            { value: "basic_strategy", label: "Mathematical Basic Strategy" },
+          ]} 
+        />
 
         {config.roomId === 'exchange_21' && config.playDecisionSource === 'strategy_advice' && (
-          <label className="mt-1 animate-in fade-in zoom-in-95 text-sm font-semibold text-[#f0e6d6]/85 duration-300">
-            Exchange Switch Engine
-            <select 
-              value={config.exchangeSwitchEngine || 'cindy_advanced'} 
-              onChange={(e) => setConfig({ exchangeSwitchEngine: e.target.value as typeof config.exchangeSwitchEngine })} 
-              className="sim-select mt-1.5 w-full rounded-lg border border-[#d4a843]/30 bg-[#d4a843]/10 px-3 py-2 text-sm font-semibold text-[#f0e6d6] outline-none focus:border-[#d4a843]/60 focus:ring-2 focus:ring-[#d4a843]/20"
-            >
-              <option value="cindy_basic">Cindy Liu Basic</option>
-              <option value="cindy_advanced">Cindy Liu Advanced</option>
-              <option value="arnold_snyder">Arnold Snyder Matrix</option>
-            </select>
-          </label>
+          <CustomSelect 
+            label="Exchange Switch Engine" 
+            value={config.exchangeSwitchEngine || 'cindy_advanced'} 
+            onChange={(e: any) => setConfig({ exchangeSwitchEngine: e.target.value as typeof config.exchangeSwitchEngine })} 
+            options={[
+              { value: "cindy_basic", label: "Cindy Liu Basic" },
+              { value: "cindy_advanced", label: "Cindy Liu Advanced" },
+              { value: "arnold_snyder", label: "Arnold Snyder Matrix" },
+            ]} 
+            animateIn
+          />
         )}
 
         <label className="mt-1 text-sm font-semibold text-[#f0e6d6]/85">
             Worker Delay (ms)
             <input 
-              type="number" min={0} max={500}
-              value={config.delayMs || 0} 
-              onChange={(e) => setConfig({ delayMs: Math.max(0, Math.min(500, Number(e.target.value || 0))) })} 
+              type="number" min={0} max={1000}
+              value={config.delayMs === undefined ? 0 : config.delayMs} 
+              onChange={(e) => setConfig({ delayMs: Math.max(0, Math.min(1000, Number(e.target.value || 0))) })} 
               className={inputClass}
             />
+            <span className="mt-1 block text-[10.5px] text-[#f0e6d6]/40 font-normal tracking-wide">Range: 0 – 1000 ms</span>
         </label>
       </div>
 
@@ -162,28 +310,30 @@ export function SimulatorSetup() {
           <div className="group relative overflow-hidden rounded-2xl border border-[#d4a843]/20 bg-[#d4a843]/10 p-4">
             <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[#d4a843]/10 opacity-60 blur-3xl transition-opacity group-hover:opacity-100" />
             <div className="flex items-center gap-2 mb-2">
-              <Info size={16} className="text-[#e8c860]" />
-              <h4 className="text-xs font-bold uppercase tracking-widest text-[#e8c860]">Rules Summary</h4>
+              <Info size={16} className="text-[#f1d98f]" />
+              <h4 className="text-xs font-bold uppercase tracking-widest text-[#f1d98f]">Rules Summary</h4>
             </div>
-            <div className="relative z-10 mt-2 space-y-2 text-sm font-medium text-[#f0e6d6]/80">
-              <p>{room.gameRules.numberOfDecks} Decks, Dealer {room.gameRules.dealerHitsSoft17 ? 'Hits Soft 17' : 'Stands All 17'}. Blackjack Pays {room.blackjackMultiplier}:1.</p>
-              
-              <div className="flex flex-wrap gap-2 mt-2">
-                {room.gameRules.allowSurrender && <span className="rounded-md border border-[#d4a843]/35 bg-[#d4a843]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#f1d98f]">Surrender</span>}
-                {room.gameRules.omitTens && <span className="rounded-md border border-rose-500/40 bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-rose-200">No 10s (Spanish)</span>}
-                {gameRules.canBurn && <span className="rounded-md border border-orange-500/40 bg-orange-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-orange-200">Burn Card</span>}
-                {gameRules.push22 && <span className="rounded-md border border-indigo-500/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-indigo-200">Push 22</span>}
-                {room.id === 'free_action' && <span className="rounded-md border border-amber-500/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-100">Free Actions</span>}
-                {room.id === 'exchange_21' && <span className="rounded-md border border-fuchsia-500/40 bg-fuchsia-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-fuchsia-100">Exchange Hand</span>}
-              </div>
+            <div className="relative z-10 p-2.5 mt-2 bg-black/30 border border-[#d4a843]/15 rounded-lg shadow-inner text-xs font-medium text-[#f0e6d6]/80">
+              <ul className="pl-4 space-y-1 list-disc text-[#e8c860]/90">
+                 <li><strong>{room.gameRules.numberOfDecks} Decks</strong> in Play.</li>
+                 <li>Dealer <strong>{room.gameRules.dealerHitsSoft17 ? 'Hits on Soft 17' : 'Stands on All 17'}</strong>.</li>
+                 <li>Blackjack payout is <strong>{room.blackjackMultiplier === 1.5 ? '3:2' : room.blackjackMultiplier === 1.2 ? '6:5' : `${room.blackjackMultiplier}:1`}</strong>.</li>
+                 {room.gameRules.allowSurrender && <li><strong>Late Surrender</strong> is allowed.</li>}
+                 {room.gameRules.allowInfiniteDouble && <li>Infinite doubling (Madness) mechanics are active.</li>}
+                 {room.gameRules.omitTens && <li className="text-rose-300"><strong>Spanish Rules:</strong> All 10-value spot cards are removed.</li>}
+                 {gameRules.canBurn && <li className="text-orange-300"><strong>Burn Rule:</strong> Player can burn the 2nd card for a fee.</li>}
+                 {gameRules.push22 && <li className="text-indigo-300"><strong>Push 22:</strong> Dealer busting with exactly 22 results in a Push.</li>}
+                 {room.id === 'free_action' && <li className="text-amber-200"><strong>Free Actions:</strong> Splits and Doubles on hard 9-11 are free.</li>}
+                 {room.id === 'exchange_21' && <li className="text-fuchsia-200"><strong>Exchange 21:</strong> Switch top cards between two hands.</li>}
+              </ul>
             </div>
           </div>
 
           <div className="group relative overflow-hidden rounded-2xl border border-[#8b1a1a]/30 bg-[#8b1a1a]/20 p-4">
             <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[#d4a843]/10 opacity-50 blur-3xl transition-opacity group-hover:opacity-95" />
             <div className="flex items-center gap-2 mb-2">
-              <BrainCircuit size={16} className="text-[#e8c860]" />
-              <h4 className="text-xs font-bold uppercase tracking-widest text-[#e8c860]">Strategy Focus</h4>
+              <BrainCircuit size={16} className="text-[#f1d98f]" />
+              <h4 className="text-xs font-bold uppercase tracking-widest text-[#f1d98f]">Strategy Focus</h4>
             </div>
             <div className="relative z-10 space-y-2 text-sm font-medium text-[#f0e6d6]/80">
               <p>{getBettingSummary(config.bettingSystem)}</p>

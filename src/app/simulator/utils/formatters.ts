@@ -103,17 +103,48 @@ export function buildPreRunRiskSnapshot(config: SimulatorConfig): PreRunRiskSnap
   return { projectedPeakBet, projectedBankrollAtRiskPct, projectedRiskOfRuinPct, notes };
 }
 
+export interface RiskConclusionLine {
+  text: string;
+  type: 'neutral' | 'success' | 'warning' | 'danger';
+}
+
 export function buildRiskConclusion(
   pre: PreRunRiskSnapshot,
   post: { bankrollAtRiskPct: number; riskOfRuinEstimate: number; roi: number },
-): string {
-  const preRisk = (pre.projectedBankrollAtRiskPct + pre.projectedRiskOfRuinPct) / 2;
-  const postRisk = (post.bankrollAtRiskPct + post.riskOfRuinEstimate) / 2;
-  const delta = postRisk - preRisk;
+): RiskConclusionLine[] {
+  const deltaRuin = post.riskOfRuinEstimate - pre.projectedRiskOfRuinPct;
+  const deltaAtRisk = post.bankrollAtRiskPct - pre.projectedBankrollAtRiskPct;
+  const roiFmt = percent(post.roi);
+  
+  const lines: RiskConclusionLine[] = [];
+  
+  // 1. Evaluate ROI magnitude
+  if (post.roi <= -0.5) {
+    lines.push({ text: `Disastrous sequence (ROI: ${roiFmt}). You lost over half your bankroll.`, type: 'danger' });
+  } else if (post.roi < -0.05) {
+    lines.push({ text: `Negative return (ROI: ${roiFmt}). The strategy failed to overcome the variance or house edge this session.`, type: 'warning' });
+  } else if (post.roi <= 0.05 && post.roi >= -0.05) {
+    lines.push({ text: `Flatline sequence (ROI: ${roiFmt}). Effectively a breakeven run with minimal capital drift.`, type: 'neutral' });
+  } else if (post.roi >= 0.5) {
+    lines.push({ text: `Exceptional upside (ROI: ${roiFmt}). You captured a massive scaling run well beyond the statistical norm.`, type: 'success' });
+  } else {
+    lines.push({ text: `Profitable run (ROI: ${roiFmt}). Solid, moderate capital growth achieved.`, type: 'success' });
+  }
 
-  if (post.roi < 0 && delta > 0.08) return 'Unlucky run with significantly higher realized risk than projected.';
-  if (post.roi < 0 && delta <= 0.08) return 'Strategy was not effective in this run. Consider a lower-variance setup.';
-  if (post.roi > 0 && delta > 0.1) return 'Profitable run, but returns came with higher-than-expected risk.';
-  if (post.roi > 0 && delta <= 0) return 'Better than expected: positive return with controlled risk.';
-  return 'Mixed result: realized performance and risk are close to projection.';
+  // 2. Evaluate Risk Independently (No averaging)
+  if (post.riskOfRuinEstimate > 0.4) {
+     lines.push({ text: `[WARNING] Extreme Risk: Realized Risk of Ruin reached ${percent(post.riskOfRuinEstimate)}. This setup is structurally unsafe for current stakes.`, type: 'danger' });
+  } else if (deltaRuin > 0.15) {
+     lines.push({ text: `High Ruin Danger: Realized ruin threat spiked to ${percent(post.riskOfRuinEstimate)}, exceeding projections by ${percent(deltaRuin)}.`, type: 'danger' });
+  } else if (deltaAtRisk > 0.15) {
+     lines.push({ text: `High Volatility: Heavy drawdowns pushed Bankroll At Risk to ${percent(post.bankrollAtRiskPct)}, exceeding initial estimates by ${percent(deltaAtRisk)}.`, type: 'warning' });
+  } else if (post.riskOfRuinEstimate < 0.05 && post.roi > 0) {
+     lines.push({ text: `Stellar Control: The negligible ruin risk (${percent(post.riskOfRuinEstimate)}) combined with positive ROI indicates a highly efficient setup.`, type: 'success' });
+  } else if (deltaRuin <= 0.05 && deltaAtRisk <= 0.05) {
+     lines.push({ text: `Risk was tightly controlled, with actual drawdowns remaining below or closely aligned with theoretical ceilings.`, type: 'neutral' });
+  } else {
+     lines.push({ text: `Realized risk metrics fluctuated but ultimately remained within acceptable statistical variance limits.`, type: 'neutral' });
+  }
+  
+  return lines;
 }

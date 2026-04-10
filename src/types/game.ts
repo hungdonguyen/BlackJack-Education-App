@@ -97,6 +97,11 @@ export interface MatchRecord {
     playDecisionSource?: string;
     roomName?: string;
     seatCount?: number;
+    systemVerdict?: { text: string; type: 'neutral' | 'success' | 'warning' | 'danger' }[];
+    evPerHand?: number;
+    longestLosingStreak?: number;
+    longestLosingStreakStart?: number;
+    longestLosingStreakEnd?: number;
   };
   simulatorChart?: {
     equityCurve: number[];

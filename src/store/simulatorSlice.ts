@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { GameStore } from '@/types/game';
 import type { SimulatorConfig, SimulatorRunState, SimulatorSlice, SimulatorWorkerOutput } from '@/types/simulator';
+import { buildPreRunRiskSnapshot, buildRiskConclusion } from '@/app/simulator/utils/formatters';
 
 const DEFAULT_CONFIG: SimulatorConfig = {
   roomId: 'classic',
@@ -51,7 +52,7 @@ let workerRef: Worker | null = null;
 
 function clampMaxHands(value: number): number {
   const safe = Number.isFinite(value) ? value : DEFAULT_CONFIG.maxHands;
-  return Math.min(100000, Math.max(1, safe));
+  return Math.min(10000000, Math.max(1, safe));
 }
 
 function clampSeatCount(value: number): number {
@@ -153,6 +154,18 @@ export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlic
            });
         } else if (payload.type === 'DONE') {
            const result = payload.payload;
+           
+           const preRunSnapshot = buildPreRunRiskSnapshot(get().simulatorConfig);
+           const verdict = buildRiskConclusion(preRunSnapshot, {
+               bankrollAtRiskPct: result.bankrollAtRiskPct,
+               riskOfRuinEstimate: result.riskOfRuinEstimate,
+               roi: result.roi
+           });
+
+           if (result.simulatorHistoryRecord && result.simulatorHistoryRecord.simulatorSummary) {
+               result.simulatorHistoryRecord.simulatorSummary.systemVerdict = verdict;
+           }
+
            const history = result.simulatorHistoryRecord
              ? [...currentState.simulatorHistory, result.simulatorHistoryRecord].slice(-500)
              : currentState.simulatorHistory;

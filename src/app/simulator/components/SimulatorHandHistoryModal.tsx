@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Eye, X, ChevronDown, ChevronUp, CheckCircle2, XCircle, MinusCircle, Database, TriangleAlert, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { MatchRecord } from '@/types/game';
 import { useGameStore } from '@/hooks/useGameStore';
 import { getRoomConfig } from '@/utils/rooms';
@@ -141,6 +142,10 @@ function calculatePoints(cards: Array<{ value: number }>) {
     aces -= 1;
   }
 
+  if (aces > 0 && total < 21) {
+    return `${total - 10}/${total}`;
+  }
+
   return total;
 }
 
@@ -155,7 +160,8 @@ function parseHandActionToken(token: string) {
 }
 
 function formatActionLine(code: string, points: number | string) {
-  const label = ACTION_LABEL[code] ?? code.replace(/_/g, ' ');
+  const fallback = code.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  const label = ACTION_LABEL[code] ?? fallback;
   return `${label}: ${points}`;
 }
 
@@ -224,15 +230,90 @@ function groupPlayerHandsBySeat(
     .sort((a, b) => a.seatNumber - b.seatNumber);
 }
 
+function buildDealerTags(cards: Array<{ value: number }>, total: number) {
+  const tags: Array<{ label: string; tone: keyof typeof TAG_STYLE }> = [];
+  if (total > 21) {
+    tags.push({ label: 'BUST', tone: 'risk' });
+  } else if (cards.length === 2 && total === 21) {
+    tags.push({ label: 'BLACKJACK', tone: 'positive' });
+  } else if (total > 0 && total <= 21) {
+    tags.push({ label: 'STAND', tone: 'neutral' });
+  }
+  return tags;
+}
+
+function buildGroupedTimeline(actions: string[], blackjacks: number) {
+  if (!actions || actions.length === 0) {
+    if (blackjacks > 0) return [{ title: 'General', items: ['Blackjack'] }];
+    return [];
+  }
+  const groups: Array<{ title: string; items: string[] }> = [];
+  let currentGroup: { title: string; items: string[] } | null = null;
+
+  for (const token of actions) {
+    const trimmed = token.trim();
+    if (!trimmed) continue;
+    if (trimmed === 'NO_BET') {
+      groups.push({ title: 'General', items: ['No Bet'] });
+      continue;
+    }
+    if (trimmed === 'BLACKJACK') {
+      groups.push({ title: 'General', items: ['Blackjack'] });
+      continue;
+    }
+
+    let title = 'General';
+    let label = trimmed;
+
+    const switchParsed = /^S(\d+):SWITCH$/.exec(trimmed);
+    const parsed = /^S(\d+)H(\d+):([A-Z0-9_]+)$/.exec(trimmed);
+    const legacyParsed = /^H(\d+):([A-Z0-9_]+)$/.exec(trimmed);
+
+    if (switchParsed) {
+      title = `Seat ${switchParsed[1]}`;
+      label = 'Switch';
+    } else if (parsed || legacyParsed) {
+      const seatIndex = parsed ? Number(parsed[1]) : 1;
+      const handIndex = parsed ? Number(parsed[2]) : Number(legacyParsed?.[1] ?? 1);
+      const actionCode = parsed ? parsed[3] : (legacyParsed?.[2] ?? '');
+      title = `Seat ${seatIndex} - Hand ${handIndex}`;
+      const actionFallback = actionCode.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      label = ACTION_LABEL[actionCode] ?? actionFallback;
+    } else {
+      label = ACTION_LABEL[trimmed] ?? trimmed.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    }
+
+    if (!currentGroup || currentGroup.title !== title) {
+      currentGroup = { title, items: [label] };
+      groups.push(currentGroup);
+    } else {
+      currentGroup.items.push(label);
+    }
+  }
+  return groups;
+}
+
 function buildHandFlow(
-  cards: Array<{ value: number }>,
+  playerHand: { cards: Array<{ rank: string; suit: string; value: number }>; handNumber: number; surrendered: boolean; profit: number },
+  seatHands: Array<{ cards: Array<{ rank: string; suit: string; value: number }>; handNumber: number }>,
   actions: string[],
-  surrendered: boolean,
-  profit: number,
   discardedEntries: Array<{ card: { value: number }; reason: 'BURN' | 'ZAP' | 'UNKNOWN' }>,
   configuredInitialCards: number,
 ) {
+  const cards = playerHand.cards;
+  const isSplitSeat = seatHands.length > 1;
   const lines: string[] = [];
+
+  const formatCard = (c: { rank: string; suit: string }) => `${rankLabel(c.rank)}${SUIT_SYMBOL[c.suit] ?? c.suit.charAt(0)}`;
+
+  if (isSplitSeat && playerHand.handNumber === 1 && seatHands[1]?.cards?.[0]) {
+    const rootC1 = cards[0];
+    const rootC2 = seatHands[1].cards[0];
+    if (rootC1 && rootC2) {
+      lines.push(`Initial Dealt: ${formatCard(rootC1)}, ${formatCard(rootC2)} (Total: ${calculatePoints([rootC1, rootC2])})`);
+    }
+  }
+
   const initialCount = Math.min(Math.max(1, configuredInitialCards), cards.length);
   let currentCount = initialCount;
   const hasZapAction = actions.includes('ZAP');
@@ -263,14 +344,24 @@ function buildHandFlow(
     : cards.slice(0, initialCount);
 
   if (cards.length === 0) {
-    return ['Initial: --', `Profit/Loss: ${formatMoney(profit)}`];
+    return ['Initial: --', `Profit/Loss: ${formatMoney(playerHand.profit ?? 0)}`];
   }
 
-  lines.push(`Initial: ${calculatePoints(initialCards)}`);
+  if (isSplitSeat) {
+    const splitCardsText = initialCards.map(c => formatCard(c as any)).join(', ');
+    lines.push(`Split Hand ${playerHand.handNumber}: ${splitCardsText} (Total: ${calculatePoints(initialCards)})`);
+  } else {
+    lines.push(`Initial: ${calculatePoints(initialCards)}`);
+  }
 
   let zapIndex = 0;
 
   for (const actionCode of actions) {
+    if ((actionCode === 'SPLIT' || actionCode === 'FREE_SPLIT') && currentCount === initialCount) {
+      // Skip redundant split logging
+      continue;
+    }
+
     if (actionCode === 'ZAP') {
       const fromCards = zapPairs[zapIndex] ?? cards.slice(0, initialCount);
       const toCards = zapPairs[zapIndex + 1] ?? cards.slice(0, initialCount);
@@ -299,11 +390,11 @@ function buildHandFlow(
     lines.push(formatActionLine(actionCode, calculatePoints(cards.slice(0, currentCount))));
   }
 
-  if (surrendered && !actions.includes('SURRENDER') && !actions.includes('RESCUE')) {
+  if (playerHand.surrendered && !actions.includes('SURRENDER') && !actions.includes('RESCUE')) {
     lines.push('Surrender: Surrender');
   }
 
-  lines.push(`Profit/Loss: ${profit > 0 ? '+' : ''}${formatMoney(profit)}`);
+  lines.push(`Profit/Loss: ${(playerHand.profit ?? 0) > 0 ? '+' : ''}${formatMoney(playerHand.profit ?? 0)}`);
 
   return lines;
 }
@@ -370,11 +461,22 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
 
   const [expandedHand, setExpandedHand] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState<'hands' | 'chart'>('hands');
+  const [activeTab, setActiveTab] = useState<'hands' | 'detail'>('hands');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const startBankroll = run.simulatorSummary?.bankrollStart ?? run.bankrollBefore;
   const endBankroll = run.simulatorSummary?.bankrollEnd ?? run.bankrollAfter;
+
+  const dataSize = useMemo(() => {
+    try {
+      const bytes = new Blob([JSON.stringify(run)]).size;
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    } catch {
+      return '--';
+    }
+  }, [run]);
 
   const totalProfit = useMemo(() => {
     if (hasDeepHistory) {
@@ -463,8 +565,23 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm sm:p-4">
-      <div className="relative flex h-[92vh] w-full max-w-330 flex-col overflow-hidden rounded-3xl border border-[#d4a843]/20 bg-[linear-gradient(180deg,rgba(28,14,10,0.96)_0%,rgba(16,8,6,0.98)_100%)] shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25 }}
+        className="fixed inset-0 bg-black/75 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        className="relative flex h-[92vh] w-full max-w-330 flex-col overflow-hidden rounded-3xl border border-[#d4a843]/20 bg-[linear-gradient(180deg,rgba(28,14,10,0.96)_0%,rgba(16,8,6,0.98)_100%)] shadow-[0_30px_80px_rgba(0,0,0,0.55)] pointer-events-auto"
+      >
         <div className="flex items-start justify-between border-b border-[#d4a843]/15 bg-[linear-gradient(90deg,rgba(44,23,16,0.9)_0%,rgba(25,13,10,0.88)_100%)] px-4 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#d4a843]/35 bg-[#d4a843]/12 text-[#e8c860] sm:h-12 sm:w-12">
@@ -475,7 +592,7 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
                 Simulation Log: {run.simulatorSummary?.roomName ?? run.roomId}
               </h2>
               <p className="truncate text-xs font-medium text-[#f0e6d6]/55 sm:text-sm">
-                {new Date(run.timestamp).toLocaleString()} · Block Size: {totalHands} Hands
+                {new Date(run.timestamp).toLocaleString()} · Block Size: {totalHands} Hands · Memory: {dataSize}
               </p>
             </div>
           </div>
@@ -564,39 +681,22 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('chart')}
-            disabled={!hasChartData}
+            onClick={() => setActiveTab('detail')}
             className={`rounded-md border px-3 py-1 text-[11px] font-semibold uppercase tracking-widest transition-colors ${
-              activeTab === 'chart'
+              activeTab === 'detail'
                 ? 'border-[#d4a843]/45 bg-[#d4a843]/20 text-[#f1d98f]'
                 : 'border-[#d4a843]/20 bg-black/25 text-[#f0e6d6]/65 hover:bg-[#d4a843]/10 hover:text-[#f0e6d6]'
-            } disabled:cursor-not-allowed disabled:opacity-35`}
+            }`}
           >
-            Chart
+            Detail
           </button>
         </div>
 
-        {activeTab === 'chart' ? (
-          <div className="custom-scrollbar flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+        {activeTab === 'detail' ? (
+          <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
             {hasChartData ? (
-              <div className="space-y-3">
-                <div className="rounded-2xl border border-[#d4a843]/20 bg-black/25 p-3">
-                  <EquityAreaChart values={chartValues} title="Run Equity Curve" />
-                </div>
-                <div className="grid gap-3 md:grid-cols-3">
-                  <div className="rounded-2xl border border-[#d4a843]/20 bg-black/25 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-[#f0e6d6]/45">Points Stored</p>
-                    <p className="mt-1 text-xl font-black text-[#f0e6d6]">{chartValues.length.toLocaleString()}</p>
-                  </div>
-                  <div className="rounded-2xl border border-[#d4a843]/20 bg-black/25 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-[#f0e6d6]/45">Start</p>
-                    <p className="mt-1 text-xl font-black text-[#f0e6d6]">{formatMoney(chartValues[0])}</p>
-                  </div>
-                  <div className="rounded-2xl border border-[#d4a843]/20 bg-black/25 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-[#f0e6d6]/45">End</p>
-                    <p className="mt-1 text-xl font-black text-[#f0e6d6]">{formatMoney(chartValues[chartValues.length - 1])}</p>
-                  </div>
-                </div>
+              <div className="rounded-2xl border border-[#d4a843]/20 bg-black/25 p-3">
+                <EquityAreaChart values={chartValues} title="Run Equity Curve" />
               </div>
             ) : (
               <div className="rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4 text-sm text-amber-100">
@@ -609,6 +709,59 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
                 </p>
               </div>
             )}
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-[#d4a843]/15 bg-[#25130d]/60 px-3 py-2.5 shadow-sm">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-[#d4a843]/70">Win Rate</span>
+                <span className="mt-1 block text-lg font-extrabold tracking-tight text-[#f0e6d6]">
+                  {summaryValue(run.simulatorSummary?.winRate, percent)}
+                </span>
+              </div>
+              <div className="rounded-xl border border-[#d4a843]/15 bg-[#25130d]/60 px-3 py-2.5 shadow-sm">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-[#d4a843]/70">EV Per Hand</span>
+                <span className="mt-1 block text-lg font-extrabold tracking-tight text-[#f0e6d6]">
+                  {summaryValue(run.simulatorSummary?.evPerHand, formatMoney)}
+                </span>
+              </div>
+              <div className="rounded-xl border border-[#d4a843]/15 bg-[#25130d]/60 px-3 py-2.5 shadow-sm">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-[#d4a843]/70">Max Drawdown</span>
+                <span className="mt-1 block text-lg font-extrabold tracking-tight text-rose-300">
+                  {summaryValue(run.simulatorSummary?.maxDrawdown, formatMoney)}
+                </span>
+              </div>
+              <div className="rounded-xl border border-[#d4a843]/15 bg-[#25130d]/60 px-3 py-2.5 shadow-sm">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-[#d4a843]/70">Max Losing Streak</span>
+                <span className="mt-1 block text-lg font-extrabold tracking-tight text-[#f0e6d6]">
+                  {run.simulatorSummary?.longestLosingStreak ?? '--'}
+                  {run.simulatorSummary?.longestLosingStreakStart && run.simulatorSummary.longestLosingStreakStart >= 0 ? (
+                    <span className="ml-1.5 text-[11px] font-semibold tracking-normal text-rose-400">
+                      (H{run.simulatorSummary.longestLosingStreakStart} - H{run.simulatorSummary.longestLosingStreakEnd})
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+            </div>
+
+            {run.simulatorSummary?.systemVerdict ? (
+              <div className="rounded-2xl border border-[#d4a843]/20 bg-[linear-gradient(180deg,rgba(36,20,14,0.85)_0%,rgba(24,12,9,0.85)_100%)] p-4 shadow-[inset_0_1px_0_rgba(212,168,67,0.1)]">
+                <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#d4a843]/90">
+                  Performance Review & Risk Analysis
+                </h4>
+                <div className="space-y-2">
+                  {run.simulatorSummary.systemVerdict.map((line, i) => {
+                    let colorClass = 'text-[#f1d98f]/90';
+                    if (line.type === 'success') colorClass = 'text-emerald-400';
+                    else if (line.type === 'danger') colorClass = 'text-rose-400';
+                    else if (line.type === 'warning') colorClass = 'text-orange-300';
+                    return (
+                      <p key={i} className={`text-sm font-medium leading-relaxed ${colorClass}`}>
+                        {line.text}
+                      </p>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : !hasDeepHistory ? (
           <div className="custom-scrollbar flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
@@ -670,9 +823,11 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
                     const isExpanded = expandedHand === hand.handNumber;
                     const isWin = hand.outcome === 'win';
                     const isLoss = hand.outcome === 'loss';
-                    const actionTrail = normalizeActionList(hand.actions, hand.blackjacks);
+                    const actionTrail = normalizeActionList(hand.actions ?? [], hand.blackjacks ?? 0);
+                    const groupedTimeline = buildGroupedTimeline(hand.actions ?? [], hand.blackjacks ?? 0);
                     const seatGroups = groupPlayerHandsBySeat(hand.playerHands ?? []);
                     const dealerFlow = buildDealerFlow(hand.dealerCards ?? []);
+                    const dealerTags = buildDealerTags(hand.dealerCards ?? [], hand.dealerTotal ?? 0);
 
                     return (
                       <Fragment key={`hist-${hand.handNumber}`}>
@@ -728,6 +883,9 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
                           <tr>
                             <td colSpan={7} className="p-0">
                               <div className="mx-3 mb-2 rounded-b-xl border border-t-0 border-[#d4a843]/20 bg-[linear-gradient(180deg,#24130d_0%,#1a0d0a_100%)] px-4 py-3">
+                                <div className="mb-3 border-b border-[#d4a843]/15 pb-2.5">
+                                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#e8c860]">Hand #{hand.handNumber} Detail</h3>
+                                </div>
                                 <div className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
                                   <div className="rounded-lg border border-[#d4a843]/15 bg-black/25 px-2.5 py-2">
                                     <p className="text-[10px] uppercase tracking-[0.14em] text-[#f0e6d6]/45">Bet</p>
@@ -758,16 +916,25 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
 
                                 <div className="mb-3 rounded-xl border border-[#d4a843]/15 bg-black/25 p-3">
                                   <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#f0e6d6]/50">Action Timeline</p>
-                                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                                    {actionTrail.length > 0 ? actionTrail.map((action, actionIndex) => (
-                                      <Fragment key={`${hand.handNumber}-timeline-${actionIndex}`}>
-                                        <span className="rounded-md border border-[#d4a843]/22 bg-[#d4a843]/10 px-2 py-0.5 text-[10px] text-[#f1d98f]">
-                                          {action}
-                                        </span>
-                                        {actionIndex < actionTrail.length - 1 ? (
-                                          <span className="text-[10px] text-[#f0e6d6]/30">&gt;</span>
-                                        ) : null}
-                                      </Fragment>
+                                  <div className="mt-2 space-y-2">
+                                    {groupedTimeline.length > 0 ? groupedTimeline.map((group, groupIndex) => (
+                                      <div key={`${hand.handNumber}-timeline-group-${groupIndex}`} className="flex flex-col gap-1">
+                                        {group.title !== 'General' && (
+                                          <span className="text-[9px] uppercase tracking-widest text-[#f0e6d6]/60">[{group.title}]</span>
+                                        )}
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                          {group.items.map((action, actionIndex) => (
+                                            <Fragment key={`${hand.handNumber}-timeline-${groupIndex}-${actionIndex}`}>
+                                              <span className="rounded-md border border-[#d4a843]/22 bg-[#d4a843]/10 px-2 py-0.5 text-[10px] text-[#f1d98f]">
+                                                {action}
+                                              </span>
+                                              {actionIndex < group.items.length - 1 ? (
+                                                <span className="text-[10px] text-[#f0e6d6]/30">&gt;</span>
+                                              ) : null}
+                                            </Fragment>
+                                          ))}
+                                        </div>
+                                      </div>
                                     )) : <span className="text-xs italic text-[#f0e6d6]/45">No action detail</span>}
                                   </div>
                                 </div>
@@ -787,6 +954,15 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
                                         <p key={`${hand.handNumber}-dealer-flow-${idx}`}>{line}</p>
                                       ))}
                                     </div>
+                                    {dealerTags.length > 0 ? (
+                                      <div className="mt-2 flex flex-wrap gap-1">
+                                        {dealerTags.map((tag, tagIdx) => (
+                                          <span key={`${hand.handNumber}-dealer-tag-${tagIdx}`} className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] ${TAG_STYLE[tag.tone]}`}>
+                                            {tag.label}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : null}
                                   </div>
 
                                   <div className="rounded-xl border border-[#d4a843]/15 bg-black/22 p-3 lg:col-span-8">
@@ -796,8 +972,9 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
                                         <div key={`${hand.handNumber}-seat-${seat.seatNumber}`} className="rounded-lg border border-[#d4a843]/14 bg-black/30 p-2.5">
                                           <div className="mb-2 flex items-center justify-between text-[10px]">
                                             <span className="font-semibold uppercase tracking-[0.12em] text-[#f0e6d6]/75">Seat {seat.seatNumber}</span>
-                                            <span className={`font-bold ${seat.seatProfit >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                                              {seat.seatProfit >= 0 ? 'Total Win' : 'Total Loss'}: {seat.seatProfit > 0 ? '+' : ''}{formatMoney(seat.seatProfit)}
+                                            <span className={`font-bold ${seat.seatProfit > 0 ? 'text-emerald-300' : seat.seatProfit < 0 ? 'text-rose-300' : 'text-amber-200/80'}`}>
+                                              Net PNL: {seat.seatProfit > 0 ? '+' : ''}{formatMoney(seat.seatProfit)}
+                                              {seat.seatProfit === 0 && seat.hands.length > 0 ? ' (Break Even)' : ''}
                                             </span>
                                           </div>
 
@@ -814,10 +991,9 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
                                               const discardedEntries = normalizeDiscardedCards(playerHand.discardedCards, seatActions);
 
                                               const flowLines = buildHandFlow(
-                                                playerHand.cards,
+                                                playerHand as any,
+                                                seat.hands as any,
                                                 seatActions,
-                                                playerHand.surrendered,
-                                                playerHand.profit ?? 0,
                                                 discardedEntries,
                                                 configuredInitialCards,
                                               );
@@ -1005,6 +1181,26 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
                   >
                     Next
                   </button>
+                  <div className="ml-1 flex items-center gap-1.5 pl-3 border-l border-[#d4a843]/20">
+                    <input
+                      type="number"
+                      min={1}
+                      max={totalPages}
+                      placeholder="..."
+                      title={`Jump to a page (1-${totalPages})`}
+                      className="h-7 w-12 rounded border border-[#d4a843]/20 bg-black/30 text-center text-[11px] font-bold text-[#f0e6d6] placeholder-[#f0e6d6]/30 outline-none transition-colors focus:border-[#d4a843]/60 focus:bg-black/50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const val = parseInt(e.currentTarget.value, 10);
+                          if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                            setCurrentPage(val);
+                            setExpandedHand(null);
+                            e.currentTarget.value = '';
+                          }
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -1037,7 +1233,7 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
             </div>
           </div>
         ) : null}
-      </div>
+      </motion.div>
     </div>
   );
 }
