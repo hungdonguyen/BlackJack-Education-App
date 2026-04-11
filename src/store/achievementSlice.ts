@@ -16,6 +16,7 @@ export interface AchievementSlice {
 
   // Actions
   checkAchievements: (match: MatchRecord) => void;
+  checkDeckPurchaseAchievement: (deckId: string) => void;
   syncAchievements: () => void;
   dismissAchievementToast: () => void;
 }
@@ -56,6 +57,25 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
           ...Object.fromEntries(newlyUnlocked.map(id => [id, now]))
         },
         achievementToastQueue: [...s.achievementToastQueue, ...newlyUnlocked],
+      }));
+    }
+  },
+
+  checkDeckPurchaseAchievement: (deckId: string) => {
+    const state = get();
+    const mapping: Record<string, string> = {
+      gold: 'gold_collector',
+      cosmic: 'cosmic_voyager',
+    };
+    const achievementId = mapping[deckId];
+    if (achievementId && !state.unlockedAchievements[achievementId]) {
+      const now = Date.now();
+      set((s) => ({
+        unlockedAchievements: {
+          ...s.unlockedAchievements,
+          [achievementId]: now,
+        },
+        achievementToastQueue: [...s.achievementToastQueue, achievementId],
       }));
     }
   },

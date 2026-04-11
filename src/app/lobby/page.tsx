@@ -13,6 +13,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import type { SwiperClass } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import { useMenuNavigation } from '@/hooks/useMenuNavigation';
+import { InsufficientFundsWarning } from '@/components/table/InsufficientFundsWarning';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -22,6 +23,7 @@ export default function LobbyPage() {
     const rooms = useMemo(() => getLobbyRooms(), []);
     const { playSound } = useAudio();
     const bankroll = useGameStore((s) => s.bankroll);
+    const insufficientFundsWarning = useGameStore((s) => s.insufficientFundsWarning);
     const [swiperRef, setSwiperRef] = useState<SwiperClass | null>(null);
     const [activePage, setActivePage] = useState(0);
 
@@ -261,6 +263,8 @@ export default function LobbyPage() {
                     Audio Credits: Music by Kevin MacLeod & Audionautix.com · SFX by Kenney.nl
                 </div>
             </motion.div>
+            
+            <InsufficientFundsWarning show={insufficientFundsWarning} />
         </motion.div>
     );
 }

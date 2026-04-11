@@ -16,7 +16,7 @@ export interface AchievementDefinition {
   /** If true, description is hidden until unlocked */
   secret?: boolean;
   /** Category for grouping in the UI */
-  category: 'general' | 'mastery' | 'daily' | 'variant';
+  category: 'general' | 'mastery' | 'daily' | 'variant' | 'store';
 }
 
 export interface AchievementProgress {
@@ -106,6 +106,10 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: 'perfect_21_sum', name: 'Zen Master', description: 'Win 3 spots with exactly 21 on all of them.', tier: 'legendary', category: 'general', icon: '/images/achievements/perfect_21_sum.png', secret: true },
   { id: 'exact_zero', name: 'Back from the Dead', description: 'Reach exactly $0 bankroll and win it all back from a daily claim.', tier: 'legendary', category: 'general', icon: '/images/achievements/exact_zero.png', secret: true },
   { id: 'count_savant', name: 'Eye in the Sky', description: 'Play 500 hands with Card Counting disabled and maintain 99%+ accuracy.', tier: 'legendary', category: 'general', icon: '/images/achievements/count_savant.png', secret: true },
+
+  // ═══ STORE PURCHASE (35–36) ═══
+  { id: 'gold_collector', name: 'Golden Touch', description: 'Purchase the Premium Gold Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/gold_collector.png' },
+  { id: 'cosmic_voyager', name: 'Cosmic Voyager', description: 'Purchase the Cosmic Swirl Deck and transcend beyond the stars.', tier: 'legendary', category: 'store', icon: '/images/achievements/cosmic_voyager.png' },
 ];
 
 /** Quick lookup map */

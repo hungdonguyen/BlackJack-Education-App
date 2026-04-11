@@ -59,6 +59,8 @@ export const useGameStoreBase = create<GameStore>()(
         switchAdviceEngine: state.switchAdviceEngine,
         keyboardMapping: state.keyboardMapping,
         gamepadMapping: state.gamepadMapping,
+        purchasedDecks: state.purchasedDecks,
+        activeDeck: state.activeDeck,
         // Achievements
         unlockedAchievements: state.unlockedAchievements,
         achievementProgress: state.achievementProgress,

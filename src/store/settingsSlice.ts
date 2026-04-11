@@ -58,6 +58,10 @@ export interface SettingsSlice {
   showStrategyModal: boolean;
   keyboardMapping: KeyboardMapping;
   gamepadMapping: GamepadMapping;
+  
+  // Store & Decks
+  purchasedDecks: string[];
+  activeDeck: string;
 
   // Actions
   setDealerSpeed: (speed: DealerSpeed) => void;
@@ -76,6 +80,8 @@ export interface SettingsSlice {
   setKeyboardMapping: (action: string, key: string) => void;
   setGamepadMapping: (action: string, button: number) => void;
   resetControlsToDefault: () => void;
+  setActiveDeck: (deckId: string) => void;
+  purchaseDeck: (deckId: string, cost: number) => void;
 }
 
 /** Delay maps keyed by dealer speed */
@@ -112,6 +118,8 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   showStrategyModal: false,
   keyboardMapping: DEFAULT_KEYBOARD_MAPPING,
   gamepadMapping: DEFAULT_GAMEPAD_MAPPING,
+  purchasedDecks: ['default'],
+  activeDeck: 'default',
 
   setDealerSpeed: (speed) => set({ dealerSpeed: speed }),
   setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
@@ -136,4 +144,9 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
     keyboardMapping: DEFAULT_KEYBOARD_MAPPING,
     gamepadMapping: DEFAULT_GAMEPAD_MAPPING,
   }),
+  setActiveDeck: (deckId) => set({ activeDeck: deckId }),
+  purchaseDeck: (deckId, cost) => set((s) => ({
+    bankroll: s.bankroll - cost,
+    purchasedDecks: [...s.purchasedDecks, deckId]
+  })),
 });

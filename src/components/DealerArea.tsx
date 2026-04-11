@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { getHandDisplayValue } from '@/utils/hand';
-import { CARD_BACK_PATH } from '@/utils/cardImages';
+import { getCardBackImage } from '@/utils/cardImages';
 import { getRoomConfig } from '@/utils/rooms';
 
 import { Shuffle } from 'lucide-react';
@@ -22,6 +22,8 @@ function ShoeIndicator() {
     const currentRoom = useGameStore((s) => s.currentRoom);
     const gamePhase = useGameStore((s) => s.gamePhase);
     const initializeShoe = useGameStore((s) => s.initializeShoe);
+    const activeDeck = useGameStore((s) => s.activeDeck) || 'default';
+    const cardBackPath = getCardBackImage(activeDeck);
     const roomCfg = getRoomConfig(currentRoom);
     const isBetting = gamePhase === GamePhase.BETTING;
     const numDecks = roomCfg.gameRules.numberOfDecks;
@@ -90,7 +92,7 @@ function ShoeIndicator() {
                             }}
                         >
                             <img 
-                                src={CARD_BACK_PATH} 
+                                src={cardBackPath} 
                                 alt="Deck layer" 
                                 className="w-full h-full object-contain rounded-lg" 
                             />

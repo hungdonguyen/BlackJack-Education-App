@@ -13,13 +13,13 @@ import { getCardImageFromCard, getCardBackImage } from '@/utils/cardImages';
  * Returns card-back image if the card is hidden.
  * @see cardImages.ts — single source of truth for card assets
  */
-export function getCardImagePath(card: Card): string {
-  return getCardImageFromCard(card);
+export function getCardImagePath(card: Card, deckTheme: string = 'default'): string {
+  return getCardImageFromCard(card, deckTheme);
 }
 
 /** Get card back image path */
-export function getCardBackPath(): string {
-  return getCardBackImage();
+export function getCardBackPath(deckTheme: string = 'default'): string {
+  return getCardBackImage(deckTheme);
 }
 
 /** Chip value to base filename mapping */

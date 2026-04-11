@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { Card } from '@/types/game';
 import { getCardImagePath, getCardBackPath } from '@/utils/assets';
 import { useAudio } from '@/utils/audio';
+import { useGameStore } from '@/hooks/useGameStore';
 import { useEffect, useRef } from 'react';
 
 interface CardComponentProps {
@@ -49,7 +50,8 @@ export default function CardComponent({
     highlightColor = '#ffffff',
 }: CardComponentProps) {
     const dimensions = SIZE_MAP[size];
-    const imagePath = card.isHidden ? getCardBackPath() : getCardImagePath(card);
+    const activeDeck = useGameStore(s => s.activeDeck);
+    const imagePath = card.isHidden ? getCardBackPath(activeDeck) : getCardImagePath(card, activeDeck);
     const fanOffset = FAN_OFFSETS[size];
     const rotation = FAN_ROTATIONS[index % FAN_ROTATIONS.length] ?? 0;
     const { playSound } = useAudio();

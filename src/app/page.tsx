@@ -8,7 +8,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Wallet, BookOpen, Sparkles, Zap, Trophy, Gift, BarChart3, Gamepad2 } from 'lucide-react';
+import { Wallet, BookOpen, Sparkles, Zap, Trophy, Gift, BarChart3, Gamepad2, ShoppingCart } from 'lucide-react';
 import appIcon from '../../src-tauri/icons/icon.png';
 import { ROOMS, getLobbyRooms } from '@/utils/rooms';
 import LegalAgreementModal from '@/components/LegalAgreementModal';
@@ -24,6 +24,8 @@ import ControlsModal from '@/components/ControlsModal';
 import { FloatingLogosBackdrop, ROOM_LOGO_PATHS } from '@/components/FloatingLogosBackdrop';
 import { useMenuNavigation } from '@/hooks/useMenuNavigation';
 import { useHasClaimableRewards } from '@/hooks/useHasClaimableRewards';
+import StoreModal from '@/components/StoreModal';
+import { InsufficientFundsWarning } from '@/components/table/InsufficientFundsWarning';
 
 export default function HomePage() {
   const router = useRouter();
@@ -34,21 +36,23 @@ export default function HomePage() {
   const [showDailyClaim, setShowDailyClaim] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [showStore, setShowStore] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState('classic');
 
   const isHydrated = useStoreHydration();
   const bankroll = useGameStore((s) => s.bankroll);
   const { playSound } = useAudio();
   const hasClaimable = useHasClaimableRewards();
+  const insufficientFundsWarning = useGameStore((s) => s.insufficientFundsWarning);
 
   // ─── Menu Navigation (keyboard + gamepad) ───
   const MENU_ITEMS = useMemo(() => [
     'lobby', 'tutorial',
     'strategy', 'simulator',
-    'trophies', 'claim', 'settings', 'controls', 'quickplay',
+    'trophies', 'claim', 'settings', 'controls', 'store',
   ], []);
 
-  const anyModalOpen = showStrategy || showAchievements || showDailyClaim || showSettings || showControls;
+  const anyModalOpen = showStrategy || showAchievements || showDailyClaim || showSettings || showControls || showStore;
 
   const handleMenuSelect = useCallback((id: string) => {
     playSound('click');
@@ -61,7 +65,7 @@ export default function HomePage() {
       case 'claim': setShowDailyClaim(true); break;
       case 'settings': setShowSettings(true); break;
       case 'controls': setShowControls(true); break;
-      case 'quickplay': router.push('/game/classic'); break;
+      case 'store': setShowStore(true); break;
     }
   }, [playSound, router]);
 
@@ -480,22 +484,22 @@ export default function HomePage() {
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/70 group-hover:text-white transition-colors text-center w-full">Controls</span>
                 </motion.button>
 
-                {/* Quick Play */}
+                {/* Store */}
                 <motion.button
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75, duration: 0.5 }}
-                  onClick={() => { playSound('click'); router.push('/game/classic'); }}
+                  onClick={() => { playSound('click'); setShowStore(true); }}
                   className="group relative flex min-h-20 flex-col items-center justify-center gap-2 p-3 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.96] overflow-hidden"
                   style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    ...focusRingStyle('quickplay'),
+                    background: 'linear-gradient(180deg, rgba(99,102,241,0.05) 0%, rgba(99,102,241,0.01) 100%)',
+                    border: '1px solid rgba(99,102,241,0.2)',
+                    ...focusRingStyle('store'),
                   }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(255,255,255,0.05)] text-white/70">
-                    <Zap size={18} className="group-hover:fill-white/20" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[rgba(99,102,241,0.1)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(99,102,241,0.15)] text-indigo-400">
+                    <ShoppingCart size={18} />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/70 group-hover:text-white transition-colors text-center w-full">Quick Play</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-400/80 group-hover:text-indigo-400 transition-colors text-center w-full">Store</span>
                 </motion.button>
 
               </div>
@@ -566,6 +570,16 @@ export default function HomePage() {
               />
             )}
           </AnimatePresence>
+
+          {/* ─── Store Modal ─── */}
+          <AnimatePresence>
+            {showStore && (
+              <StoreModal onClose={() => setShowStore(false)} />
+            )}
+          </AnimatePresence>
+
+          {/* ─── Insufficient Funds Warning ─── */}
+          <InsufficientFundsWarning show={insufficientFundsWarning} />
 
           {/* Bottom decoration */}
           <div className="mt-auto pt-2 pb-1 text-center w-full max-w-4xl relative z-10 shrink-0">
