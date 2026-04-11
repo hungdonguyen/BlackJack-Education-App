@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/hooks/useGameStore';
 import { GamePhase, HandStatus } from '@/types/enums';
 import { getHandDisplayValue } from '@/utils/hand';
+import { CARD_BACK_PATH } from '@/utils/cardImages';
 import { getRoomConfig } from '@/utils/rooms';
 
 import { Shuffle } from 'lucide-react';
@@ -46,8 +47,16 @@ function ShoeIndicator() {
             ? 'rgba(245,158,11,0.25)'
             : 'rgba(34,197,94,0.18)';
 
-    // Stacked card backs: show up to 5 card ghost layers
-    const layers = Math.min(numDecks, 5);
+    // Stacked card backs: realistically we want more layers to show a thick deck
+    // 1 layer per 30 cards, max 12 layers to avoid getting too high.
+    const layers = Math.min(12, Math.max(1, Math.ceil(remaining / 30)));
+    const maxLayers = Math.min(12, Math.max(1, Math.ceil(totalCards / 30)));
+    
+    // Card size to match "md" CardComponent exactly
+    const CARD_WIDTH = 92;
+    const CARD_HEIGHT = 133;
+    const Y_OFFSET_PER_LAYER = 1; // Slight vertical stacking
+    const X_OFFSET_PER_LAYER = 0; // Straight stack, no diagonal skew
 
     return (
         <motion.div
@@ -56,39 +65,41 @@ function ShoeIndicator() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.25 }}
         >
-            {/* Card stack icon */}
-            <div className="relative" style={{ width: 38, height: 54 }}>
+            {/* Card stack images */}
+            <div 
+                className="relative mt-2" 
+                style={{ 
+                    width: CARD_WIDTH, 
+                    height: CARD_HEIGHT + maxLayers * Y_OFFSET_PER_LAYER 
+                }}
+            >
                 {Array.from({ length: layers }).map((_, i) => {
-                    const offset = (layers - 1 - i) * 2;
                     return (
                         <div
                             key={i}
-                            className="absolute rounded-md border"
+                            className="absolute rounded-lg"
                             style={{
-                                width: 34,
-                                height: 48,
-                                bottom: offset,
-                                left: offset / 2,
-                                background: isUrgent
-                                    ? 'linear-gradient(135deg, #3b0a0a 0%, #1f0606 100%)'
-                                    : 'linear-gradient(135deg, #1a0f06 0%, #0e0804 100%)',
-                                borderColor: isUrgent
-                                    ? 'rgba(239,68,68,0.35)'
-                                    : isWarning
-                                        ? 'rgba(245,158,11,0.3)'
-                                        : 'rgba(255,255,255,0.1)',
+                                width: CARD_WIDTH,
+                                height: CARD_HEIGHT,
+                                bottom: i * Y_OFFSET_PER_LAYER,
+                                left: 0,
+                                zIndex: i,
                                 boxShadow: i === layers - 1
-                                    ? `0 0 10px ${glowColor}`
-                                    : 'none',
+                                    ? `0 0 10px ${glowColor}, -1px 2px 4px rgba(0,0,0,0.5)`
+                                    : '-1px 1px 2px rgba(0,0,0,0.6)',
                             }}
                         >
-                            {/* Card back pattern on top layer */}
-                            {i === layers - 1 && (
-                                <div className="absolute inset-[3px] rounded-sm overflow-hidden opacity-30"
-                                    style={{
-                                        backgroundImage: `repeating-linear-gradient(45deg, ${barColor}22 0px, ${barColor}22 1px, transparent 1px, transparent 6px)`,
-                                    }}
-                                />
+                            <img 
+                                src={CARD_BACK_PATH} 
+                                alt="Deck layer" 
+                                className="w-full h-full object-contain rounded-lg" 
+                            />
+                            {/* Card back tint on top layer to warn about reshuffle */}
+                            {i === layers - 1 && isUrgent && (
+                                <div className="absolute inset-0 rounded-lg bg-red-500/20 mix-blend-overlay pointer-events-none" />
+                            )}
+                            {i === layers - 1 && isWarning && (
+                                <div className="absolute inset-0 rounded-lg bg-amber-500/20 mix-blend-overlay pointer-events-none" />
                             )}
                         </div>
                     );
@@ -96,7 +107,7 @@ function ShoeIndicator() {
             </div>
 
             {/* Remaining count */}
-            <div className="flex flex-col items-center gap-0.5">
+            <div className="flex flex-col items-center gap-0.5 mt-1">
                 <span
                     className="text-[14px] font-black tabular-nums leading-none"
                     style={{ color: barColor, textShadow: `0 0 8px ${glowColor}` }}
@@ -198,7 +209,7 @@ export default function DealerArea() {
             transition={{ delay: 0.1 }}
         >
             {/* Left spacer — mirrors ShoeIndicator width so dealer hand stays centered */}
-            <div style={{ width: 60 }} />
+            <div style={{ width: 108 }} />
 
             {/* Dealer center */}
             <div className="flex flex-col items-center gap-2">
@@ -272,7 +283,7 @@ export default function DealerArea() {
 
             {/* Shoe indicator — right of dealer hand, flex sibling */}
             {!isTutorial && (
-                <div className="flex items-start pt-7 pl-4">
+                <div className="flex items-start pt-0 pl-8">
                     <ShoeIndicator />
                 </div>
             )}

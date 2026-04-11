@@ -48,10 +48,14 @@ function finalizeAndEmit() {
 async function runLoop() {
   if (!engine || !configRef || loopInFlight) return;
 
+  // Snapshot config for this loop to satisfy strict null checks and avoid
+  // repeatedly dereferencing a nullable module-scoped ref.
+  const config = configRef;
+
   loopInFlight = true;
 
   try {
-    const reportInterval = Math.max(1, Math.floor(configRef.maxHands / 100)); 
+    const reportInterval = Math.max(1, Math.floor(config.maxHands / 100)); 
     let hasDone = false;
 
     while (engine && !isPaused && !shouldForceFinish && !hasDone) {
@@ -59,8 +63,8 @@ async function runLoop() {
       stepsRun++;
       hasDone = done;
 
-      if (configRef.delayMs && configRef.delayMs > 0) {
-        await new Promise((resolve) => setTimeout(resolve, configRef.delayMs));
+      if (config.delayMs && config.delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, config.delayMs));
       }
 
       const shouldReport =
@@ -68,7 +72,7 @@ async function runLoop() {
         hasDone ||
         isPaused ||
         shouldForceFinish ||
-        (configRef.delayMs && configRef.delayMs > 0);
+        (config.delayMs && config.delayMs > 0);
 
       if (shouldReport) {
           self.postMessage({

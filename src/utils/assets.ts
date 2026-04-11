@@ -2,55 +2,24 @@
 // Asset Path Utilities
 // ============================================
 // Maps game types to image file paths.
-// Cards: Deck of Cards API | Chips: AI-generated premium
+// Cards & card-back: centralised in cardImages.ts
+// Chips: AI-generated premium
 
 import { Card } from '@/types/game';
-import { Suit, Rank } from '@/types/enums';
-
-/** Cache buster — increment and hard-reload browser when replacing images */
-// const CHIP_VERSION = 'v2';
-
-/** Map Suit enum to file prefix */
-const SUIT_PREFIX: Record<Suit, string> = {
-  [Suit.HEARTS]: 'H',
-  [Suit.DIAMONDS]: 'D',
-  [Suit.CLUBS]: 'C',
-  [Suit.SPADES]: 'S',
-};
-
-/** Map Rank enum to file suffix */
-const RANK_SUFFIX: Record<Rank, string> = {
-  [Rank.ACE]: 'A',
-  [Rank.TWO]: '2',
-  [Rank.THREE]: '3',
-  [Rank.FOUR]: '4',
-  [Rank.FIVE]: '5',
-  [Rank.SIX]: '6',
-  [Rank.SEVEN]: '7',
-  [Rank.EIGHT]: '8',
-  [Rank.NINE]: '9',
-  [Rank.TEN]: '10',
-  [Rank.JACK]: 'J',
-  [Rank.QUEEN]: 'Q',
-  [Rank.KING]: 'K',
-};
+import { getCardImageFromCard, getCardBackImage } from '@/utils/cardImages';
 
 /**
  * Get the image path for a playing card.
  * Returns card-back image if the card is hidden.
+ * @see cardImages.ts — single source of truth for card assets
  */
 export function getCardImagePath(card: Card): string {
-  if (card.isHidden) {
-    return '/images/cards/card-back.png';
-  }
-  const suit = SUIT_PREFIX[card.suit];
-  const rank = RANK_SUFFIX[card.rank];
-  return `/images/cards/${suit}-${rank}.png`;
+  return getCardImageFromCard(card);
 }
 
 /** Get card back image path */
 export function getCardBackPath(): string {
-  return '/images/cards/card-back.png';
+  return getCardBackImage();
 }
 
 /** Chip value to base filename mapping */

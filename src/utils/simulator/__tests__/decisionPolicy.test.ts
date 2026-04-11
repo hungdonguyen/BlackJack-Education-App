@@ -23,8 +23,8 @@ describe('Simulator decision policy', () => {
     expect(action).toBe('SP');
   });
 
-  it('uses custom profile when selected', () => {
-    const policy = createDecisionPolicy('custom_profile', 'conservative');
+  it('uses basic strategy policy when selected', () => {
+    const policy = createDecisionPolicy('basic_strategy');
     const action = policy.decideAction({
       cards: [card(Rank.SEVEN, 7), card(Rank.SIX, 6)],
       dealerUpcard: card(Rank.TEN, 10),
@@ -36,7 +36,7 @@ describe('Simulator decision policy', () => {
       canBurn: false,
     });
 
-    expect(action).toBe('S');
+    expect(action).toBe('H');
   });
 
   it('applies counting deviations only in strategy advice mode', () => {

@@ -5,33 +5,33 @@ describe('Strategy Tables', () => {
     describe('ACTION_META reasoning', () => {
         it('should return valid reasoning strings for H', () => {
             expect(ACTION_META['H'].reasoning(13, true, '6')).toContain('Soft 13');
-            expect(ACTION_META['H'].reasoning(14, false, 'A')).toContain('Dealer is strong');
-            expect(ACTION_META['H'].reasoning(14, false, '6')).toContain('is not competitive');
+            expect(ACTION_META['H'].reasoning(14, false, 'A')).toContain('Dealer shows a strong');
+            expect(ACTION_META['H'].reasoning(14, false, '6')).toContain('too weak');
         });
 
         it('should return valid reasoning strings for S', () => {
             expect(ACTION_META['S'].reasoning(18, true, '6')).toContain('18 soft');
-            expect(ACTION_META['S'].reasoning(15, false, '6')).toContain('Dealer is weak');
-            expect(ACTION_META['S'].reasoning(15, false, '10')).toContain('High bust risk');
+            expect(ACTION_META['S'].reasoning(15, false, '6')).toContain('Dealer shows a weak');
+            expect(ACTION_META['S'].reasoning(15, false, '10')).toContain('statistically better');
         });
 
         it('should return valid reasoning strings for D', () => {
-            expect(ACTION_META['D'].reasoning(11, false, '6')).toContain('11 — Ideal');
-            expect(ACTION_META['D'].reasoning(9, false, '6')).toContain('Dealer is weak');
+            expect(ACTION_META['D'].reasoning(11, false, '6')).toContain('mathematically powerful hand');
+            expect(ACTION_META['D'].reasoning(9, false, '6')).toContain('Dealer shows a weak');
         });
 
         it('should return valid reasoning strings for SP', () => {
             expect(ACTION_META['SP'].reasoning(22, false, '6')).toContain('Pair of Aces');
             expect(ACTION_META['SP'].reasoning(16, false, '6')).toContain('Pair of 8s');
-            expect(ACTION_META['SP'].reasoning(12, false, '6')).toContain('Split to double');
+            expect(ACTION_META['SP'].reasoning(12, false, '6')).toContain('Splitting capitalizes');
         });
 
         it('should return valid reasoning strings for SU', () => {
-            expect(ACTION_META['SU'].reasoning(16, false, '10')).toContain('Total 16');
+            expect(ACTION_META['SU'].reasoning(16, false, '10')).toContain('terrible odds');
         });
 
         it('should return valid reasoning strings for RS', () => {
-            expect(ACTION_META['RS'].reasoning(16, false, '10')).toContain('Surrender saves money');
+            expect(ACTION_META['RS'].reasoning(16, false, '10')).toContain('highly unfavorable');
         });
 
         it('should return valid reasoning strings for FD', () => {
