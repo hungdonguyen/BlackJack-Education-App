@@ -404,11 +404,11 @@ export default function MatchDetailModal({
                                                 }}>
                                                 <div className="flex items-center gap-1">
                                                     <span className="text-[9px] font-extrabold text-yellow-500 uppercase tracking-wider">
-                                                        {match.roomId === 'madness_21' ? '⚡ Push 22' : '⚡ Bonus'}
+                                                        {match.roomId === 'infinity_double_down' ? '⚡ Push 22' : '⚡ Bonus'}
                                                     </span>
                                                 </div>
                                                 <div className="text-[9px] text-yellow-300/70 font-bold">
-                                                    {match.roomId === 'madness_21'
+                                                    {match.roomId === 'infinity_double_down'
                                                         ? (seat.sideBetPayout && seat.sideBetPayout > 0
                                                             ? '✓ Dealer busted with 22 — Payout 11:1'
                                                             : '✗ Dealer did not have 22')

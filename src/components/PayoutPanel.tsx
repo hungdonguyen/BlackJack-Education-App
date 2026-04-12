@@ -23,10 +23,10 @@ function formatBlackjackMultiplier(multiplier?: number): string {
 }
 
 export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
-    const isMadness = roomConfig?.id === 'madness_21' || roomConfig?.id === 'tutorial_madness';
+    const isInfinityDoubleDown = roomConfig?.id === 'infinity_double_down' || roomConfig?.id === 'tutorial_infinity_double_down';
     const isZapout = roomConfig?.id === 'zapout_21' || roomConfig?.id === 'tutorial_zapout';
 
-    const blackjackPayoutRows = isMadness
+    const blackjackPayoutRows = isInfinityDoubleDown
         ? [
             { label: 'Suited Blackjack', value: '2 : 1' },
             { label: 'Unsuited Blackjack', value: '3 : 2' },
@@ -68,8 +68,8 @@ export default function PayoutPanel({ roomConfig }: PayoutPanelProps) {
     }
 
     const hasDealer22PushRule =
-        roomConfig?.id === 'madness_21' ||
-        roomConfig?.id === 'tutorial_madness' ||
+        roomConfig?.id === 'infinity_double_down' ||
+        roomConfig?.id === 'tutorial_infinity_double_down' ||
         roomConfig?.id === 'exchange_21' ||
         roomConfig?.id === 'tutorial_exchange' ||
         roomConfig?.id === 'zapout_21' ||

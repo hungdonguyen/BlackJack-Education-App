@@ -36,7 +36,7 @@ export const getLessons = (roomId: string): TutorialLesson[] => {
     case 'tutorial_zapout':      return normalizeTutorialLessons(roomId, ZAPOUT_TUTORIAL_LESSONS);
     case 'tutorial_exchange':    return normalizeTutorialLessons(roomId, EXCHANGE_TUTORIAL_LESSONS);
     case 'tutorial_firecard':    return normalizeTutorialLessons(roomId, FIRECARD_TUTORIAL_LESSONS);
-    case 'tutorial_madness':     return normalizeTutorialLessons(roomId, MADNESS_TUTORIAL_LESSONS);
+    case 'tutorial_infinity_double_down':     return normalizeTutorialLessons(roomId, MADNESS_TUTORIAL_LESSONS);
     case 'tutorial_iberian':     return normalizeTutorialLessons(roomId, IBERIAN_TUTORIAL_LESSONS);
     case 'tutorial_european':    return normalizeTutorialLessons(roomId, EUROPEAN_TUTORIAL_LESSONS);
     case 'tutorial_uk':          return normalizeTutorialLessons(roomId, UK_TUTORIAL_LESSONS);
@@ -87,7 +87,7 @@ export const createTutorialSlice: StateCreator<GameStore, [], [], TutorialSlice>
     
     const isSpecialTutorial = [
         'tutorial_free_action', 'tutorial_zapout', 'tutorial_exchange',
-        'tutorial_firecard', 'tutorial_madness', 'tutorial_iberian',
+        'tutorial_firecard', 'tutorial_infinity_double_down', 'tutorial_iberian',
         'tutorial_european', 'tutorial_uk'
     ].includes(roomToUse || '');
 

@@ -24,7 +24,7 @@ const PROFILE_BY_ROOM: Record<string, TutorialProfile> = {
     tutorial_zapout: { level: 'Intermediate', tone: 'coach', tags: ['Zap Out', 'Push 22'] },
     tutorial_exchange: { level: 'Advanced', tone: 'pro', tags: ['Switch EV', '2-Hand Logic'] },
     tutorial_firecard: { level: 'Intermediate', tone: 'coach', tags: ['Burn Card', 'Bonus Traps'] },
-    tutorial_madness: { level: 'Advanced', tone: 'pro', tags: ['Infinite Double', 'Push 22'] },
+    tutorial_infinity_double_down: { level: 'Advanced', tone: 'pro', tags: ['Infinite Double', 'Push 22'] },
     tutorial_iberian: { level: 'Advanced', tone: 'pro', tags: ['Spanish Deck', 'Rescue'] },
     tutorial_european: { level: 'Intermediate', tone: 'coach', tags: ['ENHC', 'Restrictions'] },
     tutorial_uk: { level: 'Intermediate', tone: 'coach', tags: ['OBO', 'DAS'] },
@@ -50,7 +50,7 @@ const TUTORIAL_SEQUENCE_BY_ROOM: Record<string, number> = {
     // Advanced - Classic to special
     tutorial_counting: 110,
     tutorial_exchange: 120,
-    tutorial_madness: 130,
+    tutorial_infinity_double_down: 130,
     tutorial_iberian: 140,
 };
 

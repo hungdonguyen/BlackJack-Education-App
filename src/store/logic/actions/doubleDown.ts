@@ -53,13 +53,13 @@ export const doubleDownLogic = (set: any, get: () => GameStore) => {
 
           const stayPlaying = roomCfg.gameRules.allowDoubleDownRescue || roomCfg.gameRules.allowInfiniteDouble;
           const isSingleCardStart = (roomCfg.gameRules.playerInitialCards ?? 2) === 1;
-          const isMadnessAceDouble = isSingleCardStart && hand.cards.length === 1 && hand.cards[0].rank === Rank.ACE;
+          const isInfinityDoubleDownAceDouble = isSingleCardStart && hand.cards.length === 1 && hand.cards[0].rank === Rank.ACE;
           
           return {
             ...hand,
             cards: newCards,
             betAmount: hand.betAmount + (isFree ? hand.betAmount : cost),
-            status: busted ? HandStatus.BUST : isImmediateWin ? HandStatus.WON : (is21 || !stayPlaying || isMadnessAceDouble) ? HandStatus.STAND : HandStatus.PLAYING,
+            status: busted ? HandStatus.BUST : isImmediateWin ? HandStatus.WON : (is21 || !stayPlaying || isInfinityDoubleDownAceDouble) ? HandStatus.STAND : HandStatus.PLAYING,
             isDoubleDown: true,
             doubleCount: (hand.doubleCount || 0) + 1,
             isFreeActionDouble: isFree ? true : hand.isFreeActionDouble,

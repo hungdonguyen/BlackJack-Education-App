@@ -235,14 +235,23 @@ export default function StoreModal({ onClose }: StoreModalProps) {
                             >
                                 {/* Compact Info Area */}
                                 <div className="mb-8 flex items-start justify-between">
-                                    <div className="space-y-2">
-                                        <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-none"
-                                            style={{ textShadow: `0 0 40px ${currentDeck.accent}22` }}>
-                                            {currentDeck.name}
-                                        </h3>
-                                        <p className="text-white/40 text-[13px] max-w-lg font-medium leading-normal">
-                                            {currentDeck.description}
-                                        </p>
+                                    <div className="flex gap-6 items-center">
+                                        <motion.div
+                                            className="relative w-[3.5rem] aspect-[2.5/3.5] rounded-lg overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] ring-1 ring-white/20 shrink-0"
+                                            whileHover={{ scale: 1.15, rotateY: 15 }}
+                                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                        >
+                                            <Image src={getCardBackImage(currentDeck.id)} alt="Card Back" fill className="object-cover" sizes="80px" />
+                                        </motion.div>
+                                        <div className="space-y-2">
+                                            <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-none"
+                                                style={{ textShadow: `0 0 40px ${currentDeck.accent}22` }}>
+                                                {currentDeck.name}
+                                            </h3>
+                                            <p className="text-white/40 text-[13px] max-w-lg font-medium leading-normal">
+                                                {currentDeck.description}
+                                            </p>
+                                        </div>
                                     </div>
 
                                     <button

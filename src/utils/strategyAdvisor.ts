@@ -112,7 +112,7 @@ const STRATEGY_MAP: Record<string, StrategyTables> = {
     'european': { hard: HARD_EUROPEAN, soft: SOFT_EUROPEAN, pairs: PAIRS_EUROPEAN },
     'uk': { hard: HARD_UK, soft: SOFT_UK, pairs: PAIRS_UK },
     'zapout_21': { hard: HARD_ZAPOUT, soft: SOFT_ZAPOUT, pairs: PAIRS_ZAPOUT },
-    'madness_21': { hard: HARD_MADNESS, soft: SOFT_MADNESS, pairs: PAIRS_MADNESS },
+    'infinity_double_down': { hard: HARD_MADNESS, soft: SOFT_MADNESS, pairs: PAIRS_MADNESS },
     'exchange_21': { hard: HARD_EXCHANGE, soft: SOFT_EXCHANGE, pairs: PAIRS_EXCHANGE },
     'firecard_21': { hard: HARD_FIRECARD, soft: SOFT_FIRECARD, pairs: PAIRS_FIRECARD },
     'classic': { hard: HARD_CLASSIC, soft: SOFT_CLASSIC, pairs: PAIRS_TABLE },
@@ -195,9 +195,9 @@ export function getStrategyAction(
     const tables = getStrategyTables(strategyType);
     let action: StrategyAction;
 
-    const isMadness = strategyType === 'madness_21';
-    const startHard = isMadness ? 2 : 5;
-    const startSoft = isMadness ? 12 : 13;
+    const isInfinityDoubleDown = strategyType === 'infinity_double_down';
+    const startHard = isInfinityDoubleDown ? 2 : 5;
+    const startSoft = isInfinityDoubleDown ? 12 : 13;
 
     const pairIndex = getPairRowIdx(cards);
     if (pairIndex >= 0) {

@@ -55,7 +55,7 @@ const CustomSelect = ({ label, value, onChange, options, animateIn }: any) => {
               exit={{ opacity: 0, y: -10, scaleY: 0.95 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
               style={{ originY: 0 }}
-              className="absolute left-0 right-0 z-50 mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-[#d4a843]/30 bg-[#160b09] p-1.5 shadow-[0_10px_40px_rgba(0,0,0,0.8)] custom-scrollbar"
+              className="absolute left-0 right-0 z-50 mt-1.5 max-h-[30rem] overflow-y-auto rounded-xl border border-[#d4a843]/30 bg-[#160b09] p-1.5 shadow-[0_10px_40px_rgba(0,0,0,0.8)] custom-scrollbar"
             >
               {options.map((opt: any) => (
                 <li
@@ -93,7 +93,7 @@ export function SimulatorSetup() {
 
   return (
     <aside className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
-      <div className={`flex flex-col gap-3 ${panelClass}`}>
+      <div className={`relative z-50 flex flex-col gap-3 ${panelClass}`}>
         <div className="border-b border-[#d4a843]/15 pb-2">
           <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.22em] text-[#f1d98f]">
             <Settings size={14} className="text-[#f1d98f]" /> Game Config
@@ -131,7 +131,7 @@ export function SimulatorSetup() {
         </div>
       </div>
 
-      <div className={`flex flex-col gap-3 ${panelClass}`}>
+      <div className={`relative z-40 flex flex-col gap-3 ${panelClass}`}>
         <div className="border-b border-[#d4a843]/15 pb-2">
           <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.22em] text-[#f1d98f]">
             <Wallet size={14} className="text-[#f1d98f]" /> Bankroll & Stakes
@@ -181,7 +181,7 @@ export function SimulatorSetup() {
         </div>
       </div>
 
-      <div className={`flex flex-col gap-3 ${panelClass}`}>
+      <div className={`relative z-30 flex flex-col gap-3 ${panelClass}`}>
         <div className="border-b border-[#d4a843]/15 pb-2">
           <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.22em] text-[#f1d98f]">
             <Route size={14} className="text-[#f1d98f]" /> Strategy Profile
@@ -319,7 +319,7 @@ export function SimulatorSetup() {
                  <li>Dealer <strong>{room.gameRules.dealerHitsSoft17 ? 'Hits on Soft 17' : 'Stands on All 17'}</strong>.</li>
                  <li>Blackjack payout is <strong>{room.blackjackMultiplier === 1.5 ? '3:2' : room.blackjackMultiplier === 1.2 ? '6:5' : `${room.blackjackMultiplier}:1`}</strong>.</li>
                  {room.gameRules.allowSurrender && <li><strong>Late Surrender</strong> is allowed.</li>}
-                 {room.gameRules.allowInfiniteDouble && <li>Infinite doubling (Madness) mechanics are active.</li>}
+                 {room.gameRules.allowInfiniteDouble && <li>Infinite doubling (InfinityDoubleDown) mechanics are active.</li>}
                  {room.gameRules.omitTens && <li className="text-rose-300"><strong>Spanish Rules:</strong> All 10-value spot cards are removed.</li>}
                  {gameRules.canBurn && <li className="text-orange-300"><strong>Burn Rule:</strong> Player can burn the 2nd card for a fee.</li>}
                  {gameRules.push22 && <li className="text-indigo-300"><strong>Push 22:</strong> Dealer busting with exactly 22 results in a Push.</li>}

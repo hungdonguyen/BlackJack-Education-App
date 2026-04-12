@@ -13,7 +13,7 @@ const INTRO_BY_ROOM: Record<string, string> = {
     tutorial_zapout: 'Core rule: one Zap Out per hand can replace both cards, and dealer 22 pushes non-blackjack hands.',
     tutorial_exchange: 'Core rule: two hands are played together, one switch is allowed, and each resulting hand follows strategy tables.',
     tutorial_firecard: 'Core rule: Burn replaces only the second card for a fee, and strategy decisions follow Fire Card table actions.',
-    tutorial_madness: 'Core rule: hands start from one card, double can repeat, and dealer 22 pushes non-blackjack hands.',
+    tutorial_infinity_double_down: 'Core rule: hands start from one card, double can repeat, and dealer 22 pushes non-blackjack hands.',
     tutorial_iberian: 'Core rule: Spanish deck without 10 spots, rescue options apply after doubles, and special cases come from Iberian tables.',
     tutorial_european: 'Core rule: ENHC (no hole card), restricted doubles, and European hard-soft-pairs charts must be respected.',
     tutorial_uk: 'Core rule: ENHC plus OBO protection, with UK-specific split and double permissions from strategy tables.'

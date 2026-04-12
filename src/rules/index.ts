@@ -31,4 +31,4 @@ export * from './UKRules';
 export * from './ZapOut21Rules';
 export * from './Exchange21Rules';
 export * from './FireCardRules';
-export * from './Madness21Rules';
+export * from './InfinityDoubleDownRules';

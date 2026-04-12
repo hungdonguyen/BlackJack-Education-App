@@ -1,12 +1,12 @@
 import React from 'react';
 import { FastForward } from 'lucide-react';
-import { Madness21Rules } from '@/rules/Madness21Rules';
+import { InfinityDoubleDownRules } from '@/rules/InfinityDoubleDownRules';
 import { RoomConfig } from './types';
 
-export const madness: RoomConfig = {
-    id: 'madness_21',
+export const infinity_double_down: RoomConfig = {
+    id: 'infinity_double_down',
     name: 'Infinity Double Down',
-    subtitle: 'Inspired by Double Down Madness',
+    subtitle: 'Inspired by Double Down InfinityDoubleDown',
     description: 'Start with 1 card! Double down as many times as you like. Suited Blackjacks pay 2:1, but Beware: Dealer pushing on 22!',
     feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #4c1d95 0%, #3b0764 25%, #2e1065 50%, #1e1b4b 80%, #0f172a 100%)',
     bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #000000 0%, #111827 50%, #312e81 100%)',
@@ -35,10 +35,10 @@ export const madness: RoomConfig = {
     accentColor: '#8b5cf6',
     isBeta: true,
     logoPath: '/images/logo/rooms/infinity_double_down.png',
-    strategyType: 'madness_21',
-    deviationsSet: 'madness_21',
+    strategyType: 'infinity_double_down',
+    deviationsSet: 'infinity_double_down',
     strategySource: 'Michael Shackleford (Wizard of Odds)',
-    rulesClass: Madness21Rules,
+    rulesClass: InfinityDoubleDownRules,
     strategyModalContent: {
         overview: "Start with just 1 card! You can Hit or Double Down repeatedly. Perfect for massive payouts if you have the bankroll.",
         highlights: [
@@ -84,7 +84,7 @@ export const madness: RoomConfig = {
     strategyTableManual: {
         hard: {
             title: "Hard Totals",
-            summary: "Madness Strategy",
+            summary: "InfinityDoubleDown Strategy",
             bullets: [
                 "Double often because you can!",
                 "Always Double starting 10 or 11.",

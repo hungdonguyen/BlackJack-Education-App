@@ -3,7 +3,7 @@ import { HandStatus, Suit } from '@/types/enums';
 import { IRules, ActionValidity, PayoutResult } from './types';
 import { isBlackjack } from '@/utils/hand';
 
-export class Madness21Rules implements IRules {
+export class InfinityDoubleDownRules implements IRules {
     blackjackPayoutMultiplier = 1.5; // default, but overridden in evaluateHand
 
     canDoubleDown(hand: Hand): ActionValidity {
@@ -17,7 +17,7 @@ export class Madness21Rules implements IRules {
     }
 
     canSplit(hand: Hand, seatHandsLength: number): ActionValidity {
-        // Splitting not allowed in Double Down Madness
+        // Splitting not allowed in Double Down InfinityDoubleDown
         return {
             allowed: false,
             isFree: false,
@@ -26,7 +26,7 @@ export class Madness21Rules implements IRules {
     }
 
     canSurrender(hand: Hand): ActionValidity {
-        // Double Down Madness does not allow surrender
+        // Double Down InfinityDoubleDown does not allow surrender
         return { allowed: false, isFree: false, cost: 0 };
     }
 
@@ -36,7 +36,7 @@ export class Madness21Rules implements IRules {
         dealerCards: Card[],
         dealerValue: HandValue
     ): PayoutResult {
-        // Madness custom BJ logic (Any 2-card 21 since they start with 1, but not on split hands)
+        // InfinityDoubleDown custom BJ logic (Any 2-card 21 since they start with 1, but not on split hands)
         const isPlayerBJ = playerHand.cards.length === 2 && playerValue.total === 21 && !playerHand.isSplit;
         const isDealerBJ = isBlackjack(dealerCards);
         

@@ -226,7 +226,7 @@ export default function HandAdvisor({
             if (action === 'SU' && !canSurrenderNow) action = basicAction;
         }
 
-        if (currentHand?.isDoubleDown && room.strategyType !== 'madness_21') {
+        if (currentHand?.isDoubleDown && room.strategyType !== 'infinity_double_down') {
             // Double Down Rescue semantics: 
             // We only want to rescue a doubled hand if we caught a bad card and are forced to stand with terrible expectation.
             // A good approximation of mathematically correct rescue spots in Spanish/Iberian 21:

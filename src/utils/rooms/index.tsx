@@ -10,7 +10,7 @@ import { european } from './european';
 import { zapout } from './zapout';
 import { exchange } from './exchange';
 import { firecard } from './firecard';
-import { madness } from './madness';
+import { infinity_double_down } from './infinity_double_down';
 import {
     tutorialBeginner,
     tutorialDouble,
@@ -22,7 +22,7 @@ import {
     tutorialZapout,
     tutorialExchange,
     tutorialFirecard,
-    tutorialMadness,
+    tutorialInfinityDoubleDown,
     tutorialIberian,
     tutorialEuropean,
     tutorialUk
@@ -42,7 +42,7 @@ export const ROOMS: Record<string, RoomConfig> = {
     zapout_21: zapout,
     exchange_21: exchange,
     firecard_21: firecard,
-    madness_21: madness,
+    infinity_double_down: infinity_double_down,
     tutorial_beginner: tutorialBeginner,
     tutorial_double: tutorialDouble,
     tutorial_strategy: tutorialStrategy,
@@ -53,7 +53,7 @@ export const ROOMS: Record<string, RoomConfig> = {
     tutorial_zapout: tutorialZapout,
     tutorial_exchange: tutorialExchange,
     tutorial_firecard: tutorialFirecard,
-    tutorial_madness: tutorialMadness,
+    tutorial_infinity_double_down: tutorialInfinityDoubleDown,
     tutorial_iberian: tutorialIberian,
     tutorial_european: tutorialEuropean,
     tutorial_uk: tutorialUk,

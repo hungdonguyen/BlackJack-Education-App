@@ -84,7 +84,7 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const showHandAdvisorState = useGameStore((s) => s.showHandAdvisor);
     const variantTutorials = [
         'tutorial_free_action', 'tutorial_zapout', 'tutorial_exchange',
-        'tutorial_firecard', 'tutorial_madness', 'tutorial_iberian',
+        'tutorial_firecard', 'tutorial_infinity_double_down', 'tutorial_iberian',
         'tutorial_european', 'tutorial_uk'
     ];
     const showHandAdvisor = showHandAdvisorState || roomId === 'tutorial_splitting' || roomId === 'tutorial_strategy' || variantTutorials.includes(roomId || '');

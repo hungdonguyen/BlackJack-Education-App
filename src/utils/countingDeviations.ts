@@ -206,7 +206,7 @@ const DEVIATION_SETS: Record<string, (system: CountingSystem, dealerHitsS17: boo
     'free_action': (_system, h17) => h17 ? PUSH_22_H17 : PUSH_22_S17,
     'zapout_21': (_system, h17) => h17 ? ZAPOUT_H17 : ZAPOUT_S17,
     'exchange_21': (_system, h17) => h17 ? EXCHANGE_H17 : EXCHANGE_S17,
-    'madness_21': (_system, h17) => h17 ? PUSH_22_H17 : PUSH_22_S17,
+    'infinity_double_down': (_system, h17) => h17 ? PUSH_22_H17 : PUSH_22_S17,
     'firecard_21': (_system) => FIRECARD_DEVIATIONS,
     'uk': (_system) => I18_UK,
     'european': (_system) => I18_EUROPEAN,

@@ -590,8 +590,8 @@ function runRound(state: EngineState): RoundResult {
 
           const doubledValue = calculateHandValue(hand.cards);
           const isSingleCardStart = configuredInitialCards === 1;
-          const isMadnessAceDouble = isSingleCardStart && preDoubleCardCount === 1 && hand.cards[0]?.rank === Rank.ACE;
-          const canContinueAfterDouble = room.gameRules.allowInfiniteDouble && doubledValue.total < 21 && !isMadnessAceDouble;
+          const isInfinityDoubleDownAceDouble = isSingleCardStart && preDoubleCardCount === 1 && hand.cards[0]?.rank === Rank.ACE;
+          const canContinueAfterDouble = room.gameRules.allowInfiniteDouble && doubledValue.total < 21 && !isInfinityDoubleDownAceDouble;
 
           if (canContinueAfterDouble) {
             continue;

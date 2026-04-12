@@ -6,7 +6,7 @@ import { FreeActionRules } from '@/rules/FreeActionRules';
 import { ZapOut21Rules } from '@/rules/ZapOut21Rules';
 import { Exchange21Rules } from '@/rules/Exchange21Rules';
 import { FireCardRules } from '@/rules/FireCardRules';
-import { Madness21Rules } from '@/rules/Madness21Rules';
+import { InfinityDoubleDownRules } from '@/rules/InfinityDoubleDownRules';
 import { Iberian21Rules } from '@/rules/Iberian21Rules';
 import { EuropeanRules } from '@/rules/EuropeanRules';
 import { UKRules } from '@/rules/UKRules';
@@ -15,7 +15,7 @@ import { freeAction as roomFreeAction } from './freeAction';
 import { zapout as roomZapout } from './zapout';
 import { exchange as roomExchange } from './exchange';
 import { firecard as roomFirecard } from './firecard';
-import { madness as roomMadness } from './madness';
+import { infinity_double_down as roomInfinityDoubleDown } from './infinity_double_down';
 import { iberian21 as roomIberian21 } from './iberian21';
 import { european as roomEuropean } from './european';
 import { uk as roomUk } from './uk';
@@ -412,17 +412,17 @@ export const tutorialFirecard: RoomConfig = {
     strategyTableManual: roomFirecard.strategyTableManual
 };
 
-export const tutorialMadness: RoomConfig = {
-    id: 'tutorial_madness',
-    name: 'Madness 21',
+export const tutorialInfinityDoubleDown: RoomConfig = {
+    id: 'tutorial_infinity_double_down',
+    name: 'InfinityDoubleDown 21',
     subtitle: 'Infinite Options',
     description: 'Double Down on any number of cards, suited blackjacks pay 2:1, and beware the Push 22 rule.',
     feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #831843 0%, #9d174d 25%, #be185d 50%, #9d174d 80%, #4c0519 100%)',
     bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #4c0519 0%, #9d174d 50%, #4c0519 100%)',
     borderColor: 'rgba(244, 63, 94, 0.4)',
-    rules: roomMadness.rules,
-    gameRules: roomMadness.gameRules,
-    blackjackMultiplier: roomMadness.blackjackMultiplier,
+    rules: roomInfinityDoubleDown.rules,
+    gameRules: roomInfinityDoubleDown.gameRules,
+    blackjackMultiplier: roomInfinityDoubleDown.blackjackMultiplier,
     betRange: [100, 100],
     rtp: 'Tutorial',
     icon: <Zap className="w-5 h-5 drop-shadow-md text-rose-400" />,
@@ -430,13 +430,13 @@ export const tutorialMadness: RoomConfig = {
     hasSideBet: false,
     isTutorial: true,
     logoPath: '/images/logo/rooms/infinity_double_down.png',
-    strategyType: 'madness_21',
-    deviationsSet: 'madness_21',
-    rulesClass: Madness21Rules,
+    strategyType: 'infinity_double_down',
+    deviationsSet: 'infinity_double_down',
+    rulesClass: InfinityDoubleDownRules,
     tutorialLessons: MADNESS_TUTORIAL_LESSONS,
-    strategyModalContent: roomMadness.strategyModalContent,
-    strategyTableManual: roomMadness.strategyTableManual,
-    strategySource: roomMadness.strategySource
+    strategyModalContent: roomInfinityDoubleDown.strategyModalContent,
+    strategyTableManual: roomInfinityDoubleDown.strategyTableManual,
+    strategySource: roomInfinityDoubleDown.strategySource
 };
 
 export const tutorialIberian: RoomConfig = {
