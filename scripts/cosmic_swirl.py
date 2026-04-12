@@ -31,6 +31,40 @@ BG_DIR = os.path.join(
 
 random.seed(42)
 
+# ─── Cosmic Suit Palettes (Pale/Luminous) ────────────────────────────────────
+SUIT_PALETTES = {
+    "S": { # Spades - Pale Cyan
+        "main": (180, 240, 255),
+        "glow_outer": (0, 180, 255, 120),
+        "glow_mid": (130, 220, 255, 100),
+        "border": (150, 230, 255)
+    },
+    "H": { # Hearts - Soft Rose
+        "main": (255, 180, 220),
+        "glow_outer": (255, 80, 180, 120),
+        "glow_mid": (255, 150, 200, 100),
+        "border": (255, 180, 210)
+    },
+    "D": { # Diamonds - Pale Gold
+        "main": (255, 230, 160),
+        "glow_outer": (255, 180, 80, 120),
+        "glow_mid": (255, 210, 130, 100),
+        "border": (255, 220, 170)
+    },
+    "C": { # Clubs - Soft Mint
+        "main": (180, 255, 220),
+        "glow_outer": (80, 255, 180, 120),
+        "glow_mid": (150, 255, 200, 100),
+        "border": (180, 245, 210)
+    },
+    "default": {
+        "main": (180, 240, 255),
+        "glow_outer": (0, 220, 255, 120),
+        "glow_mid": (100, 240, 255, 100),
+        "border": (100, 240, 255)
+    }
+}
+
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -157,18 +191,20 @@ def detect_content_mask_face_card(img_arr):
     return final
 
 
-def add_golden_border(img, w, h, radius):
-    """Draw a luxurious golden border frame."""
+def add_golden_border(img, w, h, radius, suit="default"):
+    """Draw a luxurious suit-specific cosmic border frame."""
     draw = ImageDraw.Draw(img)
+    palette = SUIT_PALETTES.get(suit, SUIT_PALETTES["default"])
+    base_color = palette["border"]
 
-    # Outer border — warm gold
+    # Outer border
     for i in range(3):
         alpha = 200 - i * 40
-        gold = (210, 170, 80, alpha)
+        color = (*base_color, alpha)
         draw.rounded_rectangle(
             [(i, i), (w - 1 - i, h - 1 - i)],
             radius=radius - i,
-            outline=gold,
+            outline=color,
             width=1
         )
 
@@ -177,7 +213,7 @@ def add_golden_border(img, w, h, radius):
     draw.rounded_rectangle(
         [(inset, inset), (w - 1 - inset, h - 1 - inset)],
         radius=radius - inset,
-        outline=(180, 150, 70, 100),
+        outline=(*base_color, 80),
         width=1
     )
 
@@ -226,26 +262,27 @@ def add_star_sparkles(img, count=80):
     return img
 
 
-def create_content_glow(content_mask_uint8, w, h):
-    """Create a golden/cyan glow effect around the card content."""
+def create_content_glow(content_mask_uint8, w, h, suit="default"):
+    """Create a suit-specific glow effect around the card content."""
     mask_img = Image.fromarray(content_mask_uint8, "L")
+    palette = SUIT_PALETTES.get(suit, SUIT_PALETTES["default"])
 
-    # Wide outer glow (golden-amber)
+    # Wide outer glow
     outer_glow_mask = mask_img.filter(ImageFilter.GaussianBlur(radius=8))
     outer_glow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    glow_color = Image.new("RGBA", (w, h), (230, 190, 80, 120))
+    glow_color = Image.new("RGBA", (w, h), palette["glow_outer"])
     outer_glow = Image.composite(glow_color, outer_glow, outer_glow_mask)
 
-    # Medium glow (warm amber)
+    # Medium glow
     mid_glow_mask = mask_img.filter(ImageFilter.GaussianBlur(radius=4))
     mid_glow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    mid_color = Image.new("RGBA", (w, h), (240, 200, 100, 100))
+    mid_color = Image.new("RGBA", (w, h), palette["glow_mid"])
     mid_glow = Image.composite(mid_color, mid_glow, mid_glow_mask)
 
-    # Tight inner glow (bright white-cyan)
+    # Tight inner glow
     inner_glow_mask = mask_img.filter(ImageFilter.GaussianBlur(radius=2))
     inner_glow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    inner_color = Image.new("RGBA", (w, h), (220, 235, 255, 90))
+    inner_color = Image.new("RGBA", (w, h), (255, 255, 255, 90))
     inner_glow = Image.composite(inner_color, inner_glow, inner_glow_mask)
 
     # Combine all glow layers
@@ -254,79 +291,31 @@ def create_content_glow(content_mask_uint8, w, h):
     return result
 
 
-def cosmic_tint_content(content_layer, content_mask, bg_cosmic, is_face_card=False):
-    """
-    Remap card content colors for cosmic theme:
-    - Face cards (J, Q, K): full cosmic recolor — dark→gold, red→neon, etc.
-    - Dark content (spades/clubs) -> pure white
-    - Red content (hearts/diamonds) -> vivid bright red
-    """
-    w, h = content_layer.size
-    content_arr = np.array(content_layer)
-    mask_bool = content_mask
-
-    r = content_arr[:, :, 0]
-    g = content_arr[:, :, 1]
-    b = content_arr[:, :, 2]
-    
-    # Identify different color regions using the mask
-    is_red = (r > 130) & (g < 100) & (b < 100) & mask_bool
-    is_dark = (r < 90) & (g < 90) & (b < 90) & mask_bool
-    is_white = (r > 180) & (g > 180) & (b > 180) & mask_bool
-
-    result_arr = content_arr.copy()
-
-    # ── Red content (hearts/diamonds) -> BRIGHT PINK-RED ──
-    if np.any(is_red):
-        result_arr[is_red, 0] = 255
-        result_arr[is_red, 1] = 40
-        result_arr[is_red, 2] = 120
-        result_arr[is_red, 3] = 255
-        
-    # ── Dark content (spades/clubs & outlines) -> PURE WHITE ──
-    if np.any(is_dark):
-        result_arr[is_dark, 0] = 255
-        result_arr[is_dark, 1] = 255
-        result_arr[is_dark, 2] = 255
-        result_arr[is_dark, 3] = 255
-        
-    # ── Original White areas (skin/clothes in JQK) -> transparent ──
-    # This prevents the new white outlines from blending in ("trùng")
-    if np.any(is_white):
-        result_arr[is_white, 3] = 0
-
-    return Image.fromarray(result_arr, "RGBA")
-
-
-def cosmic_recolor_face_card(content_arr, mask_bool):
+def cosmic_recolor_face_card(content_arr, mask_bool, suit="default"):
     """
     Recolor face card artwork smoothly to avoid banding & broken details.
-    Color mapping (soft blending instead of hard thresholds):
-      - Dark outlines (black/gray) gracefully transition into Luminous Gold.
-      - The rest of the artwork is slightly enhanced for vibrancy 
-        so it pops on the dark cosmic background.
+    Color mapping:
+      - Dark outlines (black/gray) transition into Luminous Suit-specific color.
     """
     arr = content_arr.copy().astype(float)
     r = arr[:, :, 0]
     g = arr[:, :, 1]
     b = arr[:, :, 2]
 
+    palette = SUIT_PALETTES.get(suit, SUIT_PALETTES["default"])
+    target_r, target_g, target_b = palette["main"]
+
     # Calculate Luminance
     lum = 0.299 * r + 0.587 * g + 0.114 * b
 
-    # 1. Soft map for dark outlines -> Gold (255, 215, 0)
-    # Dark pixels (<60) get strong gold. 
-    # Mid-dark (60-120) get partial gold to preserve anti-aliasing.
+    # Soft map for dark outlines -> Target Suit Color
     dark_blend = np.clip((100.0 - lum) / 70.0, 0.0, 1.0)
     
-    # Target gold color
-    gold_r, gold_g, gold_b = 255.0, 210.0, 80.0
+    new_r = r + (target_r - r) * dark_blend
+    new_g = g + (target_g - g) * dark_blend
+    new_b = b + (target_b - b) * dark_blend
     
-    new_r = r + (gold_r - r) * dark_blend
-    new_g = g + (gold_g - g) * dark_blend
-    new_b = b + (gold_b - b) * dark_blend
-    
-    # Increase saturation slightly to make the other colors pop
+    # Increase saturation slightly 
     sat_factor = 1.35
     new_lum = 0.299 * new_r + 0.587 * new_g + 0.114 * new_b
     new_r = new_lum + (new_r - new_lum) * sat_factor
@@ -337,11 +326,55 @@ def cosmic_recolor_face_card(content_arr, mask_bool):
     arr[:, :, 1] = np.clip(new_g, 0, 255)
     arr[:, :, 2] = np.clip(new_b, 0, 255)
     
-    # Important: any pixel outside mask remains transparent as original
-    # We do not touch alpha channel, but let's make sure RGB is untouched if not mask 
-    # but since cosmic_tint_content composites this back on top, it's fine.
-    
     return Image.fromarray(arr.astype(np.uint8), "RGBA")
+
+
+def cosmic_tint_content(content_layer, content_mask, bg_cosmic, is_face_card=False, suit="default"):
+    """
+    Remap card content colors for cosmic theme:
+    - Face cards (J, Q, K): recolor based on suit
+    - Dark content (spades/clubs) -> White
+    - Red content (hearts/diamonds) -> vivid bright red
+    """
+    w, h = content_layer.size
+    content_arr = np.array(content_layer)
+    mask_bool = content_mask
+
+    if is_face_card:
+        # For face cards, we use the advanced recoloring
+        return cosmic_recolor_face_card(content_arr, mask_bool, suit)
+
+    r = content_arr[:, :, 0]
+    g = content_arr[:, :, 1]
+    b = content_arr[:, :, 2]
+    
+    # Identify different color regions 
+    is_red = (r > 130) & (g < 100) & (b < 100) & mask_bool
+    is_dark = (r < 90) & (g < 90) & (b < 90) & mask_bool
+    is_white = (r > 180) & (g > 180) & (b > 180) & mask_bool
+
+    result_arr = content_arr.copy()
+
+    # Red content (hearts/diamonds) -> BRIGHT PINK-RED
+    if np.any(is_red):
+        result_arr[is_red, 0] = 255
+        result_arr[is_red, 1] = 40
+        result_arr[is_red, 2] = 120
+        result_arr[is_red, 3] = 255
+        
+    # Dark content (spades/clubs & outlines) -> PURE WHITE
+    if np.any(is_dark):
+        result_arr[is_dark, 0] = 255
+        result_arr[is_dark, 1] = 255
+        result_arr[is_dark, 2] = 255
+        result_arr[is_dark, 3] = 255
+        
+    # Skin/clothes in JQK handled by recolor_face_card above,
+    # but for simple number cards we handle white as transparent
+    if np.any(is_white):
+        result_arr[is_white, 3] = 0
+
+    return Image.fromarray(result_arr, "RGBA")
 
 
 def create_face_card_backdrop(w, h, content_mask_uint8):
@@ -428,11 +461,16 @@ def is_face_card_file(fname):
 
 
 def process_card(input_path, output_path, bg_images):
-    """Apply the cosmic swirl transformation to one card."""
+    """Apply the cosmic swirl transformation with suit-specific pale colors."""
     original = Image.open(input_path).convert("RGBA")
     w, h = original.size
     fname = os.path.basename(input_path)
     face_card = is_face_card_file(fname)
+    
+    # Extract suit (e.g., 'S-Q.png' -> 'S')
+    suit = "default"
+    if "-" in fname:
+        suit = fname.split("-")[0]
 
     # ── 1. Detect content ──
     arr = np.array(original)
@@ -455,10 +493,10 @@ def process_card(input_path, output_path, bg_images):
     cosmic_bg = ImageEnhance.Brightness(cosmic_bg).enhance(0.85)
 
     # ── 4. Tint the content with cosmic texture ──
-    cosmic_content = cosmic_tint_content(content_layer, content_mask, cosmic_bg, is_face_card=face_card)
+    cosmic_content = cosmic_tint_content(content_layer, content_mask, cosmic_bg, is_face_card=face_card, suit=suit)
 
     # ── 5. Create glow behind content ──
-    glow = create_content_glow(content_mask_uint8, w, h)
+    glow = create_content_glow(content_mask_uint8, w, h, suit=suit)
 
     # ── 6. Sparkle on content ──
     sparkle = add_sparkle_on_content(content_mask_uint8, w, h, density=0.04)
@@ -480,8 +518,8 @@ def process_card(input_path, output_path, bg_images):
     card_mask = rounded_rect_mask(w, h, CORNER_RADIUS)
     result.putalpha(card_mask)
 
-    # ── 9. Golden border ──
-    result = add_golden_border(result, w, h, CORNER_RADIUS)
+    # ── 9. Suit-specific border ──
+    result = add_golden_border(result, w, h, CORNER_RADIUS, suit=suit)
 
     result.save(output_path, "PNG")
 

@@ -33,6 +33,15 @@ export default function StoreModal({ onClose }: StoreModalProps) {
             icon: null
         },
         {
+            id: 'silver',
+            name: 'Sterling Silver Deck',
+            description: 'Polished sterling silver cards with a cool metallic sheen. Subtle elegance for the refined player.',
+            price: 100_000,
+            image: getCardImage(Suit.SPADES, Rank.ACE, 'silver'),
+            accent: '#94a3b8', // silver
+            icon: <Sparkles size={14} className="text-slate-300" />
+        },
+        {
             id: 'gold',
             name: 'Premium Gold Deck',
             description: 'Exclusive 24k solid gold textured cards designed for ultimate high rollers.',
