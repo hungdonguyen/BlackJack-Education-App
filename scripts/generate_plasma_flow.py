@@ -78,6 +78,9 @@ def process_card(filename):
     outline_glow_img = outline_img.filter(ImageFilter.GaussianBlur(3))
     outline_glow_np = np.array(outline_glow_img).astype(np.float32) / 255.0
     
+    # Build Mini-starfield for inside the content
+    content_stars = generate_starfield()
+    
     is_red = filename.startswith('H-') or filename.startswith('D-')
     y_grad = y_grid / HEIGHT
     
@@ -121,9 +124,9 @@ def process_card(filename):
         # Add glow around content
         composite = composite + glow_layer
         
-        # Override inside content with pure black + bright stars
+        # Override inside content
         # To make it look like "cutting a window into deep space"
-        composite = np.where(c_mask_bool, [10.0, 0.0, 30.0] + content_area, composite)
+        composite = np.where(c_mask_bool, inner_base + content_area, composite)
         
         # Corner cropping (Geometry)
         R = 14
