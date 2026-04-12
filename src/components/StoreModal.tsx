@@ -1,16 +1,22 @@
-'use client';
-
-import { motion } from 'framer-motion';
-import { X, ShoppingCart, Check, Crown, Lock, Sparkles } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, ShoppingCart, Check, Crown, Lock, Sparkles, CreditCard } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
 import Image from 'next/image';
-import { getCardImage } from '@/utils/cardImages';
+import { getCardImage, getCardBackImage } from '@/utils/cardImages';
 import { Suit, Rank } from '@/types/enums';
 
 interface StoreModalProps {
     onClose: () => void;
 }
+
+const ALL_RANKS = [
+    Rank.ACE, Rank.TWO, Rank.THREE, Rank.FOUR, Rank.FIVE,
+    Rank.SIX, Rank.SEVEN, Rank.EIGHT, Rank.NINE, Rank.TEN,
+    Rank.JACK, Rank.QUEEN, Rank.KING
+];
+const SUITS = [Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS];
 
 export default function StoreModal({ onClose }: StoreModalProps) {
     const { playSound } = useAudio();
@@ -26,49 +32,46 @@ export default function StoreModal({ onClose }: StoreModalProps) {
         {
             id: 'default',
             name: 'Classic Deck',
-            description: 'The standard casino-grade playing cards. Clean, readable, and elegant.',
+            description: 'Standard casino-grade cards. Clean, readable, and elegant.',
             price: 0,
-            image: getCardImage(Suit.SPADES, Rank.ACE, 'default'),
-            accent: '#4B5563', // gray
+            accent: '#4B5563',
             icon: null
         },
         {
             id: 'silver',
-            name: 'Sterling Silver Deck',
-            description: 'Polished sterling silver cards with a cool metallic sheen. Subtle elegance for the refined player.',
+            name: 'Sterling Silver',
+            description: 'Polished sterling silver cards with a cool metallic sheen.',
             price: 100_000,
-            image: getCardImage(Suit.SPADES, Rank.ACE, 'silver'),
-            accent: '#94a3b8', // silver
+            accent: '#94a3b8',
             icon: <Sparkles size={14} className="text-slate-300" />
         },
         {
             id: 'plasma',
-            name: 'Plasma Flow Deck',
-            description: 'Futuristic animated cards pulsing with dynamic neon plasma energy and stardust effects.',
-            price: 500_000,
-            image: getCardImage(Suit.SPADES, Rank.ACE, 'plasma'),
-            accent: '#06b6d4', // cyan
+            name: 'Plasma Flow',
+            description: 'Futuristic animated cards pulsing with dynamic neon plasma energy.',
+            price: 777_777,
+            accent: '#06b6d4',
             icon: <Sparkles size={14} className="text-cyan-400" />
         },
         {
             id: 'gold',
-            name: 'Premium Gold Deck',
-            description: 'Exclusive 24k solid gold textured cards designed for ultimate high rollers.',
-            price: 777_777,
-            image: getCardImage(Suit.SPADES, Rank.ACE, 'gold'),
-            accent: '#d4a843', // gold
+            name: 'Premium Gold',
+            description: 'Exclusive 24k solid gold textured cards for high rollers.',
+            price: 500_000,
+            accent: '#d4a843',
             icon: <Crown size={14} className="text-amber-500" />
         },
         {
             id: 'cosmic',
-            name: 'Cosmic Swirl Deck',
-            description: 'Cards forged from the heart of a galaxy. Swirling nebula backgrounds with star-dust detail.',
+            name: 'Cosmic Swirl',
+            description: 'Transcend beyond the stars with swirling nebula backgrounds.',
             price: 1_234_567,
-            image: getCardImage(Suit.SPADES, Rank.ACE, 'cosmic'),
-            accent: '#7c3aed', // purple
+            accent: '#7c3aed',
             icon: <Sparkles size={14} className="text-purple-400" />
         }
-    ];
+    ].sort((a, b) => a.price - b.price);
+
+    const [selectedIndex, setSelectedIndex] = useState(decks.findIndex(d => d.id === activeDeck));
 
     const formatMoney = (v: number) => {
         if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
@@ -76,7 +79,7 @@ export default function StoreModal({ onClose }: StoreModalProps) {
         return `$${v.toLocaleString()}`;
     };
 
-    const handleAction = (deckId: string, price: number) => {
+    const handleAction = useCallback((deckId: string, price: number) => {
         if (purchasedDecks.includes(deckId)) {
             if (activeDeck !== deckId) {
                 playSound('click');
@@ -88,128 +91,207 @@ export default function StoreModal({ onClose }: StoreModalProps) {
         if (bankroll >= price) {
             playSound('chip-lay');
             purchaseDeck(deckId, price);
-            setActiveDeck(deckId); // auto equip
+            setActiveDeck(deckId);
             checkDeckPurchaseAchievement(deckId);
         } else {
-            // Insufficient funds
             triggerInsufficientFunds();
         }
-    };
+    }, [purchasedDecks, activeDeck, bankroll, playSound, purchaseDeck, setActiveDeck, checkDeckPurchaseAchievement, triggerInsufficientFunds]);
+
+    // Selection helper
+    const selectDeck = useCallback((idx: number) => {
+        if (idx !== selectedIndex) {
+            playSound('click');
+            setSelectedIndex(idx);
+        }
+    }, [selectedIndex, playSound]);
+
+    // Keyboard Navigation
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectDeck(selectedIndex > 0 ? selectedIndex - 1 : decks.length - 1);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectDeck(selectedIndex < decks.length - 1 ? selectedIndex + 1 : 0);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const deck = decks[selectedIndex];
+                handleAction(deck.id, deck.price);
+            } else if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedIndex, decks, handleAction, onClose, selectDeck]);
+
+    const currentDeck = decks[selectedIndex];
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl">
             <motion.div
-                className="relative w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl flex flex-col"
-                style={{
-                    background: 'rgba(15, 10, 8, 0.95)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                }}
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="relative w-full max-w-6xl h-[82vh] rounded-[32px] overflow-hidden shadow-[0_0_80px_rgba(0,0,0,1)] flex flex-col border border-white/10"
+                style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #000 100%)' }}
+                initial={{ opacity: 0, scale: 0.9, rotateX: 10 }}
+                animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+                exit={{ opacity: 0, scale: 0.9, rotateX: 10 }}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-white/10"
-                     style={{ background: 'linear-gradient(90deg, rgba(30,20,15,1) 0%, rgba(15,10,8,1) 100%)' }}>
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center">
-                            <ShoppingCart size={20} className="text-indigo-400" />
+                <div className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-black/40">
+                    <div className="flex items-center gap-5">
+                        <div className="p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
+                            <ShoppingCart size={22} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-black uppercase tracking-wider text-white">Casino Store</h2>
-                            <p className="text-xs text-white/50 uppercase tracking-[0.1em]">Customize Your Experience</p>
+                            <h2 className="text-xl font-black uppercase tracking-tighter text-white">Grand Collection</h2>
+                            <p className="text-[8px] text-amber-500/50 uppercase tracking-[0.3em] font-black italic">Exquisite Artistry & Design</p>
                         </div>
                     </div>
-                    
-                    <div className="flex items-center gap-4">
-                        {/* Current Bankroll display in Modal */}
-                        <div className="flex flex-col items-end mr-4">
-                            <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Your Balance</span>
-                            <span className="text-sm font-black text-amber-500">${bankroll.toLocaleString()}</span>
+
+                    <div className="flex items-center gap-8">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[8px] text-white/20 uppercase tracking-[0.2em] font-black">Capital Balance</span>
+                            <span className="text-xl font-black text-white tabular-nums">${bankroll.toLocaleString()}</span>
                         </div>
-                        
+
                         <button
                             onClick={() => { playSound('click'); onClose(); }}
-                            className="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                            className="group relative w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 hover:bg-red-500/10 transition-all duration-500"
                         >
-                            <X size={18} />
+                            <X size={20} className="text-white/20 group-hover:text-red-400 transition-colors" />
                         </button>
                     </div>
                 </div>
 
-                {/* Body Elements */}
-                <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                    {decks.map(deck => {
-                        const isOwned = purchasedDecks.includes(deck.id);
-                        const isActive = activeDeck === deck.id;
-                        const canAfford = bankroll >= deck.price;
-                        
-                        return (
-                            <div 
-                                key={deck.id}
-                                className="relative flex p-4 rounded-xl transition-all duration-300 group"
-                                style={{
-                                    background: isActive ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.4)',
-                                    border: isActive ? `1px solid ${deck.accent}` : '1px solid rgba(255,255,255,0.05)',
-                                    boxShadow: isActive ? `0 0 20px ${deck.accent}22` : 'none'
-                                }}
-                            >
-                                {/* Preview Card */}
-                                <div className="w-[80px] h-[110px] shrink-0 relative mr-5 rounded-md overflow-hidden"
-                                     style={{ boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
-                                    <Image 
-                                        src={deck.image} 
-                                        alt={deck.name} 
-                                        fill 
-                                        className="object-contain" 
-                                    />
-                                </div>
-                                
-                                {/* Info */}
-                                <div className="flex-1 flex flex-col justify-center">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="text-lg font-black text-white/90 uppercase tracking-wide">{deck.name}</h3>
-                                        {deck.icon}
-                                    </div>
-                                    <p className="text-xs text-white/50 leading-relaxed mb-4 max-w-sm">
-                                        {deck.description}
-                                    </p>
-                                    
-                                    <div className="flex items-center gap-3">
-                                        {isOwned ? (
-                                            <button
-                                                onClick={() => handleAction(deck.id, deck.price)}
-                                                disabled={isActive}
-                                                className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all
-                                                    ${isActive 
-                                                        ? 'bg-white/10 text-white/80 cursor-default' 
-                                                        : 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/40 border border-indigo-500/30 font-black'
-                                                    }`}
-                                            >
-                                                {isActive ? (
-                                                    <span className="flex items-center gap-2"><Check size={14} /> Equipped</span>
-                                                ) : (
-                                                    'Equip Deck'
-                                                )}
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleAction(deck.id, deck.price)}
-                                                className={`px-8 py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2
-                                                    ${canAfford 
-                                                        ? 'bg-amber-500 text-amber-950 hover:bg-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.5)]' 
-                                                        : 'bg-white/5 text-white/30 border border-white/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30'
-                                                    }`}
-                                            >
-                                                {!canAfford && <Lock size={12} />}
-                                                {formatMoney(deck.price)}
-                                            </button>
+                {/* Main Content Area: 3:7 Split */}
+                <div className="flex-1 flex overflow-hidden">
+
+                    {/* LEFT: Selection List (28%) */}
+                    <div className="w-[28%] border-r border-white/5 p-4 space-y-2.5 overflow-y-auto custom-scrollbar bg-black/20">
+                        {decks.map((deck, idx) => {
+                            const isSelected = selectedIndex === idx;
+                            const isOwned = purchasedDecks.includes(deck.id);
+                            const isActive = activeDeck === deck.id;
+
+                            return (
+                                <button
+                                    key={deck.id}
+                                    onClick={() => selectDeck(idx)}
+                                    className={`w-full relative flex flex-col p-4 rounded-2xl transition-all duration-500 text-left border
+                                        ${isSelected
+                                            ? 'bg-white/10 border-white/10 shadow-lg scale-[1.02]'
+                                            : 'bg-transparent border-transparent hover:bg-white/5'
+                                        }`}
+                                >
+                                    <div className="flex items-center justify-between mb-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-base font-black uppercase tracking-tight transition-colors ${isSelected ? 'text-white' : 'text-white/40 group-hover:text-white/60'}`}>
+                                                {deck.name}
+                                            </span>
+                                            {deck.icon}
+                                        </div>
+                                        {isActive && (
+                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                                         )}
                                     </div>
+
+                                    <div className="flex items-center justify-between mt-2.5">
+                                        <div className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all
+                                            ${isOwned
+                                                ? 'bg-white/5 text-white/30'
+                                                : 'bg-amber-500/10 text-amber-500 border border-amber-500/10'}`}>
+                                            {isOwned ? (isActive ? 'Equipped' : 'Owned') : formatMoney(deck.price)}
+                                        </div>
+
+                                        {!isOwned && bankroll < deck.price && (
+                                            <Lock size={10} className="text-red-500/30" />
+                                        )}
+                                    </div>
+
+                                    {isSelected && (
+                                        <motion.div
+                                            layoutId="activeIndicator"
+                                            className="absolute left-0 top-1/4 bottom-1/4 w-0.5 bg-amber-500 rounded-full"
+                                        />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* RIGHT: Display Showcase (72%) */}
+                    <div className="w-[72%] relative flex flex-col bg-zinc-950/40 p-10 overflow-hidden">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={currentDeck.id}
+                                initial={{ opacity: 0, filter: 'blur(8px)' }}
+                                animate={{ opacity: 1, filter: 'blur(0px)' }}
+                                exit={{ opacity: 0, filter: 'blur(8px)' }}
+                                transition={{ duration: 0.4 }}
+                                className="flex flex-col h-full"
+                            >
+                                {/* Compact Info Area */}
+                                <div className="mb-8 flex items-start justify-between">
+                                    <div className="space-y-2">
+                                        <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-none"
+                                            style={{ textShadow: `0 0 40px ${currentDeck.accent}22` }}>
+                                            {currentDeck.name}
+                                        </h3>
+                                        <p className="text-white/40 text-[13px] max-w-lg font-medium leading-normal">
+                                            {currentDeck.description}
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        onClick={() => handleAction(currentDeck.id, currentDeck.price)}
+                                        className={`px-8 py-3.5 rounded-2xl font-black uppercase tracking-tighter text-sm transition-all duration-500
+                                            ${purchasedDecks.includes(currentDeck.id)
+                                                ? (activeDeck === currentDeck.id ? 'bg-white/5 text-white/20 border border-white/5 cursor-default' : 'bg-white text-black hover:scale-105 shadow-lg')
+                                                : (bankroll >= currentDeck.price ? 'bg-amber-500 text-black hover:scale-105 shadow-lg' : 'bg-red-500/10 text-red-500/40 border border-red-500/20 cursor-not-allowed')
+                                            }`}
+                                    >
+                                        {purchasedDecks.includes(currentDeck.id)
+                                            ? (activeDeck === currentDeck.id ? 'Equipped' : 'Equip Theme')
+                                            : `Purchase - ${formatMoney(currentDeck.price)}`}
+                                    </button>
                                 </div>
-                            </div>
-                        )
-                    })}
+
+                                {/* Spread Deck Gallery (4x13) */}
+                                <div className="flex-1 flex flex-col justify-around py-4">
+                                    {SUITS.map(suit => (
+                                        <div key={suit} className="flex items-center">
+                                            <div className="w-9 h-9 flex items-center justify-center shrink-0 border border-white/5 rounded-lg bg-white/5 mr-4">
+                                                <span className="text-xl opacity-20">{suit === Suit.SPADES ? '♠' : suit === Suit.HEARTS ? '♥' : suit === Suit.CLUBS ? '♣' : '♦'}</span>
+                                            </div>
+                                            <div className="flex flex-1 items-center justify-between">
+                                                {ALL_RANKS.map((rank, rankIdx) => (
+                                                    <motion.div
+                                                        key={`${suit}-${rank}`}
+                                                        className="relative w-14 aspect-[2.5/3.5] rounded-lg overflow-hidden shadow-2xl ring-1 ring-white/10"
+                                                        style={{
+                                                            marginLeft: rankIdx === 0 ? 0 : '-1.2rem',
+                                                            zIndex: rankIdx
+                                                        }}
+                                                        whileHover={{
+                                                            scale: 1.4,
+                                                            zIndex: 100,
+                                                            y: -15,
+                                                            transition: { type: 'spring', stiffness: 400, damping: 25 }
+                                                        }}
+                                                    >
+                                                        <Image src={getCardImage(suit, rank, currentDeck.id)} alt={`${rank}${suit}`} fill className="object-cover" />
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
                 </div>
             </motion.div>
         </div>

@@ -13,7 +13,6 @@ const baseConfig: SimulatorConfig = {
   bettingSystem: 'flat',
   bettingParams: {},
   playDecisionSource: 'basic_strategy',
-  customRiskLevel: 'balanced',
 };
 
 describe('Simulator engine', () => {

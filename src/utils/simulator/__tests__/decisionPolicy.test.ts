@@ -8,7 +8,7 @@ function card(rank: Rank, value: number) {
 
 describe('Simulator decision policy', () => {
   it('maps strategy advice actions into simulator actions', () => {
-    const policy = createDecisionPolicy('strategy_advice', 'balanced');
+    const policy = createDecisionPolicy('strategy_advice');
     const action = policy.decideAction({
       cards: [card(Rank.EIGHT, 8), card(Rank.EIGHT, 8)],
       dealerUpcard: card(Rank.SIX, 6),
@@ -18,6 +18,7 @@ describe('Simulator decision policy', () => {
       canSplit: true,
       canSurrender: true,
       canBurn: false,
+      canZap: false,
     });
 
     expect(action).toBe('SP');
@@ -34,14 +35,15 @@ describe('Simulator decision policy', () => {
       canSplit: false,
       canSurrender: false,
       canBurn: false,
+      canZap: false,
     });
 
     expect(action).toBe('H');
   });
 
   it('applies counting deviations only in strategy advice mode', () => {
-    const basic = createDecisionPolicy('basic_strategy', 'balanced');
-    const advice = createDecisionPolicy('strategy_advice', 'balanced');
+    const basic = createDecisionPolicy('basic_strategy');
+    const advice = createDecisionPolicy('strategy_advice');
 
     const basicAction = basic.decideAction({
       cards: [card(Rank.TEN, 10), card(Rank.SIX, 6)],
@@ -52,6 +54,7 @@ describe('Simulator decision policy', () => {
       canSplit: false,
       canSurrender: false,
       canBurn: false,
+      canZap: false,
     });
 
     const adviceAction = advice.decideAction({
@@ -63,6 +66,7 @@ describe('Simulator decision policy', () => {
       canSplit: false,
       canSurrender: false,
       canBurn: false,
+      canZap: false,
     });
 
     expect(basicAction).toBe('H');
