@@ -82,15 +82,22 @@ def process_card(filename):
     content_stars = generate_starfield()
     
     is_red = filename.startswith('H-') or filename.startswith('D-')
+    is_face = any(c in filename for c in ['J', 'Q', 'K'])
     y_grad = y_grid / HEIGHT
     
     if is_red:
-        # Red Suits: Hot Pink / Crimson Glow
+        # Red Suits: Red-White Glow (Top=White, Bottom=Red)
         grad_R = np.full((HEIGHT, WIDTH), 255.0, dtype=np.float32)
-        grad_G = 50.0 - y_grad * 50.0       # 50 down to 0
-        grad_B = 100.0 + y_grad * 100.0     # 100 up to 200 (Crimson to Hot Pink)
-        inner_base = np.array([80.0, 0.0, 20.0], dtype=np.float32)
-        content_area = np.stack([content_stars * 2.0, content_stars * 0.8, content_stars * 0.8], axis=-1)
+        grad_G = 255.0 - y_grad * 255.0      
+        grad_B = 255.0 - y_grad * 255.0  
+        
+        # Giảm độ đậm/chói của riêng các lá JQK để không bị nguyên một khối đỏ nặng nề
+        if is_face:
+            inner_base = np.array([100.0, 10.0, 10.0], dtype=np.float32)
+        else:
+            inner_base = np.array([180.0, 0.0, 0.0], dtype=np.float32) 
+            
+        content_area = np.stack([content_stars * 2.5, content_stars * 1.5, content_stars * 1.5], axis=-1)
     else:
         # Black Suits: Cyan / Light Blue Glow
         grad_R = 0.0 + y_grad * 100.0       # 0 up to 100
