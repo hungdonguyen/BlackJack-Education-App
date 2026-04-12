@@ -66,6 +66,7 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
     const mapping: Record<string, string> = {
       gold: 'gold_collector',
       silver: 'silver_collector',
+      plasma: 'plasma_collector',
       cosmic: 'cosmic_voyager',
     };
     const achievementId = mapping[deckId];

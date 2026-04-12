@@ -42,6 +42,15 @@ export default function StoreModal({ onClose }: StoreModalProps) {
             icon: <Sparkles size={14} className="text-slate-300" />
         },
         {
+            id: 'plasma',
+            name: 'Plasma Flow Deck',
+            description: 'Futuristic animated cards pulsing with dynamic neon plasma energy and stardust effects.',
+            price: 500_000,
+            image: getCardImage(Suit.SPADES, Rank.ACE, 'plasma'),
+            accent: '#06b6d4', // cyan
+            icon: <Sparkles size={14} className="text-cyan-400" />
+        },
+        {
             id: 'gold',
             name: 'Premium Gold Deck',
             description: 'Exclusive 24k solid gold textured cards designed for ultimate high rollers.',

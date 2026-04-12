@@ -107,9 +107,10 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: 'exact_zero', name: 'Back from the Dead', description: 'Reach exactly $0 bankroll and win it all back from a daily claim.', tier: 'legendary', category: 'general', icon: '/images/achievements/exact_zero.png', secret: true },
   { id: 'count_savant', name: 'Eye in the Sky', description: 'Play 500 hands with Card Counting disabled and maintain 99%+ accuracy.', tier: 'legendary', category: 'general', icon: '/images/achievements/count_savant.png', secret: true },
 
-  // ═══ STORE PURCHASE (35–37) ═══
+  // ═══ STORE PURCHASE (35–38) ═══
   { id: 'gold_collector', name: 'Golden Touch', description: 'Purchase the Premium Gold Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/gold_collector.png' },
   { id: 'silver_collector', name: 'Silver Lining', description: 'Purchase the Sterling Silver Deck from the Casino Store.', tier: 'rare', category: 'store', icon: '/images/achievements/silver_collector.png' },
+  { id: 'plasma_collector', name: 'Plasma State', description: 'Purchase the dynamic Plasma Flow Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/plasma_collector.png' },
   { id: 'cosmic_voyager', name: 'Cosmic Voyager', description: 'Purchase the Cosmic Swirl Deck and transcend beyond the stars.', tier: 'legendary', category: 'store', icon: '/images/achievements/cosmic_voyager.png' },
 ];
 
