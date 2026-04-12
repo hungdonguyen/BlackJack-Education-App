@@ -74,6 +74,89 @@ def detect_content_mask(img_arr):
     return content
 
 
+def detect_content_mask_face_card(img_arr):
+    """
+    Detect content for face cards using sealed-outline flood-fill.
+
+    Strategy:
+    1. Dilate colored outlines by 3px to seal hairline cracks in figure art
+    2. Flood-fill from card edges through white areas NOT blocked by sealed outlines
+       → reaches corner bg, frame interior gaps, BUT NOT face/skin whites
+       (because sealed outlines block access to interior holes)
+    3. Content = colored pixels + unreachable white areas (face/skin)
+    4. Gaussian-smooth the final mask for clean edges
+    """
+    from scipy import ndimage
+
+    r, g, b, a = img_arr[:, :, 0], img_arr[:, :, 1], img_arr[:, :, 2], img_arr[:, :, 3]
+    h, w = r.shape
+
+    # ── Pixel categories ──
+    is_white = (r > 200) & (g > 200) & (b > 200)
+    is_transparent = a < 30
+    is_colored = (~is_white) & (~is_transparent)
+
+    # ── Step 1: seal hairline cracks in figure outlines ──
+    # Dilate colored pixels by ~3px so 1-2px gaps in ink lines get sealed.
+    # This prevents flood-fill from leaking into face/skin white areas.
+    colored_img = Image.fromarray((is_colored.astype(np.uint8) * 255), "L")
+    sealed = colored_img.filter(ImageFilter.MaxFilter(size=7))  # 3px expansion each side
+    sealed_bool = np.array(sealed) > 127
+
+    # ── Step 2: build passable map for flood-fill ──
+    # White/transparent pixels that are NOT blocked by sealed outlines
+    passable = (is_white | is_transparent) & (~sealed_bool)
+
+    # ── Step 3: flood-fill from card edges ──
+    margin = 15
+    edge_seeds = np.zeros((h, w), dtype=bool)
+    edge_seeds[:margin, :] = True
+    edge_seeds[-margin:, :] = True
+    edge_seeds[:, :margin] = True
+    edge_seeds[:, -margin:] = True
+    edge_seeds = edge_seeds & passable
+
+    struct = np.ones((3, 3), dtype=int)  # 8-connectivity
+    labeled, _ = ndimage.label(passable, structure=struct)
+
+    edge_labels = set(labeled[edge_seeds].flatten())
+    edge_labels.discard(0)
+
+    reachable_bg = np.zeros((h, w), dtype=bool)
+    for lbl in edge_labels:
+        reachable_bg |= (labeled == lbl)
+
+    # Also mark outer_bg from original white+transparent (unsealed) for corners
+    is_bg_passable_orig = is_white | is_transparent
+    labeled_orig, _ = ndimage.label(is_bg_passable_orig, structure=struct)
+    edge_seeds_orig = np.zeros((h, w), dtype=bool)
+    edge_seeds_orig[:margin, :] = True
+    edge_seeds_orig[-margin:, :] = True
+    edge_seeds_orig[:, :margin] = True
+    edge_seeds_orig[:, -margin:] = True
+    edge_seeds_orig = edge_seeds_orig & is_bg_passable_orig
+    edge_labels_orig = set(labeled_orig[edge_seeds_orig].flatten())
+    edge_labels_orig.discard(0)
+    outer_bg = np.zeros((h, w), dtype=bool)
+    for lbl in edge_labels_orig:
+        outer_bg |= (labeled_orig == lbl)
+
+    # Combine: any pixel reachable via either method = background
+    all_bg = reachable_bg | outer_bg
+
+    # ── Step 4: content = colored + whites NOT reachable ──
+    trapped_white = is_white & (~all_bg) & (~is_transparent)
+    content_mask = is_colored | trapped_white
+    content_mask = content_mask & (~is_transparent)
+
+    # ── Step 5: Gaussian-smooth for clean, soft edges ──
+    mask_img = Image.fromarray((content_mask.astype(np.uint8) * 255), "L")
+    mask_img = mask_img.filter(ImageFilter.GaussianBlur(radius=1.5))
+    final = np.array(mask_img) > 120
+
+    return final
+
+
 def add_golden_border(img, w, h, radius):
     """Draw a luxurious golden border frame."""
     draw = ImageDraw.Draw(img)
@@ -174,7 +257,7 @@ def create_content_glow(content_mask_uint8, w, h):
 def cosmic_tint_content(content_layer, content_mask, bg_cosmic, is_face_card=False):
     """
     Remap card content colors for cosmic theme:
-    - Face cards (J, Q, K): keep original colors unchanged
+    - Face cards (J, Q, K): full cosmic recolor — dark→gold, red→neon, etc.
     - Dark content (spades/clubs) -> pure white
     - Red content (hearts/diamonds) -> vivid bright red
     """
@@ -182,48 +265,100 @@ def cosmic_tint_content(content_layer, content_mask, bg_cosmic, is_face_card=Fal
     content_arr = np.array(content_layer)
     mask_bool = content_mask
 
-    # Face cards: return original content as-is
-    if is_face_card:
-        return content_layer
-
-    # Detect which pixels are red-ish (hearts/diamonds) vs dark (spades/clubs)
-    r, g, b = content_arr[:, :, 0], content_arr[:, :, 1], content_arr[:, :, 2]
-    is_red = (r > 150) & (g < 100) & (b < 100) & mask_bool
-    is_dark = (~is_red) & mask_bool
+    r = content_arr[:, :, 0]
+    g = content_arr[:, :, 1]
+    b = content_arr[:, :, 2]
+    
+    # Identify different color regions using the mask
+    is_red = (r > 130) & (g < 100) & (b < 100) & mask_bool
+    is_dark = (r < 90) & (g < 90) & (b < 90) & mask_bool
+    is_white = (r > 180) & (g > 180) & (b > 180) & mask_bool
 
     result_arr = content_arr.copy()
 
-    # ── Dark content (spades/clubs) -> PURE WHITE ──
+    # ── Red content (hearts/diamonds) -> BRIGHT PINK-RED ──
+    if np.any(is_red):
+        result_arr[is_red, 0] = 255
+        result_arr[is_red, 1] = 40
+        result_arr[is_red, 2] = 120
+        result_arr[is_red, 3] = 255
+        
+    # ── Dark content (spades/clubs & outlines) -> PURE WHITE ──
     if np.any(is_dark):
         result_arr[is_dark, 0] = 255
         result_arr[is_dark, 1] = 255
         result_arr[is_dark, 2] = 255
         result_arr[is_dark, 3] = 255
-
-    # ── Red content (hearts/diamonds) -> VIVID RED ──
-    if np.any(is_red):
-        result_arr[is_red, 0] = 255
-        result_arr[is_red, 1] = 20
-        result_arr[is_red, 2] = 20
-        result_arr[is_red, 3] = 255
+        
+    # ── Original White areas (skin/clothes in JQK) -> transparent ──
+    # This prevents the new white outlines from blending in ("trùng")
+    if np.any(is_white):
+        result_arr[is_white, 3] = 0
 
     return Image.fromarray(result_arr, "RGBA")
 
 
+def cosmic_recolor_face_card(content_arr, mask_bool):
+    """
+    Recolor face card artwork smoothly to avoid banding & broken details.
+    Color mapping (soft blending instead of hard thresholds):
+      - Dark outlines (black/gray) gracefully transition into Luminous Gold.
+      - The rest of the artwork is slightly enhanced for vibrancy 
+        so it pops on the dark cosmic background.
+    """
+    arr = content_arr.copy().astype(float)
+    r = arr[:, :, 0]
+    g = arr[:, :, 1]
+    b = arr[:, :, 2]
+
+    # Calculate Luminance
+    lum = 0.299 * r + 0.587 * g + 0.114 * b
+
+    # 1. Soft map for dark outlines -> Gold (255, 215, 0)
+    # Dark pixels (<60) get strong gold. 
+    # Mid-dark (60-120) get partial gold to preserve anti-aliasing.
+    dark_blend = np.clip((100.0 - lum) / 70.0, 0.0, 1.0)
+    
+    # Target gold color
+    gold_r, gold_g, gold_b = 255.0, 210.0, 80.0
+    
+    new_r = r + (gold_r - r) * dark_blend
+    new_g = g + (gold_g - g) * dark_blend
+    new_b = b + (gold_b - b) * dark_blend
+    
+    # Increase saturation slightly to make the other colors pop
+    sat_factor = 1.35
+    new_lum = 0.299 * new_r + 0.587 * new_g + 0.114 * new_b
+    new_r = new_lum + (new_r - new_lum) * sat_factor
+    new_g = new_lum + (new_g - new_lum) * sat_factor
+    new_b = new_lum + (new_b - new_lum) * sat_factor
+
+    arr[:, :, 0] = np.clip(new_r, 0, 255)
+    arr[:, :, 1] = np.clip(new_g, 0, 255)
+    arr[:, :, 2] = np.clip(new_b, 0, 255)
+    
+    # Important: any pixel outside mask remains transparent as original
+    # We do not touch alpha channel, but let's make sure RGB is untouched if not mask 
+    # but since cosmic_tint_content composites this back on top, it's fine.
+    
+    return Image.fromarray(arr.astype(np.uint8), "RGBA")
+
+
 def create_face_card_backdrop(w, h, content_mask_uint8):
     """
-    Create a semi-transparent dark frosted panel behind face card art.
-    This gives the complex artwork a dark backing for contrast while
-    keeping the cosmic background visible around the edges.
+    Create a semi-transparent frosted panel behind face card art.
+    Uses a dark indigo panel with stronger opacity and wider feathering
+    for better readability of recolored face card art.
     """
-    # Dilate the content mask to create a backdrop slightly larger than the art
     mask_img = Image.fromarray(content_mask_uint8, "L")
-    dilated = mask_img.filter(ImageFilter.MaxFilter(size=7))
-    dilated = dilated.filter(ImageFilter.GaussianBlur(radius=6))
 
-    # Create a dark translucent layer
+    # Wider dilation for a more generous backdrop
+    dilated = mask_img.filter(ImageFilter.MaxFilter(size=9))
+    dilated = dilated.filter(ImageFilter.GaussianBlur(radius=8))
+
+    # Semi-transparent dark indigo panel
     backdrop = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    dark_panel = Image.new("RGBA", (w, h), (8, 5, 20, 160))
+    dark_panel = Image.new("RGBA", (w, h), (10, 6, 25, 180))
     backdrop = Image.composite(dark_panel, backdrop, dilated)
 
     return backdrop
@@ -301,7 +436,10 @@ def process_card(input_path, output_path, bg_images):
 
     # ── 1. Detect content ──
     arr = np.array(original)
-    content_mask = detect_content_mask(arr)
+    if face_card:
+        content_mask = detect_content_mask_face_card(arr)
+    else:
+        content_mask = detect_content_mask(arr)
     content_mask_uint8 = (content_mask.astype(np.uint8)) * 255
 
     # ── 2. Extract content layer ──
@@ -328,6 +466,12 @@ def process_card(input_path, output_path, bg_images):
     # ── 7. Compose ──
     result = cosmic_bg.copy()
     result = add_star_sparkles(result, count=60)
+
+    # Face cards get a frosted backdrop panel for readability
+    if face_card:
+        backdrop = create_face_card_backdrop(w, h, content_mask_uint8)
+        result = Image.alpha_composite(result, backdrop)
+
     result = Image.alpha_composite(result, glow)
     result = Image.alpha_composite(result, cosmic_content)
     result = Image.alpha_composite(result, sparkle)
