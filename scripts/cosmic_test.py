@@ -12,7 +12,7 @@ INPUT_DIR  = os.path.join("public", "images", "cards", "default")
 OUTPUT_DIR = os.path.join("public", "images", "cards", "cosmic")
 CARD_W, CARD_H = 226, 314
 CORNER_RADIUS = 14
-FRAMES = 60
+FRAMES = 30
 DURATION = 100
 
 # AI-generated background images
@@ -479,7 +479,7 @@ def process_card(args):
         
         frames.append(result)
 
-    frames[0].save(output_path, format="WEBP", save_all=True, append_images=frames[1:], duration=DURATION, loop=0, method=6, quality=90)
+    frames[0].save(output_path, format="WEBP", save_all=True, append_images=frames[1:], duration=DURATION, loop=0, method=6, quality=75)
     return output_path
 
 
