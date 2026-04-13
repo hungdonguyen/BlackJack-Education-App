@@ -13,6 +13,7 @@ export interface PayoutResult {
     metadata?: {
         isSuitedBJ?: boolean;
         dealerPush22?: boolean;
+        isIberianBonus?: boolean;
     };
 }
 

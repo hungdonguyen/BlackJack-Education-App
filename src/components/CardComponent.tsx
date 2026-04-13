@@ -51,7 +51,8 @@ export default function CardComponent({
 }: CardComponentProps) {
     const dimensions = SIZE_MAP[size];
     const activeDeck = useGameStore(s => s.activeDeck);
-    const imagePath = card.isHidden ? getCardBackPath(activeDeck) : getCardImagePath(card, activeDeck);
+    const cardAnimationEnabled = useGameStore(s => s.cardAnimationEnabled);
+    const imagePath = card.isHidden ? getCardBackPath(activeDeck, cardAnimationEnabled) : getCardImagePath(card, activeDeck, cardAnimationEnabled);
     const fanOffset = FAN_OFFSETS[size];
     const rotation = FAN_ROTATIONS[index % FAN_ROTATIONS.length] ?? 0;
     const { playSound } = useAudio();

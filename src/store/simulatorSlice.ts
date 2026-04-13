@@ -22,7 +22,7 @@ const DEFAULT_CONFIG: SimulatorConfig = {
   },
   playDecisionSource: 'strategy_advice',
   exchangeSwitchEngine: 'cindy_advanced',
-  delayMs: 0,
+  delayMs: 70,
 };
 
 const EMPTY_SUMMARY = {

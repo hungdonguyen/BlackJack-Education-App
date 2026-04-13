@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
-import { Eye, X, ChevronDown, ChevronUp, CheckCircle2, XCircle, MinusCircle, Database, TriangleAlert, Trash2 } from 'lucide-react';
+import { Eye, X, ChevronDown, ChevronUp, CheckCircle2, XCircle, MinusCircle, Database, TriangleAlert, Trash2, Crown, Flame } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { MatchRecord } from '@/types/game';
 import { useGameStore } from '@/hooks/useGameStore';
@@ -191,8 +191,10 @@ function buildPlayerHandTags(params: {
   surrendered: boolean;
   actionCodes: string[];
   seatSwitched: boolean;
+  isSuitedBJ?: boolean;
+  isIberianBonus?: boolean;
 }) {
-  const { playerTotal, cardsLength, surrendered, actionCodes, seatSwitched } = params;
+  const { playerTotal, cardsLength, surrendered, actionCodes, seatSwitched, isSuitedBJ, isIberianBonus } = params;
 
   const tags: Array<{ label: string; tone: keyof typeof TAG_STYLE }> = [];
   const doubleCount = actionCodes.filter((code) => code === 'DOUBLE' || code === 'FREE_DOUBLE').length;
@@ -207,7 +209,9 @@ function buildPlayerHandTags(params: {
   if (seatSwitched) tags.push({ label: 'SWITCH', tone: 'neutral' });
 
   if (!surrendered && playerTotal > 21) tags.push({ label: 'BUST', tone: 'risk' });
-  if (!surrendered && cardsLength === 2 && playerTotal === 21) tags.push({ label: 'BLACKJACK', tone: 'positive' });
+  if (isSuitedBJ) tags.push({ label: 'SUITED BLACKJACK', tone: 'positive' });
+  if (isIberianBonus) tags.push({ label: '21 BONUS', tone: 'positive' });
+  if (!surrendered && cardsLength === 2 && playerTotal === 21 && !isSuitedBJ) tags.push({ label: 'BLACKJACK', tone: 'positive' });
 
   return tags;
 }
@@ -510,6 +514,8 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
   const positiveHands = hasDeepHistory ? handHistory.filter((hand) => hand.outcome === 'win').length : undefined;
   const negativeHands = hasDeepHistory ? handHistory.filter((hand) => hand.outcome === 'loss').length : undefined;
   const pushHands = hasDeepHistory ? handHistory.filter((hand) => hand.outcome === 'push').length : undefined;
+  const blackjackHands = hasDeepHistory ? handHistory.filter((hand) => hand.blackjacks > 0).length : undefined;
+  const dealerBusts = hasDeepHistory ? handHistory.filter((hand) => hand.dealerTotal > 21).length : undefined;
 
   const totalPages = Math.max(1, Math.ceil(handHistory.length / PAGE_SIZE));
   const currentHandHistory = handHistory.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -565,7 +571,7 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -580,7 +586,7 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="relative flex h-[92vh] w-full max-w-330 flex-col overflow-hidden rounded-3xl border border-[#d4a843]/20 bg-[linear-gradient(180deg,rgba(28,14,10,0.96)_0%,rgba(16,8,6,0.98)_100%)] shadow-[0_30px_80px_rgba(0,0,0,0.55)] pointer-events-auto"
+        className="relative flex h-full max-h-[calc(100%-2rem)] md:max-h-[calc(100%-4rem)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-[#d4a843]/20 bg-[linear-gradient(180deg,rgba(28,14,10,0.96)_0%,rgba(16,8,6,0.98)_100%)] shadow-[0_30px_80px_rgba(0,0,0,0.55)] pointer-events-auto"
       >
         <div className="flex items-start justify-between border-b border-[#d4a843]/15 bg-[linear-gradient(90deg,rgba(44,23,16,0.9)_0%,rgba(25,13,10,0.88)_100%)] px-4 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
@@ -660,9 +666,12 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
           {hasDeepHistory ? (
             <>
               <span className="h-4 w-px bg-[#d4a843]/25" />
-              <span className="flex items-center gap-1.5 text-emerald-300"><CheckCircle2 size={14} /> {positiveHands ?? 0}</span>
-              <span className="flex items-center gap-1.5 text-rose-300"><XCircle size={14} /> {negativeHands ?? 0}</span>
-              <span className="flex items-center gap-1.5 text-amber-300"><MinusCircle size={14} /> {pushHands ?? 0}</span>
+              <span className="flex items-center gap-1.5 text-emerald-300" title="Win"><CheckCircle2 size={14} /> Win {positiveHands ?? 0}</span>
+              <span className="flex items-center gap-1.5 text-rose-300" title="Loss"><XCircle size={14} /> Loss {negativeHands ?? 0}</span>
+              <span className="flex items-center gap-1.5 text-amber-300" title="Push"><MinusCircle size={14} /> Push {pushHands ?? 0}</span>
+              <span className="h-4 w-px bg-[#d4a843]/25" />
+              <span className="flex items-center gap-1.5 text-fuchsia-300" title="Blackjacks"><Crown size={14} /> BJ {blackjackHands ?? 0}</span>
+              <span className="flex items-center gap-1.5 text-orange-300" title="Dealer Busts"><Flame size={14} /> DBust {dealerBusts ?? 0}</span>
             </>
           ) : null}
         </div>
@@ -1004,6 +1013,8 @@ export function SimulatorHandHistoryModal({ run, onClose }: { run: MatchRecord; 
                                                 surrendered: playerHand.surrendered,
                                                 actionCodes: seatActions,
                                                 seatSwitched,
+                                                isSuitedBJ: playerHand.isSuitedBJ,
+                                                isIberianBonus: playerHand.isIberianBonus,
                                               });
 
                                               return (

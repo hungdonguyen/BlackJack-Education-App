@@ -76,8 +76,9 @@ export const CARD_BACK_PATH = `${getThemeDir('default')}/card-back.png`;
  * getCardImage(Suit.HEARTS, Rank.ACE)          // => "/images/cards/default/H-A.png"
  * getCardImage(Suit.HEARTS, Rank.ACE, 'gold')  // => "/images/cards/gold/H-A.png"
  */
-export function getCardImage(suit: Suit, rank: Rank, deckTheme: string = 'default'): string {
-  const ext = ['plasma', 'cosmic'].includes(deckTheme) ? 'webp' : 'png';
+export function getCardImage(suit: Suit, rank: Rank, deckTheme: string = 'default', animationEnabled: boolean = true): string {
+  const isAnimatedTheme = ['plasma', 'cosmic'].includes(deckTheme);
+  const ext = (isAnimatedTheme && animationEnabled) ? 'webp' : 'png';
   return `${getThemeDir(deckTheme)}/${buildCardKey(suit, rank)}.${ext}`;
 }
 
@@ -85,18 +86,19 @@ export function getCardImage(suit: Suit, rank: Rank, deckTheme: string = 'defaul
  * Get the image path for a Card object (the type used in game state).
  * Returns the card-back image when the card is hidden.
  */
-export function getCardImageFromCard(card: { suit: Suit; rank: Rank; isHidden?: boolean }, deckTheme: string = 'default'): string {
-  if (card.isHidden) return getCardBackImage(deckTheme);
-  return getCardImage(card.suit, card.rank, deckTheme);
+export function getCardImageFromCard(card: { suit: Suit; rank: Rank; isHidden?: boolean }, deckTheme: string = 'default', animationEnabled: boolean = true): string {
+  if (card.isHidden) return getCardBackImage(deckTheme, animationEnabled);
+  return getCardImage(card.suit, card.rank, deckTheme, animationEnabled);
 }
 
 /**
  * Get the card-back image path.
  * Note: Cosmic theme uses .png for the card back while using .webp for the cards.
  */
-export function getCardBackImage(deckTheme: string = 'default'): string {
-  // Use .webp for plasma and cosmic, .png for everything else
-  const ext = ['plasma', 'cosmic'].includes(deckTheme) ? 'webp' : 'png';
+export function getCardBackImage(deckTheme: string = 'default', animationEnabled: boolean = true): string {
+  const isAnimatedTheme = ['plasma', 'cosmic'].includes(deckTheme);
+  // Both cosmic and plasma have webp animated card backs now
+  const ext = (isAnimatedTheme && animationEnabled) ? 'webp' : 'png';
   return `${getThemeDir(deckTheme)}/card-back.${ext}`;
 }
 

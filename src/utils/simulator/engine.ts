@@ -49,6 +49,8 @@ interface RoundHand {
   advisorNotes: string[];
   profit?: number;
   outcome?: 'win' | 'loss' | 'push';
+  isSuitedBJ?: boolean;
+  isIberianBonus?: boolean;
 }
 
 interface RoundSeat {
@@ -722,6 +724,9 @@ function runRound(state: EngineState): RoundResult {
         seat.hands.length,
       );
 
+      if (ruleResult.metadata?.isSuitedBJ) hand.isSuitedBJ = true;
+      if (ruleResult.metadata?.isIberianBonus) hand.isIberianBonus = true;
+
       if (ruleResult.status === HandStatus.WON || ruleResult.status === HandStatus.BLACKJACK) {
         state.bankroll += paidBet + hand.bet * ruleResult.payoutMultiplier;
         hand.profit = hand.bet * ruleResult.payoutMultiplier;
@@ -762,6 +767,8 @@ function runRound(state: EngineState): RoundResult {
       paidBet: Math.max(0, hand.bet - hand.freeBet),
       freeBet: hand.freeBet,
       advisorNotes: hand.advisorNotes,
+      isSuitedBJ: hand.isSuitedBJ,
+      isIberianBonus: hand.isIberianBonus,
       specialEvents: hand.specialEvents,
       discardedCards: hand.discardedCards.map((entry) => ({
         card: mapCardView(entry.card),

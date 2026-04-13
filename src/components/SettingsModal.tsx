@@ -42,9 +42,11 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
     const musicEnabled = useGameStore((s) => s.musicEnabled);
     const musicVolume = useGameStore((s) => s.musicVolume);
     const soundVolume = useGameStore((s) => s.soundVolume);
+    const cardAnimationEnabled = useGameStore((s) => s.cardAnimationEnabled);
     const setMusicEnabled = useGameStore((s) => s.setMusicEnabled);
     const setMusicVolume = useGameStore((s) => s.setMusicVolume);
     const setSoundVolume = useGameStore((s) => s.setSoundVolume);
+    const setCardAnimationEnabled = useGameStore((s) => s.setCardAnimationEnabled);
     const { playSound } = useAudio();
 
     const roomHasSpecialCases = COMPOSITION_DEPENDENT_OVERRIDES.some(o => o.strategyType === roomId);
@@ -169,6 +171,21 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
                             </div>
                         </>
                     )}
+
+                    <Divider />
+
+                    {/* Card Animations */}
+                    <SettingRow
+                        icon={<Zap size={18} className={cardAnimationEnabled ? "text-fuchsia-400" : "text-white/30"} />}
+                        label="Card Animations"
+                        description="Enable animated premiums (Plasma/Cosmic)"
+                    >
+                        <ToggleSwitch
+                            enabled={cardAnimationEnabled}
+                            accentColor={accentColor}
+                            onChange={(val) => { playSound('switch'); setCardAnimationEnabled(val); }}
+                        />
+                    </SettingRow>
 
                     <Divider />
 

@@ -121,7 +121,11 @@ export class Iberian21Rules implements IRules {
                     }
                 }
 
-                return { status: HandStatus.WON, payoutMultiplier };
+                return { 
+                    status: HandStatus.WON, 
+                    payoutMultiplier,
+                    metadata: payoutMultiplier > 1 ? { isIberianBonus: true } : undefined
+                };
             }
 
             return { status: HandStatus.WON, payoutMultiplier: 1 };

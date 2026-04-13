@@ -64,6 +64,8 @@ export interface SimulatorHandView {
   paidBet?: number;
   freeBet?: number;
   advisorNotes?: string[];
+  isSuitedBJ?: boolean;
+  isIberianBonus?: boolean;
   specialEvents?: SimulatorSpecialEventView[];
   discardedCards?: Array<{
     card: SimulatorCardView;

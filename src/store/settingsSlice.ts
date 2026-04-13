@@ -56,6 +56,7 @@ export interface SettingsSlice {
   showSwitchAdvice: boolean;
   switchAdviceEngine: SwitchAdviceEngine;
   showStrategyModal: boolean;
+  cardAnimationEnabled: boolean;
   keyboardMapping: KeyboardMapping;
   gamepadMapping: GamepadMapping;
   
@@ -77,6 +78,7 @@ export interface SettingsSlice {
   setShowSwitchAdvice: (show: boolean) => void;
   setSwitchAdviceEngine: (engine: SwitchAdviceEngine) => void;
   setShowStrategyModal: (show: boolean) => void;
+  setCardAnimationEnabled: (enabled: boolean) => void;
   setKeyboardMapping: (action: string, key: string) => void;
   setGamepadMapping: (action: string, button: number) => void;
   resetControlsToDefault: () => void;
@@ -116,6 +118,7 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   showSwitchAdvice: true,
   switchAdviceEngine: 'cindy_advanced',
   showStrategyModal: false,
+  cardAnimationEnabled: true,
   keyboardMapping: DEFAULT_KEYBOARD_MAPPING,
   gamepadMapping: DEFAULT_GAMEPAD_MAPPING,
   purchasedDecks: ['default'],
@@ -134,6 +137,7 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   setShowSwitchAdvice: (show: boolean) => set({ showSwitchAdvice: show }),
   setSwitchAdviceEngine: (engine: SwitchAdviceEngine) => set({ switchAdviceEngine: engine }),
   setShowStrategyModal: (show: boolean) => set({ showStrategyModal: show }),
+  setCardAnimationEnabled: (enabled: boolean) => set({ cardAnimationEnabled: enabled }),
   setKeyboardMapping: (action, key) => set((state) => ({
     keyboardMapping: { ...state.keyboardMapping, [action]: key }
   })),

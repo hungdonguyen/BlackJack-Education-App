@@ -131,9 +131,9 @@ export default function StoreModal({ onClose }: StoreModalProps) {
     const currentDeck = decks[selectedIndex];
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8 bg-black/95 backdrop-blur-2xl">
             <motion.div
-                className="relative w-full max-w-6xl h-[82vh] rounded-[32px] overflow-hidden shadow-[0_0_80px_rgba(0,0,0,1)] flex flex-col border border-white/10"
+                className="relative w-full max-w-6xl h-full max-h-[calc(100%-2rem)] md:max-h-[calc(100%-4rem)] rounded-[32px] overflow-hidden shadow-[0_0_80px_rgba(0,0,0,1)] flex flex-col border border-white/10"
                 style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #000 100%)' }}
                 initial={{ opacity: 0, scale: 0.9, rotateX: 10 }}
                 animate={{ opacity: 1, scale: 1, rotateX: 0 }}

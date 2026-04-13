@@ -130,6 +130,8 @@ export interface MatchRecord {
       paidBet?: number;
       freeBet?: number;
       advisorNotes?: string[];
+      isSuitedBJ?: boolean;
+      isIberianBonus?: boolean;
       specialEvents?: {
         code:
           | 'DOUBLE_COST'
