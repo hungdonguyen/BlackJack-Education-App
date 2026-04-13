@@ -77,7 +77,7 @@ export const CARD_BACK_PATH = `${getThemeDir('default')}/card-back.png`;
  * getCardImage(Suit.HEARTS, Rank.ACE, 'gold')  // => "/images/cards/gold/H-A.png"
  */
 export function getCardImage(suit: Suit, rank: Rank, deckTheme: string = 'default'): string {
-  const ext = deckTheme === 'plasma' ? 'webp' : 'png';
+  const ext = ['plasma', 'cosmic'].includes(deckTheme) ? 'webp' : 'png';
   return `${getThemeDir(deckTheme)}/${buildCardKey(suit, rank)}.${ext}`;
 }
 
@@ -92,9 +92,11 @@ export function getCardImageFromCard(card: { suit: Suit; rank: Rank; isHidden?: 
 
 /**
  * Get the card-back image path.
+ * Note: Cosmic theme uses .png for the card back while using .webp for the cards.
  */
 export function getCardBackImage(deckTheme: string = 'default'): string {
-  const ext = deckTheme === 'plasma' ? 'webp' : 'png';
+  // Use .webp for plasma and cosmic, .png for everything else
+  const ext = ['plasma', 'cosmic'].includes(deckTheme) ? 'webp' : 'png';
   return `${getThemeDir(deckTheme)}/card-back.${ext}`;
 }
 
