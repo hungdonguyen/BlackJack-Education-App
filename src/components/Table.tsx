@@ -20,23 +20,26 @@ import DealerArea from './DealerArea';
 import Seat from './Seat';
 import ChipRack from './ChipRack';
 import ActionPanel from './ActionPanel';
+import dynamic from 'next/dynamic';
 import DevTools from './DevTools';
 import PortraitOverlay from './PortraitOverlay';
 import TutorialGuide from './TutorialGuide';
 import PayoutPanel from './PayoutPanel';
-import StrategyModal from './StrategyModal';
-import HandAdvisor from './HandAdvisor';
-import CardCountingPanel from './CardCountingPanel';
-import MatchDetailModal from './MatchDetailModal';
-import { useGamepad } from '@/hooks/useGamepad';
-import SettingsModal from './SettingsModal';
-import ControlsModal from './ControlsModal';
+
+// --- Dynamic Imports for Heavy/Modal Components ---
+const StrategyModal = dynamic(() => import('./StrategyModal'));
+const HandAdvisor = dynamic(() => import('./HandAdvisor'));
+const CardCountingPanel = dynamic(() => import('./CardCountingPanel'));
+const MatchDetailModal = dynamic(() => import('./MatchDetailModal'));
+const SettingsModal = dynamic(() => import('./SettingsModal'));
+const ControlsModal = dynamic(() => import('./ControlsModal'));
+
 import { MusicPlayer } from './MusicPlayer';
 import { calculateMatchNetPnl, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
 import { useAudio } from '@/utils/audio';
 import { useViewportScale } from '@/hooks/useViewportScale';
-import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys';
-import { useKeyboardHotkeys } from '@/hooks/useKeyboardHotkeys';
+
+import { useTableController } from '@/hooks/useTableController';
 
 // Import newly extracted subcomponents
 import { TopHUD } from './table/TopHUD';
@@ -60,23 +63,16 @@ const compactClaimNumber = (value: number) => {
 
 export default function Table({ roomId = 'classic' }: { roomId?: string }) {
     const room = getRoomConfig(roomId);
-    const router = useRouter();
 
-    const initializeShoe = useGameStore((s) => s.initializeShoe);
-    const shoe = useGameStore(useShallow((s) => s.shoe));
     const gamePhase = useGameStore((s) => s.gamePhase);
     const bankroll = useGameStore((s) => s.bankroll);
     const tutorialBalance = useGameStore((s) => s.tutorialBalance);
     const seats = useGameStore(useShallow((s) => s.seats));
     const currentSeatIndex = useGameStore((s) => s.currentSeatIndex);
     const matchHistory = useGameStore(useShallow((s) => s.matchHistory));
-    const setCurrentRoom = useGameStore((s) => s.setCurrentRoom);
     const insufficientFundsWarning = useGameStore((s) => s.insufficientFundsWarning);
     const insuranceBets = useGameStore(useShallow((s) => s.insuranceBets));
     const sideBets = useGameStore(useShallow((s) => s.sideBets));
-    const resetRound = useGameStore((s) => s.resetRound);
-    const resetTutorialProgress = useGameStore((s) => s.resetTutorialProgress);
-    const markTutorialCompleted = useGameStore((s) => s.markTutorialCompleted);
     const isHydrated = useStoreHydration();
 
     
@@ -107,169 +103,23 @@ export default function Table({ roomId = 'classic' }: { roomId?: string }) {
         Object.values(sideBets || {}).reduce((sum, amount) => sum + amount, 0);
 
     const currentSeat = seats[currentSeatIndex];
-    const lastOutcomeMatchIdRef = useRef<string | null>(null);
-
-    // Set current room in store and reset tutorial if needed
-    useEffect(() => {
-        setCurrentRoom(roomId);
-        if (room.isTutorial) {
-            resetTutorialProgress(roomId);
-        }
-        return () => {
-            setCurrentRoom('');
-        };
-    }, [roomId, setCurrentRoom, room.isTutorial, resetTutorialProgress]);
-
-    const [winNotification, setWinNotification] = useState<{amount: number, isWin: boolean, isPush?: boolean} | null>(null);
-    const [showLogoInfo, setShowLogoInfo] = useState(false);
-    const [selectedMatchIndex, setSelectedMatchIndex] = useState<number | null>(null);
-    const [showExitConfirmation, setShowExitConfirmation] = useState<{target: 'lobby'|'home'|null}>({target: null});
-    const [isFullscreen, setIsFullscreen] = useState(false);
-
-    useEffect(() => {
-        const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
-        document.addEventListener('fullscreenchange', onFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
-    }, []);
 
     const { playSound } = useAudio();
 
-    const closeTransientLayers = () => {
-        setSelectedMatchIndex(null);
-        setShowSettings(false);
-        setShowControls(false);
-        setShowStrategy(false);
-        setShowLogoInfo(false);
-    };
-
-    const returnToLobby = () => {
-        if (room.isTutorial) {
-            setShowExitConfirmation({ target: 'lobby' });
-            return;
-        }
-        closeTransientLayers();
-        resetRound();
-        router.push('/lobby');
-    };
-
-    const returnHome = () => {
-        if (room.isTutorial) {
-            setShowExitConfirmation({ target: 'home' });
-            return;
-        }
-        closeTransientLayers();
-        resetRound();
-        router.push('/');
-    };
-
-    const finishTutorialFromHotkey = () => {
-        markTutorialCompleted(roomId);
-        resetTutorialProgress();
-        closeTransientLayers();
-        router.push('/tutorial-lobby');
-    };
-
-    useGamepad({ onLobby: () => returnToLobby(), onHome: () => returnHome(), onFinishTutorial: () => finishTutorialFromHotkey() }); // Mount Gamepad Listener
-    useKeyboardHotkeys({ onLobby: () => returnToLobby(), onHome: () => returnHome(), onFinishTutorial: () => finishTutorialFromHotkey() }); // Mount Keyboard Hotkeys
-
-    const confirmExit = () => {
-        const target = showExitConfirmation.target;
-        setShowExitConfirmation({ target: null });
-        closeTransientLayers();
-        resetTutorialProgress();
-        setCurrentRoom('');
-        resetRound();
-        if (target === 'lobby') {
-            router.push('/lobby');
-        } else {
-            router.push('/');
-        }
-    };
-
-    const toggleFullscreen = async () => {
-        try {
-            if (document.fullscreenElement) {
-                await document.exitFullscreen();
-                return;
-            }
-
-            await document.documentElement.requestFullscreen();
-        } catch (error) {
-            console.warn('[Table] Fullscreen toggle failed:', error);
-        }
-    };
-
-    useEffect(() => {
-        if (shoe.length === 0) {
-            initializeShoe();
-            playSound('shuffle', 0.5, { shortShuffle: true });
-        }
-    }, [shoe.length, initializeShoe, playSound]);
-
-    useGlobalHotkeys({
-        onEscape: () => {
-            if (selectedMatchIndex !== null) {
-                setSelectedMatchIndex(null);
-                return;
-            }
-            if (showSettings) {
-                setShowSettings(false);
-                return;
-            }
-            if (showControls) {
-                setShowControls(false);
-                return;
-            }
-            if (showStrategy) {
-                setShowStrategy(false);
-                return;
-            }
-            if (showLogoInfo) {
-                setShowLogoInfo(false);
-                return;
-            }
-            returnToLobby();
-        }
-    });
-
-    // Safety: recover from stuck DEALER_TURN (e.g. async error in dealerPlay)
-    const dealerPlay = useGameStore((s) => s.dealerPlay);
-    useEffect(() => {
-        if (gamePhase !== GamePhase.DEALER_TURN) return;
-        const safetyTimeout = setTimeout(() => {
-            dealerPlay();
-        }, 10_000);
-        return () => clearTimeout(safetyTimeout);
-    }, [gamePhase, dealerPlay]);
-
-    // Win notification and outcome sound on payout
-    const lastCompletedMatch = useGameStore((s) => s.lastCompletedMatch);
-    useEffect(() => {
-        if (isPayout) {
-            const lastMatch = lastCompletedMatch;
-            if (!lastMatch || lastOutcomeMatchIdRef.current === lastMatch.id) return;
-            lastOutcomeMatchIdRef.current = lastMatch.id;
-
-            const netRoundChange = calculateMatchNetPnl(lastMatch);
-
-            if (netRoundChange > 0) {
-                setWinNotification({ amount: netRoundChange, isWin: true });
-                playSound('win');
-            } else if (netRoundChange < 0) {
-                setWinNotification({ amount: Math.abs(netRoundChange), isWin: false });
-                playSound('lose');
-            } else {
-                // Pure push — clear any stale notification then show PUSH briefly
-                setWinNotification({ amount: 0, isWin: false, isPush: true });
-            }
-
-            const t = setTimeout(() => setWinNotification(null), 4000);
-            return () => clearTimeout(t);
-        } else if (gamePhase === GamePhase.BETTING || gamePhase === GamePhase.DEALING) {
-            lastOutcomeMatchIdRef.current = null;
-            setWinNotification(null);
-        }
-    }, [isPayout, gamePhase, playSound, lastCompletedMatch]);
+    const {
+        winNotification,
+        showLogoInfo,
+        setShowLogoInfo,
+        selectedMatchIndex,
+        setSelectedMatchIndex,
+        showExitConfirmation,
+        setShowExitConfirmation,
+        isFullscreen,
+        returnToLobby,
+        returnHome,
+        confirmExit,
+        toggleFullscreen,
+    } = useTableController(roomId || 'classic', room);
 
 
 // Logo path from room config

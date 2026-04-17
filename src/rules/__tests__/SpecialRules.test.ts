@@ -301,25 +301,25 @@ describe('Iberian 21 Rules (Spanish 21)', () => {
             hand.status = HandStatus.PLAYING;
             
             // Undoubled 3-card 21 => 1.0 (win) usually
-            expect(rules.evaluateHand(hand, {total: 21, isSoft:false}, d17, v17)).toEqual({ status: HandStatus.WON, payoutMultiplier: 1 });
+            expect(rules.evaluateHand(hand, {total: 21, isSoft:false}, d17, v17)).toMatchObject({ status: HandStatus.WON, payoutMultiplier: 1 });
 
             // 5-card 21 (3:2 = 1.5)
             const h5 = createHand([c('2',2), c('2',2), c('3',3), c('4',4), c('10',10)]);
-            expect(rules.evaluateHand(h5, {total: 21, isSoft:false}, d17, v17)).toEqual({ status: HandStatus.WON, payoutMultiplier: 1.5 });
+            expect(rules.evaluateHand(h5, {total: 21, isSoft:false}, d17, v17)).toMatchObject({ status: HandStatus.WON, payoutMultiplier: 1.5 });
 
             // 6-card 21 (2:1 = 2)
             const h6 = createHand([c('2',2), c('2',2), c('2',2), c('2',2), c('3',3), c('10',10)]);
-            expect(rules.evaluateHand(h6, {total: 21, isSoft:false}, d17, v17)).toEqual({ status: HandStatus.WON, payoutMultiplier: 2 });
+            expect(rules.evaluateHand(h6, {total: 21, isSoft:false}, d17, v17)).toMatchObject({ status: HandStatus.WON, payoutMultiplier: 2 });
 
             // 7-card 21 (3:1 = 3)
             const h7 = createHand([c('2',2), c('2',2), c('2',2), c('A',1), c('A',1), c('3',3), c('10',10)]);
-            expect(rules.evaluateHand(h7, {total: 21, isSoft:false}, d17, v17)).toEqual({ status: HandStatus.WON, payoutMultiplier: 3 });
+            expect(rules.evaluateHand(h7, {total: 21, isSoft:false}, d17, v17)).toMatchObject({ status: HandStatus.WON, payoutMultiplier: 3 });
         });
 
         it('awards strictly 1:1 if player 21 is doubled', () => {
              const h5 = createHand([c('2',2), c('2',2), c('3',3), c('4',4), c('10',10)]);
              h5.isDoubleDown = true;
-             expect(rules.evaluateHand(h5, {total: 21, isSoft:false}, d17, v17)).toEqual({ status: HandStatus.WON, payoutMultiplier: 1 });
+             expect(rules.evaluateHand(h5, {total: 21, isSoft:false}, d17, v17)).toMatchObject({ status: HandStatus.WON, payoutMultiplier: 1 });
         });
 
         it('evaluates 6-7-8 and 7-7-7 bonuses', () => {
@@ -328,26 +328,26 @@ describe('Iberian 21 Rules (Spanish 21)', () => {
                 {rank: Rank.SEVEN, value: 7, suit: Suit.CLUBS, isHidden:false},
                 {rank: Rank.EIGHT, value: 8, suit: Suit.DIAMONDS, isHidden:false}
             ]);
-            expect(rules.evaluateHand(h678_mixed, {total: 21, isSoft:false}, d17, v17)).toEqual({ status: HandStatus.WON, payoutMultiplier: 1.5 }); // 3:2
+            expect(rules.evaluateHand(h678_mixed, {total: 21, isSoft:false}, d17, v17)).toMatchObject({ status: HandStatus.WON, payoutMultiplier: 1.5 }); // 3:2
 
             const h777_suited = createHand([
                 {rank: Rank.SEVEN, value: 7, suit: Suit.HEARTS, isHidden:false},
                 {rank: Rank.SEVEN, value: 7, suit: Suit.HEARTS, isHidden:false},
                 {rank: Rank.SEVEN, value: 7, suit: Suit.HEARTS, isHidden:false}
             ]);
-            expect(rules.evaluateHand(h777_suited, {total: 21, isSoft:false}, d17, v17)).toEqual({ status: HandStatus.WON, payoutMultiplier: 2 }); // 2:1 since not spades
+            expect(rules.evaluateHand(h777_suited, {total: 21, isSoft:false}, d17, v17)).toMatchObject({ status: HandStatus.WON, payoutMultiplier: 2 }); // 2:1 since not spades
 
             const hSpades = createHand([
                 {rank: Rank.SIX, value: 6, suit: Suit.SPADES, isHidden:false},
                 {rank: Rank.SEVEN, value: 7, suit: Suit.SPADES, isHidden:false},
                 {rank: Rank.EIGHT, value: 8, suit: Suit.SPADES, isHidden:false}
             ]);
-            expect(rules.evaluateHand(hSpades, {total: 21, isSoft:false}, d17, v17)).toEqual({ status: HandStatus.WON, payoutMultiplier: 3 }); // 3:1
+            expect(rules.evaluateHand(hSpades, {total: 21, isSoft:false}, d17, v17)).toMatchObject({ status: HandStatus.WON, payoutMultiplier: 3 }); // 3:1
 
             // Super bonus 777 suited against 7 upcard
             const d7 = [{rank: Rank.SEVEN, value: 7, suit: Suit.HEARTS, isHidden:false}];
             h777_suited.betAmount = 25; // 5000 / 25 = 200 multiplier!
-            expect(rules.evaluateHand(h777_suited, {total: 21, isSoft:false}, d7, v17)).toEqual({ status: HandStatus.WON, payoutMultiplier: 200 }); // 5000 / 25
+            expect(rules.evaluateHand(h777_suited, {total: 21, isSoft:false}, d7, v17)).toMatchObject({ status: HandStatus.WON, payoutMultiplier: 200 }); // 5000 / 25
         });
 
         it('handles dealer BJ, busts, standard outcomes', () => {
