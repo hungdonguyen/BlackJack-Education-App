@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useStoreHydration } from '@/hooks/useGameStore';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -10,27 +11,54 @@ interface SplashScreenProps {
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [logoVisible, setLogoVisible] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const isHydrated = useStoreHydration();
+  const isHydratedRef = useRef(isHydrated);
+  isHydratedRef.current = isHydrated;
   
   useEffect(() => {
+    const minDuration = 2800; // Minimum load time to see the animation
+    const start = Date.now();
+    let hasCompleted = false;
+
     // Wait slightly before fading in logo
     const t1 = setTimeout(() => {
       setLogoVisible(true);
     }, 400);
-    
-    // Hide logo after reading time
-    const t2 = setTimeout(() => {
-      setLogoVisible(false);
-    }, 2400);
 
-    // Call onComplete to unmount whole splash smoothly
-    const t3 = setTimeout(() => {
-      onComplete();
-    }, 3200);
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const isReadyNow = isHydratedRef.current && document.readyState === 'complete';
+      
+      let p = Math.floor((elapsed / minDuration) * 100);
+      
+      if (!isReadyNow && p >= 90) {
+        // Stall at 90-95% if not completely ready
+        p = 90 + Math.floor((elapsed - minDuration * 0.9) / 800);
+        if (p > 95) p = 95;
+      }
+
+      if (p >= 100) {
+        // Ensure cap at 100 if ready
+        p = isReadyNow ? 100 : 99;
+      }
+
+      setProgress(p);
+
+      if (p === 100 && isReadyNow && !hasCompleted) {
+        hasCompleted = true;
+        setLogoVisible(false); // Hide logo & bar
+        
+        // Call onComplete after fade out transition (800ms)
+        setTimeout(() => {
+          onComplete();
+        }, 800);
+      }
+    }, 50);
 
     return () => {
+      clearInterval(interval);
       clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
     };
   }, [onComplete]);
 
@@ -55,6 +83,48 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           className="object-contain"
           priority
         />
+      </motion.div>
+
+      {/* Pixel Loading Bar */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: logoVisible ? 1 : 0, y: logoVisible ? 0 : 10 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="absolute bottom-16 md:bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-start w-[240px]"
+      >
+        <div 
+          className="flex justify-between w-full text-black mb-1 px-1 text-sm md:text-base font-black tracking-[0.1em]"
+          style={{ fontFamily: '"Courier New", Courier, monospace' }}
+        >
+          <span>LOADING...</span>
+          <span>{progress}%</span>
+        </div>
+        
+        {/* Pixel style bar container */}
+        <div 
+          className="bg-white"
+          style={{
+            border: '4px solid black',
+            borderRadius: '8px', /* Thicker rounded corners for pixel vibe */
+            width: '240px',
+            height: '28px',
+            padding: '3px',
+            boxShadow: '4px 4px 0px rgba(0,0,0,0.15)' /* Subtle drop shadow */
+          }}
+        >
+          <div className="flex w-full h-full gap-1">
+            {Array.from({ length: 12 }).map((_, i) => {
+              const activeSegments = Math.round((progress / 100) * 12);
+              return (
+                <div 
+                  key={i} 
+                  className={`flex-1 h-full rounded-[2px] ${i < activeSegments ? 'bg-black' : 'bg-transparent'}`}
+                  style={{ transition: 'background-color 0.15s ease' }}
+                />
+              )
+            })}
+          </div>
+        </div>
       </motion.div>
     </motion.div>
   );
