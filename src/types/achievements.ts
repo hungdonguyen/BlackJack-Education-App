@@ -117,6 +117,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: 'gold_collector', name: 'Golden Touch', description: 'Purchase the Premium Gold Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/gold_collector.png' },
   { id: 'silver_collector', name: 'Silver Lining', description: 'Purchase the Sterling Silver Deck from the Casino Store.', tier: 'rare', category: 'store', icon: '/images/achievements/silver_collector.png' },
   { id: 'plasma_collector', name: 'Plasma State', description: 'Purchase the dynamic Plasma Flow Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/plasma_collector.png' },
+  { id: 'rainbow_collector', name: 'Over the Rainbow', description: 'Purchase the Iridescent Rainbow Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/rainbow_collector.png' },
   { id: 'cosmic_voyager', name: 'Cosmic Voyager', description: 'Purchase the Cosmic Swirl Deck and transcend beyond the stars.', tier: 'legendary', category: 'store', icon: '/images/achievements/cosmic_voyager.png' },
 ];
 

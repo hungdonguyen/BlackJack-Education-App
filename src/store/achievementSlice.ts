@@ -69,6 +69,7 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
       silver: 'silver_collector',
       plasma: 'plasma_collector',
       cosmic: 'cosmic_voyager',
+      rainbow: 'rainbow_collector',
     };
     const achievementId = mapping[deckId];
     if (achievementId && !state.unlockedAchievements[achievementId]) {

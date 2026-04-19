@@ -62,6 +62,14 @@ export default function StoreModal({ onClose }: StoreModalProps) {
             icon: <Crown size={14} className="text-amber-500" />
         },
         {
+            id: 'rainbow',
+            name: 'Iridescent Rainbow',
+            description: 'Gliding holographic pastel finish sweeping over a retro rainbow aesthetic.',
+            price: 666_666,
+            accent: '#ec4899',
+            icon: <Sparkles size={14} className="text-pink-400" />
+        },
+        {
             id: 'cosmic',
             name: 'Cosmic Swirl',
             description: 'Transcend beyond the stars with swirling nebula backgrounds.',

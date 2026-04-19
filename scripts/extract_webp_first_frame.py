@@ -12,3 +12,4 @@ def convert_dir(path):
 
 convert_dir(os.path.join("public", "images", "cards", "plasma"))
 convert_dir(os.path.join("public", "images", "cards", "cosmic"))
+convert_dir(os.path.join("public", "images", "cards", "rainbow"))
