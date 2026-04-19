@@ -14,6 +14,28 @@ import { createTutorialSlice } from './tutorialSlice';
 import { createDailyClaimSlice } from './dailyClaimSlice';
 import { createSimulatorSlice } from './simulatorSlice';
 
+const WEB_MATCH_HISTORY_LIMIT = 120;
+const WEB_SIMULATOR_HISTORY_LIMIT = 80;
+const WEB_SIMULATOR_CHART_POINTS_LIMIT = 240;
+
+function isTauriRuntime(): boolean {
+  if (typeof window === 'undefined') return false;
+  const hasTauriGlobals = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+  const hasTauriUserAgent = typeof navigator !== 'undefined' && navigator.userAgent.includes('Tauri');
+  return hasTauriGlobals || hasTauriUserAgent;
+}
+
+function trimSimulatorChart<T extends { simulatorChart?: { equityCurve: number[]; drawdownCurve: number[] } }>(record: T): T {
+  if (!record.simulatorChart) return record;
+  return {
+    ...record,
+    simulatorChart: {
+      equityCurve: record.simulatorChart.equityCurve.slice(-WEB_SIMULATOR_CHART_POINTS_LIMIT),
+      drawdownCurve: record.simulatorChart.drawdownCurve.slice(-WEB_SIMULATOR_CHART_POINTS_LIMIT),
+    },
+  };
+}
+
 export const useGameStoreBase = create<GameStore>()(
   persist(
     (...a) => ({
@@ -29,10 +51,20 @@ export const useGameStoreBase = create<GameStore>()(
     {
       name: 'blackjack-storage',
       // Only persist specific state to avoid bloat and issues with complex objects
-      partialize: (state) => ({
+      partialize: (state) => {
+        const tauri = isTauriRuntime();
+        const persistedMatchHistory = tauri
+          ? state.matchHistory
+          : state.matchHistory.slice(-WEB_MATCH_HISTORY_LIMIT).map(trimSimulatorChart);
+        const persistedSimulatorHistory = (tauri
+          ? state.simulatorHistory
+          : state.simulatorHistory.slice(-WEB_SIMULATOR_HISTORY_LIMIT)
+        ).map((h) => trimSimulatorChart({ ...h, simulatorHandHistory: [] }));
+
+        return {
         bankroll: state.bankroll,
-        matchHistory: state.matchHistory,
-        simulatorHistory: state.simulatorHistory.map(h => ({ ...h, simulatorHandHistory: [] })),
+        matchHistory: persistedMatchHistory,
+        simulatorHistory: persistedSimulatorHistory,
         lastDailyClaim: state.lastDailyClaim,
         dailyClaimStreak: state.dailyClaimStreak,
         dailyClaimCount: state.dailyClaimCount,
@@ -69,7 +101,8 @@ export const useGameStoreBase = create<GameStore>()(
         // Simulator config
         simulatorConfig: state.simulatorConfig,
         simulatorPresets: state.simulatorPresets,
-      }),
+      };
+      },
     }
   )
 );

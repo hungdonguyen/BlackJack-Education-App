@@ -9,6 +9,7 @@ import { useGameStore } from '@/hooks/useGameStore';
 import { useRouter } from 'next/navigation';
 import { calculateHandValue } from '@/utils/hand';
 import { GamePhase } from '@/types/enums';
+import { toAppHref } from '@/utils/platform';
 
 // ─── Phase badge colours ───
 const PHASE_COLORS: Record<string, string> = {
@@ -213,11 +214,11 @@ export default function DevTools() {
                         {/* ══ NAVIGATION ══ */}
                         <DevSection title="Navigation" id="nav" open={openSection} toggle={toggleSection}>
                             <div className="space-y-0.5">
-                                <DevBtn label="Classic VIP" onClick={() => router.push('/game/classic')} />
-                                <DevBtn label="Vegas Strip" onClick={() => router.push('/game/vegas_strip')} color="purple" />
-                                <DevBtn label="Vegas Dwtwn" onClick={() => router.push('/game/vegas_downtown')} color="sky" />
-                                <DevBtn label="Lobby" onClick={() => router.push('/lobby')} color="sky" />
-                                <DevBtn label="Home" onClick={() => router.push('/')} color="sky" />
+                                <DevBtn label="Classic VIP" onClick={() => router.push(toAppHref('/game/classic'))} />
+                                <DevBtn label="Vegas Strip" onClick={() => router.push(toAppHref('/game/vegas_strip'))} color="purple" />
+                                <DevBtn label="Vegas Dwtwn" onClick={() => router.push(toAppHref('/game/vegas_downtown'))} color="sky" />
+                                <DevBtn label="Lobby" onClick={() => router.push(toAppHref('/lobby'))} color="sky" />
+                                <DevBtn label="Home" onClick={() => router.push(toAppHref('/'))} color="sky" />
                             </div>
                         </DevSection>
 

@@ -3,6 +3,18 @@ import { GameStore } from '@/types/game';
 import type { SimulatorConfig, SimulatorRunState, SimulatorSlice, SimulatorWorkerOutput } from '@/types/simulator';
 import { buildPreRunRiskSnapshot, buildRiskConclusion } from '@/app/simulator/utils/formatters';
 
+const WEB_SIMULATOR_HISTORY_LIMIT = 120;
+const TAURI_SIMULATOR_HISTORY_LIMIT = 500;
+const WEB_MAX_HANDS_LIMIT = 10000;
+const TAURI_MAX_HANDS_LIMIT = 50000;
+
+function isTauriRuntime(): boolean {
+  if (typeof window === 'undefined') return false;
+  const hasTauriGlobals = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+  const hasTauriUserAgent = typeof navigator !== 'undefined' && navigator.userAgent.includes('Tauri');
+  return hasTauriGlobals || hasTauriUserAgent;
+}
+
 const DEFAULT_CONFIG: SimulatorConfig = {
   roomId: 'classic',
   seatCount: 1,
@@ -50,9 +62,10 @@ const DEFAULT_RUN_STATE: SimulatorRunState = {
 
 let workerRef: Worker | null = null;
 
-function clampMaxHands(value: number): number {
+function clampMaxHands(value: number, tauriRuntime: boolean): number {
   const safe = Number.isFinite(value) ? value : DEFAULT_CONFIG.maxHands;
-  return Math.min(10000000, Math.max(1, safe));
+  const limit = tauriRuntime ? TAURI_MAX_HANDS_LIMIT : WEB_MAX_HANDS_LIMIT;
+  return Math.min(limit, Math.max(1, safe));
 }
 
 function clampSeatCount(value: number): number {
@@ -67,6 +80,15 @@ function clearWorker() {
   }
 }
 
+function appendWithHistoryLimit<T>(items: T[], nextItem: T, limit: number): T[] {
+  if (limit <= 0) return [];
+  if (items.length < limit) return [...items, nextItem];
+  const next = [...items];
+  next.shift();
+  next.push(nextItem);
+  return next;
+}
+
 export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlice> = (set, get) => {
   return {
     simulatorConfig: DEFAULT_CONFIG,
@@ -78,6 +100,7 @@ export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlic
     simulatorPresets: [],
 
     setSimulatorConfig: (patch) => {
+      const tauriRuntime = isTauriRuntime();
       const current = get().simulatorConfig;
       const next = {
         ...current,
@@ -87,7 +110,7 @@ export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlic
           ...(patch.bettingParams ?? {}),
         },
       };
-      next.maxHands = clampMaxHands(next.maxHands);
+      next.maxHands = clampMaxHands(next.maxHands, tauriRuntime);
       next.seatCount = clampSeatCount(next.seatCount);
       set({
         simulatorConfig: next,
@@ -105,9 +128,10 @@ export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlic
 
     startSimulatorRun: () => {
       clearWorker();
+      const tauriRuntime = isTauriRuntime();
       const cfg = {
         ...get().simulatorConfig,
-        maxHands: clampMaxHands(get().simulatorConfig.maxHands),
+        maxHands: clampMaxHands(get().simulatorConfig.maxHands, tauriRuntime),
         seatCount: clampSeatCount(get().simulatorConfig.seatCount),
       };
       set({ simulatorConfig: cfg });
@@ -166,8 +190,11 @@ export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlic
                result.simulatorHistoryRecord.simulatorSummary.systemVerdict = verdict;
            }
 
+           const runtimeHistoryLimit = isTauriRuntime()
+             ? TAURI_SIMULATOR_HISTORY_LIMIT
+             : WEB_SIMULATOR_HISTORY_LIMIT;
            const history = result.simulatorHistoryRecord
-             ? [...currentState.simulatorHistory, result.simulatorHistoryRecord].slice(-500)
+             ? appendWithHistoryLimit(currentState.simulatorHistory, result.simulatorHistoryRecord, runtimeHistoryLimit)
              : currentState.simulatorHistory;
 
            set({

@@ -26,6 +26,7 @@ import { useMenuNavigation } from '@/hooks/useMenuNavigation';
 import { useHasClaimableRewards } from '@/hooks/useHasClaimableRewards';
 import StoreModal from '@/components/StoreModal';
 import { InsufficientFundsWarning } from '@/components/table/InsufficientFundsWarning';
+import { toAppHref } from '@/utils/platform';
 
 export default function HomePage() {
   const router = useRouter();
@@ -57,10 +58,10 @@ export default function HomePage() {
   const handleMenuSelect = useCallback((id: string) => {
     playSound('click');
     switch (id) {
-      case 'lobby': router.push('/lobby'); break;
-      case 'tutorial': router.push('/tutorial-lobby'); break;
+      case 'lobby': router.push(toAppHref('/lobby')); break;
+      case 'tutorial': router.push(toAppHref('/tutorial-lobby')); break;
       case 'strategy': setShowStrategy(true); break;
-      case 'simulator': router.push('/simulator'); break;
+      case 'simulator': router.push(toAppHref('/simulator')); break;
       case 'trophies': setShowAchievements(true); break;
       case 'claim': setShowDailyClaim(true); break;
       case 'settings': setShowSettings(true); break;
@@ -256,7 +257,7 @@ export default function HomePage() {
                   transition={{ delay: 0.4, duration: 0.5 }}
                 >
                   <button
-                    onClick={() => { playSound('click'); router.push('/lobby'); }}
+                    onClick={() => { playSound('click'); router.push(toAppHref('/lobby')); }}
                     className="group relative w-full h-full min-h-[108px] rounded-3xl overflow-hidden cursor-pointer flex items-center justify-between px-6 py-5 text-left transition-all duration-500 hover:scale-[1.02] active:scale-[0.98]"
                     style={{
                       ...{
@@ -301,7 +302,7 @@ export default function HomePage() {
                   transition={{ delay: 0.45, duration: 0.5 }}
                 >
                   <button
-                    onClick={() => { playSound('click'); router.push('/tutorial-lobby'); }}
+                    onClick={() => { playSound('click'); router.push(toAppHref('/tutorial-lobby')); }}
                     className="group relative w-full h-full min-h-[108px] rounded-3xl cursor-pointer transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] overflow-hidden text-left px-5 py-4 flex items-center justify-between"
                     style={{
                       background: 'linear-gradient(140deg, rgba(80,110,255,0.92) 0%, rgba(125,162,255,0.95) 55%, rgba(61,86,220,0.96) 100%)',
@@ -372,7 +373,7 @@ export default function HomePage() {
                 {/* Simulator */}
                 <motion.button
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, duration: 0.5 }}
-                  onClick={() => { playSound('click'); router.push('/simulator'); }}
+                  onClick={() => { playSound('click'); router.push(toAppHref('/simulator')); }}
                   className="group relative flex min-h-28 items-center justify-between gap-4 px-5 py-4 rounded-3xl cursor-pointer transition-all hover:-translate-y-1 active:scale-[0.97] overflow-hidden"
                   style={{
                     background: 'linear-gradient(135deg, rgba(27,169,201,0.14) 0%, rgba(8,49,70,0.65) 45%, rgba(6,24,35,0.85) 100%)',
@@ -591,14 +592,14 @@ export default function HomePage() {
             </div>
             <div className="flex items-center justify-center gap-4">
               <button
-                onClick={() => { playSound('click'); router.push('/privacy'); }}
+                onClick={() => { playSound('click'); router.push(toAppHref('/privacy')); }}
                 className="text-white/20 text-[10px] hover:text-white/50 transition-colors cursor-pointer underline underline-offset-2"
               >
                 Privacy Policy
               </button>
               <span className="text-white/10 text-[10px]">•</span>
               <button
-                onClick={() => { playSound('click'); router.push('/terms'); }}
+                onClick={() => { playSound('click'); router.push(toAppHref('/terms')); }}
                 className="text-white/20 text-[10px] hover:text-white/50 transition-colors cursor-pointer underline underline-offset-2"
               >
                 Terms of Service

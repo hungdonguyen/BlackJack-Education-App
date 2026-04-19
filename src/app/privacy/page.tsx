@@ -4,10 +4,13 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useModalNavigation } from '@/hooks/useMenuNavigation';
+import { getStoreLabel, getStoreOperatorLabel } from '@/utils/platform';
 
 export default function PrivacyPage() {
     const router = useRouter();
     const lastUpdated = '2026-04-03';
+    const storeLabel = getStoreLabel();
+    const storeOperator = getStoreOperatorLabel();
 
     useModalNavigation({
         onClose: () => router.back(),
@@ -111,12 +114,11 @@ export default function PrivacyPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">5. Steam Distribution</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">5. Platform Distribution</h2>
                         <p>
-                            At this time, the game is distributed on <strong className="text-white/80">Steam</strong>.
-                            Steam account, platform, and payment-related data are handled by Valve under
-                            Steam&apos;s own terms and privacy policy. The App does not request your Steam
-                            credentials.
+                            At this time, the game is distributed on <strong className="text-white/80">{storeLabel}</strong>.
+                            Platform account, platform, and payment-related data are handled by {storeOperator}.
+                            The App does not request your platform credentials.
                         </p>
                     </section>
 
@@ -124,7 +126,7 @@ export default function PrivacyPage() {
                         <h2 className="text-lg font-bold text-white/90 mb-3">6. GDPR Compliance (EU)</h2>
                         <p>
                             We do not collect or profile personal data for analytics or advertising. If
-                            technical metadata is processed by third-party asset hosts or Steam, that
+                            technical metadata is processed by third-party asset hosts or {storeLabel}, that
                             processing is governed by those providers&apos; own policies and legal bases.
                         </p>
                     </section>

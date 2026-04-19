@@ -2,6 +2,7 @@
 
 import { useGameStore } from '@/hooks/useGameStore';
 import { useCallback, useEffect, useRef } from 'react';
+import { withBaseAsset } from '@/utils/platform';
 
 type SoundVariant =
     | 'card-slide'
@@ -17,16 +18,16 @@ type SoundVariant =
 
 // Mapping categories to specific files
 const SOUND_MAP: Record<SoundVariant, string[]> = {
-    'card-slide': ['/sounds/game/card-slide.ogg'],
-    'card-place': ['/sounds/game/card-place.ogg'],
-    'chip-lay': ['/sounds/game/chip-lay.ogg'],
-    'chips-collide': ['/sounds/game/chips-collide.ogg'],
-    'shuffle': ['/sounds/game/card-shuffle.ogg'],
-    'dice-throw': ['/sounds/ui/click.ogg'], // Not used, map to a fallback
-    'click': ['/sounds/ui/click.ogg'],
-    'switch': ['/sounds/ui/switch.ogg'],
-    'win': ['/sounds/outcomes/win.wav'],
-    'lose': ['/sounds/outcomes/lose.wav']
+    'card-slide': [withBaseAsset('/sounds/game/card-slide.ogg')],
+    'card-place': [withBaseAsset('/sounds/game/card-place.ogg')],
+    'chip-lay': [withBaseAsset('/sounds/game/chip-lay.ogg')],
+    'chips-collide': [withBaseAsset('/sounds/game/chips-collide.ogg')],
+    'shuffle': [withBaseAsset('/sounds/game/card-shuffle.ogg')],
+    'dice-throw': [withBaseAsset('/sounds/ui/click.ogg')], // Not used, map to a fallback
+    'click': [withBaseAsset('/sounds/ui/click.ogg')],
+    'switch': [withBaseAsset('/sounds/ui/switch.ogg')],
+    'win': [withBaseAsset('/sounds/outcomes/win.wav')],
+    'lose': [withBaseAsset('/sounds/outcomes/lose.wav')]
 };
 
 export function useAudio() {

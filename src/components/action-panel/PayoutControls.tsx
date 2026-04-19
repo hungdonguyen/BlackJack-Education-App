@@ -4,6 +4,7 @@ import { Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/hooks/useGameStore';
 import { getLessons } from '@/store/tutorialSlice';
+import { toAppHref } from '@/utils/platform';
 
 export function PayoutControls() {
     const router = useRouter();
@@ -21,7 +22,7 @@ export function PayoutControls() {
         <motion.button
             key="payout"
             id="finish-tutorial-button"
-            onClick={() => { markTutorialCompleted(currentRoom); resetTutorialProgress(); router.push('/tutorial-lobby'); }}
+            onClick={() => { markTutorialCompleted(currentRoom); resetTutorialProgress(); router.push(toAppHref('/tutorial-lobby')); }}
             className={`px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
                 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white
                 shadow-[0_0_30px_rgba(139,92,246,0.4),0_8px_20px_rgba(0,0,0,0.3)]

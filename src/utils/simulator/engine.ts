@@ -882,7 +882,7 @@ function createHistoryRecord(state: EngineState, result: SimulatorResult): Match
 }
 
 export function createSimulatorEngine(config: SimulatorConfig, seedInput?: number): SimulatorEngine {
-  const cappedMaxHands = Math.min(5000, Math.max(1, config.maxHands));
+  const cappedMaxHands = Math.min(50000, Math.max(1, config.maxHands));
   const effectiveConfig: SimulatorConfig = {
     ...config,
     maxHands: cappedMaxHands,

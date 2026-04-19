@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useStoreHydration } from '@/hooks/useGameStore';
+import { hasAudioUserActivation, primeBGMEngine } from '@/utils/bgm';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -12,9 +13,30 @@ interface SplashScreenProps {
 export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [logoVisible, setLogoVisible] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const [awaitingContinueClick, setAwaitingContinueClick] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const isHydrated = useStoreHydration();
   const isHydratedRef = useRef(isHydrated);
   isHydratedRef.current = isHydrated;
+
+  useEffect(() => {
+    primeBGMEngine();
+    const syncActivationState = () => {
+      setAudioUnlocked(hasAudioUserActivation());
+    };
+
+    syncActivationState();
+    window.addEventListener('bgm_audio_unlocked', syncActivationState);
+    window.addEventListener('pointerdown', syncActivationState, { capture: true });
+    window.addEventListener('keydown', syncActivationState, { capture: true });
+
+    return () => {
+      window.removeEventListener('bgm_audio_unlocked', syncActivationState);
+      window.removeEventListener('pointerdown', syncActivationState, { capture: true });
+      window.removeEventListener('keydown', syncActivationState, { capture: true });
+    };
+  }, []);
   
   useEffect(() => {
     const minDuration = 2800; // Minimum load time to see the animation
@@ -47,12 +69,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
       if (p === 100 && isReadyNow && !hasCompleted) {
         hasCompleted = true;
-        setLogoVisible(false); // Hide logo & bar
-        
-        // Call onComplete after fade out transition (800ms)
-        setTimeout(() => {
-          onComplete();
-        }, 800);
+        setAwaitingContinueClick(true);
       }
     }, 50);
 
@@ -62,13 +79,23 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
     };
   }, [onComplete]);
 
+  const handleContinue = () => {
+    if (!awaitingContinueClick || isExiting) return;
+    setIsExiting(true);
+    setLogoVisible(false);
+    setTimeout(() => {
+      onComplete();
+    }, 800);
+  };
+
   return (
     <motion.div
       key="splash-screen"
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.8, ease: 'easeInOut' }}
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-white"
+      className={`fixed inset-0 z-[99999] flex items-center justify-center bg-white ${awaitingContinueClick ? 'cursor-pointer' : ''}`}
+      onPointerDown={handleContinue}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -93,8 +120,8 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         className="absolute bottom-16 md:bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-start w-[240px]"
       >
         <div 
-          className="flex justify-between w-full text-black mb-1 px-1 text-sm md:text-base font-black tracking-[0.1em]"
-          style={{ fontFamily: '"Courier New", Courier, monospace' }}
+          className="flex justify-between w-full text-black mb-1 px-1 text-sm md:text-base font-black tracking-[0.08em]"
+          style={{ fontFamily: '"Arial Black", "Segoe UI", Arial, sans-serif' }}
         >
           <span>LOADING...</span>
           <span>{progress}%</span>
@@ -125,6 +152,18 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
             })}
           </div>
         </div>
+
+        {awaitingContinueClick && (
+          <p
+            className="mt-2 px-1 text-[10px] md:text-[11px] font-black tracking-[0.12em] uppercase"
+            style={{
+              fontFamily: '"Arial Black", "Segoe UI", Arial, sans-serif',
+              color: audioUnlocked ? '#0b8f4f' : 'rgba(0,0,0,0.72)',
+            }}
+          >
+            {'Click anywhere to countinue'}
+          </p>
+        )}
       </motion.div>
     </motion.div>
   );

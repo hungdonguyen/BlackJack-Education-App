@@ -8,6 +8,7 @@ import { useGamepad } from '@/hooks/useGamepad';
 import { useKeyboardHotkeys } from '@/hooks/useKeyboardHotkeys';
 import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys';
 import { RoomConfig } from '@/utils/rooms/types';
+import { toAppHref } from '@/utils/platform';
 
 export interface UseTableControllerReturn {
     winNotification: { amount: number; isWin: boolean; isPush?: boolean } | null;
@@ -96,7 +97,7 @@ export function useTableController(roomId: string, room: RoomConfig): UseTableCo
         }
         closeTransientLayers();
         resetRound();
-        router.push('/lobby');
+        router.push(toAppHref('/lobby'));
     };
 
     const returnHome = () => {
@@ -106,14 +107,14 @@ export function useTableController(roomId: string, room: RoomConfig): UseTableCo
         }
         closeTransientLayers();
         resetRound();
-        router.push('/');
+        router.push(toAppHref('/'));
     };
 
     const finishTutorialFromHotkey = () => {
         markTutorialCompleted(roomId);
         resetTutorialProgress();
         closeTransientLayers();
-        router.push('/tutorial-lobby');
+        router.push(toAppHref('/tutorial-lobby'));
     };
 
     const confirmExit = () => {
@@ -124,9 +125,9 @@ export function useTableController(roomId: string, room: RoomConfig): UseTableCo
         setCurrentRoom('');
         resetRound();
         if (target === 'lobby') {
-            router.push('/lobby');
+            router.push(toAppHref('/lobby'));
         } else {
-            router.push('/');
+            router.push(toAppHref('/'));
         }
     };
 

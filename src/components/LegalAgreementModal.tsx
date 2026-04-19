@@ -55,11 +55,11 @@ const PRIVACY_CONTENT = [
     },
     {
         title: '4. Third-Party Assets & Platform Services',
-        body: 'The App may load limited static visual assets (icons/textures) from third-party CDNs and is currently distributed on Steam. These providers may process technical network metadata under their own policies.',
+        body: 'The App may load limited static visual assets (icons/textures) from third-party CDNs and can be distributed on storefronts such as Steam or itch.io. These providers may process technical network metadata under their own policies.',
     },
     {
         title: '5. GDPR Compliance (EU)',
-        body: 'We do not collect or profile personal data for analytics or advertising. Any technical metadata processed by Steam or third-party asset hosts is governed by those providers\' own policies.',
+        body: 'We do not collect or profile personal data for analytics or advertising. Any technical metadata processed by storefront providers or third-party asset hosts is governed by those providers\' own policies.',
     },
     {
         title: '6. CCPA Compliance (California, US)',
@@ -89,8 +89,8 @@ const TERMS_CONTENT = [
         body: 'This App contains simulated gambling content (18+). By using this App, you confirm that you are at least 18 years of age or the age of majority in your jurisdiction, whichever is higher. The App is not intended for use by minors.',
     },
     {
-        title: '4. Platform, Network Use & Steam Distribution',
-        body: 'At this time, the game is distributed on Steam. Steam account/platform/payment data are handled by Valve under Steam\'s own terms and privacy policy. Third-party static asset hosts may receive technical network metadata as part of normal asset delivery.',
+        title: '4. Platform & Network Use',
+        body: 'At this time, the game is distributed on storefronts such as Steam or itch.io. Platform account/platform/payment data are handled by those providers under their own terms and privacy policies. Third-party static asset hosts may receive technical network metadata as part of normal asset delivery.',
     },
     {
         title: '5. Fair Play & Randomness',

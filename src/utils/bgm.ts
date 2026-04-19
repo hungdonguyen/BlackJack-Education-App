@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useGameStore } from '@/hooks/useGameStore';
+import { withBaseAsset } from '@/utils/platform';
 
 export const PLAYLIST = [
     { name: 'Cool Vibes', path: '/sounds/bgm/CoolVibes.mp3', vol: 7 },
@@ -47,6 +48,16 @@ const BGM_MAP: Record<string, string> = {
 
 const FADE_DURATION = 1500; // ms
 const BASE_VOLUME = 0.3; // Increased to allow more range
+
+function getBgmCandidates(path: string): string[] {
+    const dot = path.lastIndexOf('.');
+    const base = dot >= 0 ? path.slice(0, dot) : path;
+    return [
+        withBaseAsset(`${base}.webm`),
+        withBaseAsset(`${base}.ogg`),
+        withBaseAsset(path),
+    ];
+}
 
 // Singleton audio engine to prevent race conditions during Next.js navigation
 class BGMEngine {
@@ -159,15 +170,28 @@ class BGMEngine {
         }
 
         // Setup new track
-        if (this.currentPath !== path || this.audio.src.indexOf(path) === -1) {
-            this.audio.src = path;
-        }
-        
+        const candidates = getBgmCandidates(path);
+
         this.audio.volume = 0;
         this.currentPath = path;
 
         try {
-            await this.audio.play();
+            let played = false;
+            for (const candidate of candidates) {
+                try {
+                    this.audio.src = candidate;
+                    await this.audio.play();
+                    played = true;
+                    break;
+                } catch {
+                    // Try next format candidate (webm -> ogg -> mp3)
+                }
+            }
+
+            if (!played) {
+                throw new Error('No compatible BGM source available');
+            }
+
             if (currentToken !== this.playId) {
                 this.audio.pause();
                 return;
@@ -185,6 +209,15 @@ class BGMEngine {
         if (!this.audio || this.audio.paused || this.fadeInterval) return;
         this.audio.volume = Math.max(0, Math.min(1, volume));
     }
+}
+
+export function primeBGMEngine(): void {
+    BGMEngine.getInstance();
+}
+
+export function hasAudioUserActivation(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    return Boolean((navigator as any).userActivation?.hasBeenActive);
 }
 
 

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BookOpen, BrainCircuit } from 'lucide-react';
+import { toAppHref } from '@/utils/platform';
 
 interface Props {
   onOpenStrategy: () => void;
@@ -20,7 +21,7 @@ export function SimulatorHeader({ onOpenStrategy }: Props) {
       </div>
       <div className="flex items-center gap-2 sm:gap-3">
         <Link 
-          href="/" 
+          href={toAppHref('/')} 
           className="inline-flex h-8 items-center rounded-lg border border-[#d4a843]/20 bg-black/20 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#f0e6d6]/85 transition-all hover:border-[#d4a843]/50 hover:bg-[#d4a843]/10 hover:text-[#f7edd9] sm:h-9 sm:px-4 sm:text-sm sm:tracking-[0.08em]"
         >
           Home

@@ -4,10 +4,13 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { useModalNavigation } from '@/hooks/useMenuNavigation';
+import { getStoreLabel, getStoreOperatorLabel } from '@/utils/platform';
 
 export default function TermsPage() {
     const router = useRouter();
     const lastUpdated = '2026-04-03';
+    const storeLabel = getStoreLabel();
+    const storeOperator = getStoreOperatorLabel();
 
     useModalNavigation({
         onClose: () => router.back(),
@@ -102,12 +105,11 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">4. Platform, Network Use &amp; Steam Distribution</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">4. Platform &amp; Network Use</h2>
                         <p>
-                            At this time, the game is distributed on <strong className="text-white/80">Steam</strong>.
-                            Steam account, platform, and payment-related data are handled by Valve under
-                            Steam&apos;s own terms and privacy policy. The App does not request your Steam
-                            credentials.
+                            At this time, the game is distributed on <strong className="text-white/80">{storeLabel}</strong>.
+                            Platform account, platform, and payment-related data are handled by {storeOperator}.
+                            The App does not request your platform credentials.
                         </p>
                         <p className="mt-3">
                             Third-party static asset hosts may receive technical network metadata (such as

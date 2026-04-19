@@ -14,6 +14,7 @@ import { Navigation } from 'swiper/modules';
 import type { SwiperClass } from 'swiper/react';
 import { FloatingLogosBackdrop, ROOM_LOGO_PATHS } from '@/components/FloatingLogosBackdrop';
 import { useMenuNavigation } from '@/hooks/useMenuNavigation';
+import { toAppHref } from '@/utils/platform';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -60,12 +61,12 @@ export default function TutorialLobby() {
 
   const handleTutorialSelect = useCallback((id: string) => {
     playSound('chip-lay');
-    router.push(`/game/${id}`);
+    router.push(toAppHref(`/game/${id}`));
   }, [playSound, router]);
 
   const handleGoHome = useCallback(() => {
     playSound('click');
-    router.push('/');
+    router.push(toAppHref('/'));
   }, [playSound, router]);
 
   const handleBoundary = useCallback((direction: 'prev' | 'next') => {
@@ -122,7 +123,7 @@ export default function TutorialLobby() {
       <header className="relative z-50 flex items-center justify-between px-8 py-6 backdrop-blur-md border-b border-white/5 bg-black/40">
         <div className="flex items-center gap-6">
           <motion.button
-            onClick={() => { playSound('click'); router.push('/'); }}
+            onClick={() => { playSound('click'); router.push(toAppHref('/')); }}
             className="p-3 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
             whileHover={{ x: -4 }}
             whileTap={{ scale: 0.95 }}
@@ -166,7 +167,7 @@ export default function TutorialLobby() {
                       key={room.id}
                       room={room}
                       completed={Boolean(completedTutorials?.[room.id])}
-                      onStart={() => { playSound('chip-lay'); router.push(`/game/${room.id}`); }}
+                      onStart={() => { playSound('chip-lay'); router.push(toAppHref(`/game/${room.id}`)); }}
                       isFocused={focusedId === room.id}
                     />
                   ))}

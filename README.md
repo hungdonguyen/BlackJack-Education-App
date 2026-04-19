@@ -85,6 +85,41 @@ npm run build
 pnpm build
 ```
 
+### Web Build for itch.io (HTML5)
+Use the dedicated itch profile (platform text + web deployment flags):
+
+```bash
+npm run build:itch
+```
+
+If your itch upload is hosted under a known subpath, set `NEXT_PUBLIC_APP_BASE_PATH` before building:
+
+```bash
+# PowerShell example
+$env:NEXT_PUBLIC_APP_BASE_PATH = "/html/YOUR_UPLOAD_PATH"
+npm run build:itch
+```
+
+Then clear the env var after build if needed:
+
+```bash
+Remove-Item Env:NEXT_PUBLIC_APP_BASE_PATH
+```
+
+### Audio Optimization for Web (prefer OGG/WEBM)
+This project will prefer `.webm` / `.ogg` for BGM at runtime and fall back to `.mp3`.
+Generate compressed web formats with:
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/transcode_bgm_for_web.ps1
+```
+
+Optional: remove original mp3 files after conversion:
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/transcode_bgm_for_web.ps1 -DeleteOriginal
+```
+
 ### Desktop Build (Tauri)
 To build the installable desktop application (exe/msi/dmg/deb):
 
@@ -93,6 +128,13 @@ npm run tauri build
 # or
 pnpm tauri build
 ```
+
+Desktop builds remain stable on the default profile. You can also run:
+
+```bash
+npm run build:tauri
+```
+
 The artifacts will be located in `src-tauri/target/release/bundle/`.
 
 ## 🧪 Testing

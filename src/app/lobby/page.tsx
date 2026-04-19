@@ -14,6 +14,7 @@ import type { SwiperClass } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import { useMenuNavigation } from '@/hooks/useMenuNavigation';
 import { InsufficientFundsWarning } from '@/components/table/InsufficientFundsWarning';
+import { toAppHref } from '@/utils/platform';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -52,12 +53,12 @@ export default function LobbyPage() {
 
     const handleRoomSelect = useCallback((id: string) => {
         playSound('click');
-        router.push(`/game/${id}`);
+        router.push(toAppHref(`/game/${id}`));
     }, [playSound, router]);
 
     const handleGoHome = useCallback(() => {
         playSound('click');
-        router.push('/');
+        router.push(toAppHref('/'));
     }, [playSound, router]);
 
     const handleBoundary = useCallback((direction: 'prev' | 'next') => {
@@ -143,7 +144,7 @@ export default function LobbyPage() {
             >
                 {/* Left Side: Back/Home */}
                 <motion.button
-                    onClick={() => { playSound('click'); router.push('/'); }}
+                    onClick={() => { playSound('click'); router.push(toAppHref('/')); }}
                     className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors cursor-pointer mr-6"
                     whileHover={{ x: -3 }}
                 >
@@ -227,7 +228,7 @@ export default function LobbyPage() {
                             <SwiperSlide key={pageIndex}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 xl:gap-5 w-full max-w-[1100px] mx-auto py-2">
                                     {chunk.map((room, index) => (
-                                        <RoomCard key={room.id} room={room} index={index} onClick={() => { playSound('click'); router.push(`/game/${room.id}`); }} variants={itemVariants} isFocused={focusedId === room.id} />
+                                        <RoomCard key={room.id} room={room} index={index} onClick={() => { playSound('click'); router.push(toAppHref(`/game/${room.id}`)); }} variants={itemVariants} isFocused={focusedId === room.id} />
                                     ))}
                                 </div>
                             </SwiperSlide>
