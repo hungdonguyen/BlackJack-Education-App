@@ -5,58 +5,52 @@ import { useGameStore } from '@/hooks/useGameStore';
 import { withBaseAsset } from '@/utils/platform';
 
 export const PLAYLIST = [
-    { name: 'Cool Vibes', path: '/sounds/bgm/CoolVibes.mp3', vol: 7 },
-    { name: 'Airport Lounge', path: '/sounds/bgm/Airport Lounge.mp3', vol: 1.0 },
-    { name: 'Funk Game Loop', path: '/sounds/bgm/Funk Game Loop.mp3', vol: 1.0 },
-    { name: 'Faster Does It', path: '/sounds/bgm/Faster Does It.mp3', vol: 1.0 },
-    { name: 'Whiskey on MS', path: '/sounds/bgm/Whiskey on the Mississippi.mp3', vol: 1.0 },
-    { name: 'Bossa Antigua', path: '/sounds/bgm/Bossa Antigua.mp3', vol: 1.0 },
-    { name: 'Spanish Summer', path: '/sounds/bgm/Spanish Summer- Audionautix.mp3', vol: 1.0 },
-    { name: 'Backed Clean', path: '/sounds/bgm/Backed Clean.mp3', vol: 7 },
+    { name: 'Cool Vibes', path: '/sounds/bgm/CoolVibes.webm', vol: 7 },
+    { name: 'Airport Lounge', path: '/sounds/bgm/Airport Lounge.webm', vol: 1.0 },
+    { name: 'Funk Game Loop', path: '/sounds/bgm/Funk Game Loop.webm', vol: 1.0 },
+    { name: 'Faster Does It', path: '/sounds/bgm/Faster Does It.webm', vol: 1.0 },
+    { name: 'Whiskey on MS', path: '/sounds/bgm/Whiskey on the Mississippi.webm', vol: 1.0 },
+    { name: 'Bossa Antigua', path: '/sounds/bgm/Bossa Antigua.webm', vol: 1.0 },
+    { name: 'Spanish Summer', path: '/sounds/bgm/Spanish Summer- Audionautix.webm', vol: 1.0 },
+    { name: 'Backed Clean', path: '/sounds/bgm/Backed Clean.webm', vol: 7 },
 ];
 
 // BGM mapping: roomId → file path
 const BGM_MAP: Record<string, string> = {
-    lobby: '/sounds/bgm/CoolVibes.mp3',
-    classic: '/sounds/bgm/Airport Lounge.mp3',
-    vegas_strip: '/sounds/bgm/Funk Game Loop.mp3',
-    vegas_downtown: '/sounds/bgm/Faster Does It.mp3',
-    free_action: '/sounds/bgm/Whiskey on the Mississippi.mp3',
-    atlantic_city: '/sounds/bgm/Bossa Antigua.mp3',
-    iberian_21: '/sounds/bgm/Spanish Summer- Audionautix.mp3',
-    european: '/sounds/bgm/Backed Clean.mp3',
-    uk: '/sounds/bgm/Airport Lounge.mp3',
-    zapout_21: '/sounds/bgm/Faster Does It.mp3',
-    exchange_21: '/sounds/bgm/Bossa Antigua.mp3',
-    firecard_21: '/sounds/bgm/Whiskey on the Mississippi.mp3',
-    infinity_double_down: '/sounds/bgm/Funk Game Loop.mp3',
-    tutorial_beginner: '/sounds/bgm/CoolVibes.mp3',
-    tutorial_double: '/sounds/bgm/Airport Lounge.mp3',
-    tutorial_strategy: '/sounds/bgm/Bossa Antigua.mp3',
-    tutorial_counting: '/sounds/bgm/Backed Clean.mp3',
-    tutorial_splitting: '/sounds/bgm/Faster Does It.mp3',
-    tutorial_multihand: '/sounds/bgm/Funk Game Loop.mp3',
-    tutorial_free_action: '/sounds/bgm/Whiskey on the Mississippi.mp3',
-    tutorial_zapout: '/sounds/bgm/Faster Does It.mp3',
-    tutorial_exchange: '/sounds/bgm/Bossa Antigua.mp3',
-    tutorial_firecard: '/sounds/bgm/Whiskey on the Mississippi.mp3',
-    tutorial_infinity_double_down: '/sounds/bgm/Funk Game Loop.mp3',
-    tutorial_iberian: '/sounds/bgm/Spanish Summer- Audionautix.mp3',
-    tutorial_european: '/sounds/bgm/Backed Clean.mp3',
-    tutorial_uk: '/sounds/bgm/Airport Lounge.mp3',
+    lobby: '/sounds/bgm/CoolVibes.webm',
+    classic: '/sounds/bgm/Airport Lounge.webm',
+    vegas_strip: '/sounds/bgm/Funk Game Loop.webm',
+    vegas_downtown: '/sounds/bgm/Faster Does It.webm',
+    free_action: '/sounds/bgm/Whiskey on the Mississippi.webm',
+    atlantic_city: '/sounds/bgm/Bossa Antigua.webm',
+    iberian_21: '/sounds/bgm/Spanish Summer- Audionautix.webm',
+    european: '/sounds/bgm/Backed Clean.webm',
+    uk: '/sounds/bgm/Airport Lounge.webm',
+    zapout_21: '/sounds/bgm/Faster Does It.webm',
+    exchange_21: '/sounds/bgm/Bossa Antigua.webm',
+    firecard_21: '/sounds/bgm/Whiskey on the Mississippi.webm',
+    infinity_double_down: '/sounds/bgm/Funk Game Loop.webm',
+    tutorial_beginner: '/sounds/bgm/CoolVibes.webm',
+    tutorial_double: '/sounds/bgm/Airport Lounge.webm',
+    tutorial_strategy: '/sounds/bgm/Bossa Antigua.webm',
+    tutorial_counting: '/sounds/bgm/Backed Clean.webm',
+    tutorial_splitting: '/sounds/bgm/Faster Does It.webm',
+    tutorial_multihand: '/sounds/bgm/Funk Game Loop.webm',
+    tutorial_free_action: '/sounds/bgm/Whiskey on the Mississippi.webm',
+    tutorial_zapout: '/sounds/bgm/Faster Does It.webm',
+    tutorial_exchange: '/sounds/bgm/Bossa Antigua.webm',
+    tutorial_firecard: '/sounds/bgm/Whiskey on the Mississippi.webm',
+    tutorial_infinity_double_down: '/sounds/bgm/Funk Game Loop.webm',
+    tutorial_iberian: '/sounds/bgm/Spanish Summer- Audionautix.webm',
+    tutorial_european: '/sounds/bgm/Backed Clean.webm',
+    tutorial_uk: '/sounds/bgm/Airport Lounge.webm',
 };
 
 const FADE_DURATION = 1500; // ms
 const BASE_VOLUME = 0.3; // Increased to allow more range
 
 function getBgmCandidates(path: string): string[] {
-    const dot = path.lastIndexOf('.');
-    const base = dot >= 0 ? path.slice(0, dot) : path;
-    return [
-        withBaseAsset(`${base}.webm`),
-        withBaseAsset(`${base}.ogg`),
-        withBaseAsset(path),
-    ];
+    return [withBaseAsset(path)];
 }
 
 // Singleton audio engine to prevent race conditions during Next.js navigation
