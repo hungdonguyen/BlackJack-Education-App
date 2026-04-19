@@ -118,6 +118,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: 'silver_collector', name: 'Silver Lining', description: 'Purchase the Sterling Silver Deck from the Casino Store.', tier: 'rare', category: 'store', icon: '/images/achievements/silver_collector.png' },
   { id: 'plasma_collector', name: 'Plasma State', description: 'Purchase the dynamic Plasma Flow Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/plasma_collector.png' },
   { id: 'rainbow_collector', name: 'Over the Rainbow', description: 'Purchase the Iridescent Rainbow Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/rainbow_collector.png' },
+  { id: 'hacker_collector', name: 'System Override', description: 'Purchase the Cyber Hacker Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/hacker_collector.png' },
+  { id: 'glass_collector', name: 'Crystal Clear', description: 'Purchase the Frosted Glass Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/glass_collector.png' },
   { id: 'cosmic_voyager', name: 'Cosmic Voyager', description: 'Purchase the Cosmic Swirl Deck and transcend beyond the stars.', tier: 'legendary', category: 'store', icon: '/images/achievements/cosmic_voyager.png' },
 ];
 

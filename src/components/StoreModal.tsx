@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ShoppingCart, Check, Crown, Lock, Sparkles, CreditCard } from 'lucide-react';
+import { X, ShoppingCart, Check, Crown, Lock, Sparkles, CreditCard, Zap, Gem } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
 import Image from 'next/image';
@@ -68,6 +68,22 @@ export default function StoreModal({ onClose }: StoreModalProps) {
             price: 666_666,
             accent: '#ec4899',
             icon: <Sparkles size={14} className="text-pink-400" />
+        },
+        {
+            id: 'hacker',
+            name: 'Cyber Hacker',
+            description: 'Pitch black matrix with phosphor green glitches and scanlines.',
+            price: 404_040,
+            accent: '#22c55e',
+            icon: <Zap size={14} className="text-green-500" />
+        },
+        {
+            id: 'glass',
+            name: 'Frosted Glass',
+            description: 'Ultra-modern glassmorphism with elegant specular highlights and sheer transparency.',
+            price: 888_888,
+            accent: '#e0f2fe',
+            icon: <Gem size={14} className="text-sky-200" />
         },
         {
             id: 'cosmic',

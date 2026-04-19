@@ -70,6 +70,8 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
       plasma: 'plasma_collector',
       cosmic: 'cosmic_voyager',
       rainbow: 'rainbow_collector',
+      hacker: 'hacker_collector',
+      glass: 'glass_collector',
     };
     const achievementId = mapping[deckId];
     if (achievementId && !state.unlockedAchievements[achievementId]) {
