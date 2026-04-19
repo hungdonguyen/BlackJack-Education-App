@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { ACHIEVEMENT_MAP, TIER_CONFIG } from '@/types/achievements';
+import { CategoryIcon } from './CasinoIcons';
 
 /**
  * Steam-style achievement unlock notification toast.
@@ -53,29 +53,13 @@ export const AchievementToast: React.FC = () => {
             animate={{ x: 0, opacity: 1, scale: 1 }}
             exit={{ x: 400, opacity: 0, scale: 0.8 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="pointer-events-auto flex items-center gap-4 p-4 rounded-xl border border-white/10 shadow-2xl backdrop-blur-xl bg-black/80 min-w-[320px] max-w-[400px]"
-            style={{
-              boxShadow: `0 10px 40px -10px ${tier.glow}, 0 0 20px rgba(0,0,0,0.5)`,
-            }}
+            className="pointer-events-auto flex items-center gap-4 p-4 rounded-md border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.8)] bg-[#121212] min-w-[320px] max-w-[400px]"
           >
             {/* Achievement Icon / Badge Placeholder */}
             <div 
-              className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center border-2"
-              style={{ 
-                borderColor: tier.color,
-                background: tier.bg,
-                boxShadow: `inset 0 0 10px ${tier.glow}`
-              }}
+              className="flex-shrink-0 w-12 h-12 rounded-md flex items-center justify-center border bg-[#1c1c1c] border-white/10"
             >
-              {achievement.icon ? (
-                <img 
-                  src={achievement.icon} 
-                  alt={achievement.name}
-                  className="w-full h-full object-cover rounded-full p-0.5"
-                />
-              ) : (
-                <Trophy size={24} style={{ color: tier.color }} />
-              )}
+              <CategoryIcon category={achievement.category} size={24} style={{ color: tier.color }} />
             </div>
 
             <div className="flex-grow min-w-0">

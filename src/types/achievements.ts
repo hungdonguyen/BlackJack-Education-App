@@ -60,6 +60,10 @@ export const TIER_CONFIG: Record<AchievementTier, { label: string; color: string
   legendary: { label: 'Legendary', color: '#f59e0b', glow: 'rgba(245,158,11,0.4)',  bg: 'rgba(245,158,11,0.1)' },
 };
 
+export const TIER_SORT_ORDER: Record<string, number> = {
+  common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5
+};
+
 // ─── All Achievement Definitions ───
 
 export const ACHIEVEMENTS: AchievementDefinition[] = [
@@ -77,6 +81,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: 'millionaire', name: 'High Roller Club', description: 'Reach a bankroll of $10,000,000.', tier: 'epic', category: 'general', icon: '/images/achievements/millionaire.png' },
   { id: 'billionaire', name: 'Casino Titan', description: 'Reach a bankroll of $10,000,000,000.', tier: 'legendary', category: 'general', icon: '/images/achievements/billionaire.png' },
   { id: 'perfect_strategy', name: 'Math Genius', description: 'Make 100 consecutive "Perfect Strategy" moves according to Advisor.', tier: 'legendary', category: 'general', icon: '/images/achievements/perfect_strategy.png' },
+  { id: 'tutorial_graduate', name: 'Knowledge Seeker', description: 'Complete a tutorial lesson to refine your skills.', tier: 'common', category: 'general', icon: '' },
+  { id: 'simulator_tester', name: 'Lab Rat', description: 'Run a simulation using the Advanced Simulator.', tier: 'uncommon', category: 'general', icon: '' },
 
   // ═══ Mastery (14–17) ═══
   { id: 'wins_100', name: 'Century Winner', description: 'Reach 500 total wins.', tier: 'rare', category: 'mastery', icon: '/images/achievements/wins_100.png' },

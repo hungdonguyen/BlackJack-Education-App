@@ -151,6 +151,9 @@ export const createTutorialSlice: StateCreator<GameStore, [], [], TutorialSlice>
     const roomToMark = roomOverride || state.currentRoom;
     if (!roomToMark || !roomToMark.startsWith('tutorial_')) return;
 
+    // Unlock achievement for completing a tutorial
+    (state as any).unlockSpecificAchievement?.('tutorial_graduate');
+
     set((prev) => ({
       completedTutorials: {
         ...prev.completedTutorials,

@@ -128,6 +128,10 @@ export const createSimulatorSlice: StateCreator<GameStore, [], [], SimulatorSlic
 
     startSimulatorRun: () => {
       clearWorker();
+      
+      // Unlock achievement for running the simulator
+      (get() as any).unlockSpecificAchievement?.('simulator_tester');
+
       const tauriRuntime = isTauriRuntime();
       const cfg = {
         ...get().simulatorConfig,

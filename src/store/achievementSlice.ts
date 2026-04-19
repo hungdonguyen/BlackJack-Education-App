@@ -19,6 +19,7 @@ export interface AchievementSlice {
   checkDeckPurchaseAchievement: (deckId: string) => void;
   syncAchievements: () => void;
   dismissAchievementToast: () => void;
+  unlockSpecificAchievement: (id: string) => void;
 }
 
 export const createAchievementSlice: StateCreator<GameStore, [], [], AchievementSlice> = (set, get) => ({
@@ -122,5 +123,19 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
     set((s) => ({
       achievementToastQueue: s.achievementToastQueue.slice(1),
     }));
+  },
+
+  unlockSpecificAchievement: (id: string) => {
+    const state = get();
+    if (!state.unlockedAchievements[id]) {
+      const now = Date.now();
+      set((s) => ({
+        unlockedAchievements: {
+          ...s.unlockedAchievements,
+          [id]: now,
+        },
+        achievementToastQueue: [...s.achievementToastQueue, id],
+      }));
+    }
   },
 });

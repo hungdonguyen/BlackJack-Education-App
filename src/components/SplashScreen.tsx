@@ -77,7 +77,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       clearInterval(interval);
       clearTimeout(t1);
     };
-  }, [onComplete]);
+  }, []);
 
   const handleContinue = () => {
     if (!awaitingContinueClick || isExiting) return;

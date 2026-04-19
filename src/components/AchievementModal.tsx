@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, X, Lock, CheckCircle2, Star, Zap, Flame, Repeat, Info } from 'lucide-react';
+import { X, Lock, CheckCircle2, Trophy } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
-import { ACHIEVEMENTS, TIER_CONFIG, AchievementDefinition } from '@/types/achievements';
+import { ACHIEVEMENTS, TIER_CONFIG, TIER_SORT_ORDER, AchievementDefinition } from '@/types/achievements';
 import { useModalNavigation } from '@/hooks/useMenuNavigation';
+import { CategoryIcon } from './CasinoIcons';
 
 const ACHIEVEMENT_QUOTES: Record<string, string> = {
     first_hand: "The journey of a thousand miles begins with a single hand. — Unknown Dealer",
@@ -57,7 +58,7 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
 
   const filteredAchievements = ACHIEVEMENTS.filter(a => 
     activeCategory === 'all' || a.category === activeCategory
-  );
+  ).sort((a, b) => TIER_SORT_ORDER[a.tier] - TIER_SORT_ORDER[b.tier]);
 
   const unlockedCount = ACHIEVEMENTS.reduce((acc, a) => acc + (unlockedAchievements[a.id] ? 1 : 0), 0);
   const totalCount = ACHIEVEMENTS.length;
@@ -166,43 +167,25 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
                       setSelectedAchievement(achievement);
                       setCurrentQuote(ACHIEVEMENT_QUOTES[achievement.id] || "Fortune favors the bold. — Virgil");
                   }}
-                  className={`group relative p-4 rounded-xl border transition-all duration-500 flex items-center gap-4 cursor-pointer ${
+                  className={`relative p-3 rounded-md border transition-all duration-300 flex items-center gap-4 cursor-pointer ${
                     isUnlocked 
-                      ? 'bg-white/[0.03] border-white/10 hover:border-white/20' 
-                      : 'bg-transparent border-white/5 opacity-60'
+                      ? 'bg-[#121212] border-white/10 hover:bg-[#1a1a1a] hover:border-white/20' 
+                      : 'bg-transparent border-white/5 opacity-50 hover:bg-white/[0.02]'
                   }`}
                 >
                   {/* Badge */}
                   <div className="relative flex-shrink-0">
                     <div 
-                      className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all duration-700 ${
-                        isUnlocked ? '' : 'grayscale opacity-40 grayscale-[80%]'
+                      className={`w-14 h-14 rounded-md flex items-center justify-center border transition-all duration-500 ${
+                        isUnlocked ? 'bg-[#1c1c1c] border-white/10' : 'bg-[#0a0a0a] border-white/5'
                       }`}
-                      style={{ 
-                        borderColor: isUnlocked ? tier.color : 'rgba(255,255,255,0.1)',
-                        background: isUnlocked ? tier.bg : 'transparent',
-                        boxShadow: isUnlocked ? `0 0 20px ${tier.glow}` : 'none'
-                      }}
                     >
                       {isUnlocked ? (
-                        achievement.icon ? (
-                          <img 
-                            src={achievement.icon} 
-                            alt={achievement.name}
-                            className="w-full h-full object-cover rounded-full p-0.5"
-                          />
-                        ) : (
-                          <Star size={24} style={{ color: tier.color }} fill={tier.color} className="animate-pulse" />
-                        )
+                        <CategoryIcon category={achievement.category} size={24} style={{ color: tier.color }} />
                       ) : (
                         <Lock size={20} className="text-white/20" />
                       )}
                     </div>
-                    {isUnlocked && (
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-black border-2 border-black">
-                        <CheckCircle2 size={14} strokeWidth={4} />
-                      </div>
-                    )}
                   </div>
 
                   {/* Info */}
@@ -234,20 +217,20 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
                       {achievement.secret && !isUnlocked ? 'Unlock this to reveal the requirements.' : achievement.description}
                     </p>
                     
-                    {isUnlocked && unlockedAchievements[achievement.id] && (
-                      <div className="mt-2 text-[8px] font-bold text-white/20 uppercase tracking-widest">
-                        Earned: {new Date(unlockedAchievements[achievement.id]).toLocaleDateString()}
-                      </div>
-                    )}
+                    <div className="mt-2 text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
+                       <span style={{ color: tier.color }}>{tier.label}</span>
+                       <span className="text-white/30">•</span>
+                       {isUnlocked && unlockedAchievements[achievement.id] ? (
+                         <span className="text-green-500/80">
+                           Unlocked {new Date(unlockedAchievements[achievement.id]).toLocaleDateString()}
+                         </span>
+                       ) : (
+                         <span className="text-white/20">Locked</span>
+                       )}
+                    </div>
                   </div>
 
-                  {/* Hover Decoration */}
-                  {isUnlocked && (
-                    <div 
-                      className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none"
-                      style={{ background: `radial-gradient(circle at center, ${tier.color} 0%, transparent 70%)` }}
-                    />
-                  )}
+
                 </motion.div>
               );
             })}
@@ -289,28 +272,15 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
 
                 <div className="max-w-xl w-full flex flex-col items-center text-center">
                   <div 
-                    className={`relative w-40 h-40 rounded-full flex items-center justify-center border-4 mb-8 transition-all duration-700 ${
-                      isUnlocked ? '' : 'grayscale opacity-40 grayscale-[80%]'
+                    className={`relative w-32 h-32 rounded-lg flex items-center justify-center border-2 mb-8 transition-all duration-500 ${
+                      isUnlocked ? 'bg-[#1c1c1c] border-white/10' : 'bg-[#0a0a0a] border-white/5 opacity-50'
                     }`}
-                    style={{ 
-                      borderColor: isUnlocked ? tier.color : 'rgba(255,255,255,0.1)',
-                      background: isUnlocked ? tier.bg : 'transparent',
-                      boxShadow: isUnlocked ? `0 0 60px ${tier.glow}` : 'none'
-                    }}
                   >
-                      {isUnlocked ? (
-                        selectedAchievement.icon ? (
-                          <img 
-                            src={selectedAchievement.icon} 
-                            alt={selectedAchievement.name}
-                            className="w-full h-full object-cover rounded-full p-1"
-                          />
-                        ) : (
-                          <Star size={64} style={{ color: tier.color }} fill={tier.color} className="animate-pulse" />
-                        )
-                      ) : (
-                        <Lock size={64} className="text-white/20" />
-                      )}
+                    {isUnlocked ? (
+                      <CategoryIcon category={selectedAchievement.category} size={56} style={{ color: tier.color }} />
+                    ) : (
+                      <Lock size={56} className="text-white/20" />
+                    )}
                   </div>
                   
                   <span 
