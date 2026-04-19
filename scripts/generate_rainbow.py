@@ -1,13 +1,12 @@
 import os
 import numpy as np
-from PIL import Image, ImageFilter, ImageDraw
+from PIL import Image, ImageDraw
 import concurrent.futures
 import time
 
 INPUT_DIR = os.path.join("public", "images", "cards", "default")
 OUTPUT_DIR = os.path.join("public", "images", "cards", "rainbow")
 WIDTH, HEIGHT = 226, 314
-# Tăng số khung hình và thời gian lưu để animation mượt mà và chậm rải hơn, đỡ chóng mặt
 FRAMES = 36
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -42,7 +41,7 @@ def hsv_to_rgb(h, s, v):
 np.random.seed(123)
 num_orbs = 18
 orb_bases = []
-for i in range(num_orbs):
+for _ in range(num_orbs):
     cx = np.random.rand() * WIDTH
     cy = np.random.rand() * HEIGHT
     r = np.random.rand() * 10 + 4
@@ -52,7 +51,6 @@ for i in range(num_orbs):
 def render_orbs(t):
     canvas = np.zeros((HEIGHT, WIDTH), dtype=np.float32)
     for cx, cy, r, phase in orb_bases:
-        # Nhịp độ di chuyển chậm lại thành dao động nhẹ theo hình tròn
         c_x = cx + np.sin(t + phase) * 8.0 
         c_y = cy + np.cos(t + phase) * 8.0
         
@@ -62,36 +60,20 @@ def render_orbs(t):
         canvas += (intensity ** 2.0) * pulse
     return np.clip(canvas, 0, 1) * 255.0
 
-def offset_mask(mask, dx, dy):
-    shifted = np.zeros_like(mask)
-    y1_s = max(0, dy); y2_s = min(HEIGHT, HEIGHT + dy)
-    y1_m = max(0, -dy); y2_m = min(HEIGHT, HEIGHT - dy)
-    x1_s = max(0, dx); x2_s = min(WIDTH, WIDTH + dx)
-    x1_m = max(0, -dx); x2_m = min(WIDTH, WIDTH - dx)
-    shifted[y1_s:y2_s, x1_s:x2_s] = mask[y1_m:y2_m, x1_m:x2_m]
-    return shifted
-
 def process_card(filename):
     out_path = os.path.join(OUTPUT_DIR, filename.replace('.png', '.webp'))
     in_path = os.path.join(INPUT_DIR, filename)
     orig = Image.open(in_path).convert('RGBA')
-    orig_np = np.array(orig)
+    orig_np = np.array(orig).astype(np.float32)
     
-    white_mask = (orig_np[:,:,0]>200) & (orig_np[:,:,1]>200) & (orig_np[:,:,2]>200)
     alpha_mask = orig_np[:,:,3] > 128
+    orig_rgb = orig_np[:,:, :3]
     
-    content_mask = (~white_mask) & alpha_mask
-    
-    # Glow mask for dark drop shadow
-    c_mask_img = Image.fromarray((content_mask * 255).astype(np.uint8), 'L')
-    glow_img = c_mask_img.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(3))
-    glow_np = (np.array(glow_img).astype(np.float32) / 255.0)
-    # Mask out the content itself so shadow is only outside
-    glow_np[content_mask] = 0.0
-    
-    mask_cyan    = offset_mask(content_mask,  3,  3) & (~content_mask)
-    mask_magenta = offset_mask(content_mask, -3, -1) & (~content_mask)
-    mask_yellow  = offset_mask(content_mask, -1,  3) & (~content_mask)
+    # Calculate darkness to apply sheen only on content
+    # Standard grayscale weighting
+    darkness = 1.0 - (orig_rgb[:,:,0]*0.299 + orig_rgb[:,:,1]*0.587 + orig_rgb[:,:,2]*0.114) / 255.0
+    # Boost darkness slightly so red suits also get good sheen
+    darkness = np.clip(darkness * 1.5, 0, 1)
     
     frames = []
 
@@ -99,7 +81,6 @@ def process_card(filename):
         t = (frame_idx / FRAMES) * 2.0 * np.pi
         
         # 1. Pastel Holo Bg
-        # Giảm tốc độ wave (t * 1 thay vì t * 2) để mềm mại chậm rải hơn, tránh giật lag não
         wave = np.sin((x_grid*2 + y_grid) / 80.0 - t) * 0.5 + 0.5
         hue = (t / (2*np.pi) + wave * 0.3) % 1.0
         
@@ -108,57 +89,28 @@ def process_card(filename):
         bg_rgb = hsv_to_rgb(hue, sat, val)
         
         scanlines = (y_grid % 4 < 2).astype(np.float32)
-        bg_rgb -= scanlines[:, :, None] * 10.0 # Giảm độ tương phản scanline để bớt vằn vện
+        bg_rgb -= scanlines[:, :, None] * 10.0
         
         orbs_layer = render_orbs(t)[:, :, None]
         bg_rgb = np.clip(bg_rgb + orbs_layer, 0, 255)
         
-        # 2. Chromatic aberration shadows
-        bg_r = bg_rgb[:,:,0]; bg_g = bg_rgb[:,:,1]; bg_b = bg_rgb[:,:,2]
+        # 2. Multiply Blend Original Content
+        # Mutiplies the background with the original image, perfectly preserving all anti-aliased edges and lines.
+        # It removes the need for jagged boolean masks and sloppy drop shadows which caused blurriness.
+        composite = (bg_rgb * orig_rgb) / 255.0
         
-        bg_r[mask_cyan] = 0; bg_g[mask_cyan] = 230; bg_b[mask_cyan] = 255
-        bg_r[mask_magenta] = 255; bg_g[mask_magenta] = 0; bg_b[mask_magenta] = 240
-        bg_r[mask_yellow] = 255; bg_g[mask_yellow] = 240; bg_b[mask_yellow] = 0
-        
-        # 3. Sử dụng màu sắc gốc (Original Shape/Color) & Đổ bóng
-        # Để lá bài có chiều sâu, tạo đổ bóng (drop shadow) mờ dưới các chất bài
-        # Tạo hiệu ứng Shadow đen lót dưới
-        bg_r = bg_r * (1.0 - glow_np * 0.6)
-        bg_g = bg_g * (1.0 - glow_np * 0.6)
-        bg_b = bg_b * (1.0 - glow_np * 0.6)
-        
-        # Áp dụng màu gốc của chất bài & hình JQK nhưng phủ thêm lớp rainbow lướt qua (gliding sheen)
-        orig_r = orig_np[:,:,0].astype(np.float32)
-        orig_g = orig_np[:,:,1].astype(np.float32)
-        orig_b = orig_np[:,:,2].astype(np.float32)
-        
-        # Tính toán lớp màu rainbow dạt dào
+        # 3. Gliding Vivid Rainbow Sheen (Lướt qua)
         vivid_hue = ((x_grid*1.5 + y_grid) / 100.0 - (t / (2*np.pi))) % 1.0
         vivid_rgb = hsv_to_rgb(vivid_hue, np.full((HEIGHT, WIDTH), 1.0, dtype=np.float32), np.full((HEIGHT, WIDTH), 1.0, dtype=np.float32))
         
-        # Sóng lướt (Sweep wave) chéo qua lá bài để tạo cảm giác ánh sáng lướt qua
         sweep_wave = (np.sin((x_grid - y_grid) / 30.0 - t * 4.0) + 1.0) / 2.0
-        sweep_wave = sweep_wave ** 4.0 # Thu hẹp sóng để tạo vệt lướt rõ ràng
+        sweep_wave = sweep_wave ** 4.0 
         
-        # Blend factor: nền chỉ ám nhẹ 15% rainbow, khi vệt sóng đi qua đẩy lên 60% rainbow
-        blend_factor = 0.15 + sweep_wave * 0.45
+        # Additive blending for the sheen, masked by darkness (only on text/suits)
+        sheen = vivid_rgb * sweep_wave[:, :, None] * darkness[:, :, None] * 0.8
+        composite = composite + sheen
         
-        orig_r_content = orig_r[content_mask]
-        orig_g_content = orig_g[content_mask]
-        orig_b_content = orig_b[content_mask]
-        
-        v_r_content = vivid_rgb[:,:,0][content_mask]
-        v_g_content = vivid_rgb[:,:,1][content_mask]
-        v_b_content = vivid_rgb[:,:,2][content_mask]
-        
-        bf = blend_factor[content_mask]
-        
-        # Pha trộn giữa màu gốc và màu rainbow theo chỉ số blend_factor, boost x1.1 để giữ độ sáng rực
-        bg_r[content_mask] = (orig_r_content * (1.0 - bf) + v_r_content * bf) * 1.1
-        bg_g[content_mask] = (orig_g_content * (1.0 - bf) + v_g_content * bf) * 1.1
-        bg_b[content_mask] = (orig_b_content * (1.0 - bf) + v_b_content * bf) * 1.1
-        
-        composite = np.stack([bg_r, bg_g, bg_b], axis=-1)
+        composite = np.clip(composite, 0, 255)
         composite = np.where(alpha_mask[:, :, None], composite, [0,0,0])
         
         R = 14
@@ -187,13 +139,12 @@ def process_card(filename):
         
         frames.append(final_img)
         
-    # Thời lượng mỗi frame = 120ms => Khoảng 8.3 fps. 36 frames = chu kỳ 4.3 giây cực chậm và chill
-    frames[0].save(out_path, format="WEBP", save_all=True, append_images=frames[1:], duration=120, loop=0, method=6, quality=90)
-    print(f"Generated {out_path} (smooth)")
+    frames[0].save(out_path, format="WEBP", save_all=True, append_images=frames[1:], duration=120, loop=0, method=6, quality=95)
+    print(f"Generated {out_path} (crisp & perfect AA)")
 
 if __name__ == '__main__':
     files = [f for f in os.listdir(INPUT_DIR) if f.endswith('.png')]
     t0 = time.time()
     with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count() or 4) as executor:
         executor.map(process_card, files)
-    print(f"Successfully generated animated Rainbow Deck v3 ({len(files)} files) in {time.time() - t0:.1f}s")
+    print(f"Successfully generated animated Rainbow Deck v4 Crisp ({len(files)} files) in {time.time() - t0:.1f}s")
