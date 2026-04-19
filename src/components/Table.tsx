@@ -21,7 +21,6 @@ import Seat from './Seat';
 import ChipRack from './ChipRack';
 import ActionPanel from './ActionPanel';
 import dynamic from 'next/dynamic';
-import DevTools from './DevTools';
 import PortraitOverlay from './PortraitOverlay';
 import TutorialGuide from './TutorialGuide';
 import PayoutPanel from './PayoutPanel';
@@ -140,7 +139,6 @@ const logoPath = room.logoPath;
     return (
         <>
             <PortraitOverlay />
-            <DevTools />
 
             {/* Table layout canvas */}
             <div style={{ width: '100%', height: '100%', position: 'relative', background: '#1a0e0a' }}>

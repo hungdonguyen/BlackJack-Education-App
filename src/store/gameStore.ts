@@ -8,7 +8,6 @@ import { GameStore } from '@/types/game';
 import { createBettingSlice } from './bettingSlice';
 import { createGameFlowSlice } from './gameFlowSlice';
 import { createSettingsSlice } from './settingsSlice';
-import { createDevToolsSlice } from './devToolsSlice';
 import { createAchievementSlice } from './achievementSlice';
 import { createTutorialSlice } from './tutorialSlice';
 import { createDailyClaimSlice } from './dailyClaimSlice';
@@ -42,7 +41,6 @@ export const useGameStoreBase = create<GameStore>()(
       ...createBettingSlice(...a),
       ...createGameFlowSlice(...a),
       ...createSettingsSlice(...a),
-      ...createDevToolsSlice(...a),
       ...createAchievementSlice(...a),
       ...createTutorialSlice(...a),
       ...createDailyClaimSlice(...a),

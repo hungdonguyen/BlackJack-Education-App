@@ -335,10 +335,9 @@ export interface DailyClaimSlice {
   clearClaimPopup: () => void;
 }
 
-import { DevToolsSlice } from '@/store/devToolsSlice';
 import { AchievementSlice } from '@/store/achievementSlice';
 import { TutorialSlice } from '@/store/tutorialSlice';
 import { SimulatorSlice } from './simulator';
 
 /** Combined store type */
-export type GameStore = GameState & GameActions & SettingsSlice & DevToolsSlice & AchievementSlice & TutorialSlice & DailyClaimSlice & SimulatorSlice;
+export type GameStore = GameState & GameActions & SettingsSlice & AchievementSlice & TutorialSlice & DailyClaimSlice & SimulatorSlice;
