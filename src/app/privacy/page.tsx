@@ -8,7 +8,7 @@ import { getStoreLabel, getStoreOperatorLabel } from '@/utils/platform';
 
 export default function PrivacyPage() {
     const router = useRouter();
-    const lastUpdated = '2026-04-03';
+    const lastUpdated = '2026-04-19';
     const storeLabel = getStoreLabel();
     const storeOperator = getStoreOperatorLabel();
 
@@ -119,6 +119,11 @@ export default function PrivacyPage() {
                             At this time, the game is distributed on <strong className="text-white/80">{storeLabel}</strong>.
                             Platform account, platform, and payment-related data are handled by {storeOperator}.
                             The App does not request your platform credentials.
+                        </p>
+                        <p className="mt-3">
+                            For itch.io releases, this project does not run paid entry contests, real-money
+                            wagering, payout mechanics, or token-to-cash conversion. Virtual in-game chips
+                            remain non-monetary and are used only for local simulation gameplay.
                         </p>
                     </section>
 

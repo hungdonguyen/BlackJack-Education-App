@@ -155,13 +155,13 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
         {awaitingContinueClick && (
           <p
-            className="mt-2 px-1 text-[10px] md:text-[11px] font-black tracking-[0.12em] uppercase"
+            className="absolute left-0 top-full mt-2 w-full px-1 text-center text-[10px] md:text-[11px] font-black tracking-[0.1em] uppercase whitespace-nowrap"
             style={{
               fontFamily: '"Arial Black", "Segoe UI", Arial, sans-serif',
-              color: audioUnlocked ? '#0b8f4f' : 'rgba(0,0,0,0.72)',
+              color: audioUnlocked ? '#1f2937' : '#6b7280',
             }}
           >
-            {'Click anywhere to countinue'}
+            {'Click anywhere to continue'}
           </p>
         )}
       </motion.div>

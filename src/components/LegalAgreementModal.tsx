@@ -55,7 +55,7 @@ const PRIVACY_CONTENT = [
     },
     {
         title: '4. Third-Party Assets & Platform Services',
-        body: 'The App may load limited static visual assets (icons/textures) from third-party CDNs and can be distributed on storefronts such as Steam or itch.io. These providers may process technical network metadata under their own policies.',
+        body: 'The App may load limited static visual assets (icons/textures) from third-party CDNs and can be distributed on storefronts such as itch.io. These providers may process technical network metadata under their own policies.',
     },
     {
         title: '5. GDPR Compliance (EU)',
@@ -90,7 +90,7 @@ const TERMS_CONTENT = [
     },
     {
         title: '4. Platform & Network Use',
-        body: 'At this time, the game is distributed on storefronts such as Steam or itch.io. Platform account/platform/payment data are handled by those providers under their own terms and privacy policies. Third-party static asset hosts may receive technical network metadata as part of normal asset delivery.',
+        body: 'At this time, the game is distributed on storefronts such as itch.io. Platform account/platform/payment data are handled by those providers under their own terms and privacy policies. Third-party static asset hosts may receive technical network metadata as part of normal asset delivery. This App does not provide paid buy-ins, cash prizes, token cash-out, or real-money wagering mechanics.',
     },
     {
         title: '5. Fair Play & Randomness',
@@ -299,7 +299,7 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
                                 <ScrollableDocument
                                     key="privacy"
                                     sections={PRIVACY_CONTENT}
-                                    label="Privacy Policy — Last updated: 2026-03-08"
+                                    label="Privacy Policy — Last updated: 2026-04-19"
                                     icon={Shield}
                                     accentColor="#d4a843"
                                     onScrolledToBottom={() => setPrivacyRead(true)}
@@ -308,7 +308,7 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
                                 <ScrollableDocument
                                     key="terms"
                                     sections={TERMS_CONTENT}
-                                    label="Terms of Service — Last updated: 2026-03-08"
+                                    label="Terms of Service — Last updated: 2026-04-19"
                                     icon={FileText}
                                     accentColor="#d4a843"
                                     onScrolledToBottom={() => setTermsRead(true)}

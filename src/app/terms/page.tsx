@@ -8,7 +8,7 @@ import { getStoreLabel, getStoreOperatorLabel } from '@/utils/platform';
 
 export default function TermsPage() {
     const router = useRouter();
-    const lastUpdated = '2026-04-03';
+    const lastUpdated = '2026-04-19';
     const storeLabel = getStoreLabel();
     const storeOperator = getStoreOperatorLabel();
 
@@ -116,6 +116,11 @@ export default function TermsPage() {
                             IP address and user-agent) as part of normal asset delivery. This App does not
                             use those requests for active analytics or advertising profiling.
                         </p>
+                        <p className="mt-3">
+                            For itch.io distribution, this App is published as an educational simulation and
+                            does not provide paid buy-ins, cash prizes, wagering, token cash-out, or any
+                            mechanism that converts virtual chips into real-world monetary value.
+                        </p>
                     </section>
 
                     <section>
@@ -186,7 +191,18 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">11. Audio Credits</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">11. itch.io Publisher Compliance</h2>
+                        <p>
+                            If this build is distributed on itch.io, the project page metadata (platform,
+                            tags, age suitability, screenshots, and media) should accurately represent the
+                            shipped build. Misleading claims, unrelated tags, and content that resembles
+                            real-money gambling offerings are not part of this App and are not permitted by
+                            our distribution policy.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">12. Audio Credits</h2>
                         <p>
                             Sound effects are sourced from Kenney.nl (CC0 Public Domain). Background
                             music is provided by Kevin MacLeod (incompetech.com) and Audionautix
@@ -198,7 +214,7 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-lg font-bold text-white/90 mb-3">12. Contact</h2>
+                        <h2 className="text-lg font-bold text-white/90 mb-3">13. Contact</h2>
                         <p>
                             For questions about these Terms of Service, please open an issue on the
                             project&apos;s repository or contact the developer.
