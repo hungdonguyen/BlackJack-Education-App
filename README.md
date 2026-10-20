@@ -1,154 +1,83 @@
-# BlackJack Web (Next.js + Tauri)
+# Educational Blackjack — Web & Desktop (Next.js 16 + Tauri v2)
 
-A premium, modern Blackjack game built with Next.js 16, React 19, Tailwind CSS v4, and encased in a Tauri v2 desktop application.
+<p align="center">
+  <img src="public/images/logo_company.png" alt="QuangHung Software Studio" width="340" />
+</p>
 
-## 🚀 Tech Stack
+A Blackjack game and strategy simulator I built to practice casino rule variations, basic strategy, and card counting without real-money risk. It runs both as a static web build (for itch.io) and as a native Windows/macOS/Linux desktop app wrapped with **Tauri v2 (Rust)**.
 
-- **Frontend Framework:** [Next.js 16](https://nextjs.org/) (App Router)
-- **UI Library:** [React 19](https://react.dev/)
-- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
-- **Animations:** [Framer Motion](https://www.framer.com/motion/)
-- **State Management:** [Zustand v5](https://github.com/pmndrs/zustand) (with persist middleware)
-- **Desktop Application:** [Tauri v2](https://tauri.app/) (Rust)
-- **Icons:** [Lucide React](https://lucide.dev/)
+---
 
-## 📂 Project Structure
+## Screenshots
+
+### Main Menu & Learning Hub
+![Home Screen](docs/screenshots/01-home-desktop-hero.png)
+
+### Casino Room Lobby (Rule Variations & RTP)
+![Room Lobby](docs/screenshots/02-lobby-desktop-hero.png)
+
+### Live Table with Running / True Hi-Lo Count & Bet Advice
+![Blackjack Table](docs/screenshots/03-game-classic-desktop-hero.png)
+
+### Strategy & Risk of Ruin Simulator
+![Blackjack Simulator](docs/screenshots/05-simulator-desktop-hero.png)
+
+---
+
+## What's Inside
+
+* **Multiple Rule Variations (Strategy Pattern in `src/rules/`):** Supports Classic 8-Deck, Vegas Strip (4-Deck), Vegas Downtown (2-Deck), Atlantic City, European No-Hole-Card (ENHC), United Kingdom, plus custom bonus tables (*Push 22*, *Multi-Action*, *Zap Out 21*).
+* **Real-Time Card Counting & Strategy Hints:** Tracks the running and true Hi-Lo count across the shoe, calculates live player edge, and suggests optimal hit/stand/double/split decisions.
+* **Monte Carlo Strategy Simulator (`src/app/simulator/`):** Runs hundreds or thousands of hands in the background to measure win rate, expected value (EV) per hand, max drawdown, and estimated risk of ruin across different betting progressions.
+* **Custom Procedural Card Decks:** Includes standard decks alongside custom themes (*Cyber Hacker*, *Frosted Glass*, and animated *Iridescent Rainbow* WebP cards generated via Python image-processing pipelines).
+* **Cross-Platform Packaging:** Single codebase targeting both **itch.io HTML5** (`npm run build:itch`) and **Tauri v2 Desktop** (`npm run build:tauri`), with automated `.webm`/`.ogg` audio transcoding and Playwright screenshot capture.
+
+---
+
+## Tech Stack
+
+* **Frontend:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4
+* **State & Animation:** Zustand v5 (persisted slices for game state, bankroll, and achievements), Framer Motion
+* **Desktop Runtime:** Tauri v2 (Rust)
+* **Tooling & Automation:** Playwright (automated screenshot pipeline), Python Pillow/NumPy (card asset generation), PowerShell/FFmpeg (audio compression)
+
+---
+
+## Running Locally
+
+### Prerequisites
+* **Node.js** 18+
+* **Rust & Cargo** (only required if building the Tauri desktop window)
+
+### Commands
 
 ```bash
-src/
-├── app/                  # Next.js App Router pages
-├── components/           # Reusable UI components
-├── hooks/                # Custom React hooks
-├── rules/                # Game rules logic (Strategy Pattern)
-├── store/                # Zustand state management slices
-├── types/                # TypeScript interfaces and types
-├── utils/                # Helper functions (audio, hand calculation, etc.)
-src-tauri/                # Tauri (Rust) backend configuration
-```
+# Clone the repo
+git clone https://github.com/hungdonguyen/BlackJack-Education-App.git
+cd BlackJack-Education-App
 
-## 🛠️ Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-- **Node.js** (v18 or later)
-- **pnpm** (or npm/yarn)
-- **Rust & Cargo** (Required for Tauri desktop app)
-  - [Install Rust](https://www.rust-lang.org/tools/install)
-  - Follow [Tauri Prerequisites](https://tauri.app/v1/guides/getting-started/prerequisites)
-
-## 📦 Installation
-
-Clone the repository and install dependencies:
-
-```bash
-git clone https://github.com/yourusername/blackjack-web.git
-cd blackjack-web
-
-# Install JavaScript dependencies
+# Install dependencies
 npm install
-# or
-pnpm install
-# or
-yarn install
-```
 
-## 🏃‍♂️ Development
-
-### Web Development
-To run the web version in your browser:
-
-```bash
+# Run in browser (http://localhost:3000)
 npm run dev
-# or
-pnpm dev
-```
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-### Desktop Development (Tauri)
-To run the desktop application in development mode:
-
-```bash
+# Run as a native desktop app via Tauri
 npm run tauri dev
-# or
-pnpm tauri dev
-```
-This command will launch the Next.js dev server and a Tauri window.
-
-## 🏗️ Build for Production
-
-### Web Build
-To build a static web export or production server:
-
-```bash
-npm run build
-# or
-pnpm build
 ```
 
-### Web Build for itch.io (HTML5)
-Use the dedicated itch profile (platform text + web deployment flags):
+### Production Builds
 
 ```bash
+# Build static web bundle for itch.io
 npm run build:itch
-```
 
-If your itch upload is hosted under a known subpath, set `NEXT_PUBLIC_APP_BASE_PATH` before building:
-
-```bash
-# PowerShell example
-$env:NEXT_PUBLIC_APP_BASE_PATH = "/html/YOUR_UPLOAD_PATH"
-npm run build:itch
-```
-
-Then clear the env var after build if needed:
-
-```bash
-Remove-Item Env:NEXT_PUBLIC_APP_BASE_PATH
-```
-
-### Audio Optimization for Web (prefer OGG/WEBM)
-This project will prefer `.webm` / `.ogg` for BGM at runtime and fall back to `.mp3`.
-Generate compressed web formats with:
-
-```bash
-powershell -ExecutionPolicy Bypass -File scripts/transcode_bgm_for_web.ps1
-```
-
-Optional: remove original mp3 files after conversion:
-
-```bash
-powershell -ExecutionPolicy Bypass -File scripts/transcode_bgm_for_web.ps1 -DeleteOriginal
-```
-
-### Desktop Build (Tauri)
-To build the installable desktop application (exe/msi/dmg/deb):
-
-```bash
+# Build native desktop installer (.exe / .msi)
 npm run tauri build
-# or
-pnpm tauri build
 ```
 
-Desktop builds remain stable on the default profile. You can also run:
+---
 
-```bash
-npm run build:tauri
-```
+## License
 
-The artifacts will be located in `src-tauri/target/release/bundle/`.
-
-## 🧪 Testing
-
-Unit tests for game rules and utility logic are planned.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+MIT License. Built strictly for educational and simulation purposes — no real money or gambling is involved.
