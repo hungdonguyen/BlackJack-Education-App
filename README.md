@@ -8,19 +8,25 @@ A Blackjack game and strategy simulator I built to practice casino rule variatio
 
 ---
 
-## Screenshots
+## Screenshots (6 Views)
 
-### Main Menu & Learning Hub
-![Home Screen](docs/screenshots/01-home-desktop-hero.png)
+### 1. Main Menu & Learning Hub & 2. Casino Room Lobby (Rule Variations & RTP)
+<p align="center">
+  <img src="docs/screenshots/01-home-desktop-hero.png" alt="Main Menu" width="49%" />
+  <img src="docs/screenshots/02-lobby-desktop-hero.png" alt="Casino Room Lobby" width="49%" />
+</p>
 
-### Casino Room Lobby (Rule Variations & RTP)
-![Room Lobby](docs/screenshots/02-lobby-desktop-hero.png)
+### 3. Classic 8-Deck Table (Live Hi-Lo Count) & 4. Vegas Strip 4-Deck Table
+<p align="center">
+  <img src="docs/screenshots/03-game-classic-desktop-hero.png" alt="Classic Blackjack Table" width="49%" />
+  <img src="docs/screenshots/04-game-vegas-strip-desktop-hero.png" alt="Vegas Strip Blackjack Table" width="49%" />
+</p>
 
-### Live Table with Running / True Hi-Lo Count & Bet Advice
-![Blackjack Table](docs/screenshots/03-game-classic-desktop-hero.png)
-
-### Strategy & Risk of Ruin Simulator
-![Blackjack Simulator](docs/screenshots/05-simulator-desktop-hero.png)
+### 5. Monte Carlo Strategy & Risk of Ruin Simulator & 6. Interactive Tutorial & Skill Tracks
+<p align="center">
+  <img src="docs/screenshots/05-simulator-desktop-hero.png" alt="Strategy Simulator" width="49%" />
+  <img src="docs/screenshots/06-tutorial-lobby-desktop-hero.png" alt="Interactive Tutorials" width="49%" />
+</p>
 
 ---
 
@@ -29,6 +35,7 @@ A Blackjack game and strategy simulator I built to practice casino rule variatio
 * **Multiple Rule Variations (Strategy Pattern in `src/rules/`):** Supports Classic 8-Deck, Vegas Strip (4-Deck), Vegas Downtown (2-Deck), Atlantic City, European No-Hole-Card (ENHC), United Kingdom, plus custom bonus tables (*Push 22*, *Multi-Action*, *Zap Out 21*).
 * **Real-Time Card Counting & Strategy Hints:** Tracks the running and true Hi-Lo count across the shoe, calculates live player edge, and suggests optimal hit/stand/double/split decisions.
 * **Monte Carlo Strategy Simulator (`src/app/simulator/`):** Runs hundreds or thousands of hands in the background to measure win rate, expected value (EV) per hand, max drawdown, and estimated risk of ruin across different betting progressions.
+* **Interactive Tutorial Tracks (`src/app/tutorial/`):** Guided lessons covering core table mechanics, Double Down timing, and mathematically optimal Basic Strategy decisions with forced card sequences.
 * **Custom Procedural Card Decks:** Includes standard decks alongside custom themes (*Cyber Hacker*, *Frosted Glass*, and animated *Iridescent Rainbow* WebP cards generated via Python image-processing pipelines).
 * **Cross-Platform Packaging:** Single codebase targeting both **itch.io HTML5** (`npm run build:itch`) and **Tauri v2 Desktop** (`npm run build:tauri`), with automated `.webm`/`.ogg` audio transcoding and Playwright screenshot capture.
 
