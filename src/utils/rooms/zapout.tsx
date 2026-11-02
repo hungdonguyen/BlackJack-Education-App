@@ -7,7 +7,7 @@ export const zapout: RoomConfig = {
     id: 'zapout_21',
     name: 'Zap Out 21',
     subtitle: 'Zappit Blackjack Variant',
-    description: 'Zap Out 21 — Zap away bad hands! Trade any hard 15-18 for two new cards (once per hand). Dealer hitting 22 pushes all non-busted player hands except natural Blackjacks. Natural Blackjacks pay 3:2, Zapped Blackjacks pay 1:1. Double on any two cards. Can split once.',
+    description: 'Zap Out 21 — Trade any initial hard 15–18 for two new cards. Dealer 22 pushes all non-busted player hands except natural Blackjacks. Natural Blackjacks pay 3:2; zapped Blackjacks pay 1:1. Double on any two cards. Can split once.',
     feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #1e3a8a 0%, #1e40af 25%, #1d4ed8 50%, #2563eb 80%, #3b82f6 100%)',
     bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #000000 0%, #111827 50%, #1f2937 100%)',
     borderColor: 'rgba(59, 130, 246, 0.4)',
@@ -30,7 +30,7 @@ export const zapout: RoomConfig = {
     logoPath: '/images/logo/rooms/zapout21.png',
     strategyType: 'zapout_21',
     deviationsSet: 'zapout_21',
-    strategySource: 'Geoff Hall / Michael Shackleford',
+    strategySource: 'Geoff Hall & Michael Shackleford · Push 22 / Zap Card Combinatorial Model',
     rulesClass: ZapOut21Rules,
     strategyModalContent: {
         overview: "Zap Out 21 (Zappit) allows you to swap bad hands (15-18) for new cards, but costs you in Dealer Pushes on 22.",

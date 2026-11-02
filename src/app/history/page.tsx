@@ -8,6 +8,7 @@ import { HandStatus, Suit } from '@/types/enums';
 import { calculateMatchNetPnl, getRoomBadgeConfig, getMatchOverallStatus } from '@/utils/historyUtils';
 import { useAudio } from '@/utils/audio';
 import { useModalNavigation } from '@/hooks/useMenuNavigation';
+import { ShinyText, SpotlightCard } from '@/components/reactbits';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -45,15 +46,23 @@ export default function HistoryPage() {
             <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <button
-                        onClick={() => { playSound('click'); router.back(); }}
-                        className="flex items-center gap-2 text-white/50 hover:text-white transition-colors cursor-pointer"
-                    >
-                        <ArrowLeft size={20} />
-                        <span className="text-sm font-bold uppercase tracking-wider">Back</span>
-                    </button>
-                    <h1 className="text-2xl font-black text-amber-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                        <History /> Match History
-                    </h1>
+                            onClick={() => { playSound('click'); router.back(); }}
+                            className="flex items-center gap-2 text-white/50 hover:text-white transition-colors cursor-pointer"
+                        >
+                            <ArrowLeft size={20} />
+                            <span className="text-sm font-bold uppercase tracking-wider">Back</span>
+                        </button>
+                    <div className="flex items-center gap-3">
+                        <History className="text-amber-400" />
+                        <ShinyText
+                            text="Match History"
+                            shineColor="#ffffff"
+                            color="#fbbf24"
+                            speed={2.5}
+                            glow={0.3}
+                            className="text-2xl font-black uppercase tracking-[0.2em]"
+                        />
+                    </div>
                     <div className="w-16" /> {/* Spacer */}
                 </div>
 
@@ -68,8 +77,13 @@ export default function HistoryPage() {
                         {currentMatches.map((match) => {
                             const date = new Date(match.timestamp);
 
+                            const badgeColor = getRoomBadgeConfig(match.roomId).color;
                             return (
-                                <div key={match.id} className="bg-white/5 border border-white/10 rounded-xl p-5 hover:bg-white/10 transition-colors">
+                                <SpotlightCard
+                                    key={match.id}
+                                    spotlightColor={`${badgeColor}33`}
+                                    className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/[0.08] transition-colors"
+                                >
                                     <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
                                         <div className="flex items-center gap-4">
                                             <span className="text-xs font-bold text-white/40 tracking-wider">
@@ -175,7 +189,7 @@ export default function HistoryPage() {
                                             })}
                                         </div>
                                     </div>
-                                </div>
+                                </SpotlightCard>
                             );
                         })}
 

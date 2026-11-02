@@ -30,6 +30,7 @@ export const european: RoomConfig = {
     logoPath: '/images/logo/rooms/european.png',
     strategyType: 'european',
     deviationsSet: 'european',
+    strategySource: 'European Casino Association (ECA) · Wizard of Odds (ENHC Double 9-11)',
     rulesClass: EuropeanRules,
     strategyModalContent: {
         overview: "European Blackjack is known for its No Hole Card (ENHC) rule, which makes doubling and splitting riskier than American variants.",

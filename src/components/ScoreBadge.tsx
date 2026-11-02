@@ -6,6 +6,7 @@
 
 import { motion } from 'framer-motion';
 import { HandStatus } from '@/types/enums';
+import { ShinyText } from '@/components/reactbits';
 
 interface ScoreBadgeProps {
     value: string;
@@ -26,6 +27,7 @@ const STATUS_CONFIG: Record<HandStatus, { bg: string; glow: string; text: string
 
 export default function ScoreBadge({ value, status, delay = 0 }: ScoreBadgeProps) {
     const cfg = STATUS_CONFIG[status];
+    const isSpecial = status === HandStatus.BLACKJACK || status === HandStatus.WON;
 
     return (
         <motion.div
@@ -47,7 +49,17 @@ export default function ScoreBadge({ value, status, delay = 0 }: ScoreBadgeProps
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.15 }}
                 >
-                    {cfg.label}
+                    {isSpecial ? (
+                        <ShinyText
+                            text={cfg.label}
+                            shineColor="#ffffff"
+                            color={status === HandStatus.BLACKJACK ? '#fef08a' : '#34d399'}
+                            speed={1.8}
+                            glow={0.3}
+                        />
+                    ) : (
+                        cfg.label
+                    )}
                 </motion.span>
             )}
         </motion.div>

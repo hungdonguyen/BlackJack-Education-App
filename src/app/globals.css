@@ -31,7 +31,7 @@ body {
   overflow: hidden;
   background: var(--bg-dark);
   color: var(--text-light);
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   user-select: none !important;
@@ -140,4 +140,18 @@ svg {
 
 .animate-soft-pulse {
   animation: soft-pulse 2s ease-in-out infinite;
+}
+
+/* ─── Suppress browser media downloader overlays (Cốc Cốc Savior, etc.) ─── */
+#coccoc_savior_button,
+[id*="coccoc"],
+[class*="coccoc_savior"],
+[id*="savior"],
+.coccoc-savior-bubble {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
 }

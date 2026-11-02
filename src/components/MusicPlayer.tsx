@@ -66,7 +66,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ roomId }) => {
                                         x: 0,
                                         scale: isCurrent ? 1.1 : 0.85,
                                     }}
-                                    className={`text-[11px] font-bold whitespace-nowrap px-3 py-1 rounded-sm ${isCurrent ? 'bg-amber-400/20 text-amber-400 border-r-2 border-amber-400' : 'text-white/40'
+                                    className={`text-[11px] font-bold whitespace-nowrap px-3 py-1 rounded-sm ${isCurrent ? 'bg-amber-400/20 text-amber-400 rounded-md border border-amber-400/40' : 'text-white/40'
                                         }`}
                                 >
                                     {track.name}

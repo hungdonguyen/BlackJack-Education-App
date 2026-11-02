@@ -6,6 +6,7 @@ import { useViewportScale } from '@/hooks/useViewportScale';
 import { AnimatePresence } from 'framer-motion';
 import { SplashScreen } from '@/components/SplashScreen';
 
+
 // Default canvas is slightly smaller so UI elements appear larger on screen
 const NORMAL_DESIGN_WIDTH = 1536; // 1920 / 1.25
 const NORMAL_DESIGN_HEIGHT = 864; // 1080 / 1.25
@@ -61,12 +62,13 @@ export default function ResponsiveWrapper({ children }: { children: React.ReactN
             </AnimatePresence>
         
             <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: designWidth, height: designHeight, transform: `scale(${viewScale})`, transformOrigin: 'center center', flexShrink: 0, position: 'relative' }}>
-                    <div style={{ width: '100%', height: '100%', position: 'relative', overflowY: 'auto', overflowX: 'hidden' }} className="custom-scrollbar">
-                        {children}
+                    <div style={{ width: designWidth, height: designHeight, transform: `scale(${viewScale})`, transformOrigin: 'center center', flexShrink: 0, position: 'relative' }}>
+                        <div style={{ width: '100%', height: '100%', position: 'relative', overflowY: 'auto', overflowX: 'hidden' }} className="custom-scrollbar">
+                            {children}
+                        </div>
                     </div>
                 </div>
-            </div>
+            
         </>
     );
 }

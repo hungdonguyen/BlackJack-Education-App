@@ -57,7 +57,7 @@ export const COUNTING_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 5,
-                message: "Tap 'DEAL' to deploy your bet.",
+                message: "Tap 'DEAL' to start the hand.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.seats[2].hands[0].betAmount > 0,
                 targetElementId: 'action-button-deal',
                 position: 'bottom'

@@ -29,6 +29,7 @@ export const vegasDowntown: RoomConfig = {
     logoPath: '/images/logo/rooms/vegas_downtown.png',
     strategyType: 'vegas_downtown',
     deviationsSet: 'standard',
+    strategySource: 'Downtown Las Vegas Casino Standards · Wizard of Odds (2-Deck H17)',
     rulesClass: VegasDowntownRules,
     strategyModalContent: {
         overview: "Vegas Downtown is a 'pitch' style game traditionally, using only 2 decks but allowing the dealer to hit Soft 17.",

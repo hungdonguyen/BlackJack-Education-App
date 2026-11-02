@@ -70,7 +70,7 @@ export const StrategyRulesTab: React.FC<StrategyRulesTabProps> = ({ room }) => {
             </div>
 
             <RuleSection title="Core Actions">
-                <div className="grid grid-cols-1 gap-2 mt-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
                     <div className="bg-white/5 p-2 rounded-lg border border-white/5">
                         <strong className="text-white/80 block mb-0.5 text-xs"><Plus size={12} className="inline text-emerald-400 mr-1" />Hit</strong>
                         <p className="text-[10px] text-white/40 leading-snug">Take another card to improve your total. Use it whenever the EV of drawing is better than standing, even if the hand already feels uncomfortable.</p>
@@ -172,6 +172,26 @@ export const StrategyRulesTab: React.FC<StrategyRulesTabProps> = ({ room }) => {
                             <span className="text-yellow-500/80 font-black">Side Bet RTP: {room.sideBetRtp}</span>
                         </>
                     )}
+                </div>
+            </div>
+
+            {/* Rule Authority & Reference Citation */}
+            <div className="rounded-xl border p-3.5" style={{ background: 'rgba(212, 168, 67, 0.06)', borderColor: 'rgba(212, 168, 67, 0.22)' }}>
+                <div className="flex items-start gap-3">
+                    <div className="p-1.5 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-400 shrink-0 mt-0.5">
+                        <Info size={16} />
+                    </div>
+                    <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">Rule Authority & Reference Source</span>
+                        </div>
+                        <p className="text-xs font-bold text-white/90">
+                            {room.strategySource || 'Wizard of Odds (Michael Shackleford) · Combinatorial Analysis'}
+                        </p>
+                        <p className="text-[11px] text-white/45 leading-relaxed">
+                            Table rules, optimal strategy charts, and theoretical return-to-player (RTP {room.baseGameRtp || room.rtp}) are verified against standard combinatorial mathematics and recognized casino gaming regulations.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

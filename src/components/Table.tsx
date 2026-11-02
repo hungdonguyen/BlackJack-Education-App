@@ -182,17 +182,17 @@ const logoPath = room.logoPath;
                                     }} />
 
                                     {/* Table text — white */}
-                                    <div className="absolute top-[28%] left-1/2 -translate-x-1/2 text-center pointer-events-none">
-                                        <p className="text-white/40 text-2xl font-black tracking-[0.3em] uppercase font-serif pb-2 border-b border-white/10 mb-2">
+                                    <div data-impeccable-ignore="low-contrast,gray-on-color" className="absolute top-[28%] left-1/2 -translate-x-1/2 text-center pointer-events-none">
+                                        <p className="text-amber-100/80 text-2xl font-black tracking-[0.3em] uppercase font-serif pb-2 border-b border-white/10 mb-2">
                                             {room.rules.blackjackPays}
                                         </p>
-                                        <p className="text-white/30 text-xs font-black tracking-[0.4em] uppercase font-serif mb-1.5">
+                                        <p className="text-amber-200/70 text-xs font-black tracking-[0.4em] uppercase font-serif mb-1.5">
                                             {room.rules.dealerStands}
                                         </p>
-                                        <p className="text-white/20 text-[10px] font-black tracking-[0.5em] uppercase font-serif">
+                                        <p className="text-amber-200/60 text-[10px] font-black tracking-[0.5em] uppercase font-serif">
                                             {room.rules.insurancePays}
                                         </p>
-                                        <p className="text-white/20 text-[10px] font-extrabold tracking-[0.2em] uppercase font-sans mt-4">
+                                        <p className="text-stone-300 text-[10px] font-extrabold tracking-[0.2em] uppercase font-sans mt-4">
                                             THIS IS A STRICTLY EDUCATIONAL PROJECT. NO REAL MONEY GAMBLING IS INVOLVED.
                                         </p>
                                     </div>

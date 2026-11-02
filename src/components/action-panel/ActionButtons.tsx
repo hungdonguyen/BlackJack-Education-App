@@ -21,8 +21,8 @@ export function CircleButton({ id, label, icon, color, hoverColor, onClick, disa
             onMouseLeave={onMouseLeave}
             className="flex flex-col items-center gap-1.5 cursor-pointer"
             style={{ opacity: disabled ? 0.2 : 1 }}
-            whileHover={disabled ? {} : { scale: 1.12, y: -4 }}
-            whileTap={disabled ? {} : { scale: 0.9 }}
+            whileHover={disabled ? {} : { scale: 1.1, y: -2 }}
+            whileTap={disabled ? {} : { scale: 0.92 }}
         >
             <motion.div
                 className="rounded-full flex items-center justify-center shadow-xl transition-shadow duration-300"
@@ -94,8 +94,8 @@ export function FreeCircleButton({ id, label, icon, onClick, disabled, size, ari
             aria-label={ariaLabel || label}
             className="flex flex-col items-center gap-1.5 cursor-pointer"
             style={{ opacity: disabled ? 0.2 : 1 }}
-            whileHover={disabled ? {} : { scale: 1.15, y: -5 }}
-            whileTap={disabled ? {} : { scale: 0.88 }}
+            whileHover={disabled ? {} : { scale: 1.15, y: -4 }}
+            whileTap={disabled ? {} : { scale: 0.92 }}
         >
             <motion.div
                 className="rounded-full flex items-center justify-center shadow-xl relative overflow-hidden"

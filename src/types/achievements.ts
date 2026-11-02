@@ -108,7 +108,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: 'bust_master', name: 'Bust Master', description: 'Win 50 hands where the dealer busts.', tier: 'uncommon', category: 'general', icon: '/images/achievements/bust_master.png', secret: true },
   { id: 'insurance_pay', name: 'Safety First', description: 'Win an Insurance bet when the dealer has Blackjack.', tier: 'rare', category: 'general', icon: '/images/achievements/insurance_pay.png', secret: true },
   { id: 'multi_blackjack', name: 'Double Trouble 21', description: 'Get Blackjack on two seats in the same round.', tier: 'epic', category: 'general', icon: '/images/achievements/multi_blackjack.png', secret: true },
-  { id: 'dealer_bust_22', name: 'the 22 Curse', description: 'Dealer busts with exactly 22.', tier: 'common', category: 'general', icon: '/images/achievements/dealer_bust_22.png', secret: true },
+  { id: 'dealer_bust_22', name: 'The 22 Curse', description: 'Dealer busts with exactly 22.', tier: 'common', category: 'general', icon: '/images/achievements/dealer_bust_22.png', secret: true },
   { id: 'perfect_21_sum', name: 'Zen Master', description: 'Win 3 spots with exactly 21 on all of them.', tier: 'legendary', category: 'general', icon: '/images/achievements/perfect_21_sum.png', secret: true },
   { id: 'exact_zero', name: 'Back from the Dead', description: 'Reach exactly $0 bankroll and win it all back from a daily claim.', tier: 'legendary', category: 'general', icon: '/images/achievements/exact_zero.png', secret: true },
   { id: 'count_savant', name: 'Eye in the Sky', description: 'Play 500 hands with Card Counting disabled and maintain 99%+ accuracy.', tier: 'legendary', category: 'general', icon: '/images/achievements/count_savant.png', secret: true },
@@ -116,11 +116,11 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   // ═══ STORE PURCHASE (35–38) ═══
   { id: 'gold_collector', name: 'Golden Touch', description: 'Purchase the Premium Gold Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/gold_collector.png' },
   { id: 'silver_collector', name: 'Silver Lining', description: 'Purchase the Sterling Silver Deck from the Casino Store.', tier: 'rare', category: 'store', icon: '/images/achievements/silver_collector.png' },
-  { id: 'plasma_collector', name: 'Plasma State', description: 'Purchase the dynamic Plasma Flow Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/plasma_collector.png' },
+  { id: 'plasma_collector', name: 'Plasma State', description: 'Purchase the Plasma Flow Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/plasma_collector.png' },
   { id: 'rainbow_collector', name: 'Over the Rainbow', description: 'Purchase the Iridescent Rainbow Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/rainbow_collector.png' },
   { id: 'hacker_collector', name: 'System Override', description: 'Purchase the Cyber Hacker Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/hacker_collector.png' },
   { id: 'glass_collector', name: 'Crystal Clear', description: 'Purchase the Frosted Glass Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/glass_collector.png' },
-  { id: 'cosmic_voyager', name: 'Cosmic Voyager', description: 'Purchase the Cosmic Swirl Deck and transcend beyond the stars.', tier: 'legendary', category: 'store', icon: '/images/achievements/cosmic_voyager.png' },
+  { id: 'cosmic_voyager', name: 'Cosmic Voyager', description: 'Purchase the Cosmic Swirl Deck from the Casino Store.', tier: 'legendary', category: 'store', icon: '/images/achievements/cosmic_voyager.png' },
 ];
 
 /** Quick lookup map */

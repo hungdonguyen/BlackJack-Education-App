@@ -178,7 +178,7 @@ function ScrollableDocument({
                 {sections.map((s) => (
                     <div key={s.title}>
                         <p className="text-xs font-bold text-white/70 mb-1">{s.title}</p>
-                        <p className="text-xs text-white/40 leading-relaxed">{s.body}</p>
+                        <p className="text-xs text-stone-300 leading-relaxed max-w-[62ch]">{s.body}</p>
                     </div>
                 ))}
 
@@ -188,7 +188,7 @@ function ScrollableDocument({
 
             {/* Scroll hint */}
             {!reached && (
-                <p className="text-center text-[10px] text-white/25 mt-2 flex-shrink-0 animate-pulse">
+                <p className="text-center text-[10px] text-stone-400 mt-2 flex-shrink-0 animate-pulse">
                     ↓ Scroll to the bottom to continue
                 </p>
             )}
@@ -263,7 +263,7 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
                                 <AlertTriangle size={20} className="text-amber-400" />
                                 <h2 className="text-lg font-black text-white">Before You Play</h2>
                             </div>
-                            <p className="text-xs text-white/40">
+                            <p className="text-xs text-stone-300 max-w-[62ch]">
                                 Please read and accept our Privacy Policy and Terms of Service.
                                 You only need to do this once.
                             </p>
@@ -319,7 +319,7 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
                         {/* Footer */}
                         <div className="flex-shrink-0 px-6 py-4 border-t border-white/10 space-y-3">
                             {/* Progress indicator */}
-                            <div className="flex items-center gap-3 text-xs text-white/30">
+                            <div className="flex items-center gap-3 text-xs text-stone-400">
                                 <div className="flex items-center gap-1.5">
                                     {privacyRead
                                         ? <CheckCircle size={13} className="text-emerald-400" />
@@ -334,7 +334,7 @@ export default function LegalAgreementModal({ onAccepted }: { onAccepted: () => 
                                     <span className={termsRead ? 'text-emerald-400' : ''}>Terms of Service</span>
                                 </div>
                                 {!bothRead && (
-                                    <span className="ml-auto text-white/20 italic">
+                                    <span className="ml-auto text-stone-400 italic">
                                         {!privacyRead && !termsRead
                                             ? 'Read both documents to continue'
                                             : !privacyRead

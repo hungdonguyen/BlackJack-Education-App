@@ -15,6 +15,7 @@ import { Navigation } from 'swiper/modules';
 import { useMenuNavigation } from '@/hooks/useMenuNavigation';
 import { InsufficientFundsWarning } from '@/components/table/InsufficientFundsWarning';
 import { toAppHref } from '@/utils/platform';
+import { ShinyText, CountUp, SpotlightCard } from '@/components/reactbits';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -35,7 +36,7 @@ export default function LobbyPage() {
                 ? `$${v.toLocaleString()}`
                 : `$${v}`;
 
-    const ITEMS_PER_PAGE = 6;
+    const ITEMS_PER_PAGE = 4;
 
     const chunkedRooms = useMemo(() => {
         const chunks = [];
@@ -75,7 +76,7 @@ export default function LobbyPage() {
 
     const { focusedId, setFocusedIndex } = useMenuNavigation({
         items: currentPageRoomIds,
-        columns: 3,
+        columns: 2,
         wrap: false,
         onSelect: handleRoomSelect,
         onBack: handleGoHome,
@@ -161,9 +162,12 @@ export default function LobbyPage() {
                     </div>
                     <div className="flex flex-col">
                         <span className="text-[8px] uppercase tracking-wider text-white/40 font-bold">Balance</span>
-                        <span className="text-sm font-black text-amber-500 leading-none">
-                            {formatMoney(bankroll)}
-                        </span>
+                        <CountUp
+                            to={bankroll} from={bankroll}
+                            prefix="$"
+                            duration={0.8}
+                            className="text-sm font-black text-amber-400 leading-none"
+                        />
                     </div>
                 </motion.div>
 
@@ -175,26 +179,19 @@ export default function LobbyPage() {
             </motion.div>
 
             {/* Center content — flex 1 allows vertical centering and pushes footer down */}
-            <div className="flex-1 flex flex-col items-center justify-center w-full z-10 px-4 md:px-8 mt-12 mb-16">
+            <div className="flex-1 flex flex-col items-center justify-center w-full z-10 px-4 md:px-8 my-1">
                 {/* Heading */}
                 <motion.div
-                    className="text-center mb-6 shrink-0"
+                    className="text-center mb-2 shrink-0"
                     variants={{
                         hidden: { opacity: 0, scale: 0.9 },
                         show: { opacity: 1, scale: 1 }
                     }}
                 >
-                    <p className="text-[9px] uppercase tracking-[0.45em] text-amber-400/50 mb-1 font-sans">Welcome to</p>
-                    <h2
-                        className="text-2xl font-black uppercase tracking-[0.25em] text-transparent bg-clip-text leading-tight"
-                        style={{
-                            fontFamily: 'var(--font-cinzel), serif',
-                            backgroundImage: 'linear-gradient(135deg, #f5d280 0%, #d4a843 40%, #b8860b 70%, #f5d280 100%)',
-                            filter: 'drop-shadow(0 0 18px rgba(212,168,67,0.7)) drop-shadow(0 0 40px rgba(212,168,67,0.35))',
-                        }}
-                    >
+                    
+                    <h1 className="text-2xl font-black uppercase tracking-[0.25em] font-cinzel leading-tight text-[#f5d280] drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                         Educational Blackjack
-                    </h2>
+                    </h1>
                     <div className="flex items-center justify-center gap-3 mt-1.5">
                         <div className="h-px w-16 bg-gradient-to-r from-transparent to-amber-400/40" />
                         <span className="text-amber-400/40 text-[8px] tracking-[0.5em] uppercase font-sans">Choose Your Table</span>
@@ -226,9 +223,17 @@ export default function LobbyPage() {
                     >
                         {chunkedRooms.map((chunk, pageIndex) => (
                             <SwiperSlide key={pageIndex}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 xl:gap-5 w-full max-w-[1100px] mx-auto py-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 xl:gap-5 w-full max-w-[960px] mx-auto py-1">
                                     {chunk.map((room, index) => (
-                                        <RoomCard key={room.id} room={room} index={index} onClick={() => { playSound('click'); router.push(toAppHref(`/game/${room.id}`)); }} variants={itemVariants} isFocused={focusedId === room.id} />
+                                        <RoomCard 
+                                            key={room.id} 
+                                            room={room} 
+                                            index={index} 
+                                            onClick={() => { playSound('click'); router.push(toAppHref(`/game/${room.id}`)); }} 
+                                            variants={itemVariants} 
+                                            isFocused={focusedId === room.id}
+                                            onMouseEnter={() => setFocusedIndex(index)}
+                                        />
                                     ))}
                                 </div>
                             </SwiperSlide>
@@ -238,10 +243,10 @@ export default function LobbyPage() {
                     {/* Custom Nav Buttons */}
                     {chunkedRooms.length > 1 && (
                         <>
-                            <div className="lobby-prev absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-amber-400/20 text-amber-500/80 cursor-pointer shadow-[0_0_20px_rgba(212,168,67,0.1)] hover:bg-amber-400/10 hover:text-amber-400 hover:scale-110 hover:border-amber-400/60 transition-all duration-300">
+                            <div className="lobby-prev absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-amber-400/20 text-amber-500/80 cursor-pointer shadow-lg hover:bg-amber-400/10 hover:text-amber-400 hover:scale-110 hover:border-amber-400/60 transition-all duration-300">
                                 <ChevronLeft size={28} />
                             </div>
-                            <div className="lobby-next absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-amber-400/20 text-amber-500/80 cursor-pointer shadow-[0_0_20px_rgba(212,168,67,0.1)] hover:bg-amber-400/10 hover:text-amber-400 hover:scale-110 hover:border-amber-400/60 transition-all duration-300">
+                            <div className="lobby-next absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-amber-400/20 text-amber-500/80 cursor-pointer shadow-lg hover:bg-amber-400/10 hover:text-amber-400 hover:scale-110 hover:border-amber-400/60 transition-all duration-300">
                                 <ChevronRight size={28} />
                             </div>
                         </>
@@ -251,17 +256,19 @@ export default function LobbyPage() {
 
             {/* Educational Disclaimer */}
             <motion.div 
-                className="absolute bottom-4 left-0 right-0 text-center z-50 pointer-events-none"
+                className="absolute bottom-3 left-0 right-0 flex flex-col items-center text-center z-50 pointer-events-none"
                 variants={{
                     hidden: { opacity: 0 },
                     show: { opacity: 1 }
                 }}
             >
-                <p className="text-xs text-white/30 font-medium uppercase tracking-[0.1em]">
-                    This is a strictly educational project. No real money gambling is involved.
-                </p>
-                <div className="text-[8px] text-white/10 mt-1 leading-tight uppercase tracking-wider">
-                    Audio Credits: Music by Kevin MacLeod & Audionautix.com · SFX by Kenney.nl
+                <div className="bg-black/80 border border-white/10 backdrop-blur-md px-6 py-1.5 rounded-full flex flex-col items-center gap-0.5 shadow-lg">
+                    <p className="text-[10px] text-stone-200 font-semibold uppercase tracking-[0.15em]">
+                        This is a strictly educational project. No real money gambling is involved.
+                    </p>
+                    <div className="text-[9px] text-stone-300 leading-tight uppercase tracking-wider font-medium">
+                        Audio Credits: Music by Kevin MacLeod & Audionautix.com · SFX by Kenney.nl
+                    </div>
                 </div>
             </motion.div>
             
@@ -270,30 +277,50 @@ export default function LobbyPage() {
     );
 }
 
-function RoomCard({ room, index, onClick, variants, isFocused }: { room: RoomConfig; index: number; onClick: () => void; variants: any; isFocused?: boolean }) {
+function RoomCard({ 
+    room, 
+    index, 
+    onClick, 
+    variants, 
+    isFocused, 
+    onMouseEnter 
+}: { 
+    room: RoomConfig; 
+    index: number; 
+    onClick: () => void; 
+    variants: any; 
+    isFocused?: boolean;
+    onMouseEnter?: () => void;
+}) {
     const formattedMaxBet = useMemo(() => {
         if (room.betRange[1] >= 1000000) return 'Unlimited';
         return `$${room.betRange[1].toLocaleString('en-US')}`;
     }, [room.betRange]);
 
+    const isActive = Boolean(isFocused);
+
     return (
         <motion.div
-            className="relative w-full h-full flex flex-col rounded-2xl overflow-hidden cursor-pointer group"
+            className="relative w-full h-full flex flex-col rounded-2xl overflow-hidden cursor-pointer"
             style={{
-                border: `1px solid ${room.borderColor}`,
-                boxShadow: isFocused
-                    ? `0 0 0 3px ${room.accentColor}, 0 0 30px ${room.accentColor}60`
-                    : `0 0 40px ${room.borderColor}`,
-                transform: isFocused ? 'scale(1.03)' : undefined,
-                transition: 'box-shadow 0.15s ease, transform 0.15s ease',
+                border: isActive ? `2px solid ${room.accentColor}` : `1px solid ${room.borderColor}`,
+                boxShadow: isActive
+                    ? `0 12px 30px -8px rgba(0,0,0,0.8), 0 0 0 2px ${room.accentColor}`
+                    : '0 8px 24px -6px rgba(0,0,0,0.6)',
+                transform: isActive ? 'scale(1.025) translateY(-4px)' : 'scale(1) translateY(0)',
+                transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease',
             }}
             variants={variants}
-            whileHover={{ scale: 1.03, y: -8, boxShadow: `0 0 60px ${room.accentColor}44` }}
             whileTap={{ scale: 0.98 }}
             onClick={onClick}
+            onMouseEnter={onMouseEnter}
         >
+            <SpotlightCard
+                spotlightColor={`${room.accentColor}40`}
+                className="w-full h-full p-0 flex flex-col bg-transparent border-0 rounded-2xl"
+            >
             {/* Table preview */}
-            <div className="h-[110px] relative overflow-hidden"
+            <div className="h-[112px] relative overflow-hidden"
                 style={{ background: room.feltGradient }}
             >
                 {/* Felt texture */}
@@ -301,69 +328,78 @@ function RoomCard({ room, index, onClick, variants, isFocused }: { room: RoomCon
                     backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'4\' height=\'4\' viewBox=\'0 0 4 4\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 3h1v1H1V3zm2-2h1v1H3V1z\' fill=\'%23ffffff\' fill-opacity=\'0.4\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")',
                 }} />
 
-                {/* Room logo */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative w-[60%] h-[75%] mx-auto">
+                {/* Room logo - clearly visible, never blocked on hover */}
+                <div className="absolute inset-0 flex items-center justify-center p-2">
+                    <div className={`relative w-[70%] h-[85%] mx-auto transition-transform duration-300 ${isActive ? 'scale-105' : ''}`}>
                         <Image
                             src={room.logoPath}
                             alt={room.name}
                             fill
-                            className="object-contain drop-shadow-xl"
+                            className="object-contain drop-shadow-2xl"
                             sizes="(max-width: 768px) 100vw, 400px"
                             unoptimized
                         />
                     </div>
                 </div>
 
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
-                    <motion.span
-                        className="text-white font-bold text-sm uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                            px-6 py-2 rounded-full border border-white/30 bg-black/40 backdrop-blur-sm"
-                    >
-                        Play Now
-                    </motion.span>
+                {/* Subtle top badges */}
+                <div className="absolute top-2.5 left-3 flex items-center gap-2">
+                    {room.isBeta && (
+                        <span className="px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider bg-red-500/30 text-red-300 border border-red-500/40 uppercase">
+                            Beta
+                        </span>
+                    )}
+                </div>
+
+                {/* RTP pill top right */}
+                <div className="absolute top-2.5 right-3 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 text-[9px] font-bold" style={{ color: room.accentColor }}>
+                    {room.hasSideBet && room.baseGameRtp && room.sideBetRtp
+                        ? `RTP ${room.baseGameRtp}`
+                        : `RTP ${room.rtp}`}
                 </div>
             </div>
 
             {/* Info section */}
-            <div className="flex-1 flex flex-col p-4"
+            <div className="flex-1 flex flex-col p-3.5"
                 style={{ background: 'rgba(10, 6, 4, 0.95)' }}
             >
-                <div className="flex items-start justify-between mb-1.5">
+                <div className="flex items-start justify-between mb-1">
                     <div>
                         <div className="flex items-center gap-2">
-                            <h3 className="text-[15px] font-extrabold text-white/90">{room.name}</h3>
-                            {room.isBeta && (
-                                <span className="px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 uppercase">
-                                    Beta
-                                </span>
-                            )}
+                            <h2 className={`text-[15px] font-black transition-colors ${isActive ? 'text-amber-400' : 'text-white/90'}`}>{room.name}</h2>
                         </div>
-                        <p className="text-[9px] font-medium uppercase tracking-[0.15em] mt-0.5"
+                        <p className="text-[10px] font-bold uppercase tracking-[0.15em] mt-0.5"
                             style={{ color: room.accentColor }}
                         >
                             {room.subtitle}
                         </p>
                     </div>
-                    <span className="text-xl">{room.icon}</span>
+                    <span className={`text-xl transition-all ${isActive ? 'opacity-100 scale-110' : 'opacity-80'}`}>{room.icon}</span>
                 </div>
-                <p className="text-white/35 text-[9px] leading-relaxed mt-1">{room.description}</p>
-                <div className="flex items-center gap-3 mt-auto pt-2.5 border-t border-white/5">
-                    <span className="text-[8px] text-white/25 uppercase tracking-wider">
-                        Min: ${room.betRange[0]}
+
+                <p className="text-white/45 text-[10px] leading-relaxed line-clamp-2 my-1.5">{room.description}</p>
+
+                {/* Rule Citation & Limits Bar */}
+                <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-white/5">
+                    <span className="text-[9px] text-white/40 truncate max-w-[260px] flex items-center gap-1 font-mono">
+                        <span className="text-amber-400/80 font-bold">Ref:</span> {room.strategySource || 'Wizard of Odds Standard'}
                     </span>
-                    <span className="text-[8px] text-white/25 uppercase tracking-wider">
-                        Max: ${formattedMaxBet}
-                    </span>
-                    <span className="text-[8px] uppercase tracking-wider ml-auto font-bold" style={{ color: room.accentColor }}>
-                        {room.hasSideBet && room.baseGameRtp && room.sideBetRtp
-                            ? <>RTP {room.baseGameRtp} · <span className="text-red-400">Side Bet {room.sideBetRtp}</span></>
-                            : <>RTP {room.rtp}</>
-                        }
-                    </span>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[9px] text-white/30 uppercase tracking-wider font-semibold">
+                            ${room.betRange[0]} – {formattedMaxBet}
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all duration-200 ${
+                            isActive 
+                                ? 'bg-amber-400 text-black border border-amber-400 shadow-md scale-105' 
+                                : 'bg-white/5 border border-white/15 text-white/70'
+                        }`}>
+                            Play
+                        </span>
+                    </div>
                 </div>
             </div>
+            </SpotlightCard>
         </motion.div>
     );
 }

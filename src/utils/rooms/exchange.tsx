@@ -30,7 +30,7 @@ export const exchange: RoomConfig = {
     logoPath: '/images/logo/rooms/exchange21.png',
     strategyType: 'exchange_21',
     deviationsSet: 'exchange_21',
-    strategySource: 'Blackjack Exchange Strategy',
+    strategySource: 'Geoff Hall (Blackjack Switch Inventor) · Wizard of Odds Combinatorial Analysis',
     rulesClass: Exchange21Rules,
     strategyModalContent: {
         overview: "Exchange 21 (Blackjack Switch) requires playing two hands and allows swapping the top cards between them.",

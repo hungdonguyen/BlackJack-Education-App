@@ -326,7 +326,7 @@ export default function HandAdvisor({
                             </span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: accentColor }} />
+                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: accentColor, boxShadow: `0 0 6px ${accentColor}` }} />
                             <span className="text-[10px] font-bold uppercase tracking-[0.18em] font-sans" style={{ color: `${accentColor}90` }}>LIVE</span>
                         </div>
                     </div>
@@ -374,7 +374,7 @@ export default function HandAdvisor({
                                     </div>
                                 </div>
 
-                                <p className="text-center mt-3 text-[9px] font-bold tracking-[0.08em] font-sans" style={{ color: 'rgba(180,155,110,0.6)' }}>
+                                <p className="text-center mt-3 text-[9px] font-bold tracking-wide font-sans" style={{ color: '#d4a843' }}>
                                     Based on {analysis.bust.total} cards remaining in shoe
                                     {analysis.cardCount >= 3 && ` · ${analysis.cardCount} cards in hand`}
                                 </p>

@@ -1,6 +1,8 @@
+'use client';
+import { ShinyText, CountUp } from '@/components/reactbits';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ShoppingCart, Check, Crown, Lock, Sparkles, CreditCard, Zap, Gem } from 'lucide-react';
+import { X, ShoppingCart, Check, Crown, Lock, Sparkles, CreditCard, Zap, Gem, Flame, Bot, Waves, Sun, Ghost, Loader2 } from 'lucide-react';
 import { useGameStore } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
 import Image from 'next/image';
@@ -34,7 +36,7 @@ export default function StoreModal({ onClose }: StoreModalProps) {
             name: 'Classic Deck',
             description: 'Standard casino-grade cards. Clean, readable, and elegant.',
             price: 0,
-            accent: '#4B5563',
+            accent: '#94a3b8',
             icon: null
         },
         {
@@ -48,7 +50,7 @@ export default function StoreModal({ onClose }: StoreModalProps) {
         {
             id: 'plasma',
             name: 'Plasma Flow',
-            description: 'Futuristic animated cards pulsing with dynamic neon plasma energy.',
+            description: 'Futuristic cards featuring animated glowing cyan plasma currents.',
             price: 777_777,
             accent: '#06b6d4',
             icon: <Sparkles size={14} className="text-cyan-400" />
@@ -56,7 +58,7 @@ export default function StoreModal({ onClose }: StoreModalProps) {
         {
             id: 'gold',
             name: 'Premium Gold',
-            description: 'Exclusive 24k solid gold textured cards for high rollers.',
+            description: 'Solid 24k gold textured cards designed for high rollers.',
             price: 500_000,
             accent: '#d4a843',
             icon: <Crown size={14} className="text-amber-500" />
@@ -64,7 +66,7 @@ export default function StoreModal({ onClose }: StoreModalProps) {
         {
             id: 'rainbow',
             name: 'Iridescent Rainbow',
-            description: 'Gliding holographic pastel finish sweeping over a retro rainbow aesthetic.',
+            description: 'Holographic foil finish with an animated shifting pastel spectrum.',
             price: 666_666,
             accent: '#ec4899',
             icon: <Sparkles size={14} className="text-pink-400" />
@@ -72,7 +74,7 @@ export default function StoreModal({ onClose }: StoreModalProps) {
         {
             id: 'hacker',
             name: 'Cyber Hacker',
-            description: 'Pitch black matrix with phosphor green glitches and scanlines.',
+            description: 'Matrix terminal theme with phosphor-green scanlines and data glitches.',
             price: 404_040,
             accent: '#22c55e',
             icon: <Zap size={14} className="text-green-500" />
@@ -80,7 +82,7 @@ export default function StoreModal({ onClose }: StoreModalProps) {
         {
             id: 'glass',
             name: 'Frosted Glass',
-            description: 'Ultra-modern glassmorphism with elegant specular highlights and sheer transparency.',
+            description: 'Frosted translucent glass with animated prismatic refractions and snowflake motifs.',
             price: 888_888,
             accent: '#e0f2fe',
             icon: <Gem size={14} className="text-sky-200" />
@@ -88,10 +90,50 @@ export default function StoreModal({ onClose }: StoreModalProps) {
         {
             id: 'cosmic',
             name: 'Cosmic Swirl',
-            description: 'Transcend beyond the stars with swirling nebula backgrounds.',
+            description: 'Deep space aesthetic featuring animated swirling nebula dust.',
             price: 1_234_567,
             accent: '#7c3aed',
             icon: <Sparkles size={14} className="text-purple-400" />
+        },
+        {
+            id: 'dragon',
+            name: 'Imperial Dragon',
+            description: 'Traditional dragon motifs styled in gold leaf and imperial crimson.',
+            price: 1_888_888,
+            accent: '#f59e0b',
+            icon: <Flame size={14} className="text-amber-400" />
+        },
+        {
+            id: 'mecha',
+            name: 'Cyber Mecha',
+            description: 'Armored titanium plating with cyan energy conduits.',
+            price: 2_099_000,
+            accent: '#06b6d4',
+            icon: <Bot size={14} className="text-cyan-400" />
+        },
+        {
+            id: 'abyss',
+            name: 'Eldritch Abyss',
+            description: 'Deep-sea theme with bioluminescent aquatic accents.',
+            price: 2_500_000,
+            accent: '#2dd4bf',
+            icon: <Waves size={14} className="text-teal-400" />
+        },
+        {
+            id: 'solar',
+            name: 'Celestial Solar',
+            description: 'Dual Sun & Eclipse theme featuring the Celestial Goddess, custom solar pips, and corona flash effects.',
+            price: 3_333_333,
+            accent: '#fbbf24',
+            icon: <Sun size={14} className="text-yellow-400" />
+        },
+        {
+            id: 'phantom',
+            name: 'Ghostly Wraith',
+            description: 'Spectral gothic theme with ethereal violet flames and mist.',
+            price: 5_000_000,
+            accent: '#c084fc',
+            icon: <Ghost size={14} className="text-purple-400" />
         }
     ].sort((a, b) => a.price - b.price);
 
@@ -154,6 +196,61 @@ export default function StoreModal({ onClose }: StoreModalProps) {
 
     const currentDeck = decks[selectedIndex];
 
+    // Ensure 100% of the 52 cards are fully cached and loaded before showing to user
+    const [loadedDecks, setLoadedDecks] = useState<Set<string>>(() => new Set(['default']));
+    const [isDeckLoading, setIsDeckLoading] = useState(false);
+    const [loadProgress, setLoadProgress] = useState(0);
+
+    useEffect(() => {
+        const deckId = currentDeck.id;
+        if (loadedDecks.has(deckId)) {
+            setIsDeckLoading(false);
+            return;
+        }
+
+        let isCancelled = false;
+        setIsDeckLoading(true);
+        setLoadProgress(0);
+
+        const cardUrls: string[] = [];
+        for (const suit of SUITS) {
+            for (const rank of ALL_RANKS) {
+                cardUrls.push(getCardImage(suit, rank, deckId));
+            }
+        }
+        cardUrls.push(getCardBackImage(deckId));
+
+        let loadedCount = 0;
+        const total = cardUrls.length;
+
+        const promises = cardUrls.map(url => {
+            return new Promise<void>((resolve) => {
+                const img = new window.Image();
+                img.src = url;
+                const done = () => {
+                    loadedCount++;
+                    if (!isCancelled) {
+                        setLoadProgress(Math.round((loadedCount / total) * 100));
+                    }
+                    resolve();
+                };
+                img.onload = done;
+                img.onerror = done;
+            });
+        });
+
+        Promise.all(promises).then(() => {
+            if (!isCancelled) {
+                setLoadedDecks(prev => new Set(prev).add(deckId));
+                setIsDeckLoading(false);
+            }
+        });
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [currentDeck.id, loadedDecks]);
+
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8 bg-black/95 backdrop-blur-2xl">
             <motion.div
@@ -170,15 +267,15 @@ export default function StoreModal({ onClose }: StoreModalProps) {
                             <ShoppingCart size={22} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-black uppercase tracking-tighter text-white">Grand Collection</h2>
-                            <p className="text-[8px] text-amber-500/50 uppercase tracking-[0.3em] font-black italic">Exquisite Artistry & Design</p>
+                            <h2 className="text-xl font-black uppercase tracking-tighter text-white">Card Decks</h2>
+                            <p className="text-[8px] text-amber-500/50 uppercase tracking-[0.3em] font-black italic">Custom Visual Themes</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-8">
                         <div className="flex flex-col items-end">
-                            <span className="text-[8px] text-white/20 uppercase tracking-[0.2em] font-black">Capital Balance</span>
-                            <span className="text-xl font-black text-white tabular-nums">${bankroll.toLocaleString()}</span>
+                            <span className="text-[8px] text-white/20 uppercase tracking-[0.2em] font-black">Bankroll</span>
+                            <CountUp to={bankroll} from={bankroll} prefix="$" duration={0.8} className="text-xl font-black text-white tabular-nums" />
                         </div>
 
                         <button
@@ -268,10 +365,14 @@ export default function StoreModal({ onClose }: StoreModalProps) {
                                             <Image src={getCardBackImage(currentDeck.id)} alt="Card Back" fill className="object-cover" sizes="80px" />
                                         </motion.div>
                                         <div className="space-y-2">
-                                            <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-none"
-                                                style={{ textShadow: `0 0 40px ${currentDeck.accent}22` }}>
-                                                {currentDeck.name}
-                                            </h3>
+                                            <ShinyText
+                                                text={currentDeck.name}
+                                                shineColor={currentDeck.accent || '#ffffff'}
+                                                color="#ffffff"
+                                                speed={2.5}
+                                                glow={0.4}
+                                                className="text-4xl font-black uppercase tracking-tighter leading-none drop-shadow-md"
+                                            />
                                             <p className="text-white/40 text-[13px] max-w-lg font-medium leading-normal">
                                                 {currentDeck.description}
                                             </p>
@@ -279,48 +380,114 @@ export default function StoreModal({ onClose }: StoreModalProps) {
                                     </div>
 
                                     <button
-                                        onClick={() => handleAction(currentDeck.id, currentDeck.price)}
-                                        className={`px-8 py-3.5 rounded-2xl font-black uppercase tracking-tighter text-sm transition-all duration-500
-                                            ${purchasedDecks.includes(currentDeck.id)
-                                                ? (activeDeck === currentDeck.id ? 'bg-white/5 text-white/20 border border-white/5 cursor-default' : 'bg-white text-black hover:scale-105 shadow-lg')
-                                                : (bankroll >= currentDeck.price ? 'bg-amber-500 text-black hover:scale-105 shadow-lg' : 'bg-red-500/10 text-red-500/40 border border-red-500/20 cursor-not-allowed')
-                                            }`}
-                                    >
-                                        {purchasedDecks.includes(currentDeck.id)
-                                            ? (activeDeck === currentDeck.id ? 'Equipped' : 'Equip Theme')
-                                            : `Purchase - ${formatMoney(currentDeck.price)}`}
-                                    </button>
+                                            onClick={() => handleAction(currentDeck.id, currentDeck.price)}
+                                            className={`px-8 py-3.5 rounded-2xl font-black uppercase tracking-tighter text-sm transition-all duration-300
+                                                ${purchasedDecks.includes(currentDeck.id)
+                                                    ? (activeDeck === currentDeck.id 
+                                                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.15)] cursor-default' 
+                                                        : 'bg-white text-black hover:scale-105 shadow-lg cursor-pointer')
+                                                    : (bankroll >= currentDeck.price 
+                                                        ? 'bg-amber-500 hover:bg-amber-400 text-black hover:scale-105 shadow-lg cursor-pointer' 
+                                                        : 'bg-red-500/10 text-red-400/60 border border-red-500/20 cursor-not-allowed')
+                                                }`}
+                                        >
+                                            {purchasedDecks.includes(currentDeck.id)
+                                                ? (activeDeck === currentDeck.id ? (
+                                                    <span className="flex items-center gap-2">
+                                                        <Check size={16} className="text-emerald-400" />
+                                                        <span>Equipped</span>
+                                                    </span>
+                                                ) : 'Equip Theme')
+                                                : `Purchase - ${formatMoney(currentDeck.price)}`}
+                                        </button>
                                 </div>
 
-                                {/* Spread Deck Gallery (4x13) */}
-                                <div className="flex-1 flex flex-col justify-around py-4">
-                                    {SUITS.map(suit => (
-                                        <div key={suit} className="flex items-center">
-                                            <div className="w-9 h-9 flex items-center justify-center shrink-0 border border-white/5 rounded-lg bg-white/5 mr-4">
-                                                <span className="text-xl opacity-20">{suit === Suit.SPADES ? '♠' : suit === Suit.HEARTS ? '♥' : suit === Suit.CLUBS ? '♣' : '♦'}</span>
-                                            </div>
-                                            <div className="flex flex-1 items-center justify-between">
-                                                {ALL_RANKS.map((rank, rankIdx) => (
+                                {/* Spread Deck Gallery (4x13) or High-End Preloader */}
+                                <div className="flex-1 relative flex flex-col justify-around py-4 min-h-[360px]">
+                                    <AnimatePresence mode="wait">
+                                        {isDeckLoading ? (
+                                            <motion.div
+                                                key="loading"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md rounded-2xl border border-white/5 z-20"
+                                            >
+                                                <div className="relative mb-5">
                                                     <motion.div
-                                                        key={`${suit}-${rank}`}
-                                                        className="relative w-14 aspect-[2.5/3.5] rounded-lg overflow-hidden shadow-2xl ring-1 ring-white/10"
+                                                        animate={{ rotate: 360 }}
+                                                        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                                                        className="w-16 h-16 rounded-full border-2 border-white/10"
+                                                        style={{ borderTopColor: currentDeck.accent || '#fff' }}
+                                                    />
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <Loader2 size={24} className="animate-spin text-white/40" />
+                                                    </div>
+                                                </div>
+                                                
+                                                <p className="text-sm font-bold uppercase tracking-wider text-white/90">
+                                                    Caching card deck assets...
+                                                </p>
+                                                <p className="text-xs text-white/40 font-mono mt-1">
+                                                    {currentDeck.name} • {loadProgress}%
+                                                </p>
+
+                                                <div className="w-56 h-1.5 bg-white/10 rounded-full overflow-hidden mt-4">
+                                                    <motion.div
+                                                        className="h-full rounded-full"
                                                         style={{
-                                                            marginLeft: rankIdx === 0 ? 0 : '-1.2rem',
-                                                            zIndex: rankIdx
+                                                            width: `${loadProgress}%`,
+                                                            backgroundColor: currentDeck.accent || '#fff'
                                                         }}
-                                                        whileHover={{
-                                                            scale: 1.4,
-                                                            zIndex: 100,
-                                                            y: -15,
-                                                            transition: { type: 'spring', stiffness: 400, damping: 25 }
-                                                        }}
-                                                    >
-                                                        <Image src={getCardImage(suit, rank, currentDeck.id)} alt={`${rank}${suit}`} fill className="object-cover" />
-                                                    </motion.div>
+                                                        transition={{ duration: 0.1 }}
+                                                    />
+                                                </div>
+                                            </motion.div>
+                                        ) : (
+                                            <motion.div
+                                                key="gallery"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="flex-1 flex flex-col justify-around"
+                                            >
+                                                {SUITS.map(suit => (
+                                                    <div key={suit} className="flex items-center">
+                                                        <div className="w-9 h-9 flex items-center justify-center shrink-0 border border-white/5 rounded-lg bg-white/5 mr-4">
+                                                            <span className="text-xl opacity-20">{suit === Suit.SPADES ? '♠' : suit === Suit.HEARTS ? '♥' : suit === Suit.CLUBS ? '♣' : '♦'}</span>
+                                                        </div>
+                                                        <div className="flex flex-1 items-center justify-between">
+                                                            {ALL_RANKS.map((rank, rankIdx) => (
+                                                                <motion.div
+                                                                    key={`${suit}-${rank}`}
+                                                                    className="relative w-14 aspect-[2.5/3.5] rounded-lg overflow-hidden shadow-2xl ring-1 ring-white/10"
+                                                                    style={{
+                                                                        marginLeft: rankIdx === 0 ? 0 : '-1.2rem',
+                                                                        zIndex: rankIdx
+                                                                    }}
+                                                                    whileHover={{
+                                                                        scale: 1.4,
+                                                                        zIndex: 100,
+                                                                        y: -15,
+                                                                        transition: { type: 'spring', stiffness: 400, damping: 25 }
+                                                                    }}
+                                                                >
+                                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                    <img
+                                                                        src={getCardImage(suit, rank, currentDeck.id)}
+                                                                        alt={`${rank}${suit}`}
+                                                                        className="w-full h-full object-cover select-none pointer-events-none"
+                                                                        loading="eager"
+                                                                        decoding="sync"
+                                                                    />
+                                                                </motion.div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 ))}
-                                            </div>
-                                        </div>
-                                    ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             </motion.div>
                         </AnimatePresence>

@@ -30,7 +30,7 @@ export const classic: RoomConfig = {
     logoPath: '/images/logo/rooms/classic.png',
     strategyType: 'classic',
     deviationsSet: 'standard',
-    strategySource: 'Standard Basic Strategy',
+    strategySource: 'Michael Shackleford (Wizard of Odds) · 8-Deck S17 Basic Strategy',
     rulesClass: ClassicRules,
     strategyModalContent: {
         overview: "The Classic Online Rule follows the standard Blackjack template but is played with 8 decks and higher house penetration.",

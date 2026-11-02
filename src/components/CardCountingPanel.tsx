@@ -106,7 +106,7 @@ export default function CardCountingPanel({
                             </span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#22c55e' }} />
+                            <div className="w-1.5 h-1.5 rounded-full shadow-[0_0_6px_#22c55e]" style={{ background: '#22c55e' }} />
                             <span className="text-[10px] font-bold uppercase tracking-[0.12em] font-sans whitespace-nowrap" style={{ color: '#22c55e90' }}>
                                 {analysis.activeSystem === 'Katarina Walker' ? 'WALKER' : 'HI-LO'}
                             </span>
@@ -204,7 +204,7 @@ export default function CardCountingPanel({
                             </div>
 
                             {/* Decks remaining info */}
-                            <p className="text-center mt-3 text-[9px] font-bold tracking-[0.08em] font-sans" style={{ color: 'rgba(180,155,110,0.6)' }}>
+                            <p className="text-center mt-3 text-[9px] font-bold tracking-wide font-sans" style={{ color: '#d4a843' }}>
                                 {analysis.decksRemaining.toFixed(1)} decks remaining · {analysis.cardsRemaining} cards
                             </p>
                         </div>

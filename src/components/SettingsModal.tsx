@@ -178,7 +178,7 @@ export default function SettingsModal({ roomId, accentColor, borderColor, isFull
                     <SettingRow
                         icon={<Zap size={18} className={cardAnimationEnabled ? "text-fuchsia-400" : "text-white/30"} />}
                         label="Card Animations"
-                        description="Enable animated premiums (Plasma/Cosmic)"
+                        description="Enable animated card effects (Plasma, Glass, Solar, etc.)"
                     >
                         <ToggleSwitch
                             enabled={cardAnimationEnabled}

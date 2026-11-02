@@ -24,11 +24,11 @@ export function PayoutControls() {
             id="finish-tutorial-button"
             onClick={() => { markTutorialCompleted(currentRoom); resetTutorialProgress(); router.push(toAppHref('/tutorial-lobby')); }}
             className={`px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.25em] cursor-pointer
-                bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white
-                shadow-[0_0_30px_rgba(139,92,246,0.4),0_8px_20px_rgba(0,0,0,0.3)]
-                hover:shadow-[0_0_50px_rgba(139,92,246,0.6),0_12px_30px_rgba(0,0,0,0.4)]
-                hover:from-indigo-400 hover:via-purple-400 hover:to-pink-400
-                border-2 border-indigo-300/30
+                bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-black font-black
+                shadow-[0_0_30px_rgba(245,158,11,0.5),0_8px_20px_rgba(0,0,0,0.4)]
+                hover:shadow-[0_0_50px_rgba(245,158,11,0.8),0_12px_30px_rgba(0,0,0,0.5)]
+                hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400
+                border-2 border-yellow-200/60
                 transition-all duration-300 relative overflow-hidden`}
             style={{
                 boxShadow: hoveredAction === 'finish-tutorial' ? '0 0 25px white' : '',

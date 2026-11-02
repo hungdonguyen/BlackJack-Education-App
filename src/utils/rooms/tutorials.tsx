@@ -222,7 +222,7 @@ export const tutorialCounting: RoomConfig = {
 
 export const tutorialSplitting: RoomConfig = {
     id: 'tutorial_splitting',
-    name: 'Playing with pair',
+    name: 'Pair Splitting',
     subtitle: 'Split Smart, Win More',
     description: 'Master the golden rules of playing pairs. Know exactly when to split Aces & 8s, when to never split 10s or 5s, and how context changes the play for 9s.',
     feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #2e1065 0%, #4c1d95 25%, #5b21b6 50%, #4c1d95 80%, #1a0050 100%)',
@@ -252,7 +252,7 @@ export const tutorialSplitting: RoomConfig = {
     strategyModalContent: {
         overview: "Master every rule for playing pairs in Blackjack.",
         highlights: [
-            { eyebrow: "Tutorial", title: "Playing with pair", detail: "Always, Never, and Context rules.", tone: 'accent' }
+            { eyebrow: "Tutorial", title: "Pair Splitting", detail: "Always, Never, and Context split rules.", tone: 'accent' }
         ],
         playerOptions: { title: "Options", items: ["Split", "Double", "Stand"] },
         payouts: { title: "Payouts", items: ["Standard Payouts"] },
@@ -270,7 +270,7 @@ export const tutorialMultiHand: RoomConfig = {
     id: 'tutorial_multihand',
     name: 'Multi-Hand Play',
     subtitle: 'Expose the Trap',
-    description: 'Learn how to play multiple hands simultaneously for bigger action and more excitement.',
+    description: 'Learn how to manage multiple hands simultaneously and understand the variance implications.',
     feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #4c0519 0%, #881337 25%, #9f1239 50%, #881337 80%, #1f0009 100%)',
     bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #1f0009 0%, #4c0519 50%, #0d0003 100%)',
     borderColor: 'rgba(251, 113, 133, 0.4)',
@@ -341,7 +341,7 @@ export const tutorialZapout: RoomConfig = {
     id: 'tutorial_zapout',
     name: 'Zapout 21',
     subtitle: 'Escape Bad Hands',
-    description: 'Master the Zapout mechanic to discard dreadful hands without losing your bet.',
+    description: 'Master the Zapout mechanic to discard difficult hard totals and draw fresh cards.',
     feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #1e3a8a 0%, #1e40af 25%, #1d4ed8 50%, #1e40af 80%, #172554 100%)',
     bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #172554 0%, #1e3a8a 50%, #172554 100%)',
     borderColor: 'rgba(59, 130, 246, 0.4)',
@@ -366,7 +366,7 @@ export const tutorialExchange: RoomConfig = {
     id: 'tutorial_exchange',
     name: 'Exchange 21',
     subtitle: 'Strategic Switching',
-    description: 'Learn to switch cards between hands to turn a pair of losers into powerful winning hands.',
+    description: 'Learn how to switch second cards between two hands to optimize expected value.',
     feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #475569 0%, #334155 25%, #1e293b 50%, #0f172a 80%, #020617 100%)',
     bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #020617 0%, #334155 50%, #020617 100%)',
     borderColor: 'rgba(148, 163, 184, 0.4)',
@@ -390,8 +390,8 @@ export const tutorialExchange: RoomConfig = {
 export const tutorialFirecard: RoomConfig = {
     id: 'tutorial_firecard',
     name: 'Firecard 21',
-    subtitle: 'Burn the Upcard',
-    description: 'Learn when it is mathematically correct to burn the dealer\'s dangerous upcard.',
+    subtitle: 'Burn Replacement',
+    description: 'Learn when to burn an unfavorable second card and capitalize on burn bonuses.',
     feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #7c2d12 0%, #9a3412 25%, #c2410c 50%, #9a3412 80%, #431407 100%)',
     bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #431407 0%, #9a3412 50%, #431407 100%)',
     borderColor: 'rgba(249, 115, 22, 0.4)',
@@ -443,7 +443,7 @@ export const tutorialIberian: RoomConfig = {
     id: 'tutorial_iberian',
     name: 'Iberian 21',
     subtitle: 'No Tens, More Bonuses',
-    description: 'Play with a 48-card deck lacking 10s, utilizing Double Descues and bonus combinations.',
+    description: 'Play with 48-card Spanish decks lacking tens, utilizing Double Down Rescue and special bonus payouts.',
     feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #14532d 0%, #166534 25%, #15803d 50%, #166534 80%, #052e16 100%)',
     bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #052e16 0%, #166534 50%, #052e16 100%)',
     borderColor: 'rgba(34, 197, 94, 0.4)',

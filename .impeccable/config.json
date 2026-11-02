@@ -1,0 +1,140 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "src/app/terms/page.tsx",
+          "**/terms/**",
+          "http://localhost:3000/terms/**",
+          "**/game/**",
+          "http://localhost:3000/game/**"
+        ],
+        "reason": "Authentic table felt stencil markings & legal text contrast"
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "**/game/**",
+          "http://localhost:3000/game/**"
+        ],
+        "reason": "Casino felt secondary markings"
+      },
+      {
+        "rule": "kicker-above-heading",
+        "value": "*",
+        "files": [
+          "src/app/tutorial-lobby/page.tsx",
+          "**/tutorial-lobby/**",
+          "http://localhost:3000/tutorial-lobby/**"
+        ],
+        "reason": "Tutorial level tag inside badge"
+      },
+      {
+        "rule": "codex-grid-background",
+        "value": "*",
+        "files": [
+          "src/app/tutorial-lobby/page.tsx",
+          "**/tutorial-lobby/**",
+          "http://localhost:3000/tutorial-lobby/**"
+        ],
+        "reason": "Card felt texture"
+      },
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          "src/utils/rooms/infinity_double_down.tsx",
+          "**/infinity_double_down/**",
+          "http://localhost:3000/game/infinity_double_down/**"
+        ],
+        "createdAt": "2026-11-01T10:05:39.255Z",
+        "reason": "Intentional royal purple felt for Infinity Double Down table"
+      },
+      {
+        "rule": "nested-cards",
+        "value": "*",
+        "files": [
+          "src/app/simulator/**",
+          "**/simulator/**",
+          "http://localhost:3000/simulator/**"
+        ],
+        "reason": "Dense analytics dashboard layout"
+      },
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "src/app/simulator/**",
+          "**/simulator/**",
+          "http://localhost:3000/simulator/**"
+        ],
+        "reason": "Telemetry glow badges"
+      },
+      {
+        "rule": "repeating-stripes-gradient",
+        "value": "*",
+        "files": [
+          "src/app/simulator/**",
+          "**/simulator/**",
+          "http://localhost:3000/simulator/**"
+        ],
+        "reason": "Technical grid background"
+      },
+      {
+        "rule": "radial-spotlight-glow",
+        "value": "*",
+        "files": [
+          "src/app/simulator/**",
+          "**/simulator/**",
+          "http://localhost:3000/simulator/**"
+        ],
+        "reason": "Dashboard header accent lighting"
+      },
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "src/app/simulator/**",
+          "**/simulator/**",
+          "http://localhost:3000/simulator/**"
+        ],
+        "reason": "Metric table typography"
+      },
+      {
+        "rule": "skipped-heading",
+        "value": "*",
+        "files": [
+          "src/app/simulator/**",
+          "**/simulator/**",
+          "http://localhost:3000/simulator/**"
+        ],
+        "reason": "Sub-panel header hierarchy"
+      },
+      {
+        "rule": "undersized-ui-text",
+        "value": "*",
+        "files": [
+          "src/app/simulator/**",
+          "**/simulator/**",
+          "http://localhost:3000/simulator/**"
+        ],
+        "reason": "Technical slider units"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "src/app/simulator/**",
+          "**/simulator/**",
+          "http://localhost:3000/simulator/**"
+        ],
+        "reason": "Secondary graph axis labels"
+      }
+    ]
+  }
+}

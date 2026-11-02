@@ -6,8 +6,8 @@ import { RoomConfig } from './types';
 export const infinity_double_down: RoomConfig = {
     id: 'infinity_double_down',
     name: 'Infinity Double Down',
-    subtitle: 'Inspired by Double Down InfinityDoubleDown',
-    description: 'Start with 1 card! Double down as many times as you like. Suited Blackjacks pay 2:1, but Beware: Dealer pushing on 22!',
+    subtitle: 'Repeated Doubles & Push 22',
+    description: 'Start with 1 card and double down repeatedly on any total. Suited Blackjacks pay 2:1. Dealer 22 pushes all non-busted player hands.',
     feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #4c1d95 0%, #3b0764 25%, #2e1065 50%, #1e1b4b 80%, #0f172a 100%)',
     bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #000000 0%, #111827 50%, #312e81 100%)',
     borderColor: 'rgba(124, 58, 237, 0.4)',
@@ -37,7 +37,7 @@ export const infinity_double_down: RoomConfig = {
     logoPath: '/images/logo/rooms/infinity_double_down.png',
     strategyType: 'infinity_double_down',
     deviationsSet: 'infinity_double_down',
-    strategySource: 'Michael Shackleford (Wizard of Odds)',
+    strategySource: 'Michael Shackleford (Wizard of Odds) · Infinite Double Combinatorial Analysis',
     rulesClass: InfinityDoubleDownRules,
     strategyModalContent: {
         overview: "Start with just 1 card! You can Hit or Double Down repeatedly. Perfect for massive payouts if you have the bankroll.",

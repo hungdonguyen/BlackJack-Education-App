@@ -7,7 +7,7 @@ export const firecard: RoomConfig = {
     id: 'firecard_21',
     name: 'Fire Card 21',
     subtitle: 'Burn the 2nd Card',
-    description: 'Fire Card Blackjack — Not happy with your second card? Burn it for 0.5x your bet! This high-variance room pays 1:1 for Natural Blackjacks but features massive "Burn Bonuses" if your discarded card is an Ace. Double After Split is permitted.',
+    description: 'Fire Card 21 — Burn an unfavorable second card for 0.5x bet to draw a replacement. Discarding an Ace pays a special Burn Bonus up to 8:1. Natural Blackjacks pay 1:1. Double after split allowed.',
     feltGradient: 'radial-gradient(ellipse 90% 85% at 50% 60%, #450a0a 0%, #7f1d1d 25%, #991b1b 50%, #b91c1c 80%, #dc2626 100%)',
     bgGradient: 'radial-gradient(ellipse 120% 100% at 50% 40%, #2a0000 0%, #3f0000 50%, #5a0000 100%)',
     borderColor: 'rgba(248, 113, 113, 0.4)',
@@ -30,7 +30,7 @@ export const firecard: RoomConfig = {
     logoPath: '/images/logo/rooms/firecard21.png',
     strategyType: 'firecard_21',
     deviationsSet: 'firecard_21',
-    strategySource: 'Custom Strategy for Fire Card 21',
+    strategySource: 'Specialty Casino Table Model · Wizard of Odds Variant Analysis',
     rulesClass: FireCardRules,
     strategyModalContent: {
         overview: "Fire Card Blackjack allows you to 'Burn' a bad 2nd card for a fee, while offering massive bonuses for Burned Aces.",

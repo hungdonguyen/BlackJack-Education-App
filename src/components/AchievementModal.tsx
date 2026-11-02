@@ -1,4 +1,5 @@
 'use client';
+import { ShinyText, CountUp, SpotlightCard } from '@/components/reactbits';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,7 +41,7 @@ const ACHIEVEMENT_QUOTES: Record<string, string> = {
     insurance_pay: "Insurance is a sucker bet, unless you know exactly what is in the hole. — Lawrence Revere",
     multi_blackjack: "Two Blackjacks at once is a glitch in the matrix. — Anonymous Pit Boss",
     dealer_bust_22: "A dealer busting on 22 is a push that feels like a loss, unless you've laid a trap. — Casino Floor Regular",
-    perfect_21_sum: "Finding 21 on all spots requires a zen-like connection to the shoe. — Asian Pit Boss",
+    perfect_21_sum: "Finding 21 on all spots requires a zen-like connection to the shoe. — Casino Floor Supervisor",
     exact_zero: "Rising from exactly zero is the greatest comeback story ever told. — Stu Ungar",
     count_savant: "He's not gambling. He's doing math, and he's doing it perfectly. — Casino Surveillance",
 };
@@ -109,9 +110,17 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
               <Trophy size={28} />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
-                Achievements <span className="text-yellow-500/50">Mastery</span>
-              </h2>
+              <div className="flex items-center gap-2">
+                <ShinyText
+                  text="Achievements"
+                  shineColor="#ffffff"
+                  color="#fbbf24"
+                  speed={2.5}
+                  glow={0.3}
+                  className="text-2xl font-black uppercase tracking-tighter"
+                />
+                <span className="text-yellow-500/50 text-2xl font-black uppercase tracking-tighter">Mastery</span>
+              </div>
               <div className="flex items-center gap-3 mt-1">
                 <div className="w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
                   <motion.div 
@@ -120,8 +129,8 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
                     className="h-full bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]"
                   />
                 </div>
-                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">
-                  {unlockedCount} / {totalCount} UNLOCKED ({Math.round(progressPercent)}%)
+                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest flex items-center gap-1">
+                  <CountUp to={unlockedCount} duration={0.6} />/{totalCount} UNLOCKED (<CountUp to={Math.round(progressPercent)} suffix="%" duration={0.6} />)
                 </span>
               </div>
             </div>
@@ -160,30 +169,34 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
               const tier = TIER_CONFIG[achievement.tier];
               
               return (
+                <SpotlightCard
+                  key={achievement.id}
+                  spotlightColor={`${tier.color}25`}
+                  className="p-0 rounded-lg bg-transparent border-0 overflow-hidden"
+                >
                 <motion.div
                   layout
-                  key={achievement.id}
                   onClick={() => {
                       setSelectedAchievement(achievement);
                       setCurrentQuote(ACHIEVEMENT_QUOTES[achievement.id] || "Fortune favors the bold. — Virgil");
                   }}
-                  className={`relative p-3 rounded-md border transition-all duration-300 flex items-center gap-4 cursor-pointer ${
+                  className={`relative p-3.5 rounded-xl border transition-all duration-300 flex items-center gap-4 cursor-pointer ${
                     isUnlocked 
-                      ? 'bg-[#121212] border-white/10 hover:bg-[#1a1a1a] hover:border-white/20' 
-                      : 'bg-transparent border-white/5 opacity-50 hover:bg-white/[0.02]'
+                      ? 'bg-[#141416] border-white/10 hover:bg-[#1c1c20] hover:border-white/20 shadow-md' 
+                      : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'
                   }`}
                 >
                   {/* Badge */}
                   <div className="relative flex-shrink-0">
                     <div 
-                      className={`w-14 h-14 rounded-md flex items-center justify-center border transition-all duration-500 ${
-                        isUnlocked ? 'bg-[#1c1c1c] border-white/10' : 'bg-[#0a0a0a] border-white/5'
+                      className={`w-14 h-14 rounded-xl flex items-center justify-center border transition-all duration-300 ${
+                        isUnlocked ? 'bg-[#1c1c22] border-white/10 shadow-inner' : 'bg-white/[0.03] border-white/5'
                       }`}
                     >
                       {isUnlocked ? (
                         <CategoryIcon category={achievement.category} size={24} style={{ color: tier.color }} />
                       ) : (
-                        <Lock size={20} className="text-white/20" />
+                        <Lock size={18} className="text-white/30" />
                       )}
                     </div>
                   </div>
@@ -207,31 +220,32 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
                       )}
                     </div>
                     <h3 className={`text-sm font-bold truncate uppercase tracking-tight transition-colors ${
-                      isUnlocked ? 'text-white' : 'text-white/30'
+                      isUnlocked ? 'text-white' : 'text-white/60'
                     }`}>
                       {achievement.secret && !isUnlocked ? 'Secret Achievement' : achievement.name}
                     </h3>
-                    <p className={`text-[11px] leading-tight line-clamp-2 italic ${
-                      isUnlocked ? 'text-white/50' : 'text-white/10'
+                    <p className={`text-[11px] leading-tight line-clamp-2 italic mt-0.5 ${
+                      isUnlocked ? 'text-white/60' : 'text-white/30'
                     }`}>
                       {achievement.secret && !isUnlocked ? 'Unlock this to reveal the requirements.' : achievement.description}
                     </p>
                     
                     <div className="mt-2 text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
-                       <span style={{ color: tier.color }}>{tier.label}</span>
-                       <span className="text-white/30">•</span>
+                       <span style={{ color: isUnlocked ? tier.color : 'rgba(255,255,255,0.4)' }}>{tier.label}</span>
+                       <span className="text-white/20">•</span>
                        {isUnlocked && unlockedAchievements[achievement.id] ? (
-                         <span className="text-green-500/80">
+                         <span className="text-emerald-400 font-bold">
                            Unlocked {new Date(unlockedAchievements[achievement.id]).toLocaleDateString()}
                          </span>
                        ) : (
-                         <span className="text-white/20">Locked</span>
+                         <span className="text-white/30">Locked</span>
                        )}
                     </div>
                   </div>
 
 
                 </motion.div>
+                </SpotlightCard>
               );
             })}
           </div>

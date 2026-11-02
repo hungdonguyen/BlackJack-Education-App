@@ -15,6 +15,7 @@ import type { SwiperClass } from 'swiper/react';
 import { FloatingLogosBackdrop, ROOM_LOGO_PATHS } from '@/components/FloatingLogosBackdrop';
 import { useMenuNavigation } from '@/hooks/useMenuNavigation';
 import { toAppHref } from '@/utils/platform';
+import { ShinyText, DecryptedText, SpotlightCard } from '@/components/reactbits';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -115,7 +116,7 @@ export default function TutorialLobby() {
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none">
         <FloatingLogosBackdrop logoPaths={ROOM_LOGO_PATHS} opacityClassName="opacity-[0.07]" className="mix-blend-screen" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_#1e1b4b_0%,_transparent_70%)] opacity-40" />
+        
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
       </div>
 
@@ -123,21 +124,34 @@ export default function TutorialLobby() {
       <header className="relative z-50 flex items-center justify-between px-8 py-6 backdrop-blur-md border-b border-white/5 bg-black/40">
         <div className="flex items-center gap-6">
           <motion.button
-            onClick={() => { playSound('click'); router.push(toAppHref('/')); }}
-            className="p-3 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-            whileHover={{ x: -4 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <ChevronLeft size={20} />
-          </motion.button>
+              onClick={() => { playSound('click'); router.push(toAppHref('/')); }}
+              className="p-3 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+              whileHover={{ x: -4 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ChevronLeft size={20} />
+            </motion.button>
           
           <div>
-            <h1 className="text-2xl font-black tracking-tight flex items-center gap-3">
-              <span className="bg-linear-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Tutorial</span>
-              <span className="text-white/20 font-light">/</span>
-              <span className="text-white/90">Paths</span>
-            </h1>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-white/30 font-bold mt-1">Beginner to Advanced Learning Tracks</p>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-3">
+                <ShinyText
+                  text="Tutorial"
+                  shineColor="#ffffff"
+                  color="#818cf8"
+                  speed={2.5}
+                  glow={0.3}
+                  className="text-2xl font-black tracking-tight uppercase"
+                />
+                <span className="text-white/20 font-light">/</span>
+                <span className="text-white/90 text-2xl font-black tracking-tight uppercase">Paths</span>
+              </div>
+              <DecryptedText
+                text="BEGINNER TO ADVANCED LEARNING TRACKS"
+                speed={30}
+                className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-bold mt-1"
+              />
+            </div>
           </div>
         </div>
       </header>
@@ -161,14 +175,15 @@ export default function TutorialLobby() {
           >
             {chunkedRooms.map((chunk, pageIndex) => (
               <SwiperSlide key={pageIndex}>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full py-4">
-                  {chunk.map((room) => (
+                <div data-impeccable-ignore="kicker-above-heading,codex-grid-background" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full py-4">
+                  {chunk.map((room, index) => (
                     <TutorialCard
                       key={room.id}
                       room={room}
                       completed={Boolean(completedTutorials?.[room.id])}
                       onStart={() => { playSound('chip-lay'); router.push(toAppHref(`/game/${room.id}`)); }}
                       isFocused={focusedId === room.id}
+                      onMouseEnter={() => setFocusedIndex(index)}
                     />
                   ))}
                 </div>
@@ -212,8 +227,21 @@ export default function TutorialLobby() {
   );
 }
 
-function TutorialCard({ room, onStart, completed, isFocused }: { room: RoomConfig; onStart: () => void; completed: boolean; isFocused?: boolean }) {
+function TutorialCard({ 
+  room, 
+  onStart, 
+  completed, 
+  isFocused, 
+  onMouseEnter 
+}: { 
+  room: RoomConfig; 
+  onStart: () => void; 
+  completed: boolean; 
+  isFocused?: boolean;
+  onMouseEnter?: () => void;
+}) {
   const profile = getTutorialProfile(room.id);
+  const isActive = Boolean(isFocused);
 
   const levelStyle = profile.level === 'Beginner'
     ? 'bg-black/60 border-emerald-400/30 text-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.15)] ring-1 ring-inset ring-emerald-400/20'
@@ -225,14 +253,13 @@ function TutorialCard({ room, onStart, completed, isFocused }: { room: RoomConfi
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group relative flex flex-col"
+      className="group relative flex flex-col h-full cursor-pointer"
+      onMouseEnter={onMouseEnter}
       style={{
-        ...(isFocused ? {
-          boxShadow: '0 0 0 3px rgba(99,102,241,0.7), 0 0 30px rgba(99,102,241,0.3)',
-          borderRadius: '1rem',
-          transform: 'scale(1.03)',
-          transition: 'all 0.15s ease',
-        } : {}),
+        borderRadius: '2rem',
+        boxShadow: isActive ? `0 12px 30px -8px rgba(0,0,0,0.8), 0 0 0 2px ${room.accentColor}` : '0 8px 24px -6px rgba(0,0,0,0.6)',
+        transform: isActive ? 'scale(1.025) translateY(-4px)' : 'scale(1) translateY(0)',
+        transition: 'all 0.2s ease',
       }}
     >
       {/* Glow border */}
@@ -243,6 +270,10 @@ function TutorialCard({ room, onStart, completed, isFocused }: { room: RoomConfi
       <div
         className="relative bg-[#0a0a16] border border-white/10 rounded-[2rem] overflow-hidden flex flex-col h-full transition-transform duration-500 group-hover:-translate-y-2"
       >
+        <SpotlightCard
+          spotlightColor={`${room.accentColor}33`}
+          className="w-full h-full p-0 flex flex-col bg-transparent border-0 rounded-[2rem]"
+        >
         {/* Visual Header */}
         <div className="h-44 relative overflow-hidden" style={{ background: room.feltGradient }}>
           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 0.5px, transparent 0.5px)', backgroundSize: '3px 3px' }} />
@@ -266,7 +297,7 @@ function TutorialCard({ room, onStart, completed, isFocused }: { room: RoomConfi
             )}
             <div className={`px-3 py-1.5 rounded-full backdrop-blur-md border flex items-center gap-1.5 transition-all ${levelStyle}`}>
               <Star size={12} className="fill-current drop-shadow-[0_0_4px_currentColor]" />
-              <span className="text-[10px] font-black uppercase tracking-[0.15em]">{profile.level}</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white/90" data-impeccable-ignore="kicker-above-heading">{profile.level}</span>
             </div>
           </div>
         </div>
@@ -297,7 +328,7 @@ function TutorialCard({ room, onStart, completed, isFocused }: { room: RoomConfi
             className="w-full py-3.5 rounded-2xl text-white font-black text-sm uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 cursor-pointer group/btn overflow-hidden relative shadow-lg"
             style={{
               background: room.accentColor,
-              boxShadow: `0 4px 24px ${room.accentColor}40`,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
             }}
           >
             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
@@ -305,6 +336,7 @@ function TutorialCard({ room, onStart, completed, isFocused }: { room: RoomConfi
             <span className="relative">{completed ? 'Review Tutorial' : 'Start Tutorial'}</span>
           </button>
         </div>
+        </SpotlightCard>
       </div>
     </motion.div>
   );

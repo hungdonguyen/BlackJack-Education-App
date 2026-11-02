@@ -17,7 +17,7 @@ export const ZAPOUT_TUTORIAL_LESSONS: TutorialLesson[] = [
         steps: [
             {
                 id: 0,
-                message: "Got 2 terrible cards? ZAP OUT lets you discard your ENTIRE hand and draw 2 brand new cards — a power no other table offers!",
+                message: "Stuck with a stiff total (hard 15–18)? ZAP OUT allows you to discard your initial cards and draw two fresh cards.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue !== 100,
                 position: 'center',
                 requiresClick: true

@@ -5,6 +5,7 @@ import { useGameStore } from '@/hooks/useGameStore';
 import { useAudio } from '@/utils/audio';
 import { useMenuNavigation } from '@/hooks/useMenuNavigation';
 import { ROOMS } from '@/utils/rooms';
+import { ShinyText, CountUp, SpotlightCard } from '@/components/reactbits';
 import {
   DAILY_CLAIM_BASE_REWARD,
   DAILY_CLAIM_MILESTONE_BONUS,
@@ -273,9 +274,17 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
               </div>
             </div>
             <div>
-              <h2 className="text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-linear-to-b from-white via-white to-white/40 leading-none">
-                DAILY <span className="text-amber-500">REWARDS</span>
-              </h2>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-black tracking-tighter text-white">DAILY</span>
+                <ShinyText
+                  text="REWARDS"
+                  shineColor="#ffffff"
+                  color="#f59e0b"
+                  speed={2.5}
+                  glow={0.35}
+                  className="text-3xl font-black tracking-tighter"
+                />
+              </div>
               <div className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.3em] flex items-center gap-2 mt-1.5 drop-shadow-md">
                 <div className="h-1 w-8 bg-amber-500/30 rounded-full" />
                 Exclusive VIP Member Benefits
@@ -305,7 +314,15 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
               </div>
               <div className="flex flex-col min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-black">{card.label}</p>
-                <p className={`text-[1.6rem] leading-none font-black tracking-tight tabular-nums ${card.accent} drop-shadow-sm truncate`}>{card.value}</p>
+                <div className={`text-[1.6rem] leading-none font-black tracking-tight tabular-nums ${card.accent} drop-shadow-sm truncate`}>
+                  {card.label === 'Bankroll' ? (
+                    <CountUp to={bankroll} from={bankroll} prefix="$" duration={0.8} />
+                  ) : card.label === 'Total Claimed' ? (
+                    <CountUp to={totalClaimedAmount || 0} from={totalClaimedAmount || 0} prefix="$" duration={0.8} />
+                  ) : (
+                    card.value
+                  )}
+                </div>
               </div>
             </div>
           )})}
@@ -335,12 +352,12 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                 </div>
 
                 <button
-                  onClick={handleClaimHourly}
-                  disabled={!hourlyReady}
-                  className={`relative overflow-hidden px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all ${hourlyReady ? 'bg-linear-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] cursor-pointer scale-100 active:scale-95' : 'bg-white/5 text-white/30 cursor-not-allowed border border-white/10'}`}
-                >
-                  {hourlyReady ? 'Claim Now' : hourlyCountdown}
-                </button>
+                    onClick={handleClaimHourly}
+                    disabled={!hourlyReady}
+                    className={`relative overflow-hidden px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all ${hourlyReady ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] cursor-pointer scale-100 active:scale-95' : 'bg-white/5 text-white/30 cursor-not-allowed border border-white/10'}`}
+                  >
+                    {hourlyReady ? 'Claim Now' : hourlyCountdown}
+                  </button>
               </div>
 
               {/* Progress milestones */}
@@ -385,7 +402,7 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                      exit={{ opacity: 0, scale: 1.05 }}
                      className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md rounded-2xl"
                   >
-                    <Wallet className="text-amber-400 w-12 h-12 mb-2 animate-bounce drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" />
+                    <Wallet className="text-amber-400 w-12 h-12 mb-2 animate-pulse drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" />
                     <div className="text-4xl font-black text-amber-400 drop-shadow-[0_0_20px_rgba(245,158,11,1)]">
                       +${flashHourly.toLocaleString()}
                     </div>
@@ -421,11 +438,11 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                     </div>
                   ) : (
                     <button
-                      onClick={handleClaimMystery}
-                      className="w-full py-3 rounded-xl bg-linear-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-black text-[11px] uppercase tracking-widest shadow-[0_0_20px_rgba(217,70,239,0.3)] cursor-pointer active:scale-95 transition-all"
-                    >
-                      Open Box
-                    </button>
+                        onClick={handleClaimMystery}
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-black text-[11px] uppercase tracking-widest shadow-[0_0_20px_rgba(217,70,239,0.3)] cursor-pointer active:scale-95 transition-all"
+                      >
+                        Open Box
+                      </button>
                   )}
                 </div>
               </div>
@@ -439,7 +456,7 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                      exit={{ opacity: 0, scale: 1.05 }}
                      className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md rounded-2xl border border-fuchsia-500/50"
                   >
-                    <Gift className="text-fuchsia-400 w-16 h-16 animate-bounce mb-2 drop-shadow-[0_0_15px_rgba(217,70,239,1)]" />
+                    <Gift className="text-fuchsia-400 w-16 h-16 animate-pulse mb-2 drop-shadow-[0_0_15px_rgba(217,70,239,1)]" />
                     <div className="text-3xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,1)]">
                       +${flashMystery.toLocaleString()}
                     </div>
@@ -531,30 +548,30 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
             </div>
 
             {/* LEARNING / TUTORIALS (col-span-1) */}
-            <div className="relative overflow-hidden rounded-3xl border border-indigo-500/30 bg-linear-to-b from-indigo-500/10 via-black/40 to-black/60 p-6 flex flex-col min-h-55 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]" style={claimFocusStyle('tutorial')}>
-               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/10 blur-[60px] rounded-full" />
+            <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-linear-to-b from-amber-500/10 via-black/40 to-black/60 p-6 flex flex-col min-h-55 shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]" style={claimFocusStyle('tutorial')}>
+               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-amber-500/10 blur-[60px] rounded-full" />
                <div className="flex items-center gap-2 mb-4 z-10">
-                  <div className="w-8 h-8 rounded-lg border border-indigo-500/40 bg-indigo-500/15 flex items-center justify-center">
-                    <Sparkles size={16} className="text-indigo-300" />
+                  <div className="w-8 h-8 rounded-lg border border-amber-500/40 bg-amber-500/15 flex items-center justify-center">
+                    <Sparkles size={16} className="text-amber-300" />
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Training Bonus</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Training Bonus</span>
               </div>
               <div className="flex-1 flex flex-col justify-center mb-4 z-10">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-[10px] text-white/40 uppercase tracking-widest font-black">Pending Balance</p>
-                  <div className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[9px] font-black text-indigo-300 tracking-wider">
+                  <div className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-[9px] font-black text-amber-300 tracking-wider">
                     {totalCompletedCount}/{totalTutorialsCount} COMPLETED
                   </div>
                 </div>
-                <div className="text-3xl font-black text-indigo-400">${tutorialRewardAmount.toLocaleString()}</div>
-                <p className="text-[9px] text-indigo-300/40 uppercase tracking-widest font-bold leading-relaxed mt-3 pt-3 border-t border-white/5">
+                <div className="text-3xl font-black text-amber-400">${tutorialRewardAmount.toLocaleString()}</div>
+                <p className="text-[9px] text-amber-300/40 uppercase tracking-widest font-bold leading-relaxed mt-3 pt-3 border-t border-white/5">
                   Earn a one-time $10,000 bonus for each uniquely completed tutorial module.
                 </p>
               </div>
               <button
                 onClick={handleClaimTutorial}
                 disabled={!canClaimTutorial}
-                className={`mt-auto z-10 w-full py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all ${canClaimTutorial ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)] cursor-pointer' : 'bg-black/50 text-white/30 cursor-not-allowed border border-white/5'}`} 
+                className={`mt-auto z-10 w-full py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all ${canClaimTutorial ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black shadow-[0_0_15px_rgba(245,158,11,0.4)] cursor-pointer' : 'bg-black/50 text-white/30 cursor-not-allowed border border-white/5'}`} 
               >
                 Claim Training
               </button>
@@ -566,13 +583,13 @@ export const DailyClaimModal: React.FC<DailyClaimModalProps> = ({ isOpen, onClos
                      initial={{ opacity: 0, scale: 0.8, filter: 'blur(4px)' }}
                      animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }} 
                      exit={{ opacity: 0, scale: 1.05 }}
-                     className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md rounded-2xl border border-indigo-500/40"
+                     className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md rounded-2xl border border-amber-500/40"
                   >
-                    <Sparkles className="text-indigo-400 w-12 h-12 mb-2 drop-shadow-[0_0_15px_rgba(79,70,229,0.8)]" />
-                    <div className="text-3xl font-black text-indigo-400 drop-shadow-[0_0_15px_rgba(79,70,229,1)]">
+                    <Sparkles className="text-amber-400 w-12 h-12 mb-2 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]" />
+                    <div className="text-3xl font-black text-amber-400 drop-shadow-[0_0_15px_rgba(245,158,11,1)]">
                       +${flashTutorial.toLocaleString()}
                     </div>
-                    <div className="text-[10px] text-indigo-400/80 uppercase font-black tracking-widest mt-2">Training Reward</div>
+                    <div className="text-[10px] text-amber-400/80 uppercase font-black tracking-widest mt-2">Training Reward</div>
                   </motion.div>
                 )}
               </AnimatePresence>

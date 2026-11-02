@@ -29,6 +29,7 @@ export const vegasStrip: RoomConfig = {
     logoPath: '/images/logo/rooms/vegas_strip.png',
     strategyType: 'vegas_strip',
     deviationsSet: 'standard',
+    strategySource: 'Nevada Gaming Control Board (NGCB) Standards · Wizard of Odds (4-Deck S17)',
     rulesClass: VegasStripRules,
     strategyModalContent: {
         overview: "Vegas Strip rules are the gold standard for American Blackjack, played with 4 decks and dealer standing on all 17s.",

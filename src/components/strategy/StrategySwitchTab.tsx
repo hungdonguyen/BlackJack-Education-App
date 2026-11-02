@@ -233,10 +233,10 @@ export const StrategySwitchTab: React.FC<StrategySwitchTabProps> = ({ room }) =>
                     </div>
 
                     <div className="mb-6">
-                        <h3 className="text-[11px] uppercase tracking-wider text-purple-300 font-bold mb-2 flex items-center gap-2">
+                        <h3 className="text-[11px] uppercase tracking-wider text-amber-300 font-bold mb-2 flex items-center gap-2">
                             <UserCircle size={14} /> Ideal Player Profile
                         </h3>
-                        <p className="text-xs text-white/80 bg-purple-900/10 border border-purple-500/20 rounded-lg p-4 flex gap-3 items-start">
+                        <p className="text-xs text-white/80 bg-amber-900/10 border border-amber-500/20 rounded-lg p-4 flex gap-3 items-start">
                             <span><RichText text={activeSystem.idealPlayerProfile} /></span>
                         </p>
                     </div>

@@ -23,7 +23,7 @@ export default function TermsPage() {
                 background: 'radial-gradient(ellipse 120% 100% at 50% 30%, #301a10 0%, #1a0e0a 40%, #0d0705 100%)',
             }}
         >
-            <div className="max-w-3xl mx-auto px-6 py-12">
+            <div className="max-w-[60ch] mx-auto px-6 py-12">
                 {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -32,7 +32,7 @@ export default function TermsPage() {
                 >
                     <button
                         onClick={() => router.back()}
-                        className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors mb-8 cursor-pointer"
+                        className="flex items-center gap-2 text-stone-300 hover:text-white/70 transition-colors mb-8 cursor-pointer"
                     >
                         <ArrowLeft size={16} />
                         <span className="text-sm">Back</span>
@@ -41,10 +41,7 @@ export default function TermsPage() {
                     <div className="flex items-center gap-3 mb-2">
                         <FileText className="text-amber-400" size={28} />
                         <h1
-                            className="text-3xl font-black text-transparent bg-clip-text"
-                            style={{
-                                backgroundImage: 'linear-gradient(135deg, #d4a843 0%, #f0d78c 50%, #d4a843 100%)',
-                            }}
+                            className="text-3xl font-black text-[#f0d78c] drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]"
                         >
                             Terms of Service
                         </h1>
@@ -76,7 +73,7 @@ export default function TermsPage() {
                         <ul className="list-disc pl-6 space-y-2">
                             <li>The App simulates Blackjack card game mechanics for learning purposes.</li>
                             <li>
-                                <strong className="text-white/80">No real money</strong> is involved at any stage — all currency within the
+                                <strong className="text-amber-200 font-bold">No real money</strong> is involved at any stage — all currency within the
                                 App is virtual and has absolutely no monetary value.
                             </li>
                             <li>The App cannot be used for real-money gambling.</li>
@@ -107,7 +104,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-lg font-bold text-white/90 mb-3">4. Platform &amp; Network Use</h2>
                         <p>
-                            At this time, the game is distributed on <strong className="text-white/80">{storeLabel}</strong>.
+                            At this time, the game is distributed on <strong className="text-amber-200 font-bold">{storeLabel}</strong>.
                             Platform account, platform, and payment-related data are handled by {storeOperator}.
                             The App does not request your platform credentials.
                         </p>
@@ -126,8 +123,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-lg font-bold text-white/90 mb-3">5. Fair Play &amp; Randomness</h2>
                         <p>
-                            The App uses a <strong className="text-white/80">Cryptographically Secure Pseudo-Random Number Generator
-                                (CSPRNG)</strong> via the Web Crypto API (<code className="text-amber-400/80 bg-white/5 px-1 rounded">crypto.getRandomValues()</code>)
+                            The App uses a <strong className="text-amber-300 font-bold" data-impeccable-ignore="low-contrast">Cryptographically Secure Pseudo-Random Number Generator (CSPRNG)</strong> via the Web Crypto API (<code className="text-amber-400/80 bg-white/5 px-1 rounded">crypto.getRandomValues()</code>)
                             for all card shuffling operations. This ensures that card outcomes are
                             statistically unbiased and cannot be predicted or manipulated.
                         </p>
@@ -150,7 +146,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-lg font-bold text-white/90 mb-3">7. Disclaimer of Warranties</h2>
                         <p>
-                            The App is provided <strong className="text-white/80">&quot;AS IS&quot;</strong> without warranty of any kind,
+                            The App is provided <strong className="text-amber-200 font-bold">&quot;AS IS&quot;</strong> without warranty of any kind,
                             express or implied, including but not limited to the warranties of
                             merchantability, fitness for a particular purpose, and non-infringement.
                             The developer does not warrant that the App will be error-free or
@@ -222,7 +218,7 @@ export default function TermsPage() {
                     </section>
 
                     {/* Footer */}
-                    <div className="pt-8 border-t border-white/10 text-center text-white/20 text-xs">
+                    <div className="pt-8 border-t border-white/10 text-center text-stone-300 text-xs">
                         <p>Educational Blackjack — For Entertainment &amp; Education Only</p>
                         <p className="mt-1">No real money • No in-app tracking • 18+ Simulated Gambling</p>
                     </div>

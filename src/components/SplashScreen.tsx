@@ -18,7 +18,9 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [isExiting, setIsExiting] = useState(false);
   const isHydrated = useStoreHydration();
   const isHydratedRef = useRef(isHydrated);
-  isHydratedRef.current = isHydrated;
+  useEffect(() => {
+    isHydratedRef.current = isHydrated;
+  });
 
   useEffect(() => {
     primeBGMEngine();

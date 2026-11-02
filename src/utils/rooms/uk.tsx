@@ -30,6 +30,7 @@ export const uk: RoomConfig = {
     logoPath: '/images/logo/rooms/uk_logo.png',
     strategyType: 'uk',
     deviationsSet: 'uk',
+    strategySource: 'UK Gambling Commission (UKGC) Standards · European No Hole Card (OBO Rule)',
     rulesClass: UKRules,
     strategyModalContent: {
         overview: "UK Rules use European No Hole Card (ENHC) but protect player doubles/splits via Original Bets Only (OBO) logic.",

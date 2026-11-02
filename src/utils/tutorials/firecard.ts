@@ -16,7 +16,7 @@ export const FIRECARD_TUTORIAL_LESSONS: TutorialLesson[] = [
         steps: [
             {
                 id: 0,
-                message: "Got a bad second card? BURN lets you INCINERATE your 2nd card and replace it with a new one — for half your bet!",
+                message: "Unfavorable second card? BURN allows you to discard your second card and draw a replacement for half your bet.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.BETTING && s.selectedChipValue !== 100,
                 position: 'center',
                 requiresClick: true
@@ -44,7 +44,7 @@ export const FIRECARD_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 4,
-                message: "You have 16 vs a 10 — usually hopeless. But you can BURN that 6 away! Tap BURN!",
+                message: "You have 16 against a dealer 10 — a tough hand. In this room, you can discard that 6 and draw a replacement. Tap BURN.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PLAYER_TURN && !s.seats[2].hands[0].isBurned,
                 targetElementId: 'action-burn',
                 position: 'player'
@@ -65,7 +65,7 @@ export const FIRECARD_TUTORIAL_LESSONS: TutorialLesson[] = [
             },
             {
                 id: 7,
-                message: "You paid a small tax to dodge a bullet and walked away with a win. Tap 'NEW ROUND'.",
+                message: "Paying the burn fee turned a difficult 16 into a winning 20. Tap 'NEW ROUND'.",
                 condition: (s: GameState) => s.gamePhase === GamePhase.PAYOUT,
                 targetElementId: 'new-round-button',
                 position: 'player'

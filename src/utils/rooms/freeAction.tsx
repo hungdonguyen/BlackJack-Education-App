@@ -35,7 +35,7 @@ export const freeAction: RoomConfig = {
     logoPath: '/images/logo/rooms/freeaction.png',
     strategyType: 'free_action',
     deviationsSet: 'free_action',
-    strategySource: 'Michael Shackleford (Wizard of Odds)',
+    strategySource: 'Geoff Hall (Inventor of Free Bet Blackjack) · Wizard of Odds Analysis',
     rulesClass: FreeActionRules,
     strategyModalContent: {
         overview: "Free Action Blackjack (similar to Free Bet) offers free Double Downs and Splits in exchange for the Dealer pushing on 22.",

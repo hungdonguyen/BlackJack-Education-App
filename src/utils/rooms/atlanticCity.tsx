@@ -29,6 +29,7 @@ export const atlanticCity: RoomConfig = {
     logoPath: '/images/logo/rooms/atlantic.png',
     strategyType: 'atlantic_city',
     deviationsSet: 'standard',
+    strategySource: 'New Jersey Division of Gaming Enforcement (DGE) · Wizard of Odds (8-Deck S17)',
     rulesClass: AtlanticCityRules,
     strategyModalContent: {
         overview: "Atlantic City rules are similar to Vegas Strip but use 8 decks and allow Late Surrender.",
