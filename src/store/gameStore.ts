@@ -7,7 +7,7 @@ import { persist } from 'zustand/middleware';
 import { GameStore } from '@/types/game';
 import { createBettingSlice } from './bettingSlice';
 import { createGameFlowSlice } from './gameFlowSlice';
-import { createSettingsSlice } from './settingsSlice';
+import { createSettingsSlice, ALL_DECK_IDS } from './settingsSlice';
 import { createAchievementSlice } from './achievementSlice';
 import { createTutorialSlice } from './tutorialSlice';
 import { createDailyClaimSlice } from './dailyClaimSlice';
@@ -48,6 +48,18 @@ export const useGameStoreBase = create<GameStore>()(
     }),
     {
       name: 'blackjack-storage',
+      merge: (persistedState: any, currentState: GameStore) => {
+        const merged = {
+          ...currentState,
+          ...(persistedState as object),
+        };
+        const existing = Array.isArray((persistedState as any)?.purchasedDecks)
+          ? (persistedState as any).purchasedDecks
+          : [];
+        // Ensure 100% full decks are unlocked for test & play
+        merged.purchasedDecks = Array.from(new Set([...existing, ...ALL_DECK_IDS]));
+        return merged;
+      },
       // Only persist specific state to avoid bloat and issues with complex objects
       partialize: (state) => {
         const tauri = isTauriRuntime();

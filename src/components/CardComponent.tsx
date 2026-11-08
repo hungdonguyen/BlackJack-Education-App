@@ -1,143 +1,286 @@
-'use client';
-
-// ============================================
-// CardComponent — premium card with natural fanning & rotation
-// ============================================
-
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { Card } from '@/types/game';
-import { getCardImagePath, getCardBackPath } from '@/utils/assets';
-import { useAudio } from '@/utils/audio';
-import { useGameStore } from '@/hooks/useGameStore';
-import { useEffect, useRef, useState } from 'react';
-
-interface CardComponentProps {
-    card: Card;
-    index?: number;
-    /** Total cards in hand — used for centering the fan */
-    totalCards?: number;
-    /** Whether to animate entry */
-    animate?: boolean;
-    /** Size variant */
-    size?: 'sm' | 'md' | 'lg';
-    /** Whether the card was just switched */
-    isSwitched?: boolean;
-    /** Highlights the card to indicate it will be affected by an action */
-    isHighlighted?: boolean;
-    /** Color for the highlight glow */
-    highlightColor?: string;
-}
-
-const SIZE_MAP = {
-    sm: { width: 69, height: 101 },
-    md: { width: 92, height: 133 },
-    lg: { width: 116, height: 165 },
-};
-
-// Natural rotation for fanned cards (subtle, like a real dealer)
-const FAN_ROTATIONS = [0, 3, -2, 5, -3, 4, -1, 6];
-const FAN_OFFSETS = { sm: 28, md: 32, lg: 37 };
-
-export default function CardComponent({
-    card,
-    index = 0,
-    totalCards = 1,
-    animate = true,
-    size = 'md',
-    isSwitched = false,
-    isHighlighted = false,
-    highlightColor = '#ffffff',
-}: CardComponentProps) {
-    const dimensions = SIZE_MAP[size];
-    const activeDeck = useGameStore(s => s.activeDeck);
-    const cardAnimationEnabled = useGameStore(s => s.cardAnimationEnabled);
-
-    // One-shot burst animation for 'solar': play once when drawn/revealed, then settle to static PNG
-    const isOneShotDeck = activeDeck === 'solar';
-    const [burstActive, setBurstActive] = useState(true);
-    const [burstToken, setBurstToken] = useState(() => Math.random().toString(36).slice(2, 8));
-
-    useEffect(() => {
-        if (!isOneShotDeck || !cardAnimationEnabled) return;
-        setBurstActive(true);
-        setBurstToken(Math.random().toString(36).slice(2, 8));
-        const entryDelayMs = animate ? index * 180 : 0;
-        const timer = setTimeout(() => {
-            setBurstActive(false);
-        }, entryDelayMs + 1450);
-        return () => clearTimeout(timer);
-    }, [isOneShotDeck, cardAnimationEnabled, card.isHidden, card.suit, card.rank, animate, index]);
-
-    const useAnim = cardAnimationEnabled && (!isOneShotDeck || burstActive);
-    const baseImagePath = card.isHidden
-        ? getCardBackPath(activeDeck, useAnim)
-        : getCardImagePath(card, activeDeck, useAnim);
-    const imagePath = (isOneShotDeck && useAnim) ? `${baseImagePath}?b=${burstToken}` : baseImagePath;
-    const fanOffset = FAN_OFFSETS[size];
-    const rotation = FAN_ROTATIONS[index % FAN_ROTATIONS.length] ?? 0;
-    const { playSound } = useAudio();
-    const hasPlayedSoundRef = useRef(false);
-
-    useEffect(() => {
-        if (animate && !hasPlayedSoundRef.current) {
-            hasPlayedSoundRef.current = true;
-            // Slight delay to sync with animation, or immediate
-            const timer = setTimeout(() => {
-                playSound('card-slide');
-            }, index * 180); // matches the 0.18s delay in framer-motion        
-            return () => clearTimeout(timer);
-        }
-    }, [animate, index, playSound]);
-
-    return (
-        <motion.div
-            className="absolute"
-            style={{
-                left: `${index * fanOffset}px`,
-                zIndex: index + 1,
-            }}
-            initial={
-                isSwitched
-                    ? { x: index === 0 ? 100 : -100, y: -20, opacity: 0, scale: 1.1, rotateZ: index === 0 ? 15 : -15 }
-                    : animate ? { y: -250, opacity: 0, rotateY: 180, rotate: 0 } : false
-            }
-            animate={{
-                x: 0,
-                y: 0,
-                opacity: 1,
-                rotateY: 0,
-                scale: 1,
-                rotateZ: totalCards > 1 ? rotation : 0,
-            }}
-            transition={
-                isSwitched
-                    ? { type: 'spring', stiffness: 200, damping: 20, mass: 0.8, delay: 0.1 }
-                    : { type: 'spring', stiffness: 220, damping: 22, delay: index * 0.18 }
-            }
-        >
-            <div
-                className="relative rounded-lg overflow-hidden drop-shadow-xl"
-                style={{
-                    width: `${dimensions.width}px`,
-                    height: `${dimensions.height}px`,
-                    boxShadow: isHighlighted 
-                        ? `0 0 20px 4px ${highlightColor}, 3px 5px 15px rgba(0,0,0,0.6)`
-                        : '0 0 0 1px rgba(255,255,255,0.12), 3px 6px 18px rgba(0,0,0,0.65), 0 2px 5px rgba(0,0,0,0.4)',
-                    transform: isHighlighted ? 'translateY(-8px) scale(1.05)' : 'none',
-                    transition: 'box-shadow 0.2s ease, transform 0.2s ease',
-                    zIndex: isHighlighted ? 50 : 'auto',
-                }}
-            >
-                <Image
-                    src={imagePath}
-                    alt={card.isHidden ? 'Card Back' : `${card.rank} of ${card.suit}`}
-                    fill
-                    className="object-contain"
-                    sizes={`${dimensions.width}px`}
-                    priority={index < 2}
-                />
-            </div>
-        </motion.div>
-    );
-}
+'use client';
+
+
+
+// ============================================
+
+// CardComponent — premium card with natural fanning & rotation
+
+// ============================================
+
+
+
+import Image from 'next/image';
+
+import { motion } from 'framer-motion';
+
+import { Card } from '@/types/game';
+
+import { getCardImagePath, getCardBackPath } from '@/utils/assets';
+
+import { useAudio } from '@/utils/audio';
+
+import { useGameStore } from '@/hooks/useGameStore';
+
+import { useEffect, useRef, useState } from 'react';
+
+
+
+interface CardComponentProps {
+
+    card: Card;
+
+    index?: number;
+
+    /** Total cards in hand — used for centering the fan */
+
+    totalCards?: number;
+
+    /** Whether to animate entry */
+
+    animate?: boolean;
+
+    /** Size variant */
+
+    size?: 'sm' | 'md' | 'lg';
+
+    /** Whether the card was just switched */
+
+    isSwitched?: boolean;
+
+    /** Highlights the card to indicate it will be affected by an action */
+
+    isHighlighted?: boolean;
+
+    /** Color for the highlight glow */
+
+    highlightColor?: string;
+
+}
+
+
+
+const SIZE_MAP = {
+
+    sm: { width: 69, height: 101 },
+
+    md: { width: 92, height: 133 },
+
+    lg: { width: 116, height: 165 },
+
+};
+
+
+
+// Natural rotation for fanned cards (subtle, like a real dealer)
+
+const FAN_ROTATIONS = [0, 3, -2, 5, -3, 4, -1, 6];
+
+const FAN_OFFSETS = { sm: 28, md: 32, lg: 37 };
+
+
+
+export default function CardComponent({
+
+    card,
+
+    index = 0,
+
+    totalCards = 1,
+
+    animate = true,
+
+    size = 'md',
+
+    isSwitched = false,
+
+    isHighlighted = false,
+
+    highlightColor = '#ffffff',
+
+}: CardComponentProps) {
+
+    const dimensions = SIZE_MAP[size];
+
+    const activeDeck = useGameStore(s => s.activeDeck);
+
+    const cardAnimationEnabled = useGameStore(s => s.cardAnimationEnabled);
+
+
+
+    // One-shot burst animation for 'solar': play once when drawn/revealed, then settle to static PNG
+
+    const isOneShotDeck = ['solar', 'dragon'].includes(activeDeck);
+
+    const [burstActive, setBurstActive] = useState(true);
+
+    const [burstToken, setBurstToken] = useState(() => Math.random().toString(36).slice(2, 8));
+
+
+
+    useEffect(() => {
+
+        if (!isOneShotDeck || !cardAnimationEnabled) return;
+
+        setBurstActive(true);
+
+        setBurstToken(Math.random().toString(36).slice(2, 8));
+
+        const entryDelayMs = animate ? index * 180 : 0;
+
+        const timer = setTimeout(() => {
+
+            setBurstActive(false);
+
+        }, entryDelayMs + 1450);
+
+        return () => clearTimeout(timer);
+
+    }, [isOneShotDeck, cardAnimationEnabled, card.isHidden, card.suit, card.rank, animate, index]);
+
+
+
+    const useAnim = cardAnimationEnabled && (!isOneShotDeck || burstActive);
+
+    const baseImagePath = card.isHidden
+
+        ? getCardBackPath(activeDeck, useAnim)
+
+        : getCardImagePath(card, activeDeck, useAnim);
+
+    const imagePath = (isOneShotDeck && useAnim) ? `${baseImagePath}?b=${burstToken}` : baseImagePath;
+
+    const fanOffset = FAN_OFFSETS[size];
+
+    const rotation = FAN_ROTATIONS[index % FAN_ROTATIONS.length] ?? 0;
+
+    const { playSound } = useAudio();
+
+    const hasPlayedSoundRef = useRef(false);
+
+
+
+    useEffect(() => {
+
+        if (animate && !hasPlayedSoundRef.current) {
+
+            hasPlayedSoundRef.current = true;
+
+            // Slight delay to sync with animation, or immediate
+
+            const timer = setTimeout(() => {
+
+                playSound('card-slide');
+
+            }, index * 180); // matches the 0.18s delay in framer-motion        
+
+            return () => clearTimeout(timer);
+
+        }
+
+    }, [animate, index, playSound]);
+
+
+
+    return (
+
+        <motion.div
+
+            className="absolute"
+
+            style={{
+
+                left: `${index * fanOffset}px`,
+
+                zIndex: index + 1,
+
+            }}
+
+            initial={
+
+                isSwitched
+
+                    ? { x: index === 0 ? 100 : -100, y: -20, opacity: 0, scale: 1.1, rotateZ: index === 0 ? 15 : -15 }
+
+                    : animate ? { y: -250, opacity: 0, rotateY: 180, rotate: 0 } : false
+
+            }
+
+            animate={{
+
+                x: 0,
+
+                y: 0,
+
+                opacity: 1,
+
+                rotateY: 0,
+
+                scale: 1,
+
+                rotateZ: totalCards > 1 ? rotation : 0,
+
+            }}
+
+            transition={
+
+                isSwitched
+
+                    ? { type: 'spring', stiffness: 200, damping: 20, mass: 0.8, delay: 0.1 }
+
+                    : { type: 'spring', stiffness: 220, damping: 22, delay: index * 0.18 }
+
+            }
+
+        >
+
+            <div
+
+                className="relative rounded-lg overflow-hidden drop-shadow-xl"
+
+                style={{
+
+                    width: `${dimensions.width}px`,
+
+                    height: `${dimensions.height}px`,
+
+                    boxShadow: isHighlighted 
+
+                        ? `0 0 20px 4px ${highlightColor}, 3px 5px 15px rgba(0,0,0,0.6)`
+
+                        : '0 0 0 1px rgba(255,255,255,0.12), 3px 6px 18px rgba(0,0,0,0.65), 0 2px 5px rgba(0,0,0,0.4)',
+
+                    transform: isHighlighted ? 'translateY(-8px) scale(1.05)' : 'none',
+
+                    transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+
+                    zIndex: isHighlighted ? 50 : 'auto',
+
+                }}
+
+            >
+
+                <Image
+
+                    src={imagePath}
+
+                    alt={card.isHidden ? 'Card Back' : `${card.rank} of ${card.suit}`}
+
+                    fill
+
+                    className="object-contain"
+
+                    sizes={`${dimensions.width}px`}
+
+                    priority={index < 2}
+
+                />
+
+            </div>
+
+        </motion.div>
+
+    );
+
+}
+

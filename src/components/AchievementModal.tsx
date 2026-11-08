@@ -44,6 +44,20 @@ const ACHIEVEMENT_QUOTES: Record<string, string> = {
     perfect_21_sum: "Finding 21 on all spots requires a zen-like connection to the shoe. — Casino Floor Supervisor",
     exact_zero: "Rising from exactly zero is the greatest comeback story ever told. — Stu Ungar",
     count_savant: "He's not gambling. He's doing math, and he's doing it perfectly. — Casino Surveillance",
+    tutorial_graduate: "Study the table rules before the first shoe is dealt. — Pit Boss",
+    simulator_tester: "Run the numbers until the house edge has nowhere to hide. — Advantage Player",
+    silver_collector: "Polished sterling for a clean table. — High Limit Host",
+    gold_collector: "Twenty-four karats on every deal. — VIP Salon",
+    glass_collector: "Sharp edges and clear reads across the felt. — Card Mechanic",
+    hacker_collector: "Every card leaves a trace in the system. — Cipher",
+    plasma_collector: "High voltage running through the shoe. — Pit Floor",
+    cosmic_voyager: "Drawn from deep-space orbits. — Observatory",
+    rainbow_collector: "Full-spectrum refraction in every hand. — Vault Curator",
+    dragon_collector: "Forged in imperial fire, jade, and twenty-four karat leaf. — Dynasty Vault",
+    mecha_collector: "Precision-milled alloy built for heavy play. — Hangar Bay",
+    abyss_collector: "Raised from the crushing dark of the trench. — Deep Watch",
+    solar_collector: "Where blazing daylight meets the lunar shadow. — Astral Sanctum",
+    phantom_collector: "Dealt from the mist between worlds. — Wraith Table",
 };
 
 interface AchievementModalProps {
@@ -53,7 +67,7 @@ interface AchievementModalProps {
 
 export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onClose }) => {
   const unlockedAchievements = useGameStore(s => s.unlockedAchievements);
-  const [activeCategory, setActiveCategory] = useState<'all' | 'general' | 'mastery' | 'daily' | 'variant'>('all');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'general' | 'mastery' | 'daily' | 'variant' | 'store'>('all');
   const [selectedAchievement, setSelectedAchievement] = useState<AchievementDefinition | null>(null);
   const [currentQuote, setCurrentQuote] = useState('');
 
@@ -65,7 +79,7 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
   const totalCount = ACHIEVEMENTS.length;
   const progressPercent = (unlockedCount / totalCount) * 100;
 
-  const categories = ['all', 'general', 'mastery', 'daily', 'variant'] as const;
+  const categories = ['all', 'general', 'mastery', 'daily', 'variant', 'store'] as const;
 
   // Keyboard/gamepad: ←→ cycle categories, Escape close
   useModalNavigation({
@@ -146,7 +160,7 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
 
         {/* Navigation / Filters */}
         <div className="flex-shrink-0 px-6 py-4 flex items-center gap-2 border-b border-white/5 bg-white/[0.02] overflow-x-auto no-scrollbar">
-          {(['all', 'general', 'mastery', 'daily', 'variant'] as const).map((cat) => (
+          {(['all', 'general', 'mastery', 'daily', 'variant', 'store'] as const).map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}

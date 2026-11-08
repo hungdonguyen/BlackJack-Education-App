@@ -104,6 +104,22 @@ export const SPEED_DELAYS = {
   },
 } as const;
 
+export const ALL_DECK_IDS = [
+  'default',
+  'silver',
+  'plasma',
+  'gold',
+  'rainbow',
+  'hacker',
+  'glass',
+  'cosmic',
+  'dragon',
+  'mecha',
+  'abyss',
+  'solar',
+  'phantom',
+];
+
 export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice> = (set) => ({
   dealerSpeed: 'normal',
   soundEnabled: true,
@@ -121,7 +137,7 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
   cardAnimationEnabled: true,
   keyboardMapping: DEFAULT_KEYBOARD_MAPPING,
   gamepadMapping: DEFAULT_GAMEPAD_MAPPING,
-  purchasedDecks: ['default'],
+  purchasedDecks: ALL_DECK_IDS,
   activeDeck: 'default',
 
   setDealerSpeed: (speed) => set({ dealerSpeed: speed }),

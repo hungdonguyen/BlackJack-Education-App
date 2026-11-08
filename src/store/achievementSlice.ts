@@ -72,6 +72,11 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
       rainbow: 'rainbow_collector',
       hacker: 'hacker_collector',
       glass: 'glass_collector',
+      dragon: 'dragon_collector',
+      mecha: 'mecha_collector',
+      abyss: 'abyss_collector',
+      solar: 'solar_collector',
+      phantom: 'phantom_collector',
     };
     const achievementId = mapping[deckId];
     if (achievementId && !state.unlockedAchievements[achievementId]) {
@@ -109,6 +114,27 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
       bankroll,
       dailyClaimCount,
     );
+
+    const deckAchievementMap: Record<string, string> = {
+      gold: 'gold_collector',
+      silver: 'silver_collector',
+      plasma: 'plasma_collector',
+      cosmic: 'cosmic_voyager',
+      rainbow: 'rainbow_collector',
+      hacker: 'hacker_collector',
+      glass: 'glass_collector',
+      dragon: 'dragon_collector',
+      mecha: 'mecha_collector',
+      abyss: 'abyss_collector',
+      solar: 'solar_collector',
+      phantom: 'phantom_collector',
+    };
+    for (const deckId of state.purchasedDecks || []) {
+      const achId = deckAchievementMap[deckId];
+      if (achId && !state.unlockedAchievements[achId] && !newlyUnlocked.includes(achId)) {
+        newlyUnlocked.push(achId);
+      }
+    }
 
     if (newlyUnlocked.length > 0) {
       const now = Date.now();

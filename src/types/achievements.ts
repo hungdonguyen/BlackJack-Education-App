@@ -121,6 +121,11 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: 'hacker_collector', name: 'System Override', description: 'Purchase the Cyber Hacker Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/hacker_collector.png' },
   { id: 'glass_collector', name: 'Crystal Clear', description: 'Purchase the Frosted Glass Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/glass_collector.png' },
   { id: 'cosmic_voyager', name: 'Cosmic Voyager', description: 'Purchase the Cosmic Swirl Deck from the Casino Store.', tier: 'legendary', category: 'store', icon: '/images/achievements/cosmic_voyager.png' },
+  { id: 'dragon_collector', name: 'Imperial Sovereign', description: 'Purchase the Imperial Dragon Deck from the Casino Store.', tier: 'legendary', category: 'store', icon: '/images/achievements/dragon_collector.png' },
+  { id: 'mecha_collector', name: 'Heavy Armor', description: 'Purchase the Cyber Mecha Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/mecha_collector.png' },
+  { id: 'abyss_collector', name: 'Deep Sea Sovereign', description: 'Purchase the Abyssal Leviathan Deck from the Casino Store.', tier: 'epic', category: 'store', icon: '/images/achievements/abyss_collector.png' },
+  { id: 'solar_collector', name: 'Eclipse Conduit', description: 'Purchase the Celestial Solar Deck from the Casino Store.', tier: 'legendary', category: 'store', icon: '/images/achievements/solar_collector.png' },
+  { id: 'phantom_collector', name: 'Spectral High Roller', description: 'Purchase the Phantom Wraith Deck from the Casino Store.', tier: 'legendary', category: 'store', icon: '/images/achievements/phantom_collector.png' },
 ];
 
 /** Quick lookup map */
